@@ -1,0 +1,231 @@
+"""JADEN: Main normalization engine and pipeline orchestrator.
+
+Orchestrates multi-stage deterministic normalization:
+1. Sanitization & Unicode Homogenization (NFKC, context-aware Chōonpu)
+2. Block-bounded Kanji Numeral Normalization
+3. Administrative Boundary Resolution (Trie-based, O(L))
+4. Kyoto Intersection Grammar & Hokkaido Cardinal Grid Parsing
+5. Chome-Ban-Go & Banchi-Edaban Finite-State Automaton
+6. Building, Floor, and Unit Disentanglement
+7. Canonical String Formatting & Four-Tier Taxonomy Classification
+"""
+
+import time
+from typing import Optional, Dict
+
+from .models.codes import TaxonomyTier
+from .models.address import AddressComponents, NormalizedAddress
+from .core.sanitizer import sanitize_address_text
+from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
+from .parsers.administrative import AdministrativeParser
+from .parsers.kyoto import KyotoParser
+from .parsers.hokkaido import HokkaidoParser
+from .parsers.fsm import BlockFSM
+from .parsers.building import BuildingParser
+
+
+class AddressNormalizer:
+    """Production-grade Japanese address normalization engine."""
+
+    def __init__(self) -> None:
+        self.admin_parser = AdministrativeParser()
+
+    def normalize(self, raw_address: str) -> NormalizedAddress:
+        """Normalizes a raw Japanese address string into canonical structured form.
+
+        Args:
+            raw_address: Raw user-input address string.
+
+        Returns:
+            NormalizedAddress containing structured components, canonical string,
+            confidence score, taxonomy tier classifications, and parse latency.
+        """
+        start_time_ns = time.perf_counter_ns()
+
+        if not raw_address or not raw_address.strip():
+            return NormalizedAddress(
+                input_raw=raw_address or "",
+                input_sanitized="",
+                canonical="",
+                components=AddressComponents(),
+                tier_map={},
+                confidence_score=0.0,
+                latency_microseconds=0.0,
+            )
+
+        # Stage 1: Sanitization & Unicode homogenization
+        sanitized = sanitize_address_text(raw_address)
+
+        # Stage 2: Context-bounded Kanji numeral conversion
+        working_text = normalize_kanji_numerals_in_blocks(sanitized)
+
+        tier_map: Dict[str, str] = {}
+        confidence = 1.0
+
+        # Stage 3: Administrative Boundary Resolution
+        pref_rec, muni_rec, post_admin_text, is_pref_inferred = self.admin_parser.parse(working_text)
+
+        pref_code = pref_rec.code if pref_rec else None
+        pref_name = pref_rec.name if pref_rec else None
+        lg_code = muni_rec.lg_code if muni_rec else None
+        city_name = muni_rec.city if muni_rec else None
+        ward_name = muni_rec.ward if muni_rec else None
+        county_name = muni_rec.county if muni_rec else None
+
+        if pref_name:
+            if is_pref_inferred:
+                tier_map["prefecture"] = TaxonomyTier.TIER_3_HEURISTIC.value
+                confidence *= 0.85
+            else:
+                tier_map["prefecture"] = TaxonomyTier.TIER_1_STATUTORY.value
+        else:
+            confidence *= 0.60
+
+        if muni_rec:
+            tier_map["municipality"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["lg_code"] = TaxonomyTier.TIER_1_STATUTORY.value
+        else:
+            confidence *= 0.70
+
+        # Stage 4: Conventional Systems (Kyoto & Hokkaido)
+        kyoto_clause = None
+        hokkaido_clause = None
+        text_after_conventions = post_admin_text
+
+        # 4a. Kyoto Street-Intersection Parser
+        if pref_rec and pref_rec.code == "26" and (city_name and "京都" in city_name):
+            kyoto_clause, text_after_conventions = KyotoParser.parse(text_after_conventions)
+            if kyoto_clause:
+                tier_map["kyoto_direction"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+
+        # 4b. Hokkaido Jo-Chome Grid Parser
+        if pref_rec and pref_rec.code == "01":
+            hokkaido_clause, text_after_conventions = HokkaidoParser.parse(text_after_conventions)
+            if hokkaido_clause:
+                tier_map["hokkaido_grid"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+
+        # Stage 5: Chome-Ban-Go / Banchi-Edaban Block FSM
+        has_chome_from_hokkaido = (hokkaido_clause is not None and hokkaido_clause.chome is not None)
+        block_dict, town_name, tail_text = BlockFSM.parse(
+            text_after_conventions,
+            has_chome_already=has_chome_from_hokkaido
+        )
+
+        chome_val = block_dict["chome"] or (hokkaido_clause.chome if hokkaido_clause else None)
+        ban_val = block_dict["ban"]
+        go_val = block_dict["go"]
+        banchi_val = block_dict["banchi"]
+        edaban_val = block_dict["edaban"]
+
+        if town_name:
+            tier_map["town"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if chome_val is not None:
+            tier_map["chome"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if ban_val is not None:
+            tier_map["ban"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if go_val is not None:
+            tier_map["go"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if banchi_val is not None:
+            tier_map["banchi"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if edaban_val is not None:
+            tier_map["edaban"] = TaxonomyTier.TIER_1_STATUTORY.value
+
+        # Stage 6: Building, Floor, and Unit Disentanglement
+        building_name, floor_val, unit_val = BuildingParser.parse(tail_text)
+
+        if building_name:
+            tier_map["building"] = TaxonomyTier.TIER_3_HEURISTIC.value
+        if floor_val:
+            tier_map["floor"] = TaxonomyTier.TIER_3_HEURISTIC.value
+        if unit_val:
+            tier_map["unit"] = TaxonomyTier.TIER_3_HEURISTIC.value
+
+        # Assembling canonical representation
+        canonical_parts = []
+        if pref_name:
+            canonical_parts.append(pref_name)
+        if city_name:
+            canonical_parts.append(city_name)
+        if ward_name and ward_name not in city_name:
+            canonical_parts.append(ward_name)
+
+        if kyoto_clause:
+            canonical_parts.append(kyoto_clause.raw_clause)
+
+        if hokkaido_clause:
+            canonical_parts.append(f"{hokkaido_clause.cardinal_ns}{hokkaido_clause.jo}条{hokkaido_clause.cardinal_ew}{hokkaido_clause.chome}丁目")
+        elif town_name:
+            canonical_parts.append(town_name)
+
+        # Block string
+        if chome_val is not None and not hokkaido_clause:
+            canonical_parts.append(f"{chome_val}丁目")
+
+        if ban_val is not None and go_val is not None:
+            canonical_parts.append(f"{ban_val}番{go_val}号")
+        elif ban_val is not None:
+            canonical_parts.append(f"{ban_val}番")
+        elif banchi_val is not None and edaban_val is not None:
+            canonical_parts.append(f"{banchi_val}番地{edaban_val}")
+        elif banchi_val is not None:
+            canonical_parts.append(f"{banchi_val}番地")
+
+        # Building & Unit
+        secondary_parts = []
+        if building_name:
+            secondary_parts.append(building_name)
+        if floor_val:
+            secondary_parts.append(floor_val)
+        if unit_val:
+            secondary_parts.append(unit_val)
+
+        base_addr = "".join(canonical_parts)
+        if secondary_parts:
+            canonical_str = f"{base_addr} {' '.join(secondary_parts)}"
+        else:
+            canonical_str = base_addr
+
+        components = AddressComponents(
+            prefecture_code=pref_code,
+            prefecture=pref_name,
+            prefecture_inferred=is_pref_inferred,
+            lg_code=lg_code,
+            county=county_name,
+            city=city_name,
+            ward=ward_name,
+            town=town_name or None,
+            chome=chome_val,
+            ban=ban_val,
+            go=go_val,
+            banchi=banchi_val,
+            edaban=edaban_val,
+            building=building_name,
+            floor=floor_val,
+            unit=unit_val,
+            kyoto_direction=kyoto_clause,
+            hokkaido_grid=hokkaido_clause,
+            unparsed_tail=tail_text or None,
+        )
+
+        latency_us = (time.perf_counter_ns() - start_time_ns) / 1_000.0
+
+        return NormalizedAddress(
+            input_raw=raw_address,
+            input_sanitized=sanitized,
+            canonical=canonical_str,
+            components=components,
+            tier_map=tier_map,
+            confidence_score=round(confidence, 2),
+            latency_microseconds=round(latency_us, 2),
+        )
+
+
+_DEFAULT_ENGINE: Optional[AddressNormalizer] = None
+
+
+def normalize(address: str) -> NormalizedAddress:
+    """Public convenience function to normalize a Japanese address."""
+    global _DEFAULT_ENGINE
+    if _DEFAULT_ENGINE is None:
+        _DEFAULT_ENGINE = AddressNormalizer()
+    return _DEFAULT_ENGINE.normalize(address)

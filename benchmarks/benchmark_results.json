@@ -1,0 +1,52 @@
+{
+  "environment": {
+    "os": "Windows 11 (10.0.26200)",
+    "processor": "Intel64 Family 6 Model 151 Stepping 2, GenuineIntel",
+    "cpu_cores": 12,
+    "python_implementation": "CPython",
+    "python_version": "3.13.14",
+    "timestamp_utc": "2026-10-04T12:04:31Z"
+  },
+  "corpora": {
+    "Clean Standard (Gaiku-hoshiki)": {
+      "count": 10000,
+      "elapsed_seconds": 0.2567,
+      "throughput_ops_sec": 38949.5,
+      "latency_us": {
+        "mean": 25.39,
+        "p50_median": 22.1,
+        "p90": 34.4,
+        "p99": 77.0,
+        "min": 17.0,
+        "max": 401.9
+      }
+    },
+    "Complex Conventional (Kyoto/Hokkaido/Chiban)": {
+      "count": 10000,
+      "elapsed_seconds": 0.2481,
+      "throughput_ops_sec": 40312.1,
+      "latency_us": {
+        "mean": 24.55,
+        "p50_median": 23.1,
+        "p90": 29.4,
+        "p99": 63.1,
+        "min": 17.6,
+        "max": 332.7
+      }
+    },
+    "Dirty Real-World (Omitted/Dashes/Concatenated)": {
+      "count": 10000,
+      "elapsed_seconds": 0.3489,
+      "throughput_ops_sec": 28661.4,
+      "latency_us": {
+        "mean": 34.57,
+        "p50_median": 27.7,
+        "p90": 51.8,
+        "p99": 124.9,
+        "min": 18.1,
+        "max": 709.2
+      }
+    }
+  },
+  "overall_throughput_ops_sec": 35140.8
+}
