@@ -39,6 +39,9 @@ def test_proper_noun_collision_protection():
     assert normalize_kanji_numerals_in_blocks("北区十条仲原二丁目") == "北区十条仲原2丁目"
     assert normalize_kanji_numerals_in_blocks("千代田区九段南") == "千代田区九段南"
     assert normalize_kanji_numerals_in_blocks("世田谷区二子玉川") == "世田谷区二子玉川"
+    assert normalize_kanji_numerals_in_blocks("港区一番街1-1") == "港区一番街1-1"
+    assert normalize_kanji_numerals_in_blocks("港区麻布十番1-1") == "港区麻布十番1-1"
+    assert normalize_kanji_numerals_in_blocks("千代田区一番町一番館301") == "千代田区一番町一番館301"
 
 
 def test_block_kanji_numerals_normalization():

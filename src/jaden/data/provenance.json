@@ -1,0 +1,23 @@
+{
+  "source_organization": "Ministry of Internal Affairs and Communications (総務省自治行政局)",
+  "dataset_name": "都道府県コード及び市区町村コード (令和6年1月1日更新)",
+  "source_url": "https://www.soumu.go.jp/main_content/000925835.xlsx",
+  "source_file_sha256": "7d04c8a7f6a6e76a7823a0414a8422bf2b26bb6070766971df76eab58ea6ff78",
+  "effective_date": "2024-01-01",
+  "retrieval_date": "2026-10-04",
+  "standards": [
+    "JIS X 0401:1973",
+    "JIS X 0402:2020"
+  ],
+  "counts": {
+    "prefectures": 47,
+    "municipalities": 1747,
+    "special_wards": 23,
+    "designated_cities": 20,
+    "standard_cities": 772,
+    "towns": 743,
+    "villages": 189,
+    "administrative_wards": 171,
+    "total_bundled_records": 1918
+  }
+}

@@ -70,36 +70,62 @@ def parse_kanji_number(token: str) -> Optional[int]:
     return total
 
 
-# Pattern matching Chome clause with Kanji numerals: e.g. '三丁目' or '四十二丁目'
+# Context-bounded patterns protecting proper nouns (一番街, 一番館, 三番町, 麻布十番)
 _CHOME_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
     rf"([{_KANJI_NUM_CHARS}]+)丁目"
 )
-
-# Pattern matching Banchi/Ban clause with Kanji numerals: e.g. '四百八十八番地' or '五番'
-# Uses negative lookahead (?!町|丁) to protect proper town names like '三番町' or '一番町'
-_BAN_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
-    rf"([{_KANJI_NUM_CHARS}]+)(番地|番(?!町|丁)|号)"
+_BANCHI_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
+    rf"([{_KANJI_NUM_CHARS}]+)番地"
+)
+_BAN_CHI_GO_PATTERN: Final[re.Pattern[str]] = re.compile(
+    rf"([{_KANJI_NUM_CHARS}]+)番(地の|号)"
+)
+_BAN_AFTER_CHOME_PATTERN: Final[re.Pattern[str]] = re.compile(
+    rf"(\d+丁目)([{_KANJI_NUM_CHARS}]+)番(?!町|丁|街|館|割|組|場|屋|通|筋)"
+)
+_GO_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
+    rf"(番|\d+-)([{_KANJI_NUM_CHARS}]+)号"
+)
+_EDABAN_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
+    rf"(番地の)([{_KANJI_NUM_CHARS}]+)"
 )
 
 
 def normalize_kanji_numerals_in_blocks(text: str) -> str:
     """Normalizes Kanji numerals strictly within block/lot/chome contexts.
 
-    Leaves proper nouns untouched (e.g. '港区六本木三丁目' -> '港区六本木3丁目').
+    Leaves proper nouns untouched (e.g. '港区六本木三丁目' -> '港区六本木3丁目',
+    '千代田区三番町1-2' -> '千代田区三番町1-2', '港区一番街1-1' -> '港区一番街1-1',
+    '港区麻布十番1-1' -> '港区麻布十番1-1').
     """
-    # Replace Chome
-    def replace_chome(match: re.Match[str]) -> str:
-        k_num = match.group(1)
-        val = parse_kanji_number(k_num)
-        return f"{val}丁目" if val is not None else match.group(0)
-
-    # Replace Ban / Banchi / Go
-    def replace_ban(match: re.Match[str]) -> str:
-        k_num = match.group(1)
-        suffix = match.group(2)
-        val = parse_kanji_number(k_num)
-        return f"{val}{suffix}" if val is not None else match.group(0)
-
-    text = _CHOME_KANJI_PATTERN.sub(replace_chome, text)
-    text = _BAN_KANJI_PATTERN.sub(replace_ban, text)
+    # 1. 丁目
+    text = _CHOME_KANJI_PATTERN.sub(
+        lambda m: f"{parse_kanji_number(m.group(1))}丁目" if parse_kanji_number(m.group(1)) is not None else m.group(0),
+        text
+    )
+    # 2. 番地 (banchi)
+    text = _BANCHI_KANJI_PATTERN.sub(
+        lambda m: f"{parse_kanji_number(m.group(1))}番地" if parse_kanji_number(m.group(1)) is not None else m.group(0),
+        text
+    )
+    # 3. 番地の / 番号 (ban followed by chi/go)
+    text = _BAN_CHI_GO_PATTERN.sub(
+        lambda m: f"{parse_kanji_number(m.group(1))}番{m.group(2)}" if parse_kanji_number(m.group(1)) is not None else m.group(0),
+        text
+    )
+    # 4. 番 following 丁目 (e.g. 12丁目五番)
+    text = _BAN_AFTER_CHOME_PATTERN.sub(
+        lambda m: f"{m.group(1)}{parse_kanji_number(m.group(2))}番" if parse_kanji_number(m.group(2)) is not None else m.group(0),
+        text
+    )
+    # 5. 号 (go following ban or hyphen)
+    text = _GO_KANJI_PATTERN.sub(
+        lambda m: f"{m.group(1)}{parse_kanji_number(m.group(2))}号" if parse_kanji_number(m.group(2)) is not None else m.group(0),
+        text
+    )
+    # 6. 枝番 (edaban following 番地の)
+    text = _EDABAN_KANJI_PATTERN.sub(
+        lambda m: f"{m.group(1)}{parse_kanji_number(m.group(2))}" if parse_kanji_number(m.group(2)) is not None else m.group(0),
+        text
+    )
     return text

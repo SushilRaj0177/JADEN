@@ -3,9 +3,9 @@
 Orchestrates multi-stage deterministic normalization:
 1. Sanitization & Unicode Homogenization (NFKC, context-aware Chōonpu)
 2. Block-bounded Kanji Numeral Normalization
-3. Administrative Boundary Resolution (Trie-based, O(L))
+3. Administrative Boundary Resolution (Trie-based, O(L)) with Ambiguity Detection
 4. Kyoto Intersection Grammar & Hokkaido Cardinal Grid Parsing
-5. Chome-Ban-Go & Banchi-Edaban Finite-State Automaton
+5. Chome-Ban-Go & Banchi-Edaban Finite-State Automaton with Oaza/Koaza segmentation
 6. Building, Floor, and Unit Disentanglement
 7. Canonical String Formatting & Four-Tier Taxonomy Classification
 """
@@ -13,7 +13,7 @@ Orchestrates multi-stage deterministic normalization:
 import time
 from typing import Optional, Dict
 
-from .models.codes import TaxonomyTier
+from .models.codes import TaxonomyTier, AddressRegime
 from .models.address import AddressComponents, NormalizedAddress
 from .core.sanitizer import sanitize_address_text
 from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
@@ -63,7 +63,14 @@ class AddressNormalizer:
         confidence = 1.0
 
         # Stage 3: Administrative Boundary Resolution
-        pref_rec, muni_rec, post_admin_text, is_pref_inferred = self.admin_parser.parse(working_text)
+        admin_res = self.admin_parser.parse(working_text)
+        pref_rec = admin_res.prefecture
+        muni_rec = admin_res.municipality
+        post_admin_text = admin_res.remaining_text
+        is_pref_inferred = admin_res.is_prefecture_inferred
+        is_ambiguous = admin_res.is_ambiguous
+        ambiguous_candidates = admin_res.ambiguous_candidates
+        matched_raw_name = admin_res.matched_raw_name
 
         pref_code = pref_rec.code if pref_rec else None
         pref_name = pref_rec.name if pref_rec else None
@@ -78,13 +85,18 @@ class AddressNormalizer:
                 confidence *= 0.85
             else:
                 tier_map["prefecture"] = TaxonomyTier.TIER_1_STATUTORY.value
+        elif is_ambiguous:
+            city_name = matched_raw_name
+            tier_map["prefecture"] = TaxonomyTier.TIER_3_HEURISTIC.value
+            tier_map["municipality"] = TaxonomyTier.TIER_3_HEURISTIC.value
+            confidence *= 0.50
         else:
             confidence *= 0.60
 
         if muni_rec:
             tier_map["municipality"] = TaxonomyTier.TIER_1_STATUTORY.value
             tier_map["lg_code"] = TaxonomyTier.TIER_1_STATUTORY.value
-        else:
+        elif not is_ambiguous:
             confidence *= 0.70
 
         # Stage 4: Conventional Systems (Kyoto & Hokkaido)
@@ -93,16 +105,57 @@ class AddressNormalizer:
         text_after_conventions = post_admin_text
 
         # 4a. Kyoto Street-Intersection Parser
-        if pref_rec and pref_rec.code == "26" and (city_name and "京都" in city_name):
+        is_kyoto_candidate = (
+            (pref_rec and pref_rec.code == "26" and (city_name and "京都" in city_name))
+            or ("通" in post_admin_text and any(d in post_admin_text for d in ["上る", "上ル", "下る", "下ル", "東入", "西入"]))
+        )
+        if is_kyoto_candidate:
             kyoto_clause, text_after_conventions = KyotoParser.parse(text_after_conventions)
             if kyoto_clause:
                 tier_map["kyoto_direction"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+                if not pref_name:
+                    pref_name = "京都府"
+                    pref_code = "26"
+                    is_pref_inferred = True
+                    city_name = city_name or "京都市"
+                    is_ambiguous = False
+                    ambiguous_candidates = ()
+                    tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
 
         # 4b. Hokkaido Jo-Chome Grid Parser
-        if pref_rec and pref_rec.code == "01":
+        is_hokkaido_candidate = (
+            (pref_rec and pref_rec.code == "01")
+            or ("条" in text_after_conventions and "丁目" in text_after_conventions and any(d in text_after_conventions for d in ["北", "南"]))
+        )
+        if is_hokkaido_candidate:
             hokkaido_clause, text_after_conventions = HokkaidoParser.parse(text_after_conventions)
             if hokkaido_clause:
                 tier_map["hokkaido_grid"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+                if not pref_name:
+                    pref_name = "北海道"
+                    pref_code = "01"
+                    is_pref_inferred = True
+                    tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+                if is_ambiguous and matched_raw_name == "中央区":
+                    # Sapporo is the only city in Japan with Jo-Chome cardinal grid + 中央区
+                    city_name = "札幌市"
+                    ward_name = "中央区"
+                    lg_code = "011011"
+                    is_ambiguous = False
+                    ambiguous_candidates = ()
+
+        # Validation Guard: Reject inputs with zero verified Japanese administrative or conventional entities
+        if pref_name is None and city_name is None and not is_ambiguous and kyoto_clause is None and hokkaido_clause is None:
+            latency_us = (time.perf_counter_ns() - start_time_ns) / 1_000.0
+            return NormalizedAddress(
+                input_raw=raw_address,
+                input_sanitized=sanitized,
+                canonical=sanitized,
+                components=AddressComponents(unparsed_tail=sanitized),
+                tier_map={},
+                confidence_score=0.0,
+                latency_microseconds=round(latency_us, 2),
+            )
 
         # Stage 5: Chome-Ban-Go / Banchi-Edaban Block FSM
         has_chome_from_hokkaido = (hokkaido_clause is not None and hokkaido_clause.chome is not None)
@@ -116,9 +169,24 @@ class AddressNormalizer:
         go_val = block_dict["go"]
         banchi_val = block_dict["banchi"]
         edaban_val = block_dict["edaban"]
+        oaza_val = block_dict["oaza"]
+        koaza_val = block_dict["koaza"]
+        regime_val = block_dict["address_regime"]
+
+        # Kyoto conventional navigation addresses strictly use cadastral lot numbers (地番)
+        if kyoto_clause and (ban_val is not None and banchi_val is None):
+            banchi_val = ban_val
+            edaban_val = go_val
+            ban_val = None
+            go_val = None
+            regime_val = AddressRegime.CHIBAN.value
 
         if town_name:
             tier_map["town"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if oaza_val:
+            tier_map["oaza"] = TaxonomyTier.TIER_1_STATUTORY.value
+        if koaza_val:
+            tier_map["koaza"] = TaxonomyTier.TIER_1_STATUTORY.value
         if chome_val is not None:
             tier_map["chome"] = TaxonomyTier.TIER_1_STATUTORY.value
         if ban_val is not None:
@@ -146,7 +214,7 @@ class AddressNormalizer:
             canonical_parts.append(pref_name)
         if city_name:
             canonical_parts.append(city_name)
-        if ward_name and ward_name not in city_name:
+        if ward_name and ward_name not in (city_name or ""):
             canonical_parts.append(ward_name)
 
         if kyoto_clause:
@@ -157,7 +225,7 @@ class AddressNormalizer:
         elif town_name:
             canonical_parts.append(town_name)
 
-        # Block string
+        # Block / Lot string formatting
         if chome_val is not None and not hokkaido_clause:
             canonical_parts.append(f"{chome_val}丁目")
 
@@ -166,7 +234,7 @@ class AddressNormalizer:
         elif ban_val is not None:
             canonical_parts.append(f"{ban_val}番")
         elif banchi_val is not None and edaban_val is not None:
-            canonical_parts.append(f"{banchi_val}番地{edaban_val}")
+            canonical_parts.append(f"{banchi_val}番地の{edaban_val}")
         elif banchi_val is not None:
             canonical_parts.append(f"{banchi_val}番地")
 
@@ -193,6 +261,8 @@ class AddressNormalizer:
             county=county_name,
             city=city_name,
             ward=ward_name,
+            oaza=oaza_val,
+            koaza=koaza_val,
             town=town_name or None,
             chome=chome_val,
             ban=ban_val,
@@ -204,6 +274,9 @@ class AddressNormalizer:
             unit=unit_val,
             kyoto_direction=kyoto_clause,
             hokkaido_grid=hokkaido_clause,
+            address_regime=regime_val,
+            is_ambiguous=is_ambiguous,
+            ambiguous_candidates=ambiguous_candidates,
             unparsed_tail=tail_text or None,
         )
 

@@ -28,16 +28,16 @@ def test_complex_dash_mixture():
 
 def test_omitted_prefecture_tokyo_special_ward():
     normalizer = AddressNormalizer()
-    # '港区芝公園4-2-8 東京タワー'
-    res = normalizer.normalize("港区芝公園4-2-8 東京タワー")
+    # '新宿区西新宿2-8-1 東京都庁'
+    res = normalizer.normalize("新宿区西新宿2-8-1 東京都庁")
     assert res.components.prefecture == "東京都"
     assert res.components.prefecture_inferred is True
-    assert res.components.city == "港区"
-    assert res.components.town == "芝公園"
-    assert res.components.chome == 4
-    assert res.components.ban == 2
-    assert res.components.go == 8
-    assert res.components.building == "東京タワー"
+    assert res.components.city == "新宿区"
+    assert res.components.town == "西新宿"
+    assert res.components.chome == 2
+    assert res.components.ban == 8
+    assert res.components.go == 1
+    assert res.components.building == "東京都庁"
 
 
 def test_omitted_prefecture_yokohama():

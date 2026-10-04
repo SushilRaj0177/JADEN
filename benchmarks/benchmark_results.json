@@ -5,48 +5,60 @@
     "cpu_cores": 12,
     "python_implementation": "CPython",
     "python_version": "3.13.14",
-    "timestamp_utc": "2026-10-04T12:04:31Z"
+    "timestamp_utc": "2026-10-04T18:31:56Z"
+  },
+  "memory_profile": {
+    "registry_heap_allocation_mb": 3.17,
+    "registry_initialization_seconds": 0.1807,
+    "peak_heap_allocation_mb": 3.64
+  },
+  "corpus_statistics": {
+    "total_unique_addresses": 500,
+    "evaluation_passes": 10
   },
   "corpora": {
-    "Clean Standard (Gaiku-hoshiki)": {
-      "count": 10000,
-      "elapsed_seconds": 0.2567,
-      "throughput_ops_sec": 38949.5,
-      "latency_us": {
-        "mean": 25.39,
-        "p50_median": 22.1,
-        "p90": 34.4,
-        "p99": 77.0,
-        "min": 17.0,
-        "max": 401.9
+    "Clean Standard (Gaiku-hoshiki: 200 unique)": {
+      "unique_addresses": 200,
+      "evaluations": 2000,
+      "elapsed_seconds": 0.6892,
+      "throughput_addresses_per_sec": 2901.7,
+      "latency_microseconds": {
+        "mean": 337.55,
+        "p50_median": 275.1,
+        "p90": 485.5,
+        "p99": 861.3,
+        "min": 199.0,
+        "max": 26005.9
       }
     },
-    "Complex Conventional (Kyoto/Hokkaido/Chiban)": {
-      "count": 10000,
-      "elapsed_seconds": 0.2481,
-      "throughput_ops_sec": 40312.1,
-      "latency_us": {
-        "mean": 24.55,
-        "p50_median": 23.1,
-        "p90": 29.4,
-        "p99": 63.1,
-        "min": 17.6,
-        "max": 332.7
+    "Complex Conventional (Kyoto/Hokkaido/Cadastral: 150 unique)": {
+      "unique_addresses": 150,
+      "evaluations": 1500,
+      "elapsed_seconds": 0.4301,
+      "throughput_addresses_per_sec": 3487.5,
+      "latency_microseconds": {
+        "mean": 280.98,
+        "p50_median": 233.4,
+        "p90": 386.5,
+        "p99": 639.5,
+        "min": 192.6,
+        "max": 9580.1
       }
     },
-    "Dirty Real-World (Omitted/Dashes/Concatenated)": {
-      "count": 10000,
-      "elapsed_seconds": 0.3489,
-      "throughput_ops_sec": 28661.4,
-      "latency_us": {
-        "mean": 34.57,
-        "p50_median": 27.7,
-        "p90": 51.8,
-        "p99": 124.9,
-        "min": 18.1,
-        "max": 709.2
+    "Dirty Real-World (Omitted/Dashes/Buildings: 150 unique)": {
+      "unique_addresses": 150,
+      "evaluations": 1500,
+      "elapsed_seconds": 0.557,
+      "throughput_addresses_per_sec": 2693.1,
+      "latency_microseconds": {
+        "mean": 364.96,
+        "p50_median": 315.45,
+        "p90": 534.5,
+        "p99": 883.8,
+        "min": 244.5,
+        "max": 1606.4
       }
     }
   },
-  "overall_throughput_ops_sec": 35140.8
+  "overall_throughput_addresses_per_sec": 2982.7
 }

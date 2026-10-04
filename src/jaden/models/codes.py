@@ -18,6 +18,13 @@ class TaxonomyTier(str, Enum):
     TIER_4_SYSTEM = "tier_4_system_assumption"     # JADEN schema normalization artifact
 
 
+class AddressRegime(str, Enum):
+    """Statutory addressing regime distinguishing residential vs cadastral domains."""
+    GAIKU_HOSHIKI = "gaiku_hoshiki"      # 住居表示 (街区方式: 丁目・番・号) under Act No. 119 of 1962
+    CHIBAN = "chiban"                    # 地番区域 (番地・枝番/支号) under Real Property Registration Act (Act No. 123 of 2004)
+    UNSPECIFIED = "unspecified"          # Hyphenated or bare numbers without statutory distinguishing markers
+
+
 def calculate_modulus11_check_digit(d5: str) -> str:
     """Calculates the 6th check digit for a 5-digit JIS X 0402 municipality code.
 

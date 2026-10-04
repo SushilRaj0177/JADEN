@@ -5,9 +5,9 @@ cadastral lot addressing (地番区域), and conventional systems (Kyoto, Hokkai
 """
 
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 import json
-from .codes import TaxonomyTier
+from .codes import TaxonomyTier, AddressRegime
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +69,13 @@ class AddressComponents:
     # Conventional navigation clauses
     kyoto_direction: Optional[KyotoDirectionClause] = None
     hokkaido_grid: Optional[HokkaidoGridClause] = None
+
+    # Statutory regime classification
+    address_regime: str = AddressRegime.UNSPECIFIED.value  # 'gaiku_hoshiki', 'chiban', 'unspecified'
+
+    # Ambiguity detection on omitted prefecture / municipality
+    is_ambiguous: bool = False
+    ambiguous_candidates: Tuple[str, ...] = field(default_factory=tuple)
 
     unparsed_tail: Optional[str] = None       # Any tail string that could not be deterministically parsed
 

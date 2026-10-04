@@ -49,3 +49,22 @@ def test_non_kyoto_text():
     clause, rem = KyotoParser.parse("六本木6-10-1")
     assert clause is None
     assert rem == "六本木6-10-1"
+
+
+def test_kyoto_parser_cardinal_street_names():
+    # Streets containing cardinal characters (東洞院, 下立売) must parse without corruption
+    clause1, rem1 = KyotoParser.parse("御池通東洞院東入笹屋町436")
+    assert clause1 is not None
+    assert clause1.street_1 == "御池通"
+    assert clause1.street_2 == "東洞院"
+    assert clause1.direction == "東入"
+    assert clause1.cardinal == "east"
+    assert rem1 == "笹屋町436"
+
+    clause2, rem2 = KyotoParser.parse("新町通下立売上る薮ノ内町")
+    assert clause2 is not None
+    assert clause2.street_1 == "新町通"
+    assert clause2.street_2 == "下立売"
+    assert clause2.direction == "上る"
+    assert clause2.cardinal == "north"
+    assert rem2 == "薮ノ内町"

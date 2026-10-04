@@ -4,7 +4,7 @@ Loads and indexes official JIS X 0401 prefectures and JIS X 0402 / MIC
 Local Government Code municipal registries.
 """
 
-from typing import Dict, List, Optional, Tuple, Final
+from typing import Dict, List, Optional, Tuple, Final, Any
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -26,6 +26,7 @@ class MunicipalityRecord:
     ward: Optional[str] = None         # Administrative ward: e.g. "中区" (if designated city)
     county: Optional[str] = None       # 郡 (if town/village under county)
     entity_type: str = "city"          # special_ward, designated_city, administrative_ward, city, town, village
+    kana: Optional[str] = None         # Half-width/Full-width katakana reading
 
 
 class AddressDataRegistry:
@@ -91,12 +92,22 @@ class AddressDataRegistry:
                 ward=item.get("ward"),
                 county=item.get("county"),
                 entity_type=item.get("entity_type", "city"),
+                kana=item.get("kana"),
             )
             self._municipalities_by_code[rec.lg_code] = rec
             self._municipalities_by_pref_and_name[(rec.prefecture_code, rec.name)] = rec
+            
+            # Index by primary full name
             if rec.name not in self._municipalities_by_name_global:
                 self._municipalities_by_name_global[rec.name] = []
             self._municipalities_by_name_global[rec.name].append(rec)
+
+            # Index by bare administrative ward name if present (e.g. '中央区' in '札幌市中央区')
+            if rec.ward and rec.ward != rec.name:
+                if rec.ward not in self._municipalities_by_name_global:
+                    self._municipalities_by_name_global[rec.ward] = []
+                if rec not in self._municipalities_by_name_global[rec.ward]:
+                    self._municipalities_by_name_global[rec.ward].append(rec)
 
     # -------------------------------------------------------------------------
     # QUERY METHODS
@@ -129,6 +140,14 @@ class AddressDataRegistry:
             rec = self._municipalities_by_pref_and_name.get(key)
             return [rec] if rec else []
         return self._municipalities_by_name_global.get(name, [])
+
+    def get_provenance(self) -> Dict[str, Any]:
+        """Loads and returns the authoritative data provenance metadata."""
+        meta_path = self._DATA_DIR / "provenance.json"
+        if not meta_path.exists():
+            return {}
+        with open(meta_path, "r", encoding="utf-8") as f:
+            return json.load(f)
 
 
 # Singleton global instance
