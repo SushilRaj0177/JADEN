@@ -139,24 +139,29 @@ class AddressNormalizer:
         # 4b. Hokkaido Jo-Chome Grid Parser
         is_hokkaido_candidate = (
             (pref_rec and pref_rec.code == "01")
-            or ("条" in text_after_conventions and "丁目" in text_after_conventions and any(d in text_after_conventions for d in ["北", "南"]))
+            or (pref_rec is None and "条" in text_after_conventions and "丁目" in text_after_conventions and any(d in text_after_conventions for d in ["北", "南"]))
         )
         if is_hokkaido_candidate:
             hokkaido_clause, text_after_conventions = HokkaidoParser.parse(text_after_conventions)
             if hokkaido_clause:
                 tier_map["hokkaido_grid"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
-                if not pref_name:
-                    pref_name = "北海道"
-                    pref_code = "01"
-                    is_pref_inferred = True
-                    tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
                 if is_ambiguous and matched_raw_name == "中央区":
                     # Sapporo is the only city in Japan with Jo-Chome cardinal grid + 中央区
                     city_name = "札幌市"
                     ward_name = "中央区"
                     lg_code = "011011"
+                    pref_name = "北海道"
+                    pref_code = "01"
+                    is_pref_inferred = True
                     is_ambiguous = False
                     ambiguous_candidates = ()
+                    tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+                    confidence = 0.85
+                elif not pref_name and not is_ambiguous:
+                    pref_name = "北海道"
+                    pref_code = "01"
+                    is_pref_inferred = True
+                    tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
 
         # Validation Guard: Reject inputs with zero verified Japanese administrative or conventional entities
         if pref_name is None and city_name is None and not is_ambiguous and kyoto_clause is None and hokkaido_clause is None:
@@ -238,10 +243,11 @@ class AddressNormalizer:
         if kyoto_clause:
             canonical_parts.append(kyoto_clause.raw_clause)
 
+        if town_name:
+            canonical_parts.append(town_name)
+
         if hokkaido_clause:
             canonical_parts.append(f"{hokkaido_clause.cardinal_ns}{hokkaido_clause.jo}条{hokkaido_clause.cardinal_ew}{hokkaido_clause.chome}丁目")
-        elif town_name:
-            canonical_parts.append(town_name)
 
         # Block / Lot string formatting
         if chome_val is not None and not hokkaido_clause:
