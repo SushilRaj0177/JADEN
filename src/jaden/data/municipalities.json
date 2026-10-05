@@ -593,7 +593,7 @@
     "name": "当別町",
     "city": "当別町",
     "ward": null,
-    "county": null,
+    "county": "石狩郡",
     "entity_type": "town",
     "kana": "ﾄｳﾍﾞﾂﾁｮｳ"
   },
@@ -606,7 +606,7 @@
     "name": "新篠津村",
     "city": "新篠津村",
     "ward": null,
-    "county": null,
+    "county": "石狩郡",
     "entity_type": "village",
     "kana": "ｼﾝｼﾉﾂﾑﾗ"
   },
@@ -619,7 +619,7 @@
     "name": "松前町",
     "city": "松前町",
     "ward": null,
-    "county": null,
+    "county": "松前郡",
     "entity_type": "town",
     "kana": "ﾏﾂﾏｴﾁｮｳ"
   },
@@ -632,7 +632,7 @@
     "name": "福島町",
     "city": "福島町",
     "ward": null,
-    "county": null,
+    "county": "松前郡",
     "entity_type": "town",
     "kana": "ﾌｸｼﾏﾁｮｳ"
   },
@@ -645,7 +645,7 @@
     "name": "知内町",
     "city": "知内町",
     "ward": null,
-    "county": null,
+    "county": "上磯郡",
     "entity_type": "town",
     "kana": "ｼﾘｳﾁﾁｮｳ"
   },
@@ -658,7 +658,7 @@
     "name": "木古内町",
     "city": "木古内町",
     "ward": null,
-    "county": null,
+    "county": "上磯郡",
     "entity_type": "town",
     "kana": "ｷｺﾅｲﾁｮｳ"
   },
@@ -671,7 +671,7 @@
     "name": "七飯町",
     "city": "七飯町",
     "ward": null,
-    "county": null,
+    "county": "亀田郡",
     "entity_type": "town",
     "kana": "ﾅﾅｴﾁｮｳ"
   },
@@ -684,7 +684,7 @@
     "name": "鹿部町",
     "city": "鹿部町",
     "ward": null,
-    "county": null,
+    "county": "茅部郡",
     "entity_type": "town",
     "kana": "ｼｶﾍﾞﾁｮｳ"
   },
@@ -697,7 +697,7 @@
     "name": "森町",
     "city": "森町",
     "ward": null,
-    "county": null,
+    "county": "茅部郡",
     "entity_type": "town",
     "kana": "ﾓﾘﾏﾁ"
   },
@@ -710,7 +710,7 @@
     "name": "八雲町",
     "city": "八雲町",
     "ward": null,
-    "county": null,
+    "county": "二海郡",
     "entity_type": "town",
     "kana": "ﾔｸﾓﾁｮｳ"
   },
@@ -723,7 +723,7 @@
     "name": "長万部町",
     "city": "長万部町",
     "ward": null,
-    "county": null,
+    "county": "山越郡",
     "entity_type": "town",
     "kana": "ｵｼｬﾏﾝﾍﾞﾁｮｳ"
   },
@@ -736,7 +736,7 @@
     "name": "江差町",
     "city": "江差町",
     "ward": null,
-    "county": null,
+    "county": "檜山郡",
     "entity_type": "town",
     "kana": "ｴｻｼﾁｮｳ"
   },
@@ -749,7 +749,7 @@
     "name": "上ノ国町",
     "city": "上ノ国町",
     "ward": null,
-    "county": null,
+    "county": "檜山郡",
     "entity_type": "town",
     "kana": "ｶﾐﾉｸﾆﾁｮｳ"
   },
@@ -762,7 +762,7 @@
     "name": "厚沢部町",
     "city": "厚沢部町",
     "ward": null,
-    "county": null,
+    "county": "檜山郡",
     "entity_type": "town",
     "kana": "ｱｯｻﾌﾞﾁｮｳ"
   },
@@ -775,7 +775,7 @@
     "name": "乙部町",
     "city": "乙部町",
     "ward": null,
-    "county": null,
+    "county": "爾志郡",
     "entity_type": "town",
     "kana": "ｵﾄﾍﾞﾁｮｳ"
   },
@@ -788,7 +788,7 @@
     "name": "奥尻町",
     "city": "奥尻町",
     "ward": null,
-    "county": null,
+    "county": "奥尻郡",
     "entity_type": "town",
     "kana": "ｵｸｼﾘﾁｮｳ"
   },
@@ -801,7 +801,7 @@
     "name": "今金町",
     "city": "今金町",
     "ward": null,
-    "county": null,
+    "county": "瀬棚郡",
     "entity_type": "town",
     "kana": "ｲﾏｶﾈﾁｮｳ"
   },
@@ -814,7 +814,7 @@
     "name": "せたな町",
     "city": "せたな町",
     "ward": null,
-    "county": null,
+    "county": "久遠郡",
     "entity_type": "town",
     "kana": "ｾﾀﾅﾁｮｳ"
   },
@@ -827,7 +827,7 @@
     "name": "島牧村",
     "city": "島牧村",
     "ward": null,
-    "county": null,
+    "county": "島牧郡",
     "entity_type": "village",
     "kana": "ｼﾏﾏｷﾑﾗ"
   },
@@ -840,7 +840,7 @@
     "name": "寿都町",
     "city": "寿都町",
     "ward": null,
-    "county": null,
+    "county": "寿都郡",
     "entity_type": "town",
     "kana": "ｽｯﾂﾁｮｳ"
   },
@@ -853,7 +853,7 @@
     "name": "黒松内町",
     "city": "黒松内町",
     "ward": null,
-    "county": null,
+    "county": "寿都郡",
     "entity_type": "town",
     "kana": "ｸﾛﾏﾂﾅｲﾁｮｳ"
   },
@@ -866,7 +866,7 @@
     "name": "蘭越町",
     "city": "蘭越町",
     "ward": null,
-    "county": null,
+    "county": "磯谷郡",
     "entity_type": "town",
     "kana": "ﾗﾝｺｼﾁｮｳ"
   },
@@ -879,7 +879,7 @@
     "name": "ニセコ町",
     "city": "ニセコ町",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "town",
     "kana": "ﾆｾｺﾁｮｳ"
   },
@@ -892,7 +892,7 @@
     "name": "真狩村",
     "city": "真狩村",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "village",
     "kana": "ﾏｯｶﾘﾑﾗ"
   },
@@ -905,7 +905,7 @@
     "name": "留寿都村",
     "city": "留寿都村",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "village",
     "kana": "ﾙｽﾂﾑﾗ"
   },
@@ -918,7 +918,7 @@
     "name": "喜茂別町",
     "city": "喜茂別町",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "town",
     "kana": "ｷﾓﾍﾞﾂﾁｮｳ"
   },
@@ -931,7 +931,7 @@
     "name": "京極町",
     "city": "京極町",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "town",
     "kana": "ｷｮｳｺﾞｸﾁｮｳ"
   },
@@ -944,7 +944,7 @@
     "name": "倶知安町",
     "city": "倶知安町",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "town",
     "kana": "ｸｯﾁｬﾝﾁｮｳ"
   },
@@ -957,7 +957,7 @@
     "name": "共和町",
     "city": "共和町",
     "ward": null,
-    "county": null,
+    "county": "岩内郡",
     "entity_type": "town",
     "kana": "ｷｮｳﾜﾁｮｳ"
   },
@@ -970,7 +970,7 @@
     "name": "岩内町",
     "city": "岩内町",
     "ward": null,
-    "county": null,
+    "county": "岩内郡",
     "entity_type": "town",
     "kana": "ｲﾜﾅｲﾁｮｳ"
   },
@@ -983,7 +983,7 @@
     "name": "泊村",
     "city": "泊村",
     "ward": null,
-    "county": null,
+    "county": "古宇郡",
     "entity_type": "village",
     "kana": "ﾄﾏﾘﾑﾗ"
   },
@@ -996,7 +996,7 @@
     "name": "神恵内村",
     "city": "神恵内村",
     "ward": null,
-    "county": null,
+    "county": "古宇郡",
     "entity_type": "village",
     "kana": "ｶﾓｴﾅｲﾑﾗ"
   },
@@ -1009,7 +1009,7 @@
     "name": "積丹町",
     "city": "積丹町",
     "ward": null,
-    "county": null,
+    "county": "積丹郡",
     "entity_type": "town",
     "kana": "ｼｬｺﾀﾝﾁｮｳ"
   },
@@ -1022,7 +1022,7 @@
     "name": "古平町",
     "city": "古平町",
     "ward": null,
-    "county": null,
+    "county": "古平郡",
     "entity_type": "town",
     "kana": "ﾌﾙﾋﾞﾗﾁｮｳ"
   },
@@ -1035,7 +1035,7 @@
     "name": "仁木町",
     "city": "仁木町",
     "ward": null,
-    "county": null,
+    "county": "余市郡",
     "entity_type": "town",
     "kana": "ﾆｷﾁｮｳ"
   },
@@ -1048,7 +1048,7 @@
     "name": "余市町",
     "city": "余市町",
     "ward": null,
-    "county": null,
+    "county": "余市郡",
     "entity_type": "town",
     "kana": "ﾖｲﾁﾁｮｳ"
   },
@@ -1061,7 +1061,7 @@
     "name": "赤井川村",
     "city": "赤井川村",
     "ward": null,
-    "county": null,
+    "county": "余市郡",
     "entity_type": "village",
     "kana": "ｱｶｲｶﾞﾜﾑﾗ"
   },
@@ -1074,7 +1074,7 @@
     "name": "南幌町",
     "city": "南幌町",
     "ward": null,
-    "county": null,
+    "county": "空知郡",
     "entity_type": "town",
     "kana": "ﾅﾝﾎﾟﾛﾁｮｳ"
   },
@@ -1087,7 +1087,7 @@
     "name": "奈井江町",
     "city": "奈井江町",
     "ward": null,
-    "county": null,
+    "county": "空知郡",
     "entity_type": "town",
     "kana": "ﾅｲｴﾁｮｳ"
   },
@@ -1100,7 +1100,7 @@
     "name": "上砂川町",
     "city": "上砂川町",
     "ward": null,
-    "county": null,
+    "county": "空知郡",
     "entity_type": "town",
     "kana": "ｶﾐｽﾅｶﾞﾜﾁｮｳ"
   },
@@ -1113,7 +1113,7 @@
     "name": "由仁町",
     "city": "由仁町",
     "ward": null,
-    "county": null,
+    "county": "夕張郡",
     "entity_type": "town",
     "kana": "ﾕﾆﾁｮｳ"
   },
@@ -1126,7 +1126,7 @@
     "name": "長沼町",
     "city": "長沼町",
     "ward": null,
-    "county": null,
+    "county": "夕張郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞﾇﾏﾁｮｳ"
   },
@@ -1139,7 +1139,7 @@
     "name": "栗山町",
     "city": "栗山町",
     "ward": null,
-    "county": null,
+    "county": "夕張郡",
     "entity_type": "town",
     "kana": "ｸﾘﾔﾏﾁｮｳ"
   },
@@ -1152,7 +1152,7 @@
     "name": "月形町",
     "city": "月形町",
     "ward": null,
-    "county": null,
+    "county": "樺戸郡",
     "entity_type": "town",
     "kana": "ﾂｷｶﾞﾀﾁｮｳ"
   },
@@ -1165,7 +1165,7 @@
     "name": "浦臼町",
     "city": "浦臼町",
     "ward": null,
-    "county": null,
+    "county": "樺戸郡",
     "entity_type": "town",
     "kana": "ｳﾗｳｽﾁｮｳ"
   },
@@ -1178,7 +1178,7 @@
     "name": "新十津川町",
     "city": "新十津川町",
     "ward": null,
-    "county": null,
+    "county": "樺戸郡",
     "entity_type": "town",
     "kana": "ｼﾝﾄﾂｶﾜﾁｮｳ"
   },
@@ -1191,7 +1191,7 @@
     "name": "妹背牛町",
     "city": "妹背牛町",
     "ward": null,
-    "county": null,
+    "county": "雨竜郡",
     "entity_type": "town",
     "kana": "ﾓｾｳｼﾁｮｳ"
   },
@@ -1204,7 +1204,7 @@
     "name": "秩父別町",
     "city": "秩父別町",
     "ward": null,
-    "county": null,
+    "county": "雨竜郡",
     "entity_type": "town",
     "kana": "ﾁｯﾌﾟﾍﾞﾂﾁｮｳ"
   },
@@ -1217,7 +1217,7 @@
     "name": "雨竜町",
     "city": "雨竜町",
     "ward": null,
-    "county": null,
+    "county": "雨竜郡",
     "entity_type": "town",
     "kana": "ｳﾘｭｳﾁｮｳ"
   },
@@ -1230,7 +1230,7 @@
     "name": "北竜町",
     "city": "北竜町",
     "ward": null,
-    "county": null,
+    "county": "雨竜郡",
     "entity_type": "town",
     "kana": "ﾎｸﾘｭｳﾁｮｳ"
   },
@@ -1243,7 +1243,7 @@
     "name": "沼田町",
     "city": "沼田町",
     "ward": null,
-    "county": null,
+    "county": "雨竜郡",
     "entity_type": "town",
     "kana": "ﾇﾏﾀﾁｮｳ"
   },
@@ -1256,7 +1256,7 @@
     "name": "鷹栖町",
     "city": "鷹栖町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾀｶｽﾁｮｳ"
   },
@@ -1269,7 +1269,7 @@
     "name": "東神楽町",
     "city": "東神楽町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｶｸﾞﾗﾁｮｳ"
   },
@@ -1282,7 +1282,7 @@
     "name": "当麻町",
     "city": "当麻町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾄｳﾏﾁｮｳ"
   },
@@ -1295,7 +1295,7 @@
     "name": "比布町",
     "city": "比布町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾋﾟｯﾌﾟﾁｮｳ"
   },
@@ -1308,7 +1308,7 @@
     "name": "愛別町",
     "city": "愛別町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ｱｲﾍﾞﾂﾁｮｳ"
   },
@@ -1321,7 +1321,7 @@
     "name": "上川町",
     "city": "上川町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ｶﾐｶﾜﾁｮｳ"
   },
@@ -1334,7 +1334,7 @@
     "name": "東川町",
     "city": "東川町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｶﾜﾁｮｳ"
   },
@@ -1347,7 +1347,7 @@
     "name": "美瑛町",
     "city": "美瑛町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾋﾞｴｲﾁｮｳ"
   },
@@ -1360,7 +1360,7 @@
     "name": "上富良野町",
     "city": "上富良野町",
     "ward": null,
-    "county": null,
+    "county": "空知郡",
     "entity_type": "town",
     "kana": "ｶﾐﾌﾗﾉﾁｮｳ"
   },
@@ -1373,7 +1373,7 @@
     "name": "中富良野町",
     "city": "中富良野町",
     "ward": null,
-    "county": null,
+    "county": "空知郡",
     "entity_type": "town",
     "kana": "ﾅｶﾌﾗﾉﾁｮｳ"
   },
@@ -1386,7 +1386,7 @@
     "name": "南富良野町",
     "city": "南富良野町",
     "ward": null,
-    "county": null,
+    "county": "空知郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐﾌﾗﾉﾁｮｳ"
   },
@@ -1399,7 +1399,7 @@
     "name": "占冠村",
     "city": "占冠村",
     "ward": null,
-    "county": null,
+    "county": "勇払郡",
     "entity_type": "village",
     "kana": "ｼﾑｶｯﾌﾟﾑﾗ"
   },
@@ -1412,7 +1412,7 @@
     "name": "和寒町",
     "city": "和寒町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ﾜｯｻﾑﾁｮｳ"
   },
@@ -1425,7 +1425,7 @@
     "name": "剣淵町",
     "city": "剣淵町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ｹﾝﾌﾞﾁﾁｮｳ"
   },
@@ -1438,7 +1438,7 @@
     "name": "下川町",
     "city": "下川町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ｼﾓｶﾜﾁｮｳ"
   },
@@ -1451,7 +1451,7 @@
     "name": "美深町",
     "city": "美深町",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "town",
     "kana": "ﾋﾞﾌｶﾁｮｳ"
   },
@@ -1464,7 +1464,7 @@
     "name": "音威子府村",
     "city": "音威子府村",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "village",
     "kana": "ｵﾄｲﾈｯﾌﾟﾑﾗ"
   },
@@ -1477,7 +1477,7 @@
     "name": "中川町",
     "city": "中川町",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "town",
     "kana": "ﾅｶｶﾞﾜﾁｮｳ"
   },
@@ -1490,7 +1490,7 @@
     "name": "幌加内町",
     "city": "幌加内町",
     "ward": null,
-    "county": null,
+    "county": "雨竜郡",
     "entity_type": "town",
     "kana": "ﾎﾛｶﾅｲﾁｮｳ"
   },
@@ -1503,7 +1503,7 @@
     "name": "増毛町",
     "city": "増毛町",
     "ward": null,
-    "county": null,
+    "county": "増毛郡",
     "entity_type": "town",
     "kana": "ﾏｼｹﾁｮｳ"
   },
@@ -1516,7 +1516,7 @@
     "name": "小平町",
     "city": "小平町",
     "ward": null,
-    "county": null,
+    "county": "留萌郡",
     "entity_type": "town",
     "kana": "ｵﾋﾞﾗﾁｮｳ"
   },
@@ -1529,7 +1529,7 @@
     "name": "苫前町",
     "city": "苫前町",
     "ward": null,
-    "county": null,
+    "county": "苫前郡",
     "entity_type": "town",
     "kana": "ﾄﾏﾏｴﾁｮｳ"
   },
@@ -1542,7 +1542,7 @@
     "name": "羽幌町",
     "city": "羽幌町",
     "ward": null,
-    "county": null,
+    "county": "苫前郡",
     "entity_type": "town",
     "kana": "ﾊﾎﾞﾛﾁｮｳ"
   },
@@ -1555,7 +1555,7 @@
     "name": "初山別村",
     "city": "初山別村",
     "ward": null,
-    "county": null,
+    "county": "苫前郡",
     "entity_type": "village",
     "kana": "ｼｮｻﾝﾍﾞﾂﾑﾗ"
   },
@@ -1568,7 +1568,7 @@
     "name": "遠別町",
     "city": "遠別町",
     "ward": null,
-    "county": null,
+    "county": "天塩郡",
     "entity_type": "town",
     "kana": "ｴﾝﾍﾞﾂﾁｮｳ"
   },
@@ -1581,7 +1581,7 @@
     "name": "天塩町",
     "city": "天塩町",
     "ward": null,
-    "county": null,
+    "county": "天塩郡",
     "entity_type": "town",
     "kana": "ﾃｼｵﾁｮｳ"
   },
@@ -1594,7 +1594,7 @@
     "name": "猿払村",
     "city": "猿払村",
     "ward": null,
-    "county": null,
+    "county": "宗谷郡",
     "entity_type": "village",
     "kana": "ｻﾙﾌﾂﾑﾗ"
   },
@@ -1607,7 +1607,7 @@
     "name": "浜頓別町",
     "city": "浜頓別町",
     "ward": null,
-    "county": null,
+    "county": "枝幸郡",
     "entity_type": "town",
     "kana": "ﾊﾏﾄﾝﾍﾞﾂﾁｮｳ"
   },
@@ -1620,7 +1620,7 @@
     "name": "中頓別町",
     "city": "中頓別町",
     "ward": null,
-    "county": null,
+    "county": "枝幸郡",
     "entity_type": "town",
     "kana": "ﾅｶﾄﾝﾍﾞﾂﾁｮｳ"
   },
@@ -1633,7 +1633,7 @@
     "name": "枝幸町",
     "city": "枝幸町",
     "ward": null,
-    "county": null,
+    "county": "枝幸郡",
     "entity_type": "town",
     "kana": "ｴｻｼﾁｮｳ"
   },
@@ -1646,7 +1646,7 @@
     "name": "豊富町",
     "city": "豊富町",
     "ward": null,
-    "county": null,
+    "county": "天塩郡",
     "entity_type": "town",
     "kana": "ﾄﾖﾄﾐﾁｮｳ"
   },
@@ -1659,7 +1659,7 @@
     "name": "礼文町",
     "city": "礼文町",
     "ward": null,
-    "county": null,
+    "county": "礼文郡",
     "entity_type": "town",
     "kana": "ﾚﾌﾞﾝﾁｮｳ"
   },
@@ -1672,7 +1672,7 @@
     "name": "利尻町",
     "city": "利尻町",
     "ward": null,
-    "county": null,
+    "county": "利尻郡",
     "entity_type": "town",
     "kana": "ﾘｼﾘﾁｮｳ"
   },
@@ -1685,7 +1685,7 @@
     "name": "利尻富士町",
     "city": "利尻富士町",
     "ward": null,
-    "county": null,
+    "county": "利尻郡",
     "entity_type": "town",
     "kana": "ﾘｼﾘﾌｼﾞﾁｮｳ"
   },
@@ -1698,7 +1698,7 @@
     "name": "幌延町",
     "city": "幌延町",
     "ward": null,
-    "county": null,
+    "county": "天塩郡",
     "entity_type": "town",
     "kana": "ﾎﾛﾉﾍﾞﾁｮｳ"
   },
@@ -1711,7 +1711,7 @@
     "name": "美幌町",
     "city": "美幌町",
     "ward": null,
-    "county": null,
+    "county": "網走郡",
     "entity_type": "town",
     "kana": "ﾋﾞﾎﾛﾁｮｳ"
   },
@@ -1724,7 +1724,7 @@
     "name": "津別町",
     "city": "津別町",
     "ward": null,
-    "county": null,
+    "county": "網走郡",
     "entity_type": "town",
     "kana": "ﾂﾍﾞﾂﾁｮｳ"
   },
@@ -1737,7 +1737,7 @@
     "name": "斜里町",
     "city": "斜里町",
     "ward": null,
-    "county": null,
+    "county": "斜里郡",
     "entity_type": "town",
     "kana": "ｼｬﾘﾁｮｳ"
   },
@@ -1750,7 +1750,7 @@
     "name": "清里町",
     "city": "清里町",
     "ward": null,
-    "county": null,
+    "county": "斜里郡",
     "entity_type": "town",
     "kana": "ｷﾖｻﾄﾁｮｳ"
   },
@@ -1763,7 +1763,7 @@
     "name": "小清水町",
     "city": "小清水町",
     "ward": null,
-    "county": null,
+    "county": "斜里郡",
     "entity_type": "town",
     "kana": "ｺｼﾐｽﾞﾁｮｳ"
   },
@@ -1776,7 +1776,7 @@
     "name": "訓子府町",
     "city": "訓子府町",
     "ward": null,
-    "county": null,
+    "county": "常呂郡",
     "entity_type": "town",
     "kana": "ｸﾝﾈｯﾌﾟﾁｮｳ"
   },
@@ -1789,7 +1789,7 @@
     "name": "置戸町",
     "city": "置戸町",
     "ward": null,
-    "county": null,
+    "county": "常呂郡",
     "entity_type": "town",
     "kana": "ｵｹﾄﾁｮｳ"
   },
@@ -1802,7 +1802,7 @@
     "name": "佐呂間町",
     "city": "佐呂間町",
     "ward": null,
-    "county": null,
+    "county": "常呂郡",
     "entity_type": "town",
     "kana": "ｻﾛﾏﾁｮｳ"
   },
@@ -1815,7 +1815,7 @@
     "name": "遠軽町",
     "city": "遠軽町",
     "ward": null,
-    "county": null,
+    "county": "紋別郡",
     "entity_type": "town",
     "kana": "ｴﾝｶﾞﾙﾁｮｳ"
   },
@@ -1828,7 +1828,7 @@
     "name": "湧別町",
     "city": "湧別町",
     "ward": null,
-    "county": null,
+    "county": "紋別郡",
     "entity_type": "town",
     "kana": "ﾕｳﾍﾞﾂﾁｮｳ"
   },
@@ -1841,7 +1841,7 @@
     "name": "滝上町",
     "city": "滝上町",
     "ward": null,
-    "county": null,
+    "county": "紋別郡",
     "entity_type": "town",
     "kana": "ﾀｷﾉｳｴﾁｮｳ"
   },
@@ -1854,7 +1854,7 @@
     "name": "興部町",
     "city": "興部町",
     "ward": null,
-    "county": null,
+    "county": "紋別郡",
     "entity_type": "town",
     "kana": "ｵｺｯﾍﾟﾁｮｳ"
   },
@@ -1867,7 +1867,7 @@
     "name": "西興部村",
     "city": "西興部村",
     "ward": null,
-    "county": null,
+    "county": "紋別郡",
     "entity_type": "village",
     "kana": "ﾆｼｵｺｯﾍﾟﾑﾗ"
   },
@@ -1880,7 +1880,7 @@
     "name": "雄武町",
     "city": "雄武町",
     "ward": null,
-    "county": null,
+    "county": "紋別郡",
     "entity_type": "town",
     "kana": "ｵｳﾑﾁｮｳ"
   },
@@ -1893,7 +1893,7 @@
     "name": "大空町",
     "city": "大空町",
     "ward": null,
-    "county": null,
+    "county": "網走郡",
     "entity_type": "town",
     "kana": "ｵｵｿﾞﾗﾁｮｳ"
   },
@@ -1906,7 +1906,7 @@
     "name": "豊浦町",
     "city": "豊浦町",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "town",
     "kana": "ﾄﾖｳﾗﾁｮｳ"
   },
@@ -1919,7 +1919,7 @@
     "name": "壮瞥町",
     "city": "壮瞥町",
     "ward": null,
-    "county": null,
+    "county": "有珠郡",
     "entity_type": "town",
     "kana": "ｿｳﾍﾞﾂﾁｮｳ"
   },
@@ -1932,7 +1932,7 @@
     "name": "白老町",
     "city": "白老町",
     "ward": null,
-    "county": null,
+    "county": "白老郡",
     "entity_type": "town",
     "kana": "ｼﾗｵｲﾁｮｳ"
   },
@@ -1945,7 +1945,7 @@
     "name": "厚真町",
     "city": "厚真町",
     "ward": null,
-    "county": null,
+    "county": "勇払郡",
     "entity_type": "town",
     "kana": "ｱﾂﾏﾁｮｳ"
   },
@@ -1958,7 +1958,7 @@
     "name": "洞爺湖町",
     "city": "洞爺湖町",
     "ward": null,
-    "county": null,
+    "county": "虻田郡",
     "entity_type": "town",
     "kana": "ﾄｳﾔｺﾁｮｳ"
   },
@@ -1971,7 +1971,7 @@
     "name": "安平町",
     "city": "安平町",
     "ward": null,
-    "county": null,
+    "county": "勇払郡",
     "entity_type": "town",
     "kana": "ｱﾋﾞﾗﾁｮｳ"
   },
@@ -1984,7 +1984,7 @@
     "name": "むかわ町",
     "city": "むかわ町",
     "ward": null,
-    "county": null,
+    "county": "勇払郡",
     "entity_type": "town",
     "kana": "ﾑｶﾜﾁｮｳ"
   },
@@ -1997,7 +1997,7 @@
     "name": "日高町",
     "city": "日高町",
     "ward": null,
-    "county": null,
+    "county": "沙流郡",
     "entity_type": "town",
     "kana": "ﾋﾀﾞｶﾁｮｳ"
   },
@@ -2010,7 +2010,7 @@
     "name": "平取町",
     "city": "平取町",
     "ward": null,
-    "county": null,
+    "county": "沙流郡",
     "entity_type": "town",
     "kana": "ﾋﾞﾗﾄﾘﾁｮｳ"
   },
@@ -2023,7 +2023,7 @@
     "name": "新冠町",
     "city": "新冠町",
     "ward": null,
-    "county": null,
+    "county": "新冠郡",
     "entity_type": "town",
     "kana": "ﾆｲｶｯﾌﾟﾁｮｳ"
   },
@@ -2036,7 +2036,7 @@
     "name": "浦河町",
     "city": "浦河町",
     "ward": null,
-    "county": null,
+    "county": "浦河郡",
     "entity_type": "town",
     "kana": "ｳﾗｶﾜﾁｮｳ"
   },
@@ -2049,7 +2049,7 @@
     "name": "様似町",
     "city": "様似町",
     "ward": null,
-    "county": null,
+    "county": "様似郡",
     "entity_type": "town",
     "kana": "ｻﾏﾆﾁｮｳ"
   },
@@ -2062,7 +2062,7 @@
     "name": "えりも町",
     "city": "えりも町",
     "ward": null,
-    "county": null,
+    "county": "幌泉郡",
     "entity_type": "town",
     "kana": "ｴﾘﾓﾁｮｳ"
   },
@@ -2075,7 +2075,7 @@
     "name": "新ひだか町",
     "city": "新ひだか町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ｼﾝﾋﾀﾞｶﾁｮｳ"
   },
@@ -2088,7 +2088,7 @@
     "name": "音更町",
     "city": "音更町",
     "ward": null,
-    "county": null,
+    "county": "河東郡",
     "entity_type": "town",
     "kana": "ｵﾄﾌｹﾁｮｳ"
   },
@@ -2101,7 +2101,7 @@
     "name": "士幌町",
     "city": "士幌町",
     "ward": null,
-    "county": null,
+    "county": "河東郡",
     "entity_type": "town",
     "kana": "ｼﾎﾛﾁｮｳ"
   },
@@ -2114,7 +2114,7 @@
     "name": "上士幌町",
     "city": "上士幌町",
     "ward": null,
-    "county": null,
+    "county": "河東郡",
     "entity_type": "town",
     "kana": "ｶﾐｼﾎﾛﾁｮｳ"
   },
@@ -2127,7 +2127,7 @@
     "name": "鹿追町",
     "city": "鹿追町",
     "ward": null,
-    "county": null,
+    "county": "河東郡",
     "entity_type": "town",
     "kana": "ｼｶｵｲﾁｮｳ"
   },
@@ -2140,7 +2140,7 @@
     "name": "新得町",
     "city": "新得町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ｼﾝﾄｸﾁｮｳ"
   },
@@ -2153,7 +2153,7 @@
     "name": "清水町",
     "city": "清水町",
     "ward": null,
-    "county": null,
+    "county": "上川郡",
     "entity_type": "town",
     "kana": "ｼﾐｽﾞﾁｮｳ"
   },
@@ -2166,7 +2166,7 @@
     "name": "芽室町",
     "city": "芽室町",
     "ward": null,
-    "county": null,
+    "county": "河西郡",
     "entity_type": "town",
     "kana": "ﾒﾑﾛﾁｮｳ"
   },
@@ -2179,7 +2179,7 @@
     "name": "中札内村",
     "city": "中札内村",
     "ward": null,
-    "county": null,
+    "county": "河西郡",
     "entity_type": "village",
     "kana": "ﾅｶｻﾂﾅｲﾑﾗ"
   },
@@ -2192,7 +2192,7 @@
     "name": "更別村",
     "city": "更別村",
     "ward": null,
-    "county": null,
+    "county": "河西郡",
     "entity_type": "village",
     "kana": "ｻﾗﾍﾞﾂﾑﾗ"
   },
@@ -2205,7 +2205,7 @@
     "name": "大樹町",
     "city": "大樹町",
     "ward": null,
-    "county": null,
+    "county": "広尾郡",
     "entity_type": "town",
     "kana": "ﾀｲｷﾁｮｳ"
   },
@@ -2218,7 +2218,7 @@
     "name": "広尾町",
     "city": "広尾町",
     "ward": null,
-    "county": null,
+    "county": "広尾郡",
     "entity_type": "town",
     "kana": "ﾋﾛｵﾁｮｳ"
   },
@@ -2231,7 +2231,7 @@
     "name": "幕別町",
     "city": "幕別町",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "town",
     "kana": "ﾏｸﾍﾞﾂﾁｮｳ"
   },
@@ -2244,7 +2244,7 @@
     "name": "池田町",
     "city": "池田町",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "town",
     "kana": "ｲｹﾀﾞﾁｮｳ"
   },
@@ -2257,7 +2257,7 @@
     "name": "豊頃町",
     "city": "豊頃町",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "town",
     "kana": "ﾄﾖｺﾛﾁｮｳ"
   },
@@ -2270,7 +2270,7 @@
     "name": "本別町",
     "city": "本別町",
     "ward": null,
-    "county": null,
+    "county": "中川郡",
     "entity_type": "town",
     "kana": "ﾎﾝﾍﾞﾂﾁｮｳ"
   },
@@ -2283,7 +2283,7 @@
     "name": "足寄町",
     "city": "足寄町",
     "ward": null,
-    "county": null,
+    "county": "足寄郡",
     "entity_type": "town",
     "kana": "ｱｼｮﾛﾁｮｳ"
   },
@@ -2296,7 +2296,7 @@
     "name": "陸別町",
     "city": "陸別町",
     "ward": null,
-    "county": null,
+    "county": "足寄郡",
     "entity_type": "town",
     "kana": "ﾘｸﾍﾞﾂﾁｮｳ"
   },
@@ -2309,7 +2309,7 @@
     "name": "浦幌町",
     "city": "浦幌町",
     "ward": null,
-    "county": null,
+    "county": "十勝郡",
     "entity_type": "town",
     "kana": "ｳﾗﾎﾛﾁｮｳ"
   },
@@ -2322,7 +2322,7 @@
     "name": "釧路町",
     "city": "釧路町",
     "ward": null,
-    "county": null,
+    "county": "釧路郡",
     "entity_type": "town",
     "kana": "ｸｼﾛﾁｮｳ"
   },
@@ -2335,7 +2335,7 @@
     "name": "厚岸町",
     "city": "厚岸町",
     "ward": null,
-    "county": null,
+    "county": "厚岸郡",
     "entity_type": "town",
     "kana": "ｱｯｹｼﾁｮｳ"
   },
@@ -2348,7 +2348,7 @@
     "name": "浜中町",
     "city": "浜中町",
     "ward": null,
-    "county": null,
+    "county": "厚岸郡",
     "entity_type": "town",
     "kana": "ﾊﾏﾅｶﾁｮｳ"
   },
@@ -2361,7 +2361,7 @@
     "name": "標茶町",
     "city": "標茶町",
     "ward": null,
-    "county": null,
+    "county": "川上郡",
     "entity_type": "town",
     "kana": "ｼﾍﾞﾁｬﾁｮｳ"
   },
@@ -2374,7 +2374,7 @@
     "name": "弟子屈町",
     "city": "弟子屈町",
     "ward": null,
-    "county": null,
+    "county": "川上郡",
     "entity_type": "town",
     "kana": "ﾃｼｶｶﾞﾁｮｳ"
   },
@@ -2387,7 +2387,7 @@
     "name": "鶴居村",
     "city": "鶴居村",
     "ward": null,
-    "county": null,
+    "county": "阿寒郡",
     "entity_type": "village",
     "kana": "ﾂﾙｲﾑﾗ"
   },
@@ -2400,7 +2400,7 @@
     "name": "白糠町",
     "city": "白糠町",
     "ward": null,
-    "county": null,
+    "county": "白糠郡",
     "entity_type": "town",
     "kana": "ｼﾗﾇｶﾁｮｳ"
   },
@@ -2413,7 +2413,7 @@
     "name": "別海町",
     "city": "別海町",
     "ward": null,
-    "county": null,
+    "county": "野付郡",
     "entity_type": "town",
     "kana": "ﾍﾞﾂｶｲﾁｮｳ"
   },
@@ -2426,7 +2426,7 @@
     "name": "中標津町",
     "city": "中標津町",
     "ward": null,
-    "county": null,
+    "county": "標津郡",
     "entity_type": "town",
     "kana": "ﾅｶｼﾍﾞﾂﾁｮｳ"
   },
@@ -2439,7 +2439,7 @@
     "name": "標津町",
     "city": "標津町",
     "ward": null,
-    "county": null,
+    "county": "標津郡",
     "entity_type": "town",
     "kana": "ｼﾍﾞﾂﾁｮｳ"
   },
@@ -2452,7 +2452,7 @@
     "name": "羅臼町",
     "city": "羅臼町",
     "ward": null,
-    "county": null,
+    "county": "目梨郡",
     "entity_type": "town",
     "kana": "ﾗｳｽﾁｮｳ"
   },
@@ -2465,7 +2465,7 @@
     "name": "色丹村",
     "city": "色丹村",
     "ward": null,
-    "county": null,
+    "county": "色丹郡",
     "entity_type": "village",
     "kana": "ｼｺﾀﾝﾑﾗ"
   },
@@ -2478,7 +2478,7 @@
     "name": "泊村",
     "city": "泊村",
     "ward": null,
-    "county": null,
+    "county": "国後郡",
     "entity_type": "village",
     "kana": "ﾄﾏﾘﾑﾗ"
   },
@@ -2491,7 +2491,7 @@
     "name": "留夜別村",
     "city": "留夜別村",
     "ward": null,
-    "county": null,
+    "county": "国後郡",
     "entity_type": "village",
     "kana": "ﾙﾔﾍﾞﾂﾑﾗ"
   },
@@ -2504,7 +2504,7 @@
     "name": "留別村",
     "city": "留別村",
     "ward": null,
-    "county": null,
+    "county": "択捉郡",
     "entity_type": "village",
     "kana": "ﾙﾍﾞﾂﾑﾗ"
   },
@@ -2517,7 +2517,7 @@
     "name": "紗那村",
     "city": "紗那村",
     "ward": null,
-    "county": null,
+    "county": "紗那郡",
     "entity_type": "village",
     "kana": "ｼｬﾅﾑﾗ"
   },
@@ -2530,7 +2530,7 @@
     "name": "蘂取村",
     "city": "蘂取村",
     "ward": null,
-    "county": null,
+    "county": "蘂取郡",
     "entity_type": "village",
     "kana": "ｼﾍﾞﾄﾛﾑﾗ"
   },
@@ -2673,7 +2673,7 @@
     "name": "平内町",
     "city": "平内町",
     "ward": null,
-    "county": null,
+    "county": "東津軽郡",
     "entity_type": "town",
     "kana": "ﾋﾗﾅｲﾏﾁ"
   },
@@ -2686,7 +2686,7 @@
     "name": "今別町",
     "city": "今別町",
     "ward": null,
-    "county": null,
+    "county": "東津軽郡",
     "entity_type": "town",
     "kana": "ｲﾏﾍﾞﾂﾏﾁ"
   },
@@ -2699,7 +2699,7 @@
     "name": "蓬田村",
     "city": "蓬田村",
     "ward": null,
-    "county": null,
+    "county": "東津軽郡",
     "entity_type": "village",
     "kana": "ﾖﾓｷﾞﾀﾑﾗ"
   },
@@ -2712,7 +2712,7 @@
     "name": "外ヶ浜町",
     "city": "外ヶ浜町",
     "ward": null,
-    "county": null,
+    "county": "東津軽郡",
     "entity_type": "town",
     "kana": "ｿﾄｶﾞﾊﾏﾏﾁ"
   },
@@ -2725,7 +2725,7 @@
     "name": "鰺ヶ沢町",
     "city": "鰺ヶ沢町",
     "ward": null,
-    "county": null,
+    "county": "西津軽郡",
     "entity_type": "town",
     "kana": "ｱｼﾞｶﾞｻﾜﾏﾁ"
   },
@@ -2738,7 +2738,7 @@
     "name": "深浦町",
     "city": "深浦町",
     "ward": null,
-    "county": null,
+    "county": "西津軽郡",
     "entity_type": "town",
     "kana": "ﾌｶｳﾗﾏﾁ"
   },
@@ -2751,7 +2751,7 @@
     "name": "西目屋村",
     "city": "西目屋村",
     "ward": null,
-    "county": null,
+    "county": "中津軽郡",
     "entity_type": "village",
     "kana": "ﾆｼﾒﾔﾑﾗ"
   },
@@ -2764,7 +2764,7 @@
     "name": "藤崎町",
     "city": "藤崎町",
     "ward": null,
-    "county": null,
+    "county": "南津軽郡",
     "entity_type": "town",
     "kana": "ﾌｼﾞｻｷﾏﾁ"
   },
@@ -2777,7 +2777,7 @@
     "name": "大鰐町",
     "city": "大鰐町",
     "ward": null,
-    "county": null,
+    "county": "南津軽郡",
     "entity_type": "town",
     "kana": "ｵｵﾜﾆﾏﾁ"
   },
@@ -2790,7 +2790,7 @@
     "name": "田舎館村",
     "city": "田舎館村",
     "ward": null,
-    "county": null,
+    "county": "南津軽郡",
     "entity_type": "village",
     "kana": "ｲﾅｶﾀﾞﾃﾑﾗ"
   },
@@ -2803,7 +2803,7 @@
     "name": "板柳町",
     "city": "板柳町",
     "ward": null,
-    "county": null,
+    "county": "北津軽郡",
     "entity_type": "town",
     "kana": "ｲﾀﾔﾅｷﾞﾏﾁ"
   },
@@ -2816,7 +2816,7 @@
     "name": "鶴田町",
     "city": "鶴田町",
     "ward": null,
-    "county": null,
+    "county": "北津軽郡",
     "entity_type": "town",
     "kana": "ﾂﾙﾀﾏﾁ"
   },
@@ -2829,7 +2829,7 @@
     "name": "中泊町",
     "city": "中泊町",
     "ward": null,
-    "county": null,
+    "county": "北津軽郡",
     "entity_type": "town",
     "kana": "ﾅｶﾄﾞﾏﾘﾏﾁ"
   },
@@ -2842,7 +2842,7 @@
     "name": "野辺地町",
     "city": "野辺地町",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "town",
     "kana": "ﾉﾍｼﾞﾏﾁ"
   },
@@ -2855,7 +2855,7 @@
     "name": "七戸町",
     "city": "七戸町",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "town",
     "kana": "ｼﾁﾉﾍﾏﾁ"
   },
@@ -2868,7 +2868,7 @@
     "name": "六戸町",
     "city": "六戸町",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "town",
     "kana": "ﾛｸﾉﾍﾏﾁ"
   },
@@ -2881,7 +2881,7 @@
     "name": "横浜町",
     "city": "横浜町",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "town",
     "kana": "ﾖｺﾊﾏﾏﾁ"
   },
@@ -2894,7 +2894,7 @@
     "name": "東北町",
     "city": "東北町",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "town",
     "kana": "ﾄｳﾎｸﾏﾁ"
   },
@@ -2907,7 +2907,7 @@
     "name": "六ヶ所村",
     "city": "六ヶ所村",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "village",
     "kana": "ﾛｯｶｼｮﾑﾗ"
   },
@@ -2920,7 +2920,7 @@
     "name": "おいらせ町",
     "city": "おいらせ町",
     "ward": null,
-    "county": null,
+    "county": "上北郡",
     "entity_type": "town",
     "kana": "ｵｲﾗｾﾁｮｳ"
   },
@@ -2933,7 +2933,7 @@
     "name": "大間町",
     "city": "大間町",
     "ward": null,
-    "county": null,
+    "county": "下北郡",
     "entity_type": "town",
     "kana": "ｵｵﾏﾏﾁ"
   },
@@ -2946,7 +2946,7 @@
     "name": "東通村",
     "city": "東通村",
     "ward": null,
-    "county": null,
+    "county": "下北郡",
     "entity_type": "village",
     "kana": "ﾋｶﾞｼﾄﾞｵﾘﾑﾗ"
   },
@@ -2959,7 +2959,7 @@
     "name": "風間浦村",
     "city": "風間浦村",
     "ward": null,
-    "county": null,
+    "county": "下北郡",
     "entity_type": "village",
     "kana": "ｶｻﾞﾏｳﾗﾑﾗ"
   },
@@ -2972,7 +2972,7 @@
     "name": "佐井村",
     "city": "佐井村",
     "ward": null,
-    "county": null,
+    "county": "下北郡",
     "entity_type": "village",
     "kana": "ｻｲﾑﾗ"
   },
@@ -2985,7 +2985,7 @@
     "name": "三戸町",
     "city": "三戸町",
     "ward": null,
-    "county": null,
+    "county": "三戸郡",
     "entity_type": "town",
     "kana": "ｻﾝﾉﾍﾏﾁ"
   },
@@ -2998,7 +2998,7 @@
     "name": "五戸町",
     "city": "五戸町",
     "ward": null,
-    "county": null,
+    "county": "三戸郡",
     "entity_type": "town",
     "kana": "ｺﾞﾉﾍﾏﾁ"
   },
@@ -3011,7 +3011,7 @@
     "name": "田子町",
     "city": "田子町",
     "ward": null,
-    "county": null,
+    "county": "三戸郡",
     "entity_type": "town",
     "kana": "ﾀｯｺﾏﾁ"
   },
@@ -3024,7 +3024,7 @@
     "name": "南部町",
     "city": "南部町",
     "ward": null,
-    "county": null,
+    "county": "三戸郡",
     "entity_type": "town",
     "kana": "ﾅﾝﾌﾞﾁｮｳ"
   },
@@ -3037,7 +3037,7 @@
     "name": "階上町",
     "city": "階上町",
     "ward": null,
-    "county": null,
+    "county": "三戸郡",
     "entity_type": "town",
     "kana": "ﾊｼｶﾐﾁｮｳ"
   },
@@ -3050,7 +3050,7 @@
     "name": "新郷村",
     "city": "新郷村",
     "ward": null,
-    "county": null,
+    "county": "三戸郡",
     "entity_type": "village",
     "kana": "ｼﾝｺﾞｳﾑﾗ"
   },
@@ -3245,7 +3245,7 @@
     "name": "雫石町",
     "city": "雫石町",
     "ward": null,
-    "county": null,
+    "county": "岩手郡",
     "entity_type": "town",
     "kana": "ｼｽﾞｸｲｼﾁｮｳ"
   },
@@ -3258,7 +3258,7 @@
     "name": "葛巻町",
     "city": "葛巻町",
     "ward": null,
-    "county": null,
+    "county": "岩手郡",
     "entity_type": "town",
     "kana": "ｸｽﾞﾏｷﾏﾁ"
   },
@@ -3271,7 +3271,7 @@
     "name": "岩手町",
     "city": "岩手町",
     "ward": null,
-    "county": null,
+    "county": "岩手郡",
     "entity_type": "town",
     "kana": "ｲﾜﾃﾏﾁ"
   },
@@ -3284,7 +3284,7 @@
     "name": "紫波町",
     "city": "紫波町",
     "ward": null,
-    "county": null,
+    "county": "紫波郡",
     "entity_type": "town",
     "kana": "ｼﾜﾁｮｳ"
   },
@@ -3297,7 +3297,7 @@
     "name": "矢巾町",
     "city": "矢巾町",
     "ward": null,
-    "county": null,
+    "county": "紫波郡",
     "entity_type": "town",
     "kana": "ﾔﾊﾊﾞﾁｮｳ"
   },
@@ -3310,7 +3310,7 @@
     "name": "西和賀町",
     "city": "西和賀町",
     "ward": null,
-    "county": null,
+    "county": "和賀郡",
     "entity_type": "town",
     "kana": "ﾆｼﾜｶﾞﾏﾁ"
   },
@@ -3323,7 +3323,7 @@
     "name": "金ケ崎町",
     "city": "金ケ崎町",
     "ward": null,
-    "county": null,
+    "county": "胆沢郡",
     "entity_type": "town",
     "kana": "ｶﾈｶﾞｻｷﾁｮｳ"
   },
@@ -3336,7 +3336,7 @@
     "name": "平泉町",
     "city": "平泉町",
     "ward": null,
-    "county": null,
+    "county": "西磐井郡",
     "entity_type": "town",
     "kana": "ﾋﾗｲｽﾞﾐﾁｮｳ"
   },
@@ -3349,7 +3349,7 @@
     "name": "住田町",
     "city": "住田町",
     "ward": null,
-    "county": null,
+    "county": "気仙郡",
     "entity_type": "town",
     "kana": "ｽﾐﾀﾁｮｳ"
   },
@@ -3362,7 +3362,7 @@
     "name": "大槌町",
     "city": "大槌町",
     "ward": null,
-    "county": null,
+    "county": "上閉伊郡",
     "entity_type": "town",
     "kana": "ｵｵﾂﾁﾁｮｳ"
   },
@@ -3375,7 +3375,7 @@
     "name": "山田町",
     "city": "山田町",
     "ward": null,
-    "county": null,
+    "county": "下閉伊郡",
     "entity_type": "town",
     "kana": "ﾔﾏﾀﾞﾏﾁ"
   },
@@ -3388,7 +3388,7 @@
     "name": "岩泉町",
     "city": "岩泉町",
     "ward": null,
-    "county": null,
+    "county": "下閉伊郡",
     "entity_type": "town",
     "kana": "ｲﾜｲｽﾞﾐﾁｮｳ"
   },
@@ -3401,7 +3401,7 @@
     "name": "田野畑村",
     "city": "田野畑村",
     "ward": null,
-    "county": null,
+    "county": "下閉伊郡",
     "entity_type": "village",
     "kana": "ﾀﾉﾊﾀﾑﾗ"
   },
@@ -3414,7 +3414,7 @@
     "name": "普代村",
     "city": "普代村",
     "ward": null,
-    "county": null,
+    "county": "下閉伊郡",
     "entity_type": "village",
     "kana": "ﾌﾀﾞｲﾑﾗ"
   },
@@ -3427,7 +3427,7 @@
     "name": "軽米町",
     "city": "軽米町",
     "ward": null,
-    "county": null,
+    "county": "九戸郡",
     "entity_type": "town",
     "kana": "ｶﾙﾏｲﾏﾁ"
   },
@@ -3440,7 +3440,7 @@
     "name": "野田村",
     "city": "野田村",
     "ward": null,
-    "county": null,
+    "county": "九戸郡",
     "entity_type": "village",
     "kana": "ﾉﾀﾞﾑﾗ"
   },
@@ -3453,7 +3453,7 @@
     "name": "九戸村",
     "city": "九戸村",
     "ward": null,
-    "county": null,
+    "county": "九戸郡",
     "entity_type": "village",
     "kana": "ｸﾉﾍﾑﾗ"
   },
@@ -3466,7 +3466,7 @@
     "name": "洋野町",
     "city": "洋野町",
     "ward": null,
-    "county": null,
+    "county": "九戸郡",
     "entity_type": "town",
     "kana": "ﾋﾛﾉﾁｮｳ"
   },
@@ -3479,7 +3479,7 @@
     "name": "一戸町",
     "city": "一戸町",
     "ward": null,
-    "county": null,
+    "county": "二戸郡",
     "entity_type": "town",
     "kana": "ｲﾁﾉﾍﾏﾁ"
   },
@@ -3739,7 +3739,7 @@
     "name": "蔵王町",
     "city": "蔵王町",
     "ward": null,
-    "county": null,
+    "county": "刈田郡",
     "entity_type": "town",
     "kana": "ｻﾞｵｳﾏﾁ"
   },
@@ -3752,7 +3752,7 @@
     "name": "七ヶ宿町",
     "city": "七ヶ宿町",
     "ward": null,
-    "county": null,
+    "county": "刈田郡",
     "entity_type": "town",
     "kana": "ｼﾁｶｼｭｸﾏﾁ"
   },
@@ -3765,7 +3765,7 @@
     "name": "大河原町",
     "city": "大河原町",
     "ward": null,
-    "county": null,
+    "county": "柴田郡",
     "entity_type": "town",
     "kana": "ｵｵｶﾞﾜﾗﾏﾁ"
   },
@@ -3778,7 +3778,7 @@
     "name": "村田町",
     "city": "村田町",
     "ward": null,
-    "county": null,
+    "county": "柴田郡",
     "entity_type": "town",
     "kana": "ﾑﾗﾀﾏﾁ"
   },
@@ -3791,7 +3791,7 @@
     "name": "柴田町",
     "city": "柴田町",
     "ward": null,
-    "county": null,
+    "county": "柴田郡",
     "entity_type": "town",
     "kana": "ｼﾊﾞﾀﾏﾁ"
   },
@@ -3804,7 +3804,7 @@
     "name": "川崎町",
     "city": "川崎町",
     "ward": null,
-    "county": null,
+    "county": "柴田郡",
     "entity_type": "town",
     "kana": "ｶﾜｻｷﾏﾁ"
   },
@@ -3817,7 +3817,7 @@
     "name": "丸森町",
     "city": "丸森町",
     "ward": null,
-    "county": null,
+    "county": "伊具郡",
     "entity_type": "town",
     "kana": "ﾏﾙﾓﾘﾏﾁ"
   },
@@ -3830,7 +3830,7 @@
     "name": "亘理町",
     "city": "亘理町",
     "ward": null,
-    "county": null,
+    "county": "亘理郡",
     "entity_type": "town",
     "kana": "ﾜﾀﾘﾁｮｳ"
   },
@@ -3843,7 +3843,7 @@
     "name": "山元町",
     "city": "山元町",
     "ward": null,
-    "county": null,
+    "county": "亘理郡",
     "entity_type": "town",
     "kana": "ﾔﾏﾓﾄﾁｮｳ"
   },
@@ -3856,7 +3856,7 @@
     "name": "松島町",
     "city": "松島町",
     "ward": null,
-    "county": null,
+    "county": "宮城郡",
     "entity_type": "town",
     "kana": "ﾏﾂｼﾏﾏﾁ"
   },
@@ -3869,7 +3869,7 @@
     "name": "七ヶ浜町",
     "city": "七ヶ浜町",
     "ward": null,
-    "county": null,
+    "county": "宮城郡",
     "entity_type": "town",
     "kana": "ｼﾁｶﾞﾊﾏﾏﾁ"
   },
@@ -3882,7 +3882,7 @@
     "name": "利府町",
     "city": "利府町",
     "ward": null,
-    "county": null,
+    "county": "宮城郡",
     "entity_type": "town",
     "kana": "ﾘﾌﾁｮｳ"
   },
@@ -3895,7 +3895,7 @@
     "name": "大和町",
     "city": "大和町",
     "ward": null,
-    "county": null,
+    "county": "黒川郡",
     "entity_type": "town",
     "kana": "ﾀｲﾜﾁｮｳ"
   },
@@ -3908,7 +3908,7 @@
     "name": "大郷町",
     "city": "大郷町",
     "ward": null,
-    "county": null,
+    "county": "黒川郡",
     "entity_type": "town",
     "kana": "ｵｵｻﾄﾁｮｳ"
   },
@@ -3921,7 +3921,7 @@
     "name": "大衡村",
     "city": "大衡村",
     "ward": null,
-    "county": null,
+    "county": "黒川郡",
     "entity_type": "village",
     "kana": "ｵｵﾋﾗﾑﾗ"
   },
@@ -3934,7 +3934,7 @@
     "name": "色麻町",
     "city": "色麻町",
     "ward": null,
-    "county": null,
+    "county": "加美郡",
     "entity_type": "town",
     "kana": "ｼｶﾏﾁｮｳ"
   },
@@ -3947,7 +3947,7 @@
     "name": "加美町",
     "city": "加美町",
     "ward": null,
-    "county": null,
+    "county": "加美郡",
     "entity_type": "town",
     "kana": "ｶﾐﾏﾁ"
   },
@@ -3960,7 +3960,7 @@
     "name": "涌谷町",
     "city": "涌谷町",
     "ward": null,
-    "county": null,
+    "county": "遠田郡",
     "entity_type": "town",
     "kana": "ﾜｸﾔﾁｮｳ"
   },
@@ -3973,7 +3973,7 @@
     "name": "美里町",
     "city": "美里町",
     "ward": null,
-    "county": null,
+    "county": "遠田郡",
     "entity_type": "town",
     "kana": "ﾐｻﾄﾏﾁ"
   },
@@ -3986,7 +3986,7 @@
     "name": "女川町",
     "city": "女川町",
     "ward": null,
-    "county": null,
+    "county": "牡鹿郡",
     "entity_type": "town",
     "kana": "ｵﾅｶﾞﾜﾁｮｳ"
   },
@@ -3999,7 +3999,7 @@
     "name": "南三陸町",
     "city": "南三陸町",
     "ward": null,
-    "county": null,
+    "county": "本吉郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｻﾝﾘｸﾁｮｳ"
   },
@@ -4181,7 +4181,7 @@
     "name": "小坂町",
     "city": "小坂町",
     "ward": null,
-    "county": null,
+    "county": "鹿角郡",
     "entity_type": "town",
     "kana": "ｺｻｶﾏﾁ"
   },
@@ -4194,7 +4194,7 @@
     "name": "上小阿仁村",
     "city": "上小阿仁村",
     "ward": null,
-    "county": null,
+    "county": "北秋田郡",
     "entity_type": "village",
     "kana": "ｶﾐｺｱﾆﾑﾗ"
   },
@@ -4207,7 +4207,7 @@
     "name": "藤里町",
     "city": "藤里町",
     "ward": null,
-    "county": null,
+    "county": "山本郡",
     "entity_type": "town",
     "kana": "ﾌｼﾞｻﾄﾏﾁ"
   },
@@ -4220,7 +4220,7 @@
     "name": "三種町",
     "city": "三種町",
     "ward": null,
-    "county": null,
+    "county": "山本郡",
     "entity_type": "town",
     "kana": "ﾐﾀﾈﾁｮｳ"
   },
@@ -4233,7 +4233,7 @@
     "name": "八峰町",
     "city": "八峰町",
     "ward": null,
-    "county": null,
+    "county": "山本郡",
     "entity_type": "town",
     "kana": "ﾊｯﾎﾟｳﾁｮｳ"
   },
@@ -4246,7 +4246,7 @@
     "name": "五城目町",
     "city": "五城目町",
     "ward": null,
-    "county": null,
+    "county": "南秋田郡",
     "entity_type": "town",
     "kana": "ｺﾞｼﾞｮｳﾒﾏﾁ"
   },
@@ -4259,7 +4259,7 @@
     "name": "八郎潟町",
     "city": "八郎潟町",
     "ward": null,
-    "county": null,
+    "county": "南秋田郡",
     "entity_type": "town",
     "kana": "ﾊﾁﾛｳｶﾞﾀﾏﾁ"
   },
@@ -4272,7 +4272,7 @@
     "name": "井川町",
     "city": "井川町",
     "ward": null,
-    "county": null,
+    "county": "南秋田郡",
     "entity_type": "town",
     "kana": "ｲｶﾜﾏﾁ"
   },
@@ -4285,7 +4285,7 @@
     "name": "大潟村",
     "city": "大潟村",
     "ward": null,
-    "county": null,
+    "county": "南秋田郡",
     "entity_type": "village",
     "kana": "ｵｵｶﾞﾀﾑﾗ"
   },
@@ -4298,7 +4298,7 @@
     "name": "美郷町",
     "city": "美郷町",
     "ward": null,
-    "county": null,
+    "county": "仙北郡",
     "entity_type": "town",
     "kana": "ﾐｻﾄﾁｮｳ"
   },
@@ -4311,7 +4311,7 @@
     "name": "羽後町",
     "city": "羽後町",
     "ward": null,
-    "county": null,
+    "county": "雄勝郡",
     "entity_type": "town",
     "kana": "ｳｺﾞﾏﾁ"
   },
@@ -4324,7 +4324,7 @@
     "name": "東成瀬村",
     "city": "東成瀬村",
     "ward": null,
-    "county": null,
+    "county": "雄勝郡",
     "entity_type": "village",
     "kana": "ﾋｶﾞｼﾅﾙｾﾑﾗ"
   },
@@ -4506,7 +4506,7 @@
     "name": "山辺町",
     "city": "山辺町",
     "ward": null,
-    "county": null,
+    "county": "東村山郡",
     "entity_type": "town",
     "kana": "ﾔﾏﾉﾍﾞﾏﾁ"
   },
@@ -4519,7 +4519,7 @@
     "name": "中山町",
     "city": "中山町",
     "ward": null,
-    "county": null,
+    "county": "東村山郡",
     "entity_type": "town",
     "kana": "ﾅｶﾔﾏﾏﾁ"
   },
@@ -4532,7 +4532,7 @@
     "name": "河北町",
     "city": "河北町",
     "ward": null,
-    "county": null,
+    "county": "西村山郡",
     "entity_type": "town",
     "kana": "ｶﾎｸﾁｮｳ"
   },
@@ -4545,7 +4545,7 @@
     "name": "西川町",
     "city": "西川町",
     "ward": null,
-    "county": null,
+    "county": "西村山郡",
     "entity_type": "town",
     "kana": "ﾆｼｶﾜﾏﾁ"
   },
@@ -4558,7 +4558,7 @@
     "name": "朝日町",
     "city": "朝日町",
     "ward": null,
-    "county": null,
+    "county": "西村山郡",
     "entity_type": "town",
     "kana": "ｱｻﾋﾏﾁ"
   },
@@ -4571,7 +4571,7 @@
     "name": "大江町",
     "city": "大江町",
     "ward": null,
-    "county": null,
+    "county": "西村山郡",
     "entity_type": "town",
     "kana": "ｵｵｴﾏﾁ"
   },
@@ -4584,7 +4584,7 @@
     "name": "大石田町",
     "city": "大石田町",
     "ward": null,
-    "county": null,
+    "county": "北村山郡",
     "entity_type": "town",
     "kana": "ｵｵｲｼﾀﾞﾏﾁ"
   },
@@ -4597,7 +4597,7 @@
     "name": "金山町",
     "city": "金山町",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "town",
     "kana": "ｶﾈﾔﾏﾏﾁ"
   },
@@ -4610,7 +4610,7 @@
     "name": "最上町",
     "city": "最上町",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "town",
     "kana": "ﾓｶﾞﾐﾏﾁ"
   },
@@ -4623,7 +4623,7 @@
     "name": "舟形町",
     "city": "舟形町",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "town",
     "kana": "ﾌﾅｶﾞﾀﾏﾁ"
   },
@@ -4636,7 +4636,7 @@
     "name": "真室川町",
     "city": "真室川町",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "town",
     "kana": "ﾏﾑﾛｶﾞﾜﾏﾁ"
   },
@@ -4649,7 +4649,7 @@
     "name": "大蔵村",
     "city": "大蔵村",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "village",
     "kana": "ｵｵｸﾗﾑﾗ"
   },
@@ -4662,7 +4662,7 @@
     "name": "鮭川村",
     "city": "鮭川村",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "village",
     "kana": "ｻｹｶﾞﾜﾑﾗ"
   },
@@ -4675,7 +4675,7 @@
     "name": "戸沢村",
     "city": "戸沢村",
     "ward": null,
-    "county": null,
+    "county": "最上郡",
     "entity_type": "village",
     "kana": "ﾄｻﾞﾜﾑﾗ"
   },
@@ -4688,7 +4688,7 @@
     "name": "高畠町",
     "city": "高畠町",
     "ward": null,
-    "county": null,
+    "county": "東置賜郡",
     "entity_type": "town",
     "kana": "ﾀｶﾊﾀﾏﾁ"
   },
@@ -4701,7 +4701,7 @@
     "name": "川西町",
     "city": "川西町",
     "ward": null,
-    "county": null,
+    "county": "東置賜郡",
     "entity_type": "town",
     "kana": "ｶﾜﾆｼﾏﾁ"
   },
@@ -4714,7 +4714,7 @@
     "name": "小国町",
     "city": "小国町",
     "ward": null,
-    "county": null,
+    "county": "西置賜郡",
     "entity_type": "town",
     "kana": "ｵｸﾞﾆﾏﾁ"
   },
@@ -4727,7 +4727,7 @@
     "name": "白鷹町",
     "city": "白鷹町",
     "ward": null,
-    "county": null,
+    "county": "西置賜郡",
     "entity_type": "town",
     "kana": "ｼﾗﾀｶﾏﾁ"
   },
@@ -4740,7 +4740,7 @@
     "name": "飯豊町",
     "city": "飯豊町",
     "ward": null,
-    "county": null,
+    "county": "西置賜郡",
     "entity_type": "town",
     "kana": "ｲｲﾃﾞﾏﾁ"
   },
@@ -4753,7 +4753,7 @@
     "name": "三川町",
     "city": "三川町",
     "ward": null,
-    "county": null,
+    "county": "東田川郡",
     "entity_type": "town",
     "kana": "ﾐｶﾜﾏﾁ"
   },
@@ -4766,7 +4766,7 @@
     "name": "庄内町",
     "city": "庄内町",
     "ward": null,
-    "county": null,
+    "county": "東田川郡",
     "entity_type": "town",
     "kana": "ｼﾖｳﾅｲﾏﾁ"
   },
@@ -4779,7 +4779,7 @@
     "name": "遊佐町",
     "city": "遊佐町",
     "ward": null,
-    "county": null,
+    "county": "飽海郡",
     "entity_type": "town",
     "kana": "ﾕｻﾞﾏﾁ"
   },
@@ -4961,7 +4961,7 @@
     "name": "桑折町",
     "city": "桑折町",
     "ward": null,
-    "county": null,
+    "county": "伊達郡",
     "entity_type": "town",
     "kana": "ｺｵﾘﾏﾁ"
   },
@@ -4974,7 +4974,7 @@
     "name": "国見町",
     "city": "国見町",
     "ward": null,
-    "county": null,
+    "county": "伊達郡",
     "entity_type": "town",
     "kana": "ｸﾆﾐﾏﾁ"
   },
@@ -4987,7 +4987,7 @@
     "name": "川俣町",
     "city": "川俣町",
     "ward": null,
-    "county": null,
+    "county": "伊達郡",
     "entity_type": "town",
     "kana": "ｶﾜﾏﾀﾏﾁ"
   },
@@ -5000,7 +5000,7 @@
     "name": "大玉村",
     "city": "大玉村",
     "ward": null,
-    "county": null,
+    "county": "安達郡",
     "entity_type": "village",
     "kana": "ｵｵﾀﾏﾑﾗ"
   },
@@ -5013,7 +5013,7 @@
     "name": "鏡石町",
     "city": "鏡石町",
     "ward": null,
-    "county": null,
+    "county": "岩瀬郡",
     "entity_type": "town",
     "kana": "ｶｶﾞﾐｲｼﾏﾁ"
   },
@@ -5026,7 +5026,7 @@
     "name": "天栄村",
     "city": "天栄村",
     "ward": null,
-    "county": null,
+    "county": "岩瀬郡",
     "entity_type": "village",
     "kana": "ﾃﾝｴｲﾑﾗ"
   },
@@ -5039,7 +5039,7 @@
     "name": "下郷町",
     "city": "下郷町",
     "ward": null,
-    "county": null,
+    "county": "南会津郡",
     "entity_type": "town",
     "kana": "ｼﾓｺﾞｳﾏﾁ"
   },
@@ -5052,7 +5052,7 @@
     "name": "檜枝岐村",
     "city": "檜枝岐村",
     "ward": null,
-    "county": null,
+    "county": "南会津郡",
     "entity_type": "village",
     "kana": "ﾋﾉｴﾏﾀﾑﾗ"
   },
@@ -5065,7 +5065,7 @@
     "name": "只見町",
     "city": "只見町",
     "ward": null,
-    "county": null,
+    "county": "南会津郡",
     "entity_type": "town",
     "kana": "ﾀﾀﾞﾐﾏﾁ"
   },
@@ -5078,7 +5078,7 @@
     "name": "南会津町",
     "city": "南会津町",
     "ward": null,
-    "county": null,
+    "county": "南会津郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｱｲﾂﾞﾏﾁ"
   },
@@ -5091,7 +5091,7 @@
     "name": "北塩原村",
     "city": "北塩原村",
     "ward": null,
-    "county": null,
+    "county": "耶麻郡",
     "entity_type": "village",
     "kana": "ｷﾀｼｵﾊﾞﾗﾑﾗ"
   },
@@ -5104,7 +5104,7 @@
     "name": "西会津町",
     "city": "西会津町",
     "ward": null,
-    "county": null,
+    "county": "耶麻郡",
     "entity_type": "town",
     "kana": "ﾆｼｱｲﾂﾞﾏﾁ"
   },
@@ -5117,7 +5117,7 @@
     "name": "磐梯町",
     "city": "磐梯町",
     "ward": null,
-    "county": null,
+    "county": "耶麻郡",
     "entity_type": "town",
     "kana": "ﾊﾞﾝﾀﾞｲﾏﾁ"
   },
@@ -5130,7 +5130,7 @@
     "name": "猪苗代町",
     "city": "猪苗代町",
     "ward": null,
-    "county": null,
+    "county": "耶麻郡",
     "entity_type": "town",
     "kana": "ｲﾅﾜｼﾛﾏﾁ"
   },
@@ -5143,7 +5143,7 @@
     "name": "会津坂下町",
     "city": "会津坂下町",
     "ward": null,
-    "county": null,
+    "county": "河沼郡",
     "entity_type": "town",
     "kana": "ｱｲﾂﾞﾊﾞﾝｹﾞﾏﾁ"
   },
@@ -5156,7 +5156,7 @@
     "name": "湯川村",
     "city": "湯川村",
     "ward": null,
-    "county": null,
+    "county": "河沼郡",
     "entity_type": "village",
     "kana": "ﾕｶﾞﾜﾑﾗ"
   },
@@ -5169,7 +5169,7 @@
     "name": "柳津町",
     "city": "柳津町",
     "ward": null,
-    "county": null,
+    "county": "河沼郡",
     "entity_type": "town",
     "kana": "ﾔﾅｲﾂﾞﾏﾁ"
   },
@@ -5182,7 +5182,7 @@
     "name": "三島町",
     "city": "三島町",
     "ward": null,
-    "county": null,
+    "county": "大沼郡",
     "entity_type": "town",
     "kana": "ﾐｼﾏﾏﾁ"
   },
@@ -5195,7 +5195,7 @@
     "name": "金山町",
     "city": "金山町",
     "ward": null,
-    "county": null,
+    "county": "大沼郡",
     "entity_type": "town",
     "kana": "ｶﾈﾔﾏﾏﾁ"
   },
@@ -5208,7 +5208,7 @@
     "name": "昭和村",
     "city": "昭和村",
     "ward": null,
-    "county": null,
+    "county": "大沼郡",
     "entity_type": "village",
     "kana": "ｼｮｳﾜﾑﾗ"
   },
@@ -5221,7 +5221,7 @@
     "name": "会津美里町",
     "city": "会津美里町",
     "ward": null,
-    "county": null,
+    "county": "大沼郡",
     "entity_type": "town",
     "kana": "ｱｲﾂﾞﾐｻﾄﾏﾁ"
   },
@@ -5234,7 +5234,7 @@
     "name": "西郷村",
     "city": "西郷村",
     "ward": null,
-    "county": null,
+    "county": "西白河郡",
     "entity_type": "village",
     "kana": "ﾆｼｺﾞｳﾑﾗ"
   },
@@ -5247,7 +5247,7 @@
     "name": "泉崎村",
     "city": "泉崎村",
     "ward": null,
-    "county": null,
+    "county": "西白河郡",
     "entity_type": "village",
     "kana": "ｲｽﾞﾐｻﾞｷﾑﾗ"
   },
@@ -5260,7 +5260,7 @@
     "name": "中島村",
     "city": "中島村",
     "ward": null,
-    "county": null,
+    "county": "西白河郡",
     "entity_type": "village",
     "kana": "ﾅｶｼﾞﾏﾑﾗ"
   },
@@ -5273,7 +5273,7 @@
     "name": "矢吹町",
     "city": "矢吹町",
     "ward": null,
-    "county": null,
+    "county": "西白河郡",
     "entity_type": "town",
     "kana": "ﾔﾌﾞｷﾏﾁ"
   },
@@ -5286,7 +5286,7 @@
     "name": "棚倉町",
     "city": "棚倉町",
     "ward": null,
-    "county": null,
+    "county": "東白川郡",
     "entity_type": "town",
     "kana": "ﾀﾅｸﾞﾗﾏﾁ"
   },
@@ -5299,7 +5299,7 @@
     "name": "矢祭町",
     "city": "矢祭町",
     "ward": null,
-    "county": null,
+    "county": "東白川郡",
     "entity_type": "town",
     "kana": "ﾔﾏﾂﾘﾏﾁ"
   },
@@ -5312,7 +5312,7 @@
     "name": "塙町",
     "city": "塙町",
     "ward": null,
-    "county": null,
+    "county": "東白川郡",
     "entity_type": "town",
     "kana": "ﾊﾅﾜﾏﾁ"
   },
@@ -5325,7 +5325,7 @@
     "name": "鮫川村",
     "city": "鮫川村",
     "ward": null,
-    "county": null,
+    "county": "東白川郡",
     "entity_type": "village",
     "kana": "ｻﾒｶﾞﾜﾑﾗ"
   },
@@ -5338,7 +5338,7 @@
     "name": "石川町",
     "city": "石川町",
     "ward": null,
-    "county": null,
+    "county": "石川郡",
     "entity_type": "town",
     "kana": "ｲｼｶﾜﾏﾁ"
   },
@@ -5351,7 +5351,7 @@
     "name": "玉川村",
     "city": "玉川村",
     "ward": null,
-    "county": null,
+    "county": "石川郡",
     "entity_type": "village",
     "kana": "ﾀﾏｶﾜﾑﾗ"
   },
@@ -5364,7 +5364,7 @@
     "name": "平田村",
     "city": "平田村",
     "ward": null,
-    "county": null,
+    "county": "石川郡",
     "entity_type": "village",
     "kana": "ﾋﾗﾀﾑﾗ"
   },
@@ -5377,7 +5377,7 @@
     "name": "浅川町",
     "city": "浅川町",
     "ward": null,
-    "county": null,
+    "county": "石川郡",
     "entity_type": "town",
     "kana": "ｱｻｶﾜﾏﾁ"
   },
@@ -5390,7 +5390,7 @@
     "name": "古殿町",
     "city": "古殿町",
     "ward": null,
-    "county": null,
+    "county": "石川郡",
     "entity_type": "town",
     "kana": "ﾌﾙﾄﾞﾉﾏﾁ"
   },
@@ -5403,7 +5403,7 @@
     "name": "三春町",
     "city": "三春町",
     "ward": null,
-    "county": null,
+    "county": "田村郡",
     "entity_type": "town",
     "kana": "ﾐﾊﾙﾏﾁ"
   },
@@ -5416,7 +5416,7 @@
     "name": "小野町",
     "city": "小野町",
     "ward": null,
-    "county": null,
+    "county": "田村郡",
     "entity_type": "town",
     "kana": "ｵﾉﾏﾁ"
   },
@@ -5429,7 +5429,7 @@
     "name": "広野町",
     "city": "広野町",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "town",
     "kana": "ﾋﾛﾉﾏﾁ"
   },
@@ -5442,7 +5442,7 @@
     "name": "楢葉町",
     "city": "楢葉町",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "town",
     "kana": "ﾅﾗﾊﾏﾁ"
   },
@@ -5455,7 +5455,7 @@
     "name": "富岡町",
     "city": "富岡町",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "town",
     "kana": "ﾄﾐｵｶﾏﾁ"
   },
@@ -5468,7 +5468,7 @@
     "name": "川内村",
     "city": "川内村",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "village",
     "kana": "ｶﾜｳﾁﾑﾗ"
   },
@@ -5481,7 +5481,7 @@
     "name": "大熊町",
     "city": "大熊町",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "town",
     "kana": "ｵｵｸﾏﾏﾁ"
   },
@@ -5494,7 +5494,7 @@
     "name": "双葉町",
     "city": "双葉町",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "town",
     "kana": "ﾌﾀﾊﾞﾏﾁ"
   },
@@ -5507,7 +5507,7 @@
     "name": "浪江町",
     "city": "浪江町",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "town",
     "kana": "ﾅﾐｴﾏﾁ"
   },
@@ -5520,7 +5520,7 @@
     "name": "葛尾村",
     "city": "葛尾村",
     "ward": null,
-    "county": null,
+    "county": "双葉郡",
     "entity_type": "village",
     "kana": "ｶﾂﾗｵﾑﾗ"
   },
@@ -5533,7 +5533,7 @@
     "name": "新地町",
     "city": "新地町",
     "ward": null,
-    "county": null,
+    "county": "相馬郡",
     "entity_type": "town",
     "kana": "ｼﾝﾁﾏﾁ"
   },
@@ -5546,7 +5546,7 @@
     "name": "飯舘村",
     "city": "飯舘村",
     "ward": null,
-    "county": null,
+    "county": "相馬郡",
     "entity_type": "village",
     "kana": "ｲｲﾀﾃﾑﾗ"
   },
@@ -5975,7 +5975,7 @@
     "name": "茨城町",
     "city": "茨城町",
     "ward": null,
-    "county": null,
+    "county": "東茨城郡",
     "entity_type": "town",
     "kana": "ｲﾊﾞﾗｷﾏﾁ"
   },
@@ -5988,7 +5988,7 @@
     "name": "大洗町",
     "city": "大洗町",
     "ward": null,
-    "county": null,
+    "county": "東茨城郡",
     "entity_type": "town",
     "kana": "ｵｵｱﾗｲﾏﾁ"
   },
@@ -6001,7 +6001,7 @@
     "name": "城里町",
     "city": "城里町",
     "ward": null,
-    "county": null,
+    "county": "東茨城郡",
     "entity_type": "town",
     "kana": "ｼﾛｻﾄﾏﾁ"
   },
@@ -6014,7 +6014,7 @@
     "name": "東海村",
     "city": "東海村",
     "ward": null,
-    "county": null,
+    "county": "那珂郡",
     "entity_type": "village",
     "kana": "ﾄｳｶｲﾑﾗ"
   },
@@ -6027,7 +6027,7 @@
     "name": "大子町",
     "city": "大子町",
     "ward": null,
-    "county": null,
+    "county": "久慈郡",
     "entity_type": "town",
     "kana": "ﾀﾞｲｺﾞﾏﾁ"
   },
@@ -6040,7 +6040,7 @@
     "name": "美浦村",
     "city": "美浦村",
     "ward": null,
-    "county": null,
+    "county": "稲敷郡",
     "entity_type": "village",
     "kana": "ﾐﾎﾑﾗ"
   },
@@ -6053,7 +6053,7 @@
     "name": "阿見町",
     "city": "阿見町",
     "ward": null,
-    "county": null,
+    "county": "稲敷郡",
     "entity_type": "town",
     "kana": "ｱﾐﾏﾁ"
   },
@@ -6066,7 +6066,7 @@
     "name": "河内町",
     "city": "河内町",
     "ward": null,
-    "county": null,
+    "county": "稲敷郡",
     "entity_type": "town",
     "kana": "ｶﾜﾁﾏﾁ"
   },
@@ -6079,7 +6079,7 @@
     "name": "八千代町",
     "city": "八千代町",
     "ward": null,
-    "county": null,
+    "county": "結城郡",
     "entity_type": "town",
     "kana": "ﾔﾁﾖﾏﾁ"
   },
@@ -6092,7 +6092,7 @@
     "name": "五霞町",
     "city": "五霞町",
     "ward": null,
-    "county": null,
+    "county": "猿島郡",
     "entity_type": "town",
     "kana": "ｺﾞｶﾏﾁ"
   },
@@ -6105,7 +6105,7 @@
     "name": "境町",
     "city": "境町",
     "ward": null,
-    "county": null,
+    "county": "猿島郡",
     "entity_type": "town",
     "kana": "ｻｶｲﾏﾁ"
   },
@@ -6118,7 +6118,7 @@
     "name": "利根町",
     "city": "利根町",
     "ward": null,
-    "county": null,
+    "county": "北相馬郡",
     "entity_type": "town",
     "kana": "ﾄﾈﾏﾁ"
   },
@@ -6313,7 +6313,7 @@
     "name": "上三川町",
     "city": "上三川町",
     "ward": null,
-    "county": null,
+    "county": "河内郡",
     "entity_type": "town",
     "kana": "ｶﾐﾉｶﾜﾏﾁ"
   },
@@ -6326,7 +6326,7 @@
     "name": "益子町",
     "city": "益子町",
     "ward": null,
-    "county": null,
+    "county": "芳賀郡",
     "entity_type": "town",
     "kana": "ﾏｼｺﾏﾁ"
   },
@@ -6339,7 +6339,7 @@
     "name": "茂木町",
     "city": "茂木町",
     "ward": null,
-    "county": null,
+    "county": "芳賀郡",
     "entity_type": "town",
     "kana": "ﾓﾃｷﾞﾏﾁ"
   },
@@ -6352,7 +6352,7 @@
     "name": "市貝町",
     "city": "市貝町",
     "ward": null,
-    "county": null,
+    "county": "芳賀郡",
     "entity_type": "town",
     "kana": "ｲﾁｶｲﾏﾁ"
   },
@@ -6365,7 +6365,7 @@
     "name": "芳賀町",
     "city": "芳賀町",
     "ward": null,
-    "county": null,
+    "county": "芳賀郡",
     "entity_type": "town",
     "kana": "ﾊｶﾞﾏﾁ"
   },
@@ -6378,7 +6378,7 @@
     "name": "壬生町",
     "city": "壬生町",
     "ward": null,
-    "county": null,
+    "county": "下都賀郡",
     "entity_type": "town",
     "kana": "ﾐﾌﾞﾏﾁ"
   },
@@ -6391,7 +6391,7 @@
     "name": "野木町",
     "city": "野木町",
     "ward": null,
-    "county": null,
+    "county": "下都賀郡",
     "entity_type": "town",
     "kana": "ﾉｷﾞﾏﾁ"
   },
@@ -6404,7 +6404,7 @@
     "name": "塩谷町",
     "city": "塩谷町",
     "ward": null,
-    "county": null,
+    "county": "塩谷郡",
     "entity_type": "town",
     "kana": "ｼｵﾔﾏﾁ"
   },
@@ -6417,7 +6417,7 @@
     "name": "高根沢町",
     "city": "高根沢町",
     "ward": null,
-    "county": null,
+    "county": "塩谷郡",
     "entity_type": "town",
     "kana": "ﾀｶﾈｻﾞﾜﾏﾁ"
   },
@@ -6430,7 +6430,7 @@
     "name": "那須町",
     "city": "那須町",
     "ward": null,
-    "county": null,
+    "county": "那須郡",
     "entity_type": "town",
     "kana": "ﾅｽﾏﾁ"
   },
@@ -6443,7 +6443,7 @@
     "name": "那珂川町",
     "city": "那珂川町",
     "ward": null,
-    "county": null,
+    "county": "那須郡",
     "entity_type": "town",
     "kana": "ﾅｶｶﾞﾜﾏﾁ"
   },
@@ -6612,7 +6612,7 @@
     "name": "榛東村",
     "city": "榛東村",
     "ward": null,
-    "county": null,
+    "county": "北群馬郡",
     "entity_type": "village",
     "kana": "ｼﾝﾄｳﾑﾗ"
   },
@@ -6625,7 +6625,7 @@
     "name": "吉岡町",
     "city": "吉岡町",
     "ward": null,
-    "county": null,
+    "county": "北群馬郡",
     "entity_type": "town",
     "kana": "ﾖｼｵｶﾏﾁ"
   },
@@ -6638,7 +6638,7 @@
     "name": "上野村",
     "city": "上野村",
     "ward": null,
-    "county": null,
+    "county": "多野郡",
     "entity_type": "village",
     "kana": "ｳｴﾉﾑﾗ"
   },
@@ -6651,7 +6651,7 @@
     "name": "神流町",
     "city": "神流町",
     "ward": null,
-    "county": null,
+    "county": "多野郡",
     "entity_type": "town",
     "kana": "ｶﾝﾅﾏﾁ"
   },
@@ -6664,7 +6664,7 @@
     "name": "下仁田町",
     "city": "下仁田町",
     "ward": null,
-    "county": null,
+    "county": "甘楽郡",
     "entity_type": "town",
     "kana": "ｼﾓﾆﾀﾏﾁ"
   },
@@ -6677,7 +6677,7 @@
     "name": "南牧村",
     "city": "南牧村",
     "ward": null,
-    "county": null,
+    "county": "甘楽郡",
     "entity_type": "village",
     "kana": "ﾅﾝﾓｸﾑﾗ"
   },
@@ -6690,7 +6690,7 @@
     "name": "甘楽町",
     "city": "甘楽町",
     "ward": null,
-    "county": null,
+    "county": "甘楽郡",
     "entity_type": "town",
     "kana": "ｶﾝﾗﾏﾁ"
   },
@@ -6703,7 +6703,7 @@
     "name": "中之条町",
     "city": "中之条町",
     "ward": null,
-    "county": null,
+    "county": "吾妻郡",
     "entity_type": "town",
     "kana": "ﾅｶﾉｼﾞﾖｳﾏﾁ"
   },
@@ -6716,7 +6716,7 @@
     "name": "長野原町",
     "city": "長野原町",
     "ward": null,
-    "county": null,
+    "county": "吾妻郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞﾉﾊﾗﾏﾁ"
   },
@@ -6729,7 +6729,7 @@
     "name": "嬬恋村",
     "city": "嬬恋村",
     "ward": null,
-    "county": null,
+    "county": "吾妻郡",
     "entity_type": "village",
     "kana": "ﾂﾏｺﾞｲﾑﾗ"
   },
@@ -6742,7 +6742,7 @@
     "name": "草津町",
     "city": "草津町",
     "ward": null,
-    "county": null,
+    "county": "吾妻郡",
     "entity_type": "town",
     "kana": "ｸｻﾂﾏﾁ"
   },
@@ -6755,7 +6755,7 @@
     "name": "高山村",
     "city": "高山村",
     "ward": null,
-    "county": null,
+    "county": "吾妻郡",
     "entity_type": "village",
     "kana": "ﾀｶﾔﾏﾑﾗ"
   },
@@ -6768,7 +6768,7 @@
     "name": "東吾妻町",
     "city": "東吾妻町",
     "ward": null,
-    "county": null,
+    "county": "吾妻郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｱｶﾞﾂﾏﾏﾁ"
   },
@@ -6781,7 +6781,7 @@
     "name": "片品村",
     "city": "片品村",
     "ward": null,
-    "county": null,
+    "county": "利根郡",
     "entity_type": "village",
     "kana": "ｶﾀｼﾅﾑﾗ"
   },
@@ -6794,7 +6794,7 @@
     "name": "川場村",
     "city": "川場村",
     "ward": null,
-    "county": null,
+    "county": "利根郡",
     "entity_type": "village",
     "kana": "ｶﾜﾊﾞﾑﾗ"
   },
@@ -6807,7 +6807,7 @@
     "name": "昭和村",
     "city": "昭和村",
     "ward": null,
-    "county": null,
+    "county": "利根郡",
     "entity_type": "village",
     "kana": "ｼｮｳﾜﾑﾗ"
   },
@@ -6820,7 +6820,7 @@
     "name": "みなかみ町",
     "city": "みなかみ町",
     "ward": null,
-    "county": null,
+    "county": "利根郡",
     "entity_type": "town",
     "kana": "ﾐﾅｶﾐﾏﾁ"
   },
@@ -6833,7 +6833,7 @@
     "name": "玉村町",
     "city": "玉村町",
     "ward": null,
-    "county": null,
+    "county": "佐波郡",
     "entity_type": "town",
     "kana": "ﾀﾏﾑﾗﾏﾁ"
   },
@@ -6846,7 +6846,7 @@
     "name": "板倉町",
     "city": "板倉町",
     "ward": null,
-    "county": null,
+    "county": "邑楽郡",
     "entity_type": "town",
     "kana": "ｲﾀｸﾗﾏﾁ"
   },
@@ -6859,7 +6859,7 @@
     "name": "明和町",
     "city": "明和町",
     "ward": null,
-    "county": null,
+    "county": "邑楽郡",
     "entity_type": "town",
     "kana": "ﾒｲﾜﾏﾁ"
   },
@@ -6872,7 +6872,7 @@
     "name": "千代田町",
     "city": "千代田町",
     "ward": null,
-    "county": null,
+    "county": "邑楽郡",
     "entity_type": "town",
     "kana": "ﾁﾖﾀﾞﾏﾁ"
   },
@@ -6885,7 +6885,7 @@
     "name": "大泉町",
     "city": "大泉町",
     "ward": null,
-    "county": null,
+    "county": "邑楽郡",
     "entity_type": "town",
     "kana": "ｵｵｲｽﾞﾐﾏﾁ"
   },
@@ -6898,7 +6898,7 @@
     "name": "邑楽町",
     "city": "邑楽町",
     "ward": null,
-    "county": null,
+    "county": "邑楽郡",
     "entity_type": "town",
     "kana": "ｵｳﾗﾏﾁ"
   },
@@ -7561,7 +7561,7 @@
     "name": "伊奈町",
     "city": "伊奈町",
     "ward": null,
-    "county": null,
+    "county": "北足立郡",
     "entity_type": "town",
     "kana": "ｲﾅﾏﾁ"
   },
@@ -7574,7 +7574,7 @@
     "name": "三芳町",
     "city": "三芳町",
     "ward": null,
-    "county": null,
+    "county": "入間郡",
     "entity_type": "town",
     "kana": "ﾐﾖｼﾏﾁ"
   },
@@ -7587,7 +7587,7 @@
     "name": "毛呂山町",
     "city": "毛呂山町",
     "ward": null,
-    "county": null,
+    "county": "入間郡",
     "entity_type": "town",
     "kana": "ﾓﾛﾔﾏﾏﾁ"
   },
@@ -7600,7 +7600,7 @@
     "name": "越生町",
     "city": "越生町",
     "ward": null,
-    "county": null,
+    "county": "入間郡",
     "entity_type": "town",
     "kana": "ｵｺﾞｾﾏﾁ"
   },
@@ -7613,7 +7613,7 @@
     "name": "滑川町",
     "city": "滑川町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ﾅﾒｶﾞﾜﾏﾁ"
   },
@@ -7626,7 +7626,7 @@
     "name": "嵐山町",
     "city": "嵐山町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ﾗﾝｻﾞﾝﾏﾁ"
   },
@@ -7639,7 +7639,7 @@
     "name": "小川町",
     "city": "小川町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ｵｶﾞﾜﾏﾁ"
   },
@@ -7652,7 +7652,7 @@
     "name": "川島町",
     "city": "川島町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ｶﾜｼﾞﾏﾏﾁ"
   },
@@ -7665,7 +7665,7 @@
     "name": "吉見町",
     "city": "吉見町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ﾖｼﾐﾏﾁ"
   },
@@ -7678,7 +7678,7 @@
     "name": "鳩山町",
     "city": "鳩山町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ﾊﾄﾔﾏﾏﾁ"
   },
@@ -7691,7 +7691,7 @@
     "name": "ときがわ町",
     "city": "ときがわ町",
     "ward": null,
-    "county": null,
+    "county": "比企郡",
     "entity_type": "town",
     "kana": "ﾄｷｶﾞﾜﾏﾁ"
   },
@@ -7704,7 +7704,7 @@
     "name": "横瀬町",
     "city": "横瀬町",
     "ward": null,
-    "county": null,
+    "county": "秩父郡",
     "entity_type": "town",
     "kana": "ﾖｺｾﾞﾏﾁ"
   },
@@ -7717,7 +7717,7 @@
     "name": "皆野町",
     "city": "皆野町",
     "ward": null,
-    "county": null,
+    "county": "秩父郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾉﾏﾁ"
   },
@@ -7730,7 +7730,7 @@
     "name": "長瀞町",
     "city": "長瀞町",
     "ward": null,
-    "county": null,
+    "county": "秩父郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞﾄﾛﾏﾁ"
   },
@@ -7743,7 +7743,7 @@
     "name": "小鹿野町",
     "city": "小鹿野町",
     "ward": null,
-    "county": null,
+    "county": "秩父郡",
     "entity_type": "town",
     "kana": "ｵｶﾞﾉﾏﾁ"
   },
@@ -7756,7 +7756,7 @@
     "name": "東秩父村",
     "city": "東秩父村",
     "ward": null,
-    "county": null,
+    "county": "秩父郡",
     "entity_type": "village",
     "kana": "ﾋｶﾞｼﾁﾁﾌﾞﾑﾗ"
   },
@@ -7769,7 +7769,7 @@
     "name": "美里町",
     "city": "美里町",
     "ward": null,
-    "county": null,
+    "county": "児玉郡",
     "entity_type": "town",
     "kana": "ﾐｻﾄﾏﾁ"
   },
@@ -7782,7 +7782,7 @@
     "name": "神川町",
     "city": "神川町",
     "ward": null,
-    "county": null,
+    "county": "児玉郡",
     "entity_type": "town",
     "kana": "ｶﾐｶﾜﾏﾁ"
   },
@@ -7795,7 +7795,7 @@
     "name": "上里町",
     "city": "上里町",
     "ward": null,
-    "county": null,
+    "county": "児玉郡",
     "entity_type": "town",
     "kana": "ｶﾐｻﾄﾏﾁ"
   },
@@ -7808,7 +7808,7 @@
     "name": "寄居町",
     "city": "寄居町",
     "ward": null,
-    "county": null,
+    "county": "大里郡",
     "entity_type": "town",
     "kana": "ﾖﾘｲﾏﾁ"
   },
@@ -7821,7 +7821,7 @@
     "name": "宮代町",
     "city": "宮代町",
     "ward": null,
-    "county": null,
+    "county": "南埼玉郡",
     "entity_type": "town",
     "kana": "ﾐﾔｼﾛﾏﾁ"
   },
@@ -7834,7 +7834,7 @@
     "name": "杉戸町",
     "city": "杉戸町",
     "ward": null,
-    "county": null,
+    "county": "北葛飾郡",
     "entity_type": "town",
     "kana": "ｽｷﾞﾄﾏﾁ"
   },
@@ -7847,7 +7847,7 @@
     "name": "松伏町",
     "city": "松伏町",
     "ward": null,
-    "county": null,
+    "county": "北葛飾郡",
     "entity_type": "town",
     "kana": "ﾏﾂﾌﾞｼﾏﾁ"
   },
@@ -8419,7 +8419,7 @@
     "name": "酒々井町",
     "city": "酒々井町",
     "ward": null,
-    "county": null,
+    "county": "印旛郡",
     "entity_type": "town",
     "kana": "ｼｽｲﾏﾁ"
   },
@@ -8432,7 +8432,7 @@
     "name": "栄町",
     "city": "栄町",
     "ward": null,
-    "county": null,
+    "county": "印旛郡",
     "entity_type": "town",
     "kana": "ｻｶｴﾏﾁ"
   },
@@ -8445,7 +8445,7 @@
     "name": "神崎町",
     "city": "神崎町",
     "ward": null,
-    "county": null,
+    "county": "香取郡",
     "entity_type": "town",
     "kana": "ｺｳｻﾞｷﾏﾁ"
   },
@@ -8458,7 +8458,7 @@
     "name": "多古町",
     "city": "多古町",
     "ward": null,
-    "county": null,
+    "county": "香取郡",
     "entity_type": "town",
     "kana": "ﾀｺﾏﾁ"
   },
@@ -8471,7 +8471,7 @@
     "name": "東庄町",
     "city": "東庄町",
     "ward": null,
-    "county": null,
+    "county": "香取郡",
     "entity_type": "town",
     "kana": "ﾄｳﾉｼｮｳﾏﾁ"
   },
@@ -8484,7 +8484,7 @@
     "name": "九十九里町",
     "city": "九十九里町",
     "ward": null,
-    "county": null,
+    "county": "山武郡",
     "entity_type": "town",
     "kana": "ｸｼﾞﾕｳｸﾘﾏﾁ"
   },
@@ -8497,7 +8497,7 @@
     "name": "芝山町",
     "city": "芝山町",
     "ward": null,
-    "county": null,
+    "county": "山武郡",
     "entity_type": "town",
     "kana": "ｼﾊﾞﾔﾏﾏﾁ"
   },
@@ -8510,7 +8510,7 @@
     "name": "横芝光町",
     "city": "横芝光町",
     "ward": null,
-    "county": null,
+    "county": "山武郡",
     "entity_type": "town",
     "kana": "ﾖｺｼﾊﾞﾋｶﾘﾏﾁ"
   },
@@ -8523,7 +8523,7 @@
     "name": "一宮町",
     "city": "一宮町",
     "ward": null,
-    "county": null,
+    "county": "長生郡",
     "entity_type": "town",
     "kana": "ｲﾁﾉﾐﾔﾏﾁ"
   },
@@ -8536,7 +8536,7 @@
     "name": "睦沢町",
     "city": "睦沢町",
     "ward": null,
-    "county": null,
+    "county": "長生郡",
     "entity_type": "town",
     "kana": "ﾑﾂｻﾞﾜﾏﾁ"
   },
@@ -8549,7 +8549,7 @@
     "name": "長生村",
     "city": "長生村",
     "ward": null,
-    "county": null,
+    "county": "長生郡",
     "entity_type": "village",
     "kana": "ﾁｮｳｾｲﾑﾗ"
   },
@@ -8562,7 +8562,7 @@
     "name": "白子町",
     "city": "白子町",
     "ward": null,
-    "county": null,
+    "county": "長生郡",
     "entity_type": "town",
     "kana": "ｼﾗｺﾏﾁ"
   },
@@ -8575,7 +8575,7 @@
     "name": "長柄町",
     "city": "長柄町",
     "ward": null,
-    "county": null,
+    "county": "長生郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞﾗﾏﾁ"
   },
@@ -8588,7 +8588,7 @@
     "name": "長南町",
     "city": "長南町",
     "ward": null,
-    "county": null,
+    "county": "長生郡",
     "entity_type": "town",
     "kana": "ﾁｮｳﾅﾝﾏﾁ"
   },
@@ -8601,7 +8601,7 @@
     "name": "大多喜町",
     "city": "大多喜町",
     "ward": null,
-    "county": null,
+    "county": "夷隅郡",
     "entity_type": "town",
     "kana": "ｵｵﾀｷﾏﾁ"
   },
@@ -8614,7 +8614,7 @@
     "name": "御宿町",
     "city": "御宿町",
     "ward": null,
-    "county": null,
+    "county": "夷隅郡",
     "entity_type": "town",
     "kana": "ｵﾝｼﾞﾕｸﾏﾁ"
   },
@@ -8627,7 +8627,7 @@
     "name": "鋸南町",
     "city": "鋸南町",
     "ward": null,
-    "county": null,
+    "county": "安房郡",
     "entity_type": "town",
     "kana": "ｷﾖﾅﾝﾏﾁ"
   },
@@ -9277,7 +9277,7 @@
     "name": "瑞穂町",
     "city": "瑞穂町",
     "ward": null,
-    "county": null,
+    "county": "西多摩郡",
     "entity_type": "town",
     "kana": "ﾐｽﾞﾎﾏﾁ"
   },
@@ -9290,7 +9290,7 @@
     "name": "日の出町",
     "city": "日の出町",
     "ward": null,
-    "county": null,
+    "county": "西多摩郡",
     "entity_type": "town",
     "kana": "ﾋﾉﾃﾞﾏﾁ"
   },
@@ -9303,7 +9303,7 @@
     "name": "檜原村",
     "city": "檜原村",
     "ward": null,
-    "county": null,
+    "county": "西多摩郡",
     "entity_type": "village",
     "kana": "ﾋﾉﾊﾗﾑﾗ"
   },
@@ -9316,7 +9316,7 @@
     "name": "奥多摩町",
     "city": "奥多摩町",
     "ward": null,
-    "county": null,
+    "county": "西多摩郡",
     "entity_type": "town",
     "kana": "ｵｸﾀﾏﾏﾁ"
   },
@@ -10057,7 +10057,7 @@
     "name": "葉山町",
     "city": "葉山町",
     "ward": null,
-    "county": null,
+    "county": "三浦郡",
     "entity_type": "town",
     "kana": "ﾊﾔﾏﾏﾁ"
   },
@@ -10070,7 +10070,7 @@
     "name": "寒川町",
     "city": "寒川町",
     "ward": null,
-    "county": null,
+    "county": "高座郡",
     "entity_type": "town",
     "kana": "ｻﾑｶﾜﾏﾁ"
   },
@@ -10083,7 +10083,7 @@
     "name": "大磯町",
     "city": "大磯町",
     "ward": null,
-    "county": null,
+    "county": "中郡",
     "entity_type": "town",
     "kana": "ｵｵｲｿﾏﾁ"
   },
@@ -10096,7 +10096,7 @@
     "name": "二宮町",
     "city": "二宮町",
     "ward": null,
-    "county": null,
+    "county": "中郡",
     "entity_type": "town",
     "kana": "ﾆﾉﾐﾔﾏﾁ"
   },
@@ -10109,7 +10109,7 @@
     "name": "中井町",
     "city": "中井町",
     "ward": null,
-    "county": null,
+    "county": "足柄上郡",
     "entity_type": "town",
     "kana": "ﾅｶｲﾏﾁ"
   },
@@ -10122,7 +10122,7 @@
     "name": "大井町",
     "city": "大井町",
     "ward": null,
-    "county": null,
+    "county": "足柄上郡",
     "entity_type": "town",
     "kana": "ｵｵｲﾏﾁ"
   },
@@ -10135,7 +10135,7 @@
     "name": "松田町",
     "city": "松田町",
     "ward": null,
-    "county": null,
+    "county": "足柄上郡",
     "entity_type": "town",
     "kana": "ﾏﾂﾀﾞﾏﾁ"
   },
@@ -10148,7 +10148,7 @@
     "name": "山北町",
     "city": "山北町",
     "ward": null,
-    "county": null,
+    "county": "足柄上郡",
     "entity_type": "town",
     "kana": "ﾔﾏｷﾀﾏﾁ"
   },
@@ -10161,7 +10161,7 @@
     "name": "開成町",
     "city": "開成町",
     "ward": null,
-    "county": null,
+    "county": "足柄上郡",
     "entity_type": "town",
     "kana": "ｶｲｾｲﾏﾁ"
   },
@@ -10174,7 +10174,7 @@
     "name": "箱根町",
     "city": "箱根町",
     "ward": null,
-    "county": null,
+    "county": "足柄下郡",
     "entity_type": "town",
     "kana": "ﾊｺﾈﾏﾁ"
   },
@@ -10187,7 +10187,7 @@
     "name": "真鶴町",
     "city": "真鶴町",
     "ward": null,
-    "county": null,
+    "county": "足柄下郡",
     "entity_type": "town",
     "kana": "ﾏﾅﾂﾞﾙﾏﾁ"
   },
@@ -10200,7 +10200,7 @@
     "name": "湯河原町",
     "city": "湯河原町",
     "ward": null,
-    "county": null,
+    "county": "足柄下郡",
     "entity_type": "town",
     "kana": "ﾕｶﾞﾜﾗﾏﾁ"
   },
@@ -10213,7 +10213,7 @@
     "name": "愛川町",
     "city": "愛川町",
     "ward": null,
-    "county": null,
+    "county": "愛甲郡",
     "entity_type": "town",
     "kana": "ｱｲｶﾜﾏﾁ"
   },
@@ -10226,7 +10226,7 @@
     "name": "清川村",
     "city": "清川村",
     "ward": null,
-    "county": null,
+    "county": "愛甲郡",
     "entity_type": "village",
     "kana": "ｷﾖｶﾜﾑﾗ"
   },
@@ -10603,7 +10603,7 @@
     "name": "聖籠町",
     "city": "聖籠町",
     "ward": null,
-    "county": null,
+    "county": "北蒲原郡",
     "entity_type": "town",
     "kana": "ｾｲﾛｳﾏﾁ"
   },
@@ -10616,7 +10616,7 @@
     "name": "弥彦村",
     "city": "弥彦村",
     "ward": null,
-    "county": null,
+    "county": "西蒲原郡",
     "entity_type": "village",
     "kana": "ﾔﾋｺﾑﾗ"
   },
@@ -10629,7 +10629,7 @@
     "name": "田上町",
     "city": "田上町",
     "ward": null,
-    "county": null,
+    "county": "南蒲原郡",
     "entity_type": "town",
     "kana": "ﾀｶﾞﾐﾏﾁ"
   },
@@ -10642,7 +10642,7 @@
     "name": "阿賀町",
     "city": "阿賀町",
     "ward": null,
-    "county": null,
+    "county": "東蒲原郡",
     "entity_type": "town",
     "kana": "ｱｶﾞﾏﾁ"
   },
@@ -10655,7 +10655,7 @@
     "name": "出雲崎町",
     "city": "出雲崎町",
     "ward": null,
-    "county": null,
+    "county": "三島郡",
     "entity_type": "town",
     "kana": "ｲｽﾞﾓｻﾞｷﾏﾁ"
   },
@@ -10668,7 +10668,7 @@
     "name": "湯沢町",
     "city": "湯沢町",
     "ward": null,
-    "county": null,
+    "county": "南魚沼郡",
     "entity_type": "town",
     "kana": "ﾕｻﾞﾜﾏﾁ"
   },
@@ -10681,7 +10681,7 @@
     "name": "津南町",
     "city": "津南町",
     "ward": null,
-    "county": null,
+    "county": "中魚沼郡",
     "entity_type": "town",
     "kana": "ﾂﾅﾝﾏﾁ"
   },
@@ -10694,7 +10694,7 @@
     "name": "刈羽村",
     "city": "刈羽村",
     "ward": null,
-    "county": null,
+    "county": "刈羽郡",
     "entity_type": "village",
     "kana": "ｶﾘﾜﾑﾗ"
   },
@@ -10707,7 +10707,7 @@
     "name": "関川村",
     "city": "関川村",
     "ward": null,
-    "county": null,
+    "county": "岩船郡",
     "entity_type": "village",
     "kana": "ｾｷｶﾜﾑﾗ"
   },
@@ -10720,7 +10720,7 @@
     "name": "粟島浦村",
     "city": "粟島浦村",
     "ward": null,
-    "county": null,
+    "county": "岩船郡",
     "entity_type": "village",
     "kana": "ｱﾜｼﾏｳﾗﾑﾗ"
   },
@@ -10863,7 +10863,7 @@
     "name": "舟橋村",
     "city": "舟橋村",
     "ward": null,
-    "county": null,
+    "county": "中新川郡",
     "entity_type": "village",
     "kana": "ﾌﾅﾊｼﾑﾗ"
   },
@@ -10876,7 +10876,7 @@
     "name": "上市町",
     "city": "上市町",
     "ward": null,
-    "county": null,
+    "county": "中新川郡",
     "entity_type": "town",
     "kana": "ｶﾐｲﾁﾏﾁ"
   },
@@ -10889,7 +10889,7 @@
     "name": "立山町",
     "city": "立山町",
     "ward": null,
-    "county": null,
+    "county": "中新川郡",
     "entity_type": "town",
     "kana": "ﾀﾃﾔﾏﾏﾁ"
   },
@@ -10902,7 +10902,7 @@
     "name": "入善町",
     "city": "入善町",
     "ward": null,
-    "county": null,
+    "county": "下新川郡",
     "entity_type": "town",
     "kana": "ﾆｭｳｾﾞﾝﾏﾁ"
   },
@@ -10915,7 +10915,7 @@
     "name": "朝日町",
     "city": "朝日町",
     "ward": null,
-    "county": null,
+    "county": "下新川郡",
     "entity_type": "town",
     "kana": "ｱｻﾋﾏﾁ"
   },
@@ -11071,7 +11071,7 @@
     "name": "川北町",
     "city": "川北町",
     "ward": null,
-    "county": null,
+    "county": "能美郡",
     "entity_type": "town",
     "kana": "ｶﾜｷﾀﾏﾁ"
   },
@@ -11084,7 +11084,7 @@
     "name": "津幡町",
     "city": "津幡町",
     "ward": null,
-    "county": null,
+    "county": "河北郡",
     "entity_type": "town",
     "kana": "ﾂﾊﾞﾀﾏﾁ"
   },
@@ -11097,7 +11097,7 @@
     "name": "内灘町",
     "city": "内灘町",
     "ward": null,
-    "county": null,
+    "county": "河北郡",
     "entity_type": "town",
     "kana": "ｳﾁﾅﾀﾞﾏﾁ"
   },
@@ -11110,7 +11110,7 @@
     "name": "志賀町",
     "city": "志賀町",
     "ward": null,
-    "county": null,
+    "county": "羽咋郡",
     "entity_type": "town",
     "kana": "ｼｶﾏﾁ"
   },
@@ -11123,7 +11123,7 @@
     "name": "宝達志水町",
     "city": "宝達志水町",
     "ward": null,
-    "county": null,
+    "county": "羽咋郡",
     "entity_type": "town",
     "kana": "ﾎｳﾀﾞﾂｼﾐｽﾞﾁｮｳ"
   },
@@ -11136,7 +11136,7 @@
     "name": "中能登町",
     "city": "中能登町",
     "ward": null,
-    "county": null,
+    "county": "鹿島郡",
     "entity_type": "town",
     "kana": "ﾅｶﾉﾄﾏﾁ"
   },
@@ -11149,7 +11149,7 @@
     "name": "穴水町",
     "city": "穴水町",
     "ward": null,
-    "county": null,
+    "county": "鳳珠郡",
     "entity_type": "town",
     "kana": "ｱﾅﾐｽﾞﾏﾁ"
   },
@@ -11162,7 +11162,7 @@
     "name": "能登町",
     "city": "能登町",
     "ward": null,
-    "county": null,
+    "county": "鳳珠郡",
     "entity_type": "town",
     "kana": "ﾉﾄﾁｮｳ"
   },
@@ -11292,7 +11292,7 @@
     "name": "永平寺町",
     "city": "永平寺町",
     "ward": null,
-    "county": null,
+    "county": "吉田郡",
     "entity_type": "town",
     "kana": "ｴｲﾍｲｼﾞﾁｮｳ"
   },
@@ -11305,7 +11305,7 @@
     "name": "池田町",
     "city": "池田町",
     "ward": null,
-    "county": null,
+    "county": "今立郡",
     "entity_type": "town",
     "kana": "ｲｹﾀﾞﾁｮｳ"
   },
@@ -11318,7 +11318,7 @@
     "name": "南越前町",
     "city": "南越前町",
     "ward": null,
-    "county": null,
+    "county": "南条郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｴﾁｾﾞﾝﾁｮｳ"
   },
@@ -11331,7 +11331,7 @@
     "name": "越前町",
     "city": "越前町",
     "ward": null,
-    "county": null,
+    "county": "丹生郡",
     "entity_type": "town",
     "kana": "ｴﾁｾﾞﾝﾁｮｳ"
   },
@@ -11344,7 +11344,7 @@
     "name": "美浜町",
     "city": "美浜町",
     "ward": null,
-    "county": null,
+    "county": "三方郡",
     "entity_type": "town",
     "kana": "ﾐﾊﾏﾁｮｳ"
   },
@@ -11357,7 +11357,7 @@
     "name": "高浜町",
     "city": "高浜町",
     "ward": null,
-    "county": null,
+    "county": "大飯郡",
     "entity_type": "town",
     "kana": "ﾀｶﾊﾏﾁｮｳ"
   },
@@ -11370,7 +11370,7 @@
     "name": "おおい町",
     "city": "おおい町",
     "ward": null,
-    "county": null,
+    "county": "大飯郡",
     "entity_type": "town",
     "kana": "ｵｵｲﾁｮｳ"
   },
@@ -11383,7 +11383,7 @@
     "name": "若狭町",
     "city": "若狭町",
     "ward": null,
-    "county": null,
+    "county": "三方上中郡",
     "entity_type": "town",
     "kana": "ﾜｶｻﾁｮｳ"
   },
@@ -11565,7 +11565,7 @@
     "name": "市川三郷町",
     "city": "市川三郷町",
     "ward": null,
-    "county": null,
+    "county": "西八代郡",
     "entity_type": "town",
     "kana": "ｲﾁｶﾜﾐｻﾄﾁｮｳ"
   },
@@ -11578,7 +11578,7 @@
     "name": "早川町",
     "city": "早川町",
     "ward": null,
-    "county": null,
+    "county": "南巨摩郡",
     "entity_type": "town",
     "kana": "ﾊﾔｶﾜﾁｮｳ"
   },
@@ -11591,7 +11591,7 @@
     "name": "身延町",
     "city": "身延町",
     "ward": null,
-    "county": null,
+    "county": "南巨摩郡",
     "entity_type": "town",
     "kana": "ﾐﾉﾌﾞﾁｮｳ"
   },
@@ -11604,7 +11604,7 @@
     "name": "南部町",
     "city": "南部町",
     "ward": null,
-    "county": null,
+    "county": "南巨摩郡",
     "entity_type": "town",
     "kana": "ﾅﾝﾌﾞﾁｮｳ"
   },
@@ -11617,7 +11617,7 @@
     "name": "富士川町",
     "city": "富士川町",
     "ward": null,
-    "county": null,
+    "county": "南巨摩郡",
     "entity_type": "town",
     "kana": "ﾌｼﾞｶﾜﾁｮｳ"
   },
@@ -11630,7 +11630,7 @@
     "name": "昭和町",
     "city": "昭和町",
     "ward": null,
-    "county": null,
+    "county": "中巨摩郡",
     "entity_type": "town",
     "kana": "ｼｮｳﾜﾁｮｳ"
   },
@@ -11643,7 +11643,7 @@
     "name": "道志村",
     "city": "道志村",
     "ward": null,
-    "county": null,
+    "county": "南都留郡",
     "entity_type": "village",
     "kana": "ﾄﾞｳｼﾑﾗ"
   },
@@ -11656,7 +11656,7 @@
     "name": "西桂町",
     "city": "西桂町",
     "ward": null,
-    "county": null,
+    "county": "南都留郡",
     "entity_type": "town",
     "kana": "ﾆｼｶﾂﾗﾁｮｳ"
   },
@@ -11669,7 +11669,7 @@
     "name": "忍野村",
     "city": "忍野村",
     "ward": null,
-    "county": null,
+    "county": "南都留郡",
     "entity_type": "village",
     "kana": "ｵｼﾉﾑﾗ"
   },
@@ -11682,7 +11682,7 @@
     "name": "山中湖村",
     "city": "山中湖村",
     "ward": null,
-    "county": null,
+    "county": "南都留郡",
     "entity_type": "village",
     "kana": "ﾔﾏﾅｶｺﾑﾗ"
   },
@@ -11695,7 +11695,7 @@
     "name": "鳴沢村",
     "city": "鳴沢村",
     "ward": null,
-    "county": null,
+    "county": "南都留郡",
     "entity_type": "village",
     "kana": "ﾅﾙｻﾜﾑﾗ"
   },
@@ -11708,7 +11708,7 @@
     "name": "富士河口湖町",
     "city": "富士河口湖町",
     "ward": null,
-    "county": null,
+    "county": "南都留郡",
     "entity_type": "town",
     "kana": "ﾌｼﾞｶﾜｸﾞﾁｺﾏﾁ"
   },
@@ -11721,7 +11721,7 @@
     "name": "小菅村",
     "city": "小菅村",
     "ward": null,
-    "county": null,
+    "county": "北都留郡",
     "entity_type": "village",
     "kana": "ｺｽｹﾞﾑﾗ"
   },
@@ -11734,7 +11734,7 @@
     "name": "丹波山村",
     "city": "丹波山村",
     "ward": null,
-    "county": null,
+    "county": "北都留郡",
     "entity_type": "village",
     "kana": "ﾀﾊﾞﾔﾏﾑﾗ"
   },
@@ -11994,7 +11994,7 @@
     "name": "小海町",
     "city": "小海町",
     "ward": null,
-    "county": null,
+    "county": "南佐久郡",
     "entity_type": "town",
     "kana": "ｺｳﾐﾏﾁ"
   },
@@ -12007,7 +12007,7 @@
     "name": "川上村",
     "city": "川上村",
     "ward": null,
-    "county": null,
+    "county": "南佐久郡",
     "entity_type": "village",
     "kana": "ｶﾜｶﾐﾑﾗ"
   },
@@ -12020,7 +12020,7 @@
     "name": "南牧村",
     "city": "南牧村",
     "ward": null,
-    "county": null,
+    "county": "南佐久郡",
     "entity_type": "village",
     "kana": "ﾐﾅﾐﾏｷﾑﾗ"
   },
@@ -12033,7 +12033,7 @@
     "name": "南相木村",
     "city": "南相木村",
     "ward": null,
-    "county": null,
+    "county": "南佐久郡",
     "entity_type": "village",
     "kana": "ﾐﾅﾐｱｲｷﾑﾗ"
   },
@@ -12046,7 +12046,7 @@
     "name": "北相木村",
     "city": "北相木村",
     "ward": null,
-    "county": null,
+    "county": "南佐久郡",
     "entity_type": "village",
     "kana": "ｷﾀｱｲｷﾑﾗ"
   },
@@ -12059,7 +12059,7 @@
     "name": "佐久穂町",
     "city": "佐久穂町",
     "ward": null,
-    "county": null,
+    "county": "南佐久郡",
     "entity_type": "town",
     "kana": "ｻｸﾎﾏﾁ"
   },
@@ -12072,7 +12072,7 @@
     "name": "軽井沢町",
     "city": "軽井沢町",
     "ward": null,
-    "county": null,
+    "county": "北佐久郡",
     "entity_type": "town",
     "kana": "ｶﾙｲｻﾞﾜﾏﾁ"
   },
@@ -12085,7 +12085,7 @@
     "name": "御代田町",
     "city": "御代田町",
     "ward": null,
-    "county": null,
+    "county": "北佐久郡",
     "entity_type": "town",
     "kana": "ﾐﾖﾀﾏﾁ"
   },
@@ -12098,7 +12098,7 @@
     "name": "立科町",
     "city": "立科町",
     "ward": null,
-    "county": null,
+    "county": "北佐久郡",
     "entity_type": "town",
     "kana": "ﾀﾃｼﾅﾏﾁ"
   },
@@ -12111,7 +12111,7 @@
     "name": "青木村",
     "city": "青木村",
     "ward": null,
-    "county": null,
+    "county": "小県郡",
     "entity_type": "village",
     "kana": "ｱｵｷﾑﾗ"
   },
@@ -12124,7 +12124,7 @@
     "name": "長和町",
     "city": "長和町",
     "ward": null,
-    "county": null,
+    "county": "小県郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞﾜﾏﾁ"
   },
@@ -12137,7 +12137,7 @@
     "name": "下諏訪町",
     "city": "下諏訪町",
     "ward": null,
-    "county": null,
+    "county": "諏訪郡",
     "entity_type": "town",
     "kana": "ｼﾓｽﾜﾏﾁ"
   },
@@ -12150,7 +12150,7 @@
     "name": "富士見町",
     "city": "富士見町",
     "ward": null,
-    "county": null,
+    "county": "諏訪郡",
     "entity_type": "town",
     "kana": "ﾌｼﾞﾐﾏﾁ"
   },
@@ -12163,7 +12163,7 @@
     "name": "原村",
     "city": "原村",
     "ward": null,
-    "county": null,
+    "county": "諏訪郡",
     "entity_type": "village",
     "kana": "ﾊﾗﾑﾗ"
   },
@@ -12176,7 +12176,7 @@
     "name": "辰野町",
     "city": "辰野町",
     "ward": null,
-    "county": null,
+    "county": "上伊那郡",
     "entity_type": "town",
     "kana": "ﾀﾂﾉﾏﾁ"
   },
@@ -12189,7 +12189,7 @@
     "name": "箕輪町",
     "city": "箕輪町",
     "ward": null,
-    "county": null,
+    "county": "上伊那郡",
     "entity_type": "town",
     "kana": "ﾐﾉﾜﾏﾁ"
   },
@@ -12202,7 +12202,7 @@
     "name": "飯島町",
     "city": "飯島町",
     "ward": null,
-    "county": null,
+    "county": "上伊那郡",
     "entity_type": "town",
     "kana": "ｲｲｼﾞﾏﾏﾁ"
   },
@@ -12215,7 +12215,7 @@
     "name": "南箕輪村",
     "city": "南箕輪村",
     "ward": null,
-    "county": null,
+    "county": "上伊那郡",
     "entity_type": "village",
     "kana": "ﾐﾅﾐﾐﾉﾜﾑﾗ"
   },
@@ -12228,7 +12228,7 @@
     "name": "中川村",
     "city": "中川村",
     "ward": null,
-    "county": null,
+    "county": "上伊那郡",
     "entity_type": "village",
     "kana": "ﾅｶｶﾞﾜﾑﾗ"
   },
@@ -12241,7 +12241,7 @@
     "name": "宮田村",
     "city": "宮田村",
     "ward": null,
-    "county": null,
+    "county": "上伊那郡",
     "entity_type": "village",
     "kana": "ﾐﾔﾀﾞﾑﾗ"
   },
@@ -12254,7 +12254,7 @@
     "name": "松川町",
     "city": "松川町",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "town",
     "kana": "ﾏﾂｶﾜﾏﾁ"
   },
@@ -12267,7 +12267,7 @@
     "name": "高森町",
     "city": "高森町",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "town",
     "kana": "ﾀｶﾓﾘﾏﾁ"
   },
@@ -12280,7 +12280,7 @@
     "name": "阿南町",
     "city": "阿南町",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "town",
     "kana": "ｱﾅﾝﾁｮｳ"
   },
@@ -12293,7 +12293,7 @@
     "name": "阿智村",
     "city": "阿智村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ｱﾁﾑﾗ"
   },
@@ -12306,7 +12306,7 @@
     "name": "平谷村",
     "city": "平谷村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ﾋﾗﾔﾑﾗ"
   },
@@ -12319,7 +12319,7 @@
     "name": "根羽村",
     "city": "根羽村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ﾈﾊﾞﾑﾗ"
   },
@@ -12332,7 +12332,7 @@
     "name": "下條村",
     "city": "下條村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ｼﾓｼﾞｮｳﾑﾗ"
   },
@@ -12345,7 +12345,7 @@
     "name": "売木村",
     "city": "売木村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ｳﾙｷﾞﾑﾗ"
   },
@@ -12358,7 +12358,7 @@
     "name": "天龍村",
     "city": "天龍村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ﾃﾝﾘｭｳﾑﾗ"
   },
@@ -12371,7 +12371,7 @@
     "name": "泰阜村",
     "city": "泰阜村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ﾔｽｵｶﾑﾗ"
   },
@@ -12384,7 +12384,7 @@
     "name": "喬木村",
     "city": "喬木村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ﾀｶｷﾞﾑﾗ"
   },
@@ -12397,7 +12397,7 @@
     "name": "豊丘村",
     "city": "豊丘村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ﾄﾖｵｶﾑﾗ"
   },
@@ -12410,7 +12410,7 @@
     "name": "大鹿村",
     "city": "大鹿村",
     "ward": null,
-    "county": null,
+    "county": "下伊那郡",
     "entity_type": "village",
     "kana": "ｵｵｼｶﾑﾗ"
   },
@@ -12423,7 +12423,7 @@
     "name": "上松町",
     "city": "上松町",
     "ward": null,
-    "county": null,
+    "county": "木曽郡",
     "entity_type": "town",
     "kana": "ｱｹﾞﾏﾂﾏﾁ"
   },
@@ -12436,7 +12436,7 @@
     "name": "南木曽町",
     "city": "南木曽町",
     "ward": null,
-    "county": null,
+    "county": "木曽郡",
     "entity_type": "town",
     "kana": "ﾅｷﾞｿﾏﾁ"
   },
@@ -12449,7 +12449,7 @@
     "name": "木祖村",
     "city": "木祖村",
     "ward": null,
-    "county": null,
+    "county": "木曽郡",
     "entity_type": "village",
     "kana": "ｷｿﾑﾗ"
   },
@@ -12462,7 +12462,7 @@
     "name": "王滝村",
     "city": "王滝村",
     "ward": null,
-    "county": null,
+    "county": "木曽郡",
     "entity_type": "village",
     "kana": "ｵｳﾀｷﾑﾗ"
   },
@@ -12475,7 +12475,7 @@
     "name": "大桑村",
     "city": "大桑村",
     "ward": null,
-    "county": null,
+    "county": "木曽郡",
     "entity_type": "village",
     "kana": "ｵｵｸﾜﾑﾗ"
   },
@@ -12488,7 +12488,7 @@
     "name": "木曽町",
     "city": "木曽町",
     "ward": null,
-    "county": null,
+    "county": "木曽郡",
     "entity_type": "town",
     "kana": "ｷｿﾏﾁ"
   },
@@ -12501,7 +12501,7 @@
     "name": "麻績村",
     "city": "麻績村",
     "ward": null,
-    "county": null,
+    "county": "東筑摩郡",
     "entity_type": "village",
     "kana": "ｵﾐﾑﾗ"
   },
@@ -12514,7 +12514,7 @@
     "name": "生坂村",
     "city": "生坂村",
     "ward": null,
-    "county": null,
+    "county": "東筑摩郡",
     "entity_type": "village",
     "kana": "ｲｸｻｶﾑﾗ"
   },
@@ -12527,7 +12527,7 @@
     "name": "山形村",
     "city": "山形村",
     "ward": null,
-    "county": null,
+    "county": "東筑摩郡",
     "entity_type": "village",
     "kana": "ﾔﾏｶﾞﾀﾑﾗ"
   },
@@ -12540,7 +12540,7 @@
     "name": "朝日村",
     "city": "朝日村",
     "ward": null,
-    "county": null,
+    "county": "東筑摩郡",
     "entity_type": "village",
     "kana": "ｱｻﾋﾑﾗ"
   },
@@ -12553,7 +12553,7 @@
     "name": "筑北村",
     "city": "筑北村",
     "ward": null,
-    "county": null,
+    "county": "東筑摩郡",
     "entity_type": "village",
     "kana": "ﾁｸﾎｸﾑﾗ"
   },
@@ -12566,7 +12566,7 @@
     "name": "池田町",
     "city": "池田町",
     "ward": null,
-    "county": null,
+    "county": "北安曇郡",
     "entity_type": "town",
     "kana": "ｲｹﾀﾞﾏﾁ"
   },
@@ -12579,7 +12579,7 @@
     "name": "松川村",
     "city": "松川村",
     "ward": null,
-    "county": null,
+    "county": "北安曇郡",
     "entity_type": "village",
     "kana": "ﾏﾂｶﾜﾑﾗ"
   },
@@ -12592,7 +12592,7 @@
     "name": "白馬村",
     "city": "白馬村",
     "ward": null,
-    "county": null,
+    "county": "北安曇郡",
     "entity_type": "village",
     "kana": "ﾊｸﾊﾞﾑﾗ"
   },
@@ -12605,7 +12605,7 @@
     "name": "小谷村",
     "city": "小谷村",
     "ward": null,
-    "county": null,
+    "county": "北安曇郡",
     "entity_type": "village",
     "kana": "ｵﾀﾘﾑﾗ"
   },
@@ -12618,7 +12618,7 @@
     "name": "坂城町",
     "city": "坂城町",
     "ward": null,
-    "county": null,
+    "county": "埴科郡",
     "entity_type": "town",
     "kana": "ｻｶｷﾏﾁ"
   },
@@ -12631,7 +12631,7 @@
     "name": "小布施町",
     "city": "小布施町",
     "ward": null,
-    "county": null,
+    "county": "上高井郡",
     "entity_type": "town",
     "kana": "ｵﾌﾞｾﾏﾁ"
   },
@@ -12644,7 +12644,7 @@
     "name": "高山村",
     "city": "高山村",
     "ward": null,
-    "county": null,
+    "county": "上高井郡",
     "entity_type": "village",
     "kana": "ﾀｶﾔﾏﾑﾗ"
   },
@@ -12657,7 +12657,7 @@
     "name": "山ノ内町",
     "city": "山ノ内町",
     "ward": null,
-    "county": null,
+    "county": "下高井郡",
     "entity_type": "town",
     "kana": "ﾔﾏﾉｳﾁﾏﾁ"
   },
@@ -12670,7 +12670,7 @@
     "name": "木島平村",
     "city": "木島平村",
     "ward": null,
-    "county": null,
+    "county": "下高井郡",
     "entity_type": "village",
     "kana": "ｷｼﾞﾏﾀﾞｲﾗﾑﾗ"
   },
@@ -12683,7 +12683,7 @@
     "name": "野沢温泉村",
     "city": "野沢温泉村",
     "ward": null,
-    "county": null,
+    "county": "下高井郡",
     "entity_type": "village",
     "kana": "ﾉｻﾞﾜｵﾝｾﾝﾑﾗ"
   },
@@ -12696,7 +12696,7 @@
     "name": "信濃町",
     "city": "信濃町",
     "ward": null,
-    "county": null,
+    "county": "上水内郡",
     "entity_type": "town",
     "kana": "ｼﾅﾉﾏﾁ"
   },
@@ -12709,7 +12709,7 @@
     "name": "小川村",
     "city": "小川村",
     "ward": null,
-    "county": null,
+    "county": "上水内郡",
     "entity_type": "village",
     "kana": "ｵｶﾞﾜﾑﾗ"
   },
@@ -12722,7 +12722,7 @@
     "name": "飯綱町",
     "city": "飯綱町",
     "ward": null,
-    "county": null,
+    "county": "上水内郡",
     "entity_type": "town",
     "kana": "ｲｲﾂﾞﾅﾏﾁ"
   },
@@ -12735,7 +12735,7 @@
     "name": "栄村",
     "city": "栄村",
     "ward": null,
-    "county": null,
+    "county": "下水内郡",
     "entity_type": "village",
     "kana": "ｻｶｴﾑﾗ"
   },
@@ -13021,7 +13021,7 @@
     "name": "岐南町",
     "city": "岐南町",
     "ward": null,
-    "county": null,
+    "county": "羽島郡",
     "entity_type": "town",
     "kana": "ｷﾞﾅﾝﾁｮｳ"
   },
@@ -13034,7 +13034,7 @@
     "name": "笠松町",
     "city": "笠松町",
     "ward": null,
-    "county": null,
+    "county": "羽島郡",
     "entity_type": "town",
     "kana": "ｶｻﾏﾂﾁｮｳ"
   },
@@ -13047,7 +13047,7 @@
     "name": "養老町",
     "city": "養老町",
     "ward": null,
-    "county": null,
+    "county": "養老郡",
     "entity_type": "town",
     "kana": "ﾖｳﾛｳﾁｮｳ"
   },
@@ -13060,7 +13060,7 @@
     "name": "垂井町",
     "city": "垂井町",
     "ward": null,
-    "county": null,
+    "county": "不破郡",
     "entity_type": "town",
     "kana": "ﾀﾙｲﾁｮｳ"
   },
@@ -13073,7 +13073,7 @@
     "name": "関ケ原町",
     "city": "関ケ原町",
     "ward": null,
-    "county": null,
+    "county": "不破郡",
     "entity_type": "town",
     "kana": "ｾｷｶﾞﾊﾗﾁｮｳ"
   },
@@ -13086,7 +13086,7 @@
     "name": "神戸町",
     "city": "神戸町",
     "ward": null,
-    "county": null,
+    "county": "安八郡",
     "entity_type": "town",
     "kana": "ｺﾞｳﾄﾞﾁｮｳ"
   },
@@ -13099,7 +13099,7 @@
     "name": "輪之内町",
     "city": "輪之内町",
     "ward": null,
-    "county": null,
+    "county": "安八郡",
     "entity_type": "town",
     "kana": "ﾜﾉｳﾁﾁｮｳ"
   },
@@ -13112,7 +13112,7 @@
     "name": "安八町",
     "city": "安八町",
     "ward": null,
-    "county": null,
+    "county": "安八郡",
     "entity_type": "town",
     "kana": "ｱﾝﾊﾟﾁﾁｮｳ"
   },
@@ -13125,7 +13125,7 @@
     "name": "揖斐川町",
     "city": "揖斐川町",
     "ward": null,
-    "county": null,
+    "county": "揖斐郡",
     "entity_type": "town",
     "kana": "ｲﾋﾞｶﾞﾜﾁｮｳ"
   },
@@ -13138,7 +13138,7 @@
     "name": "大野町",
     "city": "大野町",
     "ward": null,
-    "county": null,
+    "county": "揖斐郡",
     "entity_type": "town",
     "kana": "ｵｵﾉﾁｮｳ"
   },
@@ -13151,7 +13151,7 @@
     "name": "池田町",
     "city": "池田町",
     "ward": null,
-    "county": null,
+    "county": "揖斐郡",
     "entity_type": "town",
     "kana": "ｲｹﾀﾞﾁｮｳ"
   },
@@ -13164,7 +13164,7 @@
     "name": "北方町",
     "city": "北方町",
     "ward": null,
-    "county": null,
+    "county": "本巣郡",
     "entity_type": "town",
     "kana": "ｷﾀｶﾞﾀﾁｮｳ"
   },
@@ -13177,7 +13177,7 @@
     "name": "坂祝町",
     "city": "坂祝町",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "town",
     "kana": "ｻｶﾎｷﾞﾁｮｳ"
   },
@@ -13190,7 +13190,7 @@
     "name": "富加町",
     "city": "富加町",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "town",
     "kana": "ﾄﾐｶﾁｮｳ"
   },
@@ -13203,7 +13203,7 @@
     "name": "川辺町",
     "city": "川辺町",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "town",
     "kana": "ｶﾜﾍﾞﾁｮｳ"
   },
@@ -13216,7 +13216,7 @@
     "name": "七宗町",
     "city": "七宗町",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "town",
     "kana": "ﾋﾁｿｳﾁｮｳ"
   },
@@ -13229,7 +13229,7 @@
     "name": "八百津町",
     "city": "八百津町",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "town",
     "kana": "ﾔｵﾂﾁｮｳ"
   },
@@ -13242,7 +13242,7 @@
     "name": "白川町",
     "city": "白川町",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "town",
     "kana": "ｼﾗｶﾜﾁｮｳ"
   },
@@ -13255,7 +13255,7 @@
     "name": "東白川村",
     "city": "東白川村",
     "ward": null,
-    "county": null,
+    "county": "加茂郡",
     "entity_type": "village",
     "kana": "ﾋｶﾞｼｼﾗｶﾜﾑﾗ"
   },
@@ -13268,7 +13268,7 @@
     "name": "御嵩町",
     "city": "御嵩町",
     "ward": null,
-    "county": null,
+    "county": "可児郡",
     "entity_type": "town",
     "kana": "ﾐﾀｹﾁｮｳ"
   },
@@ -13281,7 +13281,7 @@
     "name": "白川村",
     "city": "白川村",
     "ward": null,
-    "county": null,
+    "county": "大野郡",
     "entity_type": "village",
     "kana": "ｼﾗｶﾜﾑﾗ"
   },
@@ -13671,7 +13671,7 @@
     "name": "東伊豆町",
     "city": "東伊豆町",
     "ward": null,
-    "county": null,
+    "county": "賀茂郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｲｽﾞﾁｮｳ"
   },
@@ -13684,7 +13684,7 @@
     "name": "河津町",
     "city": "河津町",
     "ward": null,
-    "county": null,
+    "county": "賀茂郡",
     "entity_type": "town",
     "kana": "ｶﾜﾂﾞﾁｮｳ"
   },
@@ -13697,7 +13697,7 @@
     "name": "南伊豆町",
     "city": "南伊豆町",
     "ward": null,
-    "county": null,
+    "county": "賀茂郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｲｽﾞﾁｮｳ"
   },
@@ -13710,7 +13710,7 @@
     "name": "松崎町",
     "city": "松崎町",
     "ward": null,
-    "county": null,
+    "county": "賀茂郡",
     "entity_type": "town",
     "kana": "ﾏﾂｻﾞｷﾁｮｳ"
   },
@@ -13723,7 +13723,7 @@
     "name": "西伊豆町",
     "city": "西伊豆町",
     "ward": null,
-    "county": null,
+    "county": "賀茂郡",
     "entity_type": "town",
     "kana": "ﾆｼｲｽﾞﾁｮｳ"
   },
@@ -13736,7 +13736,7 @@
     "name": "函南町",
     "city": "函南町",
     "ward": null,
-    "county": null,
+    "county": "田方郡",
     "entity_type": "town",
     "kana": "ｶﾝﾅﾐﾁｮｳ"
   },
@@ -13749,7 +13749,7 @@
     "name": "清水町",
     "city": "清水町",
     "ward": null,
-    "county": null,
+    "county": "駿東郡",
     "entity_type": "town",
     "kana": "ｼﾐｽﾞﾁｮｳ"
   },
@@ -13762,7 +13762,7 @@
     "name": "長泉町",
     "city": "長泉町",
     "ward": null,
-    "county": null,
+    "county": "駿東郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞｲｽﾞﾐﾁｮｳ"
   },
@@ -13775,7 +13775,7 @@
     "name": "小山町",
     "city": "小山町",
     "ward": null,
-    "county": null,
+    "county": "駿東郡",
     "entity_type": "town",
     "kana": "ｵﾔﾏﾁｮｳ"
   },
@@ -13788,7 +13788,7 @@
     "name": "吉田町",
     "city": "吉田町",
     "ward": null,
-    "county": null,
+    "county": "榛原郡",
     "entity_type": "town",
     "kana": "ﾖｼﾀﾞﾁｮｳ"
   },
@@ -13801,7 +13801,7 @@
     "name": "川根本町",
     "city": "川根本町",
     "ward": null,
-    "county": null,
+    "county": "榛原郡",
     "entity_type": "town",
     "kana": "ｶﾜﾈﾎﾝﾁｮｳ"
   },
@@ -13814,7 +13814,7 @@
     "name": "森町",
     "city": "森町",
     "ward": null,
-    "county": null,
+    "county": "周智郡",
     "entity_type": "town",
     "kana": "ﾓﾘﾏﾁ"
   },
@@ -14529,7 +14529,7 @@
     "name": "東郷町",
     "city": "東郷町",
     "ward": null,
-    "county": null,
+    "county": "愛知郡",
     "entity_type": "town",
     "kana": "ﾄｳｺﾞｳﾁｮｳ"
   },
@@ -14542,7 +14542,7 @@
     "name": "豊山町",
     "city": "豊山町",
     "ward": null,
-    "county": null,
+    "county": "西春日井郡",
     "entity_type": "town",
     "kana": "ﾄﾖﾔﾏﾁｮｳ"
   },
@@ -14555,7 +14555,7 @@
     "name": "大口町",
     "city": "大口町",
     "ward": null,
-    "county": null,
+    "county": "丹羽郡",
     "entity_type": "town",
     "kana": "ｵｵｸﾞﾁﾁｮｳ"
   },
@@ -14568,7 +14568,7 @@
     "name": "扶桑町",
     "city": "扶桑町",
     "ward": null,
-    "county": null,
+    "county": "丹羽郡",
     "entity_type": "town",
     "kana": "ﾌｿｳﾁｮｳ"
   },
@@ -14581,7 +14581,7 @@
     "name": "大治町",
     "city": "大治町",
     "ward": null,
-    "county": null,
+    "county": "海部郡",
     "entity_type": "town",
     "kana": "ｵｵﾊﾙﾁｮｳ"
   },
@@ -14594,7 +14594,7 @@
     "name": "蟹江町",
     "city": "蟹江町",
     "ward": null,
-    "county": null,
+    "county": "海部郡",
     "entity_type": "town",
     "kana": "ｶﾆｴﾁｮｳ"
   },
@@ -14607,7 +14607,7 @@
     "name": "飛島村",
     "city": "飛島村",
     "ward": null,
-    "county": null,
+    "county": "海部郡",
     "entity_type": "village",
     "kana": "ﾄﾋﾞｼﾏﾑﾗ"
   },
@@ -14620,7 +14620,7 @@
     "name": "阿久比町",
     "city": "阿久比町",
     "ward": null,
-    "county": null,
+    "county": "知多郡",
     "entity_type": "town",
     "kana": "ｱｸﾞｲﾁｮｳ"
   },
@@ -14633,7 +14633,7 @@
     "name": "東浦町",
     "city": "東浦町",
     "ward": null,
-    "county": null,
+    "county": "知多郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｳﾗﾁｮｳ"
   },
@@ -14646,7 +14646,7 @@
     "name": "南知多町",
     "city": "南知多町",
     "ward": null,
-    "county": null,
+    "county": "知多郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐﾁﾀﾁｮｳ"
   },
@@ -14659,7 +14659,7 @@
     "name": "美浜町",
     "city": "美浜町",
     "ward": null,
-    "county": null,
+    "county": "知多郡",
     "entity_type": "town",
     "kana": "ﾐﾊﾏﾁｮｳ"
   },
@@ -14672,7 +14672,7 @@
     "name": "武豊町",
     "city": "武豊町",
     "ward": null,
-    "county": null,
+    "county": "知多郡",
     "entity_type": "town",
     "kana": "ﾀｹﾄﾖﾁｮｳ"
   },
@@ -14685,7 +14685,7 @@
     "name": "幸田町",
     "city": "幸田町",
     "ward": null,
-    "county": null,
+    "county": "額田郡",
     "entity_type": "town",
     "kana": "ｺｳﾀﾁｮｳ"
   },
@@ -14698,7 +14698,7 @@
     "name": "設楽町",
     "city": "設楽町",
     "ward": null,
-    "county": null,
+    "county": "北設楽郡",
     "entity_type": "town",
     "kana": "ｼﾀﾗﾁｮｳ"
   },
@@ -14711,7 +14711,7 @@
     "name": "東栄町",
     "city": "東栄町",
     "ward": null,
-    "county": null,
+    "county": "北設楽郡",
     "entity_type": "town",
     "kana": "ﾄｳｴｲﾁｮｳ"
   },
@@ -14724,7 +14724,7 @@
     "name": "豊根村",
     "city": "豊根村",
     "ward": null,
-    "county": null,
+    "county": "北設楽郡",
     "entity_type": "village",
     "kana": "ﾄﾖﾈﾑﾗ"
   },
@@ -14919,7 +14919,7 @@
     "name": "木曽岬町",
     "city": "木曽岬町",
     "ward": null,
-    "county": null,
+    "county": "桑名郡",
     "entity_type": "town",
     "kana": "ｷｿｻｷﾁｮｳ"
   },
@@ -14932,7 +14932,7 @@
     "name": "東員町",
     "city": "東員町",
     "ward": null,
-    "county": null,
+    "county": "員弁郡",
     "entity_type": "town",
     "kana": "ﾄｳｲﾝﾁｮｳ"
   },
@@ -14945,7 +14945,7 @@
     "name": "菰野町",
     "city": "菰野町",
     "ward": null,
-    "county": null,
+    "county": "三重郡",
     "entity_type": "town",
     "kana": "ｺﾓﾉﾁｮｳ"
   },
@@ -14958,7 +14958,7 @@
     "name": "朝日町",
     "city": "朝日町",
     "ward": null,
-    "county": null,
+    "county": "三重郡",
     "entity_type": "town",
     "kana": "ｱｻﾋﾁｮｳ"
   },
@@ -14971,7 +14971,7 @@
     "name": "川越町",
     "city": "川越町",
     "ward": null,
-    "county": null,
+    "county": "三重郡",
     "entity_type": "town",
     "kana": "ｶﾜｺﾞｴﾁｮｳ"
   },
@@ -14984,7 +14984,7 @@
     "name": "多気町",
     "city": "多気町",
     "ward": null,
-    "county": null,
+    "county": "多気郡",
     "entity_type": "town",
     "kana": "ﾀｷﾁｮｳ"
   },
@@ -14997,7 +14997,7 @@
     "name": "明和町",
     "city": "明和町",
     "ward": null,
-    "county": null,
+    "county": "多気郡",
     "entity_type": "town",
     "kana": "ﾒｲﾜﾁｮｳ"
   },
@@ -15010,7 +15010,7 @@
     "name": "大台町",
     "city": "大台町",
     "ward": null,
-    "county": null,
+    "county": "多気郡",
     "entity_type": "town",
     "kana": "ｵｵﾀﾞｲﾁｮｳ"
   },
@@ -15023,7 +15023,7 @@
     "name": "玉城町",
     "city": "玉城町",
     "ward": null,
-    "county": null,
+    "county": "度会郡",
     "entity_type": "town",
     "kana": "ﾀﾏｷﾁｮｳ"
   },
@@ -15036,7 +15036,7 @@
     "name": "度会町",
     "city": "度会町",
     "ward": null,
-    "county": null,
+    "county": "度会郡",
     "entity_type": "town",
     "kana": "ﾜﾀﾗｲﾁｮｳ"
   },
@@ -15049,7 +15049,7 @@
     "name": "大紀町",
     "city": "大紀町",
     "ward": null,
-    "county": null,
+    "county": "度会郡",
     "entity_type": "town",
     "kana": "ﾀｲｷﾁｮｳ"
   },
@@ -15062,7 +15062,7 @@
     "name": "南伊勢町",
     "city": "南伊勢町",
     "ward": null,
-    "county": null,
+    "county": "度会郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｲｾﾁｮｳ"
   },
@@ -15075,7 +15075,7 @@
     "name": "紀北町",
     "city": "紀北町",
     "ward": null,
-    "county": null,
+    "county": "北牟婁郡",
     "entity_type": "town",
     "kana": "ｷﾎｸﾁｮｳ"
   },
@@ -15088,7 +15088,7 @@
     "name": "御浜町",
     "city": "御浜町",
     "ward": null,
-    "county": null,
+    "county": "南牟婁郡",
     "entity_type": "town",
     "kana": "ﾐﾊﾏﾁｮｳ"
   },
@@ -15101,7 +15101,7 @@
     "name": "紀宝町",
     "city": "紀宝町",
     "ward": null,
-    "county": null,
+    "county": "南牟婁郡",
     "entity_type": "town",
     "kana": "ｷﾎｳﾁｮｳ"
   },
@@ -15283,7 +15283,7 @@
     "name": "日野町",
     "city": "日野町",
     "ward": null,
-    "county": null,
+    "county": "蒲生郡",
     "entity_type": "town",
     "kana": "ﾋﾉﾁｮｳ"
   },
@@ -15296,7 +15296,7 @@
     "name": "竜王町",
     "city": "竜王町",
     "ward": null,
-    "county": null,
+    "county": "蒲生郡",
     "entity_type": "town",
     "kana": "ﾘﾕｳｵｳﾁｮｳ"
   },
@@ -15309,7 +15309,7 @@
     "name": "愛荘町",
     "city": "愛荘町",
     "ward": null,
-    "county": null,
+    "county": "愛知郡",
     "entity_type": "town",
     "kana": "ｱｲｼｮｳﾁｮｳ"
   },
@@ -15322,7 +15322,7 @@
     "name": "豊郷町",
     "city": "豊郷町",
     "ward": null,
-    "county": null,
+    "county": "犬上郡",
     "entity_type": "town",
     "kana": "ﾄﾖｻﾄﾁｮｳ"
   },
@@ -15335,7 +15335,7 @@
     "name": "甲良町",
     "city": "甲良町",
     "ward": null,
-    "county": null,
+    "county": "犬上郡",
     "entity_type": "town",
     "kana": "ｺｳﾗﾁｮｳ"
   },
@@ -15348,7 +15348,7 @@
     "name": "多賀町",
     "city": "多賀町",
     "ward": null,
-    "county": null,
+    "county": "犬上郡",
     "entity_type": "town",
     "kana": "ﾀｶﾞﾁｮｳ"
   },
@@ -15699,7 +15699,7 @@
     "name": "大山崎町",
     "city": "大山崎町",
     "ward": null,
-    "county": null,
+    "county": "乙訓郡",
     "entity_type": "town",
     "kana": "ｵｵﾔﾏｻﾞｷﾁｮｳ"
   },
@@ -15712,7 +15712,7 @@
     "name": "久御山町",
     "city": "久御山町",
     "ward": null,
-    "county": null,
+    "county": "久世郡",
     "entity_type": "town",
     "kana": "ｸﾐﾔﾏﾁｮｳ"
   },
@@ -15725,7 +15725,7 @@
     "name": "井手町",
     "city": "井手町",
     "ward": null,
-    "county": null,
+    "county": "綴喜郡",
     "entity_type": "town",
     "kana": "ｲﾃﾞﾁｮｳ"
   },
@@ -15738,7 +15738,7 @@
     "name": "宇治田原町",
     "city": "宇治田原町",
     "ward": null,
-    "county": null,
+    "county": "綴喜郡",
     "entity_type": "town",
     "kana": "ｳｼﾞﾀﾜﾗﾁｮｳ"
   },
@@ -15751,7 +15751,7 @@
     "name": "笠置町",
     "city": "笠置町",
     "ward": null,
-    "county": null,
+    "county": "相楽郡",
     "entity_type": "town",
     "kana": "ｶｻｷﾞﾁｮｳ"
   },
@@ -15764,7 +15764,7 @@
     "name": "和束町",
     "city": "和束町",
     "ward": null,
-    "county": null,
+    "county": "相楽郡",
     "entity_type": "town",
     "kana": "ﾜﾂﾞｶﾁｮｳ"
   },
@@ -15777,7 +15777,7 @@
     "name": "精華町",
     "city": "精華町",
     "ward": null,
-    "county": null,
+    "county": "相楽郡",
     "entity_type": "town",
     "kana": "ｾｲｶﾁｮｳ"
   },
@@ -15790,7 +15790,7 @@
     "name": "南山城村",
     "city": "南山城村",
     "ward": null,
-    "county": null,
+    "county": "相楽郡",
     "entity_type": "village",
     "kana": "ﾐﾅﾐﾔﾏｼﾛﾑﾗ"
   },
@@ -15803,7 +15803,7 @@
     "name": "京丹波町",
     "city": "京丹波町",
     "ward": null,
-    "county": null,
+    "county": "船井郡",
     "entity_type": "town",
     "kana": "ｷｮｳﾀﾝﾊﾞﾁｮｳ"
   },
@@ -15816,7 +15816,7 @@
     "name": "伊根町",
     "city": "伊根町",
     "ward": null,
-    "county": null,
+    "county": "与謝郡",
     "entity_type": "town",
     "kana": "ｲﾈﾁｮｳ"
   },
@@ -15829,7 +15829,7 @@
     "name": "与謝野町",
     "city": "与謝野町",
     "ward": null,
-    "county": null,
+    "county": "与謝郡",
     "entity_type": "town",
     "kana": "ﾖｻﾉﾁｮｳ"
   },
@@ -16674,7 +16674,7 @@
     "name": "島本町",
     "city": "島本町",
     "ward": null,
-    "county": null,
+    "county": "三島郡",
     "entity_type": "town",
     "kana": "ｼﾏﾓﾄﾁｮｳ"
   },
@@ -16687,7 +16687,7 @@
     "name": "豊能町",
     "city": "豊能町",
     "ward": null,
-    "county": null,
+    "county": "豊能郡",
     "entity_type": "town",
     "kana": "ﾄﾖﾉﾁｮｳ"
   },
@@ -16700,7 +16700,7 @@
     "name": "能勢町",
     "city": "能勢町",
     "ward": null,
-    "county": null,
+    "county": "豊能郡",
     "entity_type": "town",
     "kana": "ﾉｾﾁｮｳ"
   },
@@ -16713,7 +16713,7 @@
     "name": "忠岡町",
     "city": "忠岡町",
     "ward": null,
-    "county": null,
+    "county": "泉北郡",
     "entity_type": "town",
     "kana": "ﾀﾀﾞｵｶﾁｮｳ"
   },
@@ -16726,7 +16726,7 @@
     "name": "熊取町",
     "city": "熊取町",
     "ward": null,
-    "county": null,
+    "county": "泉南郡",
     "entity_type": "town",
     "kana": "ｸﾏﾄﾘﾁｮｳ"
   },
@@ -16739,7 +16739,7 @@
     "name": "田尻町",
     "city": "田尻町",
     "ward": null,
-    "county": null,
+    "county": "泉南郡",
     "entity_type": "town",
     "kana": "ﾀｼﾞﾘﾁｮｳ"
   },
@@ -16752,7 +16752,7 @@
     "name": "岬町",
     "city": "岬町",
     "ward": null,
-    "county": null,
+    "county": "泉南郡",
     "entity_type": "town",
     "kana": "ﾐｻｷﾁｮｳ"
   },
@@ -16765,7 +16765,7 @@
     "name": "太子町",
     "city": "太子町",
     "ward": null,
-    "county": null,
+    "county": "南河内郡",
     "entity_type": "town",
     "kana": "ﾀｲｼﾁｮｳ"
   },
@@ -16778,7 +16778,7 @@
     "name": "河南町",
     "city": "河南町",
     "ward": null,
-    "county": null,
+    "county": "南河内郡",
     "entity_type": "town",
     "kana": "ｶﾅﾝﾁｮｳ"
   },
@@ -16791,7 +16791,7 @@
     "name": "千早赤阪村",
     "city": "千早赤阪村",
     "ward": null,
-    "county": null,
+    "county": "南河内郡",
     "entity_type": "village",
     "kana": "ﾁﾊﾔｱｶｻｶﾑﾗ"
   },
@@ -17298,7 +17298,7 @@
     "name": "猪名川町",
     "city": "猪名川町",
     "ward": null,
-    "county": null,
+    "county": "川辺郡",
     "entity_type": "town",
     "kana": "ｲﾅｶﾞﾜﾁｮｳ"
   },
@@ -17311,7 +17311,7 @@
     "name": "多可町",
     "city": "多可町",
     "ward": null,
-    "county": null,
+    "county": "多可郡",
     "entity_type": "town",
     "kana": "ﾀｶﾁｮｳ"
   },
@@ -17324,7 +17324,7 @@
     "name": "稲美町",
     "city": "稲美町",
     "ward": null,
-    "county": null,
+    "county": "加古郡",
     "entity_type": "town",
     "kana": "ｲﾅﾐﾁｮｳ"
   },
@@ -17337,7 +17337,7 @@
     "name": "播磨町",
     "city": "播磨町",
     "ward": null,
-    "county": null,
+    "county": "加古郡",
     "entity_type": "town",
     "kana": "ﾊﾘﾏﾁｮｳ"
   },
@@ -17350,7 +17350,7 @@
     "name": "市川町",
     "city": "市川町",
     "ward": null,
-    "county": null,
+    "county": "神崎郡",
     "entity_type": "town",
     "kana": "ｲﾁｶﾜﾁｮｳ"
   },
@@ -17363,7 +17363,7 @@
     "name": "福崎町",
     "city": "福崎町",
     "ward": null,
-    "county": null,
+    "county": "神崎郡",
     "entity_type": "town",
     "kana": "ﾌｸｻｷﾁｮｳ"
   },
@@ -17376,7 +17376,7 @@
     "name": "神河町",
     "city": "神河町",
     "ward": null,
-    "county": null,
+    "county": "神崎郡",
     "entity_type": "town",
     "kana": "ｶﾐｶﾜﾁｮｳ"
   },
@@ -17389,7 +17389,7 @@
     "name": "太子町",
     "city": "太子町",
     "ward": null,
-    "county": null,
+    "county": "揖保郡",
     "entity_type": "town",
     "kana": "ﾀｲｼﾁｮｳ"
   },
@@ -17402,7 +17402,7 @@
     "name": "上郡町",
     "city": "上郡町",
     "ward": null,
-    "county": null,
+    "county": "赤穂郡",
     "entity_type": "town",
     "kana": "ｶﾐｺﾞｵﾘﾁｮｳ"
   },
@@ -17415,7 +17415,7 @@
     "name": "佐用町",
     "city": "佐用町",
     "ward": null,
-    "county": null,
+    "county": "佐用郡",
     "entity_type": "town",
     "kana": "ｻﾖｳﾁｮｳ"
   },
@@ -17428,7 +17428,7 @@
     "name": "香美町",
     "city": "香美町",
     "ward": null,
-    "county": null,
+    "county": "美方郡",
     "entity_type": "town",
     "kana": "ｶﾐﾁｮｳ"
   },
@@ -17441,7 +17441,7 @@
     "name": "新温泉町",
     "city": "新温泉町",
     "ward": null,
-    "county": null,
+    "county": "美方郡",
     "entity_type": "town",
     "kana": "ｼﾝｵﾝｾﾝﾁｮｳ"
   },
@@ -17610,7 +17610,7 @@
     "name": "山添村",
     "city": "山添村",
     "ward": null,
-    "county": null,
+    "county": "山辺郡",
     "entity_type": "village",
     "kana": "ﾔﾏｿﾞｴﾑﾗ"
   },
@@ -17623,7 +17623,7 @@
     "name": "平群町",
     "city": "平群町",
     "ward": null,
-    "county": null,
+    "county": "生駒郡",
     "entity_type": "town",
     "kana": "ﾍｸﾞﾘﾁｮｳ"
   },
@@ -17636,7 +17636,7 @@
     "name": "三郷町",
     "city": "三郷町",
     "ward": null,
-    "county": null,
+    "county": "生駒郡",
     "entity_type": "town",
     "kana": "ｻﾝｺﾞｳﾁｮｳ"
   },
@@ -17649,7 +17649,7 @@
     "name": "斑鳩町",
     "city": "斑鳩町",
     "ward": null,
-    "county": null,
+    "county": "生駒郡",
     "entity_type": "town",
     "kana": "ｲｶﾙｶﾞﾁｮｳ"
   },
@@ -17662,7 +17662,7 @@
     "name": "安堵町",
     "city": "安堵町",
     "ward": null,
-    "county": null,
+    "county": "生駒郡",
     "entity_type": "town",
     "kana": "ｱﾝﾄﾞﾁｮｳ"
   },
@@ -17675,7 +17675,7 @@
     "name": "川西町",
     "city": "川西町",
     "ward": null,
-    "county": null,
+    "county": "磯城郡",
     "entity_type": "town",
     "kana": "ｶﾜﾆｼﾁｮｳ"
   },
@@ -17688,7 +17688,7 @@
     "name": "三宅町",
     "city": "三宅町",
     "ward": null,
-    "county": null,
+    "county": "磯城郡",
     "entity_type": "town",
     "kana": "ﾐﾔｹﾁｮｳ"
   },
@@ -17701,7 +17701,7 @@
     "name": "田原本町",
     "city": "田原本町",
     "ward": null,
-    "county": null,
+    "county": "磯城郡",
     "entity_type": "town",
     "kana": "ﾀﾜﾗﾓﾄﾁｮｳ"
   },
@@ -17714,7 +17714,7 @@
     "name": "曽爾村",
     "city": "曽爾村",
     "ward": null,
-    "county": null,
+    "county": "宇陀郡",
     "entity_type": "village",
     "kana": "ｿﾆﾑﾗ"
   },
@@ -17727,7 +17727,7 @@
     "name": "御杖村",
     "city": "御杖村",
     "ward": null,
-    "county": null,
+    "county": "宇陀郡",
     "entity_type": "village",
     "kana": "ﾐﾂｴﾑﾗ"
   },
@@ -17740,7 +17740,7 @@
     "name": "高取町",
     "city": "高取町",
     "ward": null,
-    "county": null,
+    "county": "高市郡",
     "entity_type": "town",
     "kana": "ﾀｶﾄﾘﾁｮｳ"
   },
@@ -17753,7 +17753,7 @@
     "name": "明日香村",
     "city": "明日香村",
     "ward": null,
-    "county": null,
+    "county": "高市郡",
     "entity_type": "village",
     "kana": "ｱｽｶﾑﾗ"
   },
@@ -17766,7 +17766,7 @@
     "name": "上牧町",
     "city": "上牧町",
     "ward": null,
-    "county": null,
+    "county": "北葛城郡",
     "entity_type": "town",
     "kana": "ｶﾝﾏｷﾁｮｳ"
   },
@@ -17779,7 +17779,7 @@
     "name": "王寺町",
     "city": "王寺町",
     "ward": null,
-    "county": null,
+    "county": "北葛城郡",
     "entity_type": "town",
     "kana": "ｵｳｼﾞﾁｮｳ"
   },
@@ -17792,7 +17792,7 @@
     "name": "広陵町",
     "city": "広陵町",
     "ward": null,
-    "county": null,
+    "county": "北葛城郡",
     "entity_type": "town",
     "kana": "ｺｳﾘﾖｳﾁｮｳ"
   },
@@ -17805,7 +17805,7 @@
     "name": "河合町",
     "city": "河合町",
     "ward": null,
-    "county": null,
+    "county": "北葛城郡",
     "entity_type": "town",
     "kana": "ｶﾜｲﾁｮｳ"
   },
@@ -17818,7 +17818,7 @@
     "name": "吉野町",
     "city": "吉野町",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "town",
     "kana": "ﾖｼﾉﾁｮｳ"
   },
@@ -17831,7 +17831,7 @@
     "name": "大淀町",
     "city": "大淀町",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "town",
     "kana": "ｵｵﾖﾄﾞﾁｮｳ"
   },
@@ -17844,7 +17844,7 @@
     "name": "下市町",
     "city": "下市町",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "town",
     "kana": "ｼﾓｲﾁﾁｮｳ"
   },
@@ -17857,7 +17857,7 @@
     "name": "黒滝村",
     "city": "黒滝村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ｸﾛﾀｷﾑﾗ"
   },
@@ -17870,7 +17870,7 @@
     "name": "天川村",
     "city": "天川村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ﾃﾝｶﾜﾑﾗ"
   },
@@ -17883,7 +17883,7 @@
     "name": "野迫川村",
     "city": "野迫川村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ﾉｾｶﾞﾜﾑﾗ"
   },
@@ -17896,7 +17896,7 @@
     "name": "十津川村",
     "city": "十津川村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ﾄﾂｶﾜﾑﾗ"
   },
@@ -17909,7 +17909,7 @@
     "name": "下北山村",
     "city": "下北山村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ｼﾓｷﾀﾔﾏﾑﾗ"
   },
@@ -17922,7 +17922,7 @@
     "name": "上北山村",
     "city": "上北山村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ｶﾐｷﾀﾔﾏﾑﾗ"
   },
@@ -17935,7 +17935,7 @@
     "name": "川上村",
     "city": "川上村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ｶﾜｶﾐﾑﾗ"
   },
@@ -17948,7 +17948,7 @@
     "name": "東吉野村",
     "city": "東吉野村",
     "ward": null,
-    "county": null,
+    "county": "吉野郡",
     "entity_type": "village",
     "kana": "ﾋｶﾞｼﾖｼﾉﾑﾗ"
   },
@@ -18078,7 +18078,7 @@
     "name": "紀美野町",
     "city": "紀美野町",
     "ward": null,
-    "county": null,
+    "county": "海草郡",
     "entity_type": "town",
     "kana": "ｷﾐﾉﾁｮｳ"
   },
@@ -18091,7 +18091,7 @@
     "name": "かつらぎ町",
     "city": "かつらぎ町",
     "ward": null,
-    "county": null,
+    "county": "伊都郡",
     "entity_type": "town",
     "kana": "ｶﾂﾗｷﾞﾁｮｳ"
   },
@@ -18104,7 +18104,7 @@
     "name": "九度山町",
     "city": "九度山町",
     "ward": null,
-    "county": null,
+    "county": "伊都郡",
     "entity_type": "town",
     "kana": "ｸﾄﾞﾔﾏﾁｮｳ"
   },
@@ -18117,7 +18117,7 @@
     "name": "高野町",
     "city": "高野町",
     "ward": null,
-    "county": null,
+    "county": "伊都郡",
     "entity_type": "town",
     "kana": "ｺｳﾔﾁｮｳ"
   },
@@ -18130,7 +18130,7 @@
     "name": "湯浅町",
     "city": "湯浅町",
     "ward": null,
-    "county": null,
+    "county": "有田郡",
     "entity_type": "town",
     "kana": "ﾕｱｻﾁｮｳ"
   },
@@ -18143,7 +18143,7 @@
     "name": "広川町",
     "city": "広川町",
     "ward": null,
-    "county": null,
+    "county": "有田郡",
     "entity_type": "town",
     "kana": "ﾋﾛｶﾞﾜﾁｮｳ"
   },
@@ -18156,7 +18156,7 @@
     "name": "有田川町",
     "city": "有田川町",
     "ward": null,
-    "county": null,
+    "county": "有田郡",
     "entity_type": "town",
     "kana": "ｱﾘﾀﾞｶﾞﾜﾁｮｳ"
   },
@@ -18169,7 +18169,7 @@
     "name": "美浜町",
     "city": "美浜町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ﾐﾊﾏﾁｮｳ"
   },
@@ -18182,7 +18182,7 @@
     "name": "日高町",
     "city": "日高町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ﾋﾀﾞｶﾁｮｳ"
   },
@@ -18195,7 +18195,7 @@
     "name": "由良町",
     "city": "由良町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ﾕﾗﾁｮｳ"
   },
@@ -18208,7 +18208,7 @@
     "name": "印南町",
     "city": "印南町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ｲﾅﾐﾁｮｳ"
   },
@@ -18221,7 +18221,7 @@
     "name": "みなべ町",
     "city": "みなべ町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾍﾞﾁｮｳ"
   },
@@ -18234,7 +18234,7 @@
     "name": "日高川町",
     "city": "日高川町",
     "ward": null,
-    "county": null,
+    "county": "日高郡",
     "entity_type": "town",
     "kana": "ﾋﾀﾞｶｶﾞﾜﾁｮｳ"
   },
@@ -18247,7 +18247,7 @@
     "name": "白浜町",
     "city": "白浜町",
     "ward": null,
-    "county": null,
+    "county": "西牟婁郡",
     "entity_type": "town",
     "kana": "ｼﾗﾊﾏﾁｮｳ"
   },
@@ -18260,7 +18260,7 @@
     "name": "上富田町",
     "city": "上富田町",
     "ward": null,
-    "county": null,
+    "county": "西牟婁郡",
     "entity_type": "town",
     "kana": "ｶﾐﾄﾝﾀﾞﾁｮｳ"
   },
@@ -18273,7 +18273,7 @@
     "name": "すさみ町",
     "city": "すさみ町",
     "ward": null,
-    "county": null,
+    "county": "西牟婁郡",
     "entity_type": "town",
     "kana": "ｽｻﾐﾁｮｳ"
   },
@@ -18286,7 +18286,7 @@
     "name": "那智勝浦町",
     "city": "那智勝浦町",
     "ward": null,
-    "county": null,
+    "county": "東牟婁郡",
     "entity_type": "town",
     "kana": "ﾅﾁｶﾂｳﾗﾁｮｳ"
   },
@@ -18299,7 +18299,7 @@
     "name": "太地町",
     "city": "太地町",
     "ward": null,
-    "county": null,
+    "county": "東牟婁郡",
     "entity_type": "town",
     "kana": "ﾀｲｼﾞﾁｮｳ"
   },
@@ -18312,7 +18312,7 @@
     "name": "古座川町",
     "city": "古座川町",
     "ward": null,
-    "county": null,
+    "county": "東牟婁郡",
     "entity_type": "town",
     "kana": "ｺｻﾞｶﾞﾜﾁｮｳ"
   },
@@ -18325,7 +18325,7 @@
     "name": "北山村",
     "city": "北山村",
     "ward": null,
-    "county": null,
+    "county": "東牟婁郡",
     "entity_type": "village",
     "kana": "ｷﾀﾔﾏﾑﾗ"
   },
@@ -18338,7 +18338,7 @@
     "name": "串本町",
     "city": "串本町",
     "ward": null,
-    "county": null,
+    "county": "東牟婁郡",
     "entity_type": "town",
     "kana": "ｸｼﾓﾄﾁｮｳ"
   },
@@ -18403,7 +18403,7 @@
     "name": "岩美町",
     "city": "岩美町",
     "ward": null,
-    "county": null,
+    "county": "岩美郡",
     "entity_type": "town",
     "kana": "ｲﾜﾐﾁｮｳ"
   },
@@ -18416,7 +18416,7 @@
     "name": "若桜町",
     "city": "若桜町",
     "ward": null,
-    "county": null,
+    "county": "八頭郡",
     "entity_type": "town",
     "kana": "ﾜｶｻﾁｮｳ"
   },
@@ -18429,7 +18429,7 @@
     "name": "智頭町",
     "city": "智頭町",
     "ward": null,
-    "county": null,
+    "county": "八頭郡",
     "entity_type": "town",
     "kana": "ﾁﾂﾞﾁｮｳ"
   },
@@ -18442,7 +18442,7 @@
     "name": "八頭町",
     "city": "八頭町",
     "ward": null,
-    "county": null,
+    "county": "八頭郡",
     "entity_type": "town",
     "kana": "ﾔｽﾞﾁｮｳ"
   },
@@ -18455,7 +18455,7 @@
     "name": "三朝町",
     "city": "三朝町",
     "ward": null,
-    "county": null,
+    "county": "東伯郡",
     "entity_type": "town",
     "kana": "ﾐｻｻﾁｮｳ"
   },
@@ -18468,7 +18468,7 @@
     "name": "湯梨浜町",
     "city": "湯梨浜町",
     "ward": null,
-    "county": null,
+    "county": "東伯郡",
     "entity_type": "town",
     "kana": "ﾕﾘﾊﾏﾁｮｳ"
   },
@@ -18481,7 +18481,7 @@
     "name": "琴浦町",
     "city": "琴浦町",
     "ward": null,
-    "county": null,
+    "county": "東伯郡",
     "entity_type": "town",
     "kana": "ｺﾄｳﾗﾁｮｳ"
   },
@@ -18494,7 +18494,7 @@
     "name": "北栄町",
     "city": "北栄町",
     "ward": null,
-    "county": null,
+    "county": "東伯郡",
     "entity_type": "town",
     "kana": "ﾎｸｴｲﾁｮｳ"
   },
@@ -18507,7 +18507,7 @@
     "name": "日吉津村",
     "city": "日吉津村",
     "ward": null,
-    "county": null,
+    "county": "西伯郡",
     "entity_type": "village",
     "kana": "ﾋｴﾂﾞｿﾝ"
   },
@@ -18520,7 +18520,7 @@
     "name": "大山町",
     "city": "大山町",
     "ward": null,
-    "county": null,
+    "county": "西伯郡",
     "entity_type": "town",
     "kana": "ﾀﾞｲｾﾝﾁｮｳ"
   },
@@ -18533,7 +18533,7 @@
     "name": "南部町",
     "city": "南部町",
     "ward": null,
-    "county": null,
+    "county": "西伯郡",
     "entity_type": "town",
     "kana": "ﾅﾝﾌﾞﾁｮｳ"
   },
@@ -18546,7 +18546,7 @@
     "name": "伯耆町",
     "city": "伯耆町",
     "ward": null,
-    "county": null,
+    "county": "西伯郡",
     "entity_type": "town",
     "kana": "ﾎｳｷﾁｮｳ"
   },
@@ -18559,7 +18559,7 @@
     "name": "日南町",
     "city": "日南町",
     "ward": null,
-    "county": null,
+    "county": "日野郡",
     "entity_type": "town",
     "kana": "ﾆﾁﾅﾝﾁｮｳ"
   },
@@ -18572,7 +18572,7 @@
     "name": "日野町",
     "city": "日野町",
     "ward": null,
-    "county": null,
+    "county": "日野郡",
     "entity_type": "town",
     "kana": "ﾋﾉﾁｮｳ"
   },
@@ -18585,7 +18585,7 @@
     "name": "江府町",
     "city": "江府町",
     "ward": null,
-    "county": null,
+    "county": "日野郡",
     "entity_type": "town",
     "kana": "ｺｳﾌﾁｮｳ"
   },
@@ -18702,7 +18702,7 @@
     "name": "奥出雲町",
     "city": "奥出雲町",
     "ward": null,
-    "county": null,
+    "county": "仁多郡",
     "entity_type": "town",
     "kana": "ｵｸｲｽﾞﾓﾁｮｳ"
   },
@@ -18715,7 +18715,7 @@
     "name": "飯南町",
     "city": "飯南町",
     "ward": null,
-    "county": null,
+    "county": "飯石郡",
     "entity_type": "town",
     "kana": "ｲｲﾅﾝﾁｮｳ"
   },
@@ -18728,7 +18728,7 @@
     "name": "川本町",
     "city": "川本町",
     "ward": null,
-    "county": null,
+    "county": "邑智郡",
     "entity_type": "town",
     "kana": "ｶﾜﾓﾄﾏﾁ"
   },
@@ -18741,7 +18741,7 @@
     "name": "美郷町",
     "city": "美郷町",
     "ward": null,
-    "county": null,
+    "county": "邑智郡",
     "entity_type": "town",
     "kana": "ﾐｻﾄﾁｮｳ"
   },
@@ -18754,7 +18754,7 @@
     "name": "邑南町",
     "city": "邑南町",
     "ward": null,
-    "county": null,
+    "county": "邑智郡",
     "entity_type": "town",
     "kana": "ｵｵﾅﾝﾁｮｳ"
   },
@@ -18767,7 +18767,7 @@
     "name": "津和野町",
     "city": "津和野町",
     "ward": null,
-    "county": null,
+    "county": "鹿足郡",
     "entity_type": "town",
     "kana": "ﾂﾜﾉﾁｮｳ"
   },
@@ -18780,7 +18780,7 @@
     "name": "吉賀町",
     "city": "吉賀町",
     "ward": null,
-    "county": null,
+    "county": "鹿足郡",
     "entity_type": "town",
     "kana": "ﾖｼｶﾁｮｳ"
   },
@@ -18793,7 +18793,7 @@
     "name": "海士町",
     "city": "海士町",
     "ward": null,
-    "county": null,
+    "county": "隠岐郡",
     "entity_type": "town",
     "kana": "ｱﾏﾁｮｳ"
   },
@@ -18806,7 +18806,7 @@
     "name": "西ノ島町",
     "city": "西ノ島町",
     "ward": null,
-    "county": null,
+    "county": "隠岐郡",
     "entity_type": "town",
     "kana": "ﾆｼﾉｼﾏﾁｮｳ"
   },
@@ -18819,7 +18819,7 @@
     "name": "知夫村",
     "city": "知夫村",
     "ward": null,
-    "county": null,
+    "county": "隠岐郡",
     "entity_type": "village",
     "kana": "ﾁﾌﾞﾑﾗ"
   },
@@ -18832,7 +18832,7 @@
     "name": "隠岐の島町",
     "city": "隠岐の島町",
     "ward": null,
-    "county": null,
+    "county": "隠岐郡",
     "entity_type": "town",
     "kana": "ｵｷﾉｼﾏﾁｮｳ"
   },
@@ -19092,7 +19092,7 @@
     "name": "和気町",
     "city": "和気町",
     "ward": null,
-    "county": null,
+    "county": "和気郡",
     "entity_type": "town",
     "kana": "ﾜｹﾁｮｳ"
   },
@@ -19105,7 +19105,7 @@
     "name": "早島町",
     "city": "早島町",
     "ward": null,
-    "county": null,
+    "county": "都窪郡",
     "entity_type": "town",
     "kana": "ﾊﾔｼﾏﾁｮｳ"
   },
@@ -19118,7 +19118,7 @@
     "name": "里庄町",
     "city": "里庄町",
     "ward": null,
-    "county": null,
+    "county": "浅口郡",
     "entity_type": "town",
     "kana": "ｻﾄｼｮｳﾁｮｳ"
   },
@@ -19131,7 +19131,7 @@
     "name": "矢掛町",
     "city": "矢掛町",
     "ward": null,
-    "county": null,
+    "county": "小田郡",
     "entity_type": "town",
     "kana": "ﾔｶｹﾞﾁｮｳ"
   },
@@ -19144,7 +19144,7 @@
     "name": "新庄村",
     "city": "新庄村",
     "ward": null,
-    "county": null,
+    "county": "真庭郡",
     "entity_type": "village",
     "kana": "ｼﾝｼﾞﾖｳｿﾝ"
   },
@@ -19157,7 +19157,7 @@
     "name": "鏡野町",
     "city": "鏡野町",
     "ward": null,
-    "county": null,
+    "county": "苫田郡",
     "entity_type": "town",
     "kana": "ｶｶﾞﾐﾉﾁｮｳ"
   },
@@ -19170,7 +19170,7 @@
     "name": "勝央町",
     "city": "勝央町",
     "ward": null,
-    "county": null,
+    "county": "勝田郡",
     "entity_type": "town",
     "kana": "ｼｮｳｵｳﾁｮｳ"
   },
@@ -19183,7 +19183,7 @@
     "name": "奈義町",
     "city": "奈義町",
     "ward": null,
-    "county": null,
+    "county": "勝田郡",
     "entity_type": "town",
     "kana": "ﾅｷﾞﾁｮｳ"
   },
@@ -19196,7 +19196,7 @@
     "name": "西粟倉村",
     "city": "西粟倉村",
     "ward": null,
-    "county": null,
+    "county": "英田郡",
     "entity_type": "village",
     "kana": "ﾆｼｱﾜｸﾗｿﾝ"
   },
@@ -19209,7 +19209,7 @@
     "name": "久米南町",
     "city": "久米南町",
     "ward": null,
-    "county": null,
+    "county": "久米郡",
     "entity_type": "town",
     "kana": "ｸﾒﾅﾝﾁｮｳ"
   },
@@ -19222,7 +19222,7 @@
     "name": "美咲町",
     "city": "美咲町",
     "ward": null,
-    "county": null,
+    "county": "久米郡",
     "entity_type": "town",
     "kana": "ﾐｻｷﾁｮｳ"
   },
@@ -19235,7 +19235,7 @@
     "name": "吉備中央町",
     "city": "吉備中央町",
     "ward": null,
-    "county": null,
+    "county": "加賀郡",
     "entity_type": "town",
     "kana": "ｷﾋﾞﾁｭｳｵｳﾁｮｳ"
   },
@@ -19534,7 +19534,7 @@
     "name": "府中町",
     "city": "府中町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ﾌﾁｭｳﾁｮｳ"
   },
@@ -19547,7 +19547,7 @@
     "name": "海田町",
     "city": "海田町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ｶｲﾀﾁｮｳ"
   },
@@ -19560,7 +19560,7 @@
     "name": "熊野町",
     "city": "熊野町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ｸﾏﾉﾁｮｳ"
   },
@@ -19573,7 +19573,7 @@
     "name": "坂町",
     "city": "坂町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ｻｶﾁｮｳ"
   },
@@ -19586,7 +19586,7 @@
     "name": "安芸太田町",
     "city": "安芸太田町",
     "ward": null,
-    "county": null,
+    "county": "山県郡",
     "entity_type": "town",
     "kana": "ｱｷｵｵﾀﾁｮｳ"
   },
@@ -19599,7 +19599,7 @@
     "name": "北広島町",
     "city": "北広島町",
     "ward": null,
-    "county": null,
+    "county": "山県郡",
     "entity_type": "town",
     "kana": "ｷﾀﾋﾛｼﾏﾁｮｳ"
   },
@@ -19612,7 +19612,7 @@
     "name": "大崎上島町",
     "city": "大崎上島町",
     "ward": null,
-    "county": null,
+    "county": "豊田郡",
     "entity_type": "town",
     "kana": "ｵｵｻｷｶﾐｼﾞﾏﾁｮｳ"
   },
@@ -19625,7 +19625,7 @@
     "name": "世羅町",
     "city": "世羅町",
     "ward": null,
-    "county": null,
+    "county": "世羅郡",
     "entity_type": "town",
     "kana": "ｾﾗﾁｮｳ"
   },
@@ -19638,7 +19638,7 @@
     "name": "神石高原町",
     "city": "神石高原町",
     "ward": null,
-    "county": null,
+    "county": "神石郡",
     "entity_type": "town",
     "kana": "ｼﾞﾝｾｷｺｳｹﾞﾝﾁｮｳ"
   },
@@ -19820,7 +19820,7 @@
     "name": "周防大島町",
     "city": "周防大島町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ｽｵｳｵｵｼﾏﾁｮｳ"
   },
@@ -19833,7 +19833,7 @@
     "name": "和木町",
     "city": "和木町",
     "ward": null,
-    "county": null,
+    "county": "玖珂郡",
     "entity_type": "town",
     "kana": "ﾜｷﾁｮｳ"
   },
@@ -19846,7 +19846,7 @@
     "name": "上関町",
     "city": "上関町",
     "ward": null,
-    "county": null,
+    "county": "熊毛郡",
     "entity_type": "town",
     "kana": "ｶﾐﾉｾｷﾁｮｳ"
   },
@@ -19859,7 +19859,7 @@
     "name": "田布施町",
     "city": "田布施町",
     "ward": null,
-    "county": null,
+    "county": "熊毛郡",
     "entity_type": "town",
     "kana": "ﾀﾌﾞｾﾁｮｳ"
   },
@@ -19872,7 +19872,7 @@
     "name": "平生町",
     "city": "平生町",
     "ward": null,
-    "county": null,
+    "county": "熊毛郡",
     "entity_type": "town",
     "kana": "ﾋﾗｵﾁｮｳ"
   },
@@ -19885,7 +19885,7 @@
     "name": "阿武町",
     "city": "阿武町",
     "ward": null,
-    "county": null,
+    "county": "阿武郡",
     "entity_type": "town",
     "kana": "ｱﾌﾞﾁｮｳ"
   },
@@ -20002,7 +20002,7 @@
     "name": "勝浦町",
     "city": "勝浦町",
     "ward": null,
-    "county": null,
+    "county": "勝浦郡",
     "entity_type": "town",
     "kana": "ｶﾂｳﾗﾁｮｳ"
   },
@@ -20015,7 +20015,7 @@
     "name": "上勝町",
     "city": "上勝町",
     "ward": null,
-    "county": null,
+    "county": "勝浦郡",
     "entity_type": "town",
     "kana": "ｶﾐｶﾂﾁｮｳ"
   },
@@ -20028,7 +20028,7 @@
     "name": "佐那河内村",
     "city": "佐那河内村",
     "ward": null,
-    "county": null,
+    "county": "名東郡",
     "entity_type": "village",
     "kana": "ｻﾅｺﾞｳﾁｿﾝ"
   },
@@ -20041,7 +20041,7 @@
     "name": "石井町",
     "city": "石井町",
     "ward": null,
-    "county": null,
+    "county": "名西郡",
     "entity_type": "town",
     "kana": "ｲｼｲﾁｮｳ"
   },
@@ -20054,7 +20054,7 @@
     "name": "神山町",
     "city": "神山町",
     "ward": null,
-    "county": null,
+    "county": "名西郡",
     "entity_type": "town",
     "kana": "ｶﾐﾔﾏﾁｮｳ"
   },
@@ -20067,7 +20067,7 @@
     "name": "那賀町",
     "city": "那賀町",
     "ward": null,
-    "county": null,
+    "county": "那賀郡",
     "entity_type": "town",
     "kana": "ﾅｶﾁｮｳ"
   },
@@ -20080,7 +20080,7 @@
     "name": "牟岐町",
     "city": "牟岐町",
     "ward": null,
-    "county": null,
+    "county": "海部郡",
     "entity_type": "town",
     "kana": "ﾑｷﾞﾁｮｳ"
   },
@@ -20093,7 +20093,7 @@
     "name": "美波町",
     "city": "美波町",
     "ward": null,
-    "county": null,
+    "county": "海部郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐﾁｮｳ"
   },
@@ -20106,7 +20106,7 @@
     "name": "海陽町",
     "city": "海陽町",
     "ward": null,
-    "county": null,
+    "county": "海部郡",
     "entity_type": "town",
     "kana": "ｶｲﾖｳﾁｮｳ"
   },
@@ -20119,7 +20119,7 @@
     "name": "松茂町",
     "city": "松茂町",
     "ward": null,
-    "county": null,
+    "county": "板野郡",
     "entity_type": "town",
     "kana": "ﾏﾂｼｹﾞﾁｮｳ"
   },
@@ -20132,7 +20132,7 @@
     "name": "北島町",
     "city": "北島町",
     "ward": null,
-    "county": null,
+    "county": "板野郡",
     "entity_type": "town",
     "kana": "ｷﾀｼﾞﾏﾁｮｳ"
   },
@@ -20145,7 +20145,7 @@
     "name": "藍住町",
     "city": "藍住町",
     "ward": null,
-    "county": null,
+    "county": "板野郡",
     "entity_type": "town",
     "kana": "ｱｲｽﾞﾐﾁｮｳ"
   },
@@ -20158,7 +20158,7 @@
     "name": "板野町",
     "city": "板野町",
     "ward": null,
-    "county": null,
+    "county": "板野郡",
     "entity_type": "town",
     "kana": "ｲﾀﾉﾁｮｳ"
   },
@@ -20171,7 +20171,7 @@
     "name": "上板町",
     "city": "上板町",
     "ward": null,
-    "county": null,
+    "county": "板野郡",
     "entity_type": "town",
     "kana": "ｶﾐｲﾀﾁｮｳ"
   },
@@ -20184,7 +20184,7 @@
     "name": "つるぎ町",
     "city": "つるぎ町",
     "ward": null,
-    "county": null,
+    "county": "美馬郡",
     "entity_type": "town",
     "kana": "ﾂﾙｷﾞﾁｮｳ"
   },
@@ -20197,7 +20197,7 @@
     "name": "東みよし町",
     "city": "東みよし町",
     "ward": null,
-    "county": null,
+    "county": "三好郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼﾐﾖｼﾁｮｳ"
   },
@@ -20314,7 +20314,7 @@
     "name": "土庄町",
     "city": "土庄町",
     "ward": null,
-    "county": null,
+    "county": "小豆郡",
     "entity_type": "town",
     "kana": "ﾄﾉｼｮｳﾁｮｳ"
   },
@@ -20327,7 +20327,7 @@
     "name": "小豆島町",
     "city": "小豆島町",
     "ward": null,
-    "county": null,
+    "county": "小豆郡",
     "entity_type": "town",
     "kana": "ｼｮｳﾄﾞｼﾏﾁｮｳ"
   },
@@ -20340,7 +20340,7 @@
     "name": "三木町",
     "city": "三木町",
     "ward": null,
-    "county": null,
+    "county": "木田郡",
     "entity_type": "town",
     "kana": "ﾐｷﾁｮｳ"
   },
@@ -20353,7 +20353,7 @@
     "name": "直島町",
     "city": "直島町",
     "ward": null,
-    "county": null,
+    "county": "香川郡",
     "entity_type": "town",
     "kana": "ﾅｵｼﾏﾁｮｳ"
   },
@@ -20366,7 +20366,7 @@
     "name": "宇多津町",
     "city": "宇多津町",
     "ward": null,
-    "county": null,
+    "county": "綾歌郡",
     "entity_type": "town",
     "kana": "ｳﾀﾂﾞﾁｮｳ"
   },
@@ -20379,7 +20379,7 @@
     "name": "綾川町",
     "city": "綾川町",
     "ward": null,
-    "county": null,
+    "county": "綾歌郡",
     "entity_type": "town",
     "kana": "ｱﾔｶﾞﾜﾁｮｳ"
   },
@@ -20392,7 +20392,7 @@
     "name": "琴平町",
     "city": "琴平町",
     "ward": null,
-    "county": null,
+    "county": "仲多度郡",
     "entity_type": "town",
     "kana": "ｺﾄﾋﾗﾁｮｳ"
   },
@@ -20405,7 +20405,7 @@
     "name": "多度津町",
     "city": "多度津町",
     "ward": null,
-    "county": null,
+    "county": "仲多度郡",
     "entity_type": "town",
     "kana": "ﾀﾄﾞﾂﾁｮｳ"
   },
@@ -20418,7 +20418,7 @@
     "name": "まんのう町",
     "city": "まんのう町",
     "ward": null,
-    "county": null,
+    "county": "仲多度郡",
     "entity_type": "town",
     "kana": "ﾏﾝﾉｳﾁｮｳ"
   },
@@ -20574,7 +20574,7 @@
     "name": "上島町",
     "city": "上島町",
     "ward": null,
-    "county": null,
+    "county": "越智郡",
     "entity_type": "town",
     "kana": "ｶﾐｼﾞﾏﾁｮｳ"
   },
@@ -20587,7 +20587,7 @@
     "name": "久万高原町",
     "city": "久万高原町",
     "ward": null,
-    "county": null,
+    "county": "上浮穴郡",
     "entity_type": "town",
     "kana": "ｸﾏｺｳｹﾞﾝﾁｮｳ"
   },
@@ -20600,7 +20600,7 @@
     "name": "松前町",
     "city": "松前町",
     "ward": null,
-    "county": null,
+    "county": "伊予郡",
     "entity_type": "town",
     "kana": "ﾏｻｷﾁｮｳ"
   },
@@ -20613,7 +20613,7 @@
     "name": "砥部町",
     "city": "砥部町",
     "ward": null,
-    "county": null,
+    "county": "伊予郡",
     "entity_type": "town",
     "kana": "ﾄﾍﾞﾁｮｳ"
   },
@@ -20626,7 +20626,7 @@
     "name": "内子町",
     "city": "内子町",
     "ward": null,
-    "county": null,
+    "county": "喜多郡",
     "entity_type": "town",
     "kana": "ｳﾁｺﾁｮｳ"
   },
@@ -20639,7 +20639,7 @@
     "name": "伊方町",
     "city": "伊方町",
     "ward": null,
-    "county": null,
+    "county": "西宇和郡",
     "entity_type": "town",
     "kana": "ｲｶﾀﾁｮｳ"
   },
@@ -20652,7 +20652,7 @@
     "name": "松野町",
     "city": "松野町",
     "ward": null,
-    "county": null,
+    "county": "北宇和郡",
     "entity_type": "town",
     "kana": "ﾏﾂﾉﾁｮｳ"
   },
@@ -20665,7 +20665,7 @@
     "name": "鬼北町",
     "city": "鬼北町",
     "ward": null,
-    "county": null,
+    "county": "北宇和郡",
     "entity_type": "town",
     "kana": "ｷﾎｸﾁｮｳ"
   },
@@ -20678,7 +20678,7 @@
     "name": "愛南町",
     "city": "愛南町",
     "ward": null,
-    "county": null,
+    "county": "南宇和郡",
     "entity_type": "town",
     "kana": "ｱｲﾅﾝﾁｮｳ"
   },
@@ -20834,7 +20834,7 @@
     "name": "東洋町",
     "city": "東洋町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ﾄｳﾖｳﾁｮｳ"
   },
@@ -20847,7 +20847,7 @@
     "name": "奈半利町",
     "city": "奈半利町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ﾅﾊﾘﾁｮｳ"
   },
@@ -20860,7 +20860,7 @@
     "name": "田野町",
     "city": "田野町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ﾀﾉﾁｮｳ"
   },
@@ -20873,7 +20873,7 @@
     "name": "安田町",
     "city": "安田町",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "town",
     "kana": "ﾔｽﾀﾞﾁｮｳ"
   },
@@ -20886,7 +20886,7 @@
     "name": "北川村",
     "city": "北川村",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "village",
     "kana": "ｷﾀｶﾞﾜﾑﾗ"
   },
@@ -20899,7 +20899,7 @@
     "name": "馬路村",
     "city": "馬路村",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "village",
     "kana": "ｳﾏｼﾞﾑﾗ"
   },
@@ -20912,7 +20912,7 @@
     "name": "芸西村",
     "city": "芸西村",
     "ward": null,
-    "county": null,
+    "county": "安芸郡",
     "entity_type": "village",
     "kana": "ｹﾞｲｾｲﾑﾗ"
   },
@@ -20925,7 +20925,7 @@
     "name": "本山町",
     "city": "本山町",
     "ward": null,
-    "county": null,
+    "county": "長岡郡",
     "entity_type": "town",
     "kana": "ﾓﾄﾔﾏﾁｮｳ"
   },
@@ -20938,7 +20938,7 @@
     "name": "大豊町",
     "city": "大豊町",
     "ward": null,
-    "county": null,
+    "county": "長岡郡",
     "entity_type": "town",
     "kana": "ｵｵﾄﾖﾁｮｳ"
   },
@@ -20951,7 +20951,7 @@
     "name": "土佐町",
     "city": "土佐町",
     "ward": null,
-    "county": null,
+    "county": "土佐郡",
     "entity_type": "town",
     "kana": "ﾄｻﾁｮｳ"
   },
@@ -20964,7 +20964,7 @@
     "name": "大川村",
     "city": "大川村",
     "ward": null,
-    "county": null,
+    "county": "土佐郡",
     "entity_type": "village",
     "kana": "ｵｵｶﾜﾑﾗ"
   },
@@ -20977,7 +20977,7 @@
     "name": "いの町",
     "city": "いの町",
     "ward": null,
-    "county": null,
+    "county": "吾川郡",
     "entity_type": "town",
     "kana": "ｲﾉﾁｮｳ"
   },
@@ -20990,7 +20990,7 @@
     "name": "仁淀川町",
     "city": "仁淀川町",
     "ward": null,
-    "county": null,
+    "county": "吾川郡",
     "entity_type": "town",
     "kana": "ﾆﾖﾄﾞｶﾞﾜﾁｮｳ"
   },
@@ -21003,7 +21003,7 @@
     "name": "中土佐町",
     "city": "中土佐町",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "town",
     "kana": "ﾅｶﾄｻﾁｮｳ"
   },
@@ -21016,7 +21016,7 @@
     "name": "佐川町",
     "city": "佐川町",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "town",
     "kana": "ｻｶﾜﾁｮｳ"
   },
@@ -21029,7 +21029,7 @@
     "name": "越知町",
     "city": "越知町",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "town",
     "kana": "ｵﾁﾁｮｳ"
   },
@@ -21042,7 +21042,7 @@
     "name": "梼原町",
     "city": "梼原町",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "town",
     "kana": "ﾕｽﾊﾗﾁｮｳ"
   },
@@ -21055,7 +21055,7 @@
     "name": "日高村",
     "city": "日高村",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "village",
     "kana": "ﾋﾀﾞｶﾑﾗ"
   },
@@ -21068,7 +21068,7 @@
     "name": "津野町",
     "city": "津野町",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "town",
     "kana": "ﾂﾉﾁｮｳ"
   },
@@ -21081,7 +21081,7 @@
     "name": "四万十町",
     "city": "四万十町",
     "ward": null,
-    "county": null,
+    "county": "高岡郡",
     "entity_type": "town",
     "kana": "ｼﾏﾝﾄﾁｮｳ"
   },
@@ -21094,7 +21094,7 @@
     "name": "大月町",
     "city": "大月町",
     "ward": null,
-    "county": null,
+    "county": "幡多郡",
     "entity_type": "town",
     "kana": "ｵｵﾂｷﾁｮｳ"
   },
@@ -21107,7 +21107,7 @@
     "name": "三原村",
     "city": "三原村",
     "ward": null,
-    "county": null,
+    "county": "幡多郡",
     "entity_type": "village",
     "kana": "ﾐﾊﾗﾑﾗ"
   },
@@ -21120,7 +21120,7 @@
     "name": "黒潮町",
     "city": "黒潮町",
     "ward": null,
-    "county": null,
+    "county": "幡多郡",
     "entity_type": "town",
     "kana": "ｸﾛｼｵﾁｮｳ"
   },
@@ -21692,7 +21692,7 @@
     "name": "宇美町",
     "city": "宇美町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ｳﾐﾏﾁ"
   },
@@ -21705,7 +21705,7 @@
     "name": "篠栗町",
     "city": "篠栗町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ｻｻｸﾞﾘﾏﾁ"
   },
@@ -21718,7 +21718,7 @@
     "name": "志免町",
     "city": "志免町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ｼﾒﾏﾁ"
   },
@@ -21731,7 +21731,7 @@
     "name": "須恵町",
     "city": "須恵町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ｽｴﾏﾁ"
   },
@@ -21744,7 +21744,7 @@
     "name": "新宮町",
     "city": "新宮町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ｼﾝｸﾞｳﾏﾁ"
   },
@@ -21757,7 +21757,7 @@
     "name": "久山町",
     "city": "久山町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ﾋｻﾔﾏﾏﾁ"
   },
@@ -21770,7 +21770,7 @@
     "name": "粕屋町",
     "city": "粕屋町",
     "ward": null,
-    "county": null,
+    "county": "糟屋郡",
     "entity_type": "town",
     "kana": "ｶｽﾔﾏﾁ"
   },
@@ -21783,7 +21783,7 @@
     "name": "芦屋町",
     "city": "芦屋町",
     "ward": null,
-    "county": null,
+    "county": "遠賀郡",
     "entity_type": "town",
     "kana": "ｱｼﾔﾏﾁ"
   },
@@ -21796,7 +21796,7 @@
     "name": "水巻町",
     "city": "水巻町",
     "ward": null,
-    "county": null,
+    "county": "遠賀郡",
     "entity_type": "town",
     "kana": "ﾐｽﾞﾏｷﾏﾁ"
   },
@@ -21809,7 +21809,7 @@
     "name": "岡垣町",
     "city": "岡垣町",
     "ward": null,
-    "county": null,
+    "county": "遠賀郡",
     "entity_type": "town",
     "kana": "ｵｶｶﾞｷﾏﾁ"
   },
@@ -21822,7 +21822,7 @@
     "name": "遠賀町",
     "city": "遠賀町",
     "ward": null,
-    "county": null,
+    "county": "遠賀郡",
     "entity_type": "town",
     "kana": "ｵﾝｶﾞﾁｮｳ"
   },
@@ -21835,7 +21835,7 @@
     "name": "小竹町",
     "city": "小竹町",
     "ward": null,
-    "county": null,
+    "county": "鞍手郡",
     "entity_type": "town",
     "kana": "ｺﾀｹﾏﾁ"
   },
@@ -21848,7 +21848,7 @@
     "name": "鞍手町",
     "city": "鞍手町",
     "ward": null,
-    "county": null,
+    "county": "鞍手郡",
     "entity_type": "town",
     "kana": "ｸﾗﾃﾏﾁ"
   },
@@ -21861,7 +21861,7 @@
     "name": "桂川町",
     "city": "桂川町",
     "ward": null,
-    "county": null,
+    "county": "嘉穂郡",
     "entity_type": "town",
     "kana": "ｹｲｾﾝﾏﾁ"
   },
@@ -21874,7 +21874,7 @@
     "name": "筑前町",
     "city": "筑前町",
     "ward": null,
-    "county": null,
+    "county": "朝倉郡",
     "entity_type": "town",
     "kana": "ﾁｸｾﾞﾝﾏﾁ"
   },
@@ -21887,7 +21887,7 @@
     "name": "東峰村",
     "city": "東峰村",
     "ward": null,
-    "county": null,
+    "county": "朝倉郡",
     "entity_type": "village",
     "kana": "ﾄｳﾎｳﾑﾗ"
   },
@@ -21900,7 +21900,7 @@
     "name": "大刀洗町",
     "city": "大刀洗町",
     "ward": null,
-    "county": null,
+    "county": "三井郡",
     "entity_type": "town",
     "kana": "ﾀﾁｱﾗｲﾏﾁ"
   },
@@ -21913,7 +21913,7 @@
     "name": "大木町",
     "city": "大木町",
     "ward": null,
-    "county": null,
+    "county": "三潴郡",
     "entity_type": "town",
     "kana": "ｵｵｷﾏﾁ"
   },
@@ -21926,7 +21926,7 @@
     "name": "広川町",
     "city": "広川町",
     "ward": null,
-    "county": null,
+    "county": "八女郡",
     "entity_type": "town",
     "kana": "ﾋﾛｶﾜﾏﾁ"
   },
@@ -21939,7 +21939,7 @@
     "name": "香春町",
     "city": "香春町",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "town",
     "kana": "ｶﾜﾗﾏﾁ"
   },
@@ -21952,7 +21952,7 @@
     "name": "添田町",
     "city": "添田町",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "town",
     "kana": "ｿｴﾀﾞﾏﾁ"
   },
@@ -21965,7 +21965,7 @@
     "name": "糸田町",
     "city": "糸田町",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "town",
     "kana": "ｲﾄﾀﾞﾏﾁ"
   },
@@ -21978,7 +21978,7 @@
     "name": "川崎町",
     "city": "川崎町",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "town",
     "kana": "ｶﾜｻｷﾏﾁ"
   },
@@ -21991,7 +21991,7 @@
     "name": "大任町",
     "city": "大任町",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "town",
     "kana": "ｵｵﾄｳﾏﾁ"
   },
@@ -22004,7 +22004,7 @@
     "name": "赤村",
     "city": "赤村",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "village",
     "kana": "ｱｶﾑﾗ"
   },
@@ -22017,7 +22017,7 @@
     "name": "福智町",
     "city": "福智町",
     "ward": null,
-    "county": null,
+    "county": "田川郡",
     "entity_type": "town",
     "kana": "ﾌｸﾁﾏﾁ"
   },
@@ -22030,7 +22030,7 @@
     "name": "苅田町",
     "city": "苅田町",
     "ward": null,
-    "county": null,
+    "county": "京都郡",
     "entity_type": "town",
     "kana": "ｶﾝﾀﾞﾏﾁ"
   },
@@ -22043,7 +22043,7 @@
     "name": "みやこ町",
     "city": "みやこ町",
     "ward": null,
-    "county": null,
+    "county": "京都郡",
     "entity_type": "town",
     "kana": "ﾐﾔｺﾏﾁ"
   },
@@ -22056,7 +22056,7 @@
     "name": "吉富町",
     "city": "吉富町",
     "ward": null,
-    "county": null,
+    "county": "築上郡",
     "entity_type": "town",
     "kana": "ﾖｼﾄﾐﾏﾁ"
   },
@@ -22069,7 +22069,7 @@
     "name": "上毛町",
     "city": "上毛町",
     "ward": null,
-    "county": null,
+    "county": "築上郡",
     "entity_type": "town",
     "kana": "ｺｳｹﾞﾏﾁ"
   },
@@ -22082,7 +22082,7 @@
     "name": "築上町",
     "city": "築上町",
     "ward": null,
-    "county": null,
+    "county": "築上郡",
     "entity_type": "town",
     "kana": "ﾁｸｼﾞｮｳﾏﾁ"
   },
@@ -22225,7 +22225,7 @@
     "name": "吉野ヶ里町",
     "city": "吉野ヶ里町",
     "ward": null,
-    "county": null,
+    "county": "神埼郡",
     "entity_type": "town",
     "kana": "ﾖｼﾉｶﾞﾘﾁｮｳ"
   },
@@ -22238,7 +22238,7 @@
     "name": "基山町",
     "city": "基山町",
     "ward": null,
-    "county": null,
+    "county": "三養基郡",
     "entity_type": "town",
     "kana": "ｷﾔﾏﾁｮｳ"
   },
@@ -22251,7 +22251,7 @@
     "name": "上峰町",
     "city": "上峰町",
     "ward": null,
-    "county": null,
+    "county": "三養基郡",
     "entity_type": "town",
     "kana": "ｶﾐﾐﾈﾁｮｳ"
   },
@@ -22264,7 +22264,7 @@
     "name": "みやき町",
     "city": "みやき町",
     "ward": null,
-    "county": null,
+    "county": "三養基郡",
     "entity_type": "town",
     "kana": "ﾐﾔｷﾁｮｳ"
   },
@@ -22277,7 +22277,7 @@
     "name": "玄海町",
     "city": "玄海町",
     "ward": null,
-    "county": null,
+    "county": "東松浦郡",
     "entity_type": "town",
     "kana": "ｹﾞﾝｶｲﾁｮｳ"
   },
@@ -22290,7 +22290,7 @@
     "name": "有田町",
     "city": "有田町",
     "ward": null,
-    "county": null,
+    "county": "西松浦郡",
     "entity_type": "town",
     "kana": "ｱﾘﾀﾁｮｳ"
   },
@@ -22303,7 +22303,7 @@
     "name": "大町町",
     "city": "大町町",
     "ward": null,
-    "county": null,
+    "county": "杵島郡",
     "entity_type": "town",
     "kana": "ｵｵﾏﾁﾁｮｳ"
   },
@@ -22316,7 +22316,7 @@
     "name": "江北町",
     "city": "江北町",
     "ward": null,
-    "county": null,
+    "county": "杵島郡",
     "entity_type": "town",
     "kana": "ｺｳﾎｸﾏﾁ"
   },
@@ -22329,7 +22329,7 @@
     "name": "白石町",
     "city": "白石町",
     "ward": null,
-    "county": null,
+    "county": "杵島郡",
     "entity_type": "town",
     "kana": "ｼﾛｲｼﾁｮｳ"
   },
@@ -22342,7 +22342,7 @@
     "name": "太良町",
     "city": "太良町",
     "ward": null,
-    "county": null,
+    "county": "藤津郡",
     "entity_type": "town",
     "kana": "ﾀﾗﾁｮｳ"
   },
@@ -22524,7 +22524,7 @@
     "name": "長与町",
     "city": "長与町",
     "ward": null,
-    "county": null,
+    "county": "西彼杵郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞﾖﾁｮｳ"
   },
@@ -22537,7 +22537,7 @@
     "name": "時津町",
     "city": "時津町",
     "ward": null,
-    "county": null,
+    "county": "西彼杵郡",
     "entity_type": "town",
     "kana": "ﾄｷﾞﾂﾁｮｳ"
   },
@@ -22550,7 +22550,7 @@
     "name": "東彼杵町",
     "city": "東彼杵町",
     "ward": null,
-    "county": null,
+    "county": "東彼杵郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｿﾉｷﾞﾁｮｳ"
   },
@@ -22563,7 +22563,7 @@
     "name": "川棚町",
     "city": "川棚町",
     "ward": null,
-    "county": null,
+    "county": "東彼杵郡",
     "entity_type": "town",
     "kana": "ｶﾜﾀﾅﾁｮｳ"
   },
@@ -22576,7 +22576,7 @@
     "name": "波佐見町",
     "city": "波佐見町",
     "ward": null,
-    "county": null,
+    "county": "東彼杵郡",
     "entity_type": "town",
     "kana": "ﾊｻﾐﾁｮｳ"
   },
@@ -22589,7 +22589,7 @@
     "name": "小値賀町",
     "city": "小値賀町",
     "ward": null,
-    "county": null,
+    "county": "北松浦郡",
     "entity_type": "town",
     "kana": "ｵﾁﾞｶﾁｮｳ"
   },
@@ -22602,7 +22602,7 @@
     "name": "佐々町",
     "city": "佐々町",
     "ward": null,
-    "county": null,
+    "county": "北松浦郡",
     "entity_type": "town",
     "kana": "ｻｻﾞﾁｮｳ"
   },
@@ -22615,7 +22615,7 @@
     "name": "新上五島町",
     "city": "新上五島町",
     "ward": null,
-    "county": null,
+    "county": "南松浦郡",
     "entity_type": "town",
     "kana": "ｼﾝｶﾐｺﾞﾄｳﾁｮｳ"
   },
@@ -22875,7 +22875,7 @@
     "name": "美里町",
     "city": "美里町",
     "ward": null,
-    "county": null,
+    "county": "下益城郡",
     "entity_type": "town",
     "kana": "ﾐｻﾄﾏﾁ"
   },
@@ -22888,7 +22888,7 @@
     "name": "玉東町",
     "city": "玉東町",
     "ward": null,
-    "county": null,
+    "county": "玉名郡",
     "entity_type": "town",
     "kana": "ｷﾞｮｸﾄｳﾏﾁ"
   },
@@ -22901,7 +22901,7 @@
     "name": "南関町",
     "city": "南関町",
     "ward": null,
-    "county": null,
+    "county": "玉名郡",
     "entity_type": "town",
     "kana": "ﾅﾝｶﾝﾏﾁ"
   },
@@ -22914,7 +22914,7 @@
     "name": "長洲町",
     "city": "長洲町",
     "ward": null,
-    "county": null,
+    "county": "玉名郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞｽﾏﾁ"
   },
@@ -22927,7 +22927,7 @@
     "name": "和水町",
     "city": "和水町",
     "ward": null,
-    "county": null,
+    "county": "玉名郡",
     "entity_type": "town",
     "kana": "ﾅｺﾞﾐﾏﾁ"
   },
@@ -22940,7 +22940,7 @@
     "name": "大津町",
     "city": "大津町",
     "ward": null,
-    "county": null,
+    "county": "菊池郡",
     "entity_type": "town",
     "kana": "ｵｵﾂﾞﾏﾁ"
   },
@@ -22953,7 +22953,7 @@
     "name": "菊陽町",
     "city": "菊陽町",
     "ward": null,
-    "county": null,
+    "county": "菊池郡",
     "entity_type": "town",
     "kana": "ｷｸﾖｳﾏﾁ"
   },
@@ -22966,7 +22966,7 @@
     "name": "南小国町",
     "city": "南小国町",
     "ward": null,
-    "county": null,
+    "county": "阿蘇郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｵｸﾞﾆﾏﾁ"
   },
@@ -22979,7 +22979,7 @@
     "name": "小国町",
     "city": "小国町",
     "ward": null,
-    "county": null,
+    "county": "阿蘇郡",
     "entity_type": "town",
     "kana": "ｵｸﾞﾆﾏﾁ"
   },
@@ -22992,7 +22992,7 @@
     "name": "産山村",
     "city": "産山村",
     "ward": null,
-    "county": null,
+    "county": "阿蘇郡",
     "entity_type": "village",
     "kana": "ｳﾌﾞﾔﾏﾑﾗ"
   },
@@ -23005,7 +23005,7 @@
     "name": "高森町",
     "city": "高森町",
     "ward": null,
-    "county": null,
+    "county": "阿蘇郡",
     "entity_type": "town",
     "kana": "ﾀｶﾓﾘﾏﾁ"
   },
@@ -23018,7 +23018,7 @@
     "name": "西原村",
     "city": "西原村",
     "ward": null,
-    "county": null,
+    "county": "阿蘇郡",
     "entity_type": "village",
     "kana": "ﾆｼﾊﾗﾑﾗ"
   },
@@ -23031,7 +23031,7 @@
     "name": "南阿蘇村",
     "city": "南阿蘇村",
     "ward": null,
-    "county": null,
+    "county": "阿蘇郡",
     "entity_type": "village",
     "kana": "ﾐﾅﾐｱｿﾑﾗ"
   },
@@ -23044,7 +23044,7 @@
     "name": "御船町",
     "city": "御船町",
     "ward": null,
-    "county": null,
+    "county": "上益城郡",
     "entity_type": "town",
     "kana": "ﾐﾌﾈﾏﾁ"
   },
@@ -23057,7 +23057,7 @@
     "name": "嘉島町",
     "city": "嘉島町",
     "ward": null,
-    "county": null,
+    "county": "上益城郡",
     "entity_type": "town",
     "kana": "ｶｼﾏﾏﾁ"
   },
@@ -23070,7 +23070,7 @@
     "name": "益城町",
     "city": "益城町",
     "ward": null,
-    "county": null,
+    "county": "上益城郡",
     "entity_type": "town",
     "kana": "ﾏｼｷﾏﾁ"
   },
@@ -23083,7 +23083,7 @@
     "name": "甲佐町",
     "city": "甲佐町",
     "ward": null,
-    "county": null,
+    "county": "上益城郡",
     "entity_type": "town",
     "kana": "ｺｳｻﾏﾁ"
   },
@@ -23096,7 +23096,7 @@
     "name": "山都町",
     "city": "山都町",
     "ward": null,
-    "county": null,
+    "county": "上益城郡",
     "entity_type": "town",
     "kana": "ﾔﾏﾄﾁｮｳ"
   },
@@ -23109,7 +23109,7 @@
     "name": "氷川町",
     "city": "氷川町",
     "ward": null,
-    "county": null,
+    "county": "八代郡",
     "entity_type": "town",
     "kana": "ﾋｶﾜﾁｮｳ"
   },
@@ -23122,7 +23122,7 @@
     "name": "芦北町",
     "city": "芦北町",
     "ward": null,
-    "county": null,
+    "county": "葦北郡",
     "entity_type": "town",
     "kana": "ｱｼｷﾀﾏﾁ"
   },
@@ -23135,7 +23135,7 @@
     "name": "津奈木町",
     "city": "津奈木町",
     "ward": null,
-    "county": null,
+    "county": "葦北郡",
     "entity_type": "town",
     "kana": "ﾂﾅｷﾞﾏﾁ"
   },
@@ -23148,7 +23148,7 @@
     "name": "錦町",
     "city": "錦町",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "town",
     "kana": "ﾆｼｷﾏﾁ"
   },
@@ -23161,7 +23161,7 @@
     "name": "多良木町",
     "city": "多良木町",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "town",
     "kana": "ﾀﾗｷﾞﾏﾁ"
   },
@@ -23174,7 +23174,7 @@
     "name": "湯前町",
     "city": "湯前町",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "town",
     "kana": "ﾕﾉﾏｴﾏﾁ"
   },
@@ -23187,7 +23187,7 @@
     "name": "水上村",
     "city": "水上村",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "village",
     "kana": "ﾐｽﾞｶﾐﾑﾗ"
   },
@@ -23200,7 +23200,7 @@
     "name": "相良村",
     "city": "相良村",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "village",
     "kana": "ｻｶﾞﾗﾑﾗ"
   },
@@ -23213,7 +23213,7 @@
     "name": "五木村",
     "city": "五木村",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "village",
     "kana": "ｲﾂｷﾑﾗ"
   },
@@ -23226,7 +23226,7 @@
     "name": "山江村",
     "city": "山江村",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "village",
     "kana": "ﾔﾏｴﾑﾗ"
   },
@@ -23239,7 +23239,7 @@
     "name": "球磨村",
     "city": "球磨村",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "village",
     "kana": "ｸﾏﾑﾗ"
   },
@@ -23252,7 +23252,7 @@
     "name": "あさぎり町",
     "city": "あさぎり町",
     "ward": null,
-    "county": null,
+    "county": "球磨郡",
     "entity_type": "town",
     "kana": "ｱｻｷﾞﾘﾁｮｳ"
   },
@@ -23265,7 +23265,7 @@
     "name": "苓北町",
     "city": "苓北町",
     "ward": null,
-    "county": null,
+    "county": "天草郡",
     "entity_type": "town",
     "kana": "ﾚｲﾎｸﾏﾁ"
   },
@@ -23460,7 +23460,7 @@
     "name": "姫島村",
     "city": "姫島村",
     "ward": null,
-    "county": null,
+    "county": "東国東郡",
     "entity_type": "village",
     "kana": "ﾋﾒｼﾏﾑﾗ"
   },
@@ -23473,7 +23473,7 @@
     "name": "日出町",
     "city": "日出町",
     "ward": null,
-    "county": null,
+    "county": "速見郡",
     "entity_type": "town",
     "kana": "ﾋｼﾞﾏﾁ"
   },
@@ -23486,7 +23486,7 @@
     "name": "九重町",
     "city": "九重町",
     "ward": null,
-    "county": null,
+    "county": "玖珠郡",
     "entity_type": "town",
     "kana": "ｺｺﾉｴﾏﾁ"
   },
@@ -23499,7 +23499,7 @@
     "name": "玖珠町",
     "city": "玖珠町",
     "ward": null,
-    "county": null,
+    "county": "玖珠郡",
     "entity_type": "town",
     "kana": "ｸｽﾏﾁ"
   },
@@ -23629,7 +23629,7 @@
     "name": "三股町",
     "city": "三股町",
     "ward": null,
-    "county": null,
+    "county": "北諸県郡",
     "entity_type": "town",
     "kana": "ﾐﾏﾀﾁｮｳ"
   },
@@ -23642,7 +23642,7 @@
     "name": "高原町",
     "city": "高原町",
     "ward": null,
-    "county": null,
+    "county": "西諸県郡",
     "entity_type": "town",
     "kana": "ﾀｶﾊﾙﾁｮｳ"
   },
@@ -23655,7 +23655,7 @@
     "name": "国富町",
     "city": "国富町",
     "ward": null,
-    "county": null,
+    "county": "東諸県郡",
     "entity_type": "town",
     "kana": "ｸﾆﾄﾐﾁｮｳ"
   },
@@ -23668,7 +23668,7 @@
     "name": "綾町",
     "city": "綾町",
     "ward": null,
-    "county": null,
+    "county": "東諸県郡",
     "entity_type": "town",
     "kana": "ｱﾔﾁｮｳ"
   },
@@ -23681,7 +23681,7 @@
     "name": "高鍋町",
     "city": "高鍋町",
     "ward": null,
-    "county": null,
+    "county": "児湯郡",
     "entity_type": "town",
     "kana": "ﾀｶﾅﾍﾞﾁｮｳ"
   },
@@ -23694,7 +23694,7 @@
     "name": "新富町",
     "city": "新富町",
     "ward": null,
-    "county": null,
+    "county": "児湯郡",
     "entity_type": "town",
     "kana": "ｼﾝﾄﾐﾁｮｳ"
   },
@@ -23707,7 +23707,7 @@
     "name": "西米良村",
     "city": "西米良村",
     "ward": null,
-    "county": null,
+    "county": "児湯郡",
     "entity_type": "village",
     "kana": "ﾆｼﾒﾗｿﾝ"
   },
@@ -23720,7 +23720,7 @@
     "name": "木城町",
     "city": "木城町",
     "ward": null,
-    "county": null,
+    "county": "児湯郡",
     "entity_type": "town",
     "kana": "ｷｼﾞｮｳﾁｮｳ"
   },
@@ -23733,7 +23733,7 @@
     "name": "川南町",
     "city": "川南町",
     "ward": null,
-    "county": null,
+    "county": "児湯郡",
     "entity_type": "town",
     "kana": "ｶﾜﾐﾅﾐﾁｮｳ"
   },
@@ -23746,7 +23746,7 @@
     "name": "都農町",
     "city": "都農町",
     "ward": null,
-    "county": null,
+    "county": "児湯郡",
     "entity_type": "town",
     "kana": "ﾂﾉﾁｮｳ"
   },
@@ -23759,7 +23759,7 @@
     "name": "門川町",
     "city": "門川町",
     "ward": null,
-    "county": null,
+    "county": "東臼杵郡",
     "entity_type": "town",
     "kana": "ｶﾄﾞｶﾞﾜﾁｮｳ"
   },
@@ -23772,7 +23772,7 @@
     "name": "諸塚村",
     "city": "諸塚村",
     "ward": null,
-    "county": null,
+    "county": "東臼杵郡",
     "entity_type": "village",
     "kana": "ﾓﾛﾂｶｿﾝ"
   },
@@ -23785,7 +23785,7 @@
     "name": "椎葉村",
     "city": "椎葉村",
     "ward": null,
-    "county": null,
+    "county": "東臼杵郡",
     "entity_type": "village",
     "kana": "ｼｲﾊﾞｿﾝ"
   },
@@ -23798,7 +23798,7 @@
     "name": "美郷町",
     "city": "美郷町",
     "ward": null,
-    "county": null,
+    "county": "東臼杵郡",
     "entity_type": "town",
     "kana": "ﾐｻﾄﾁｮｳ"
   },
@@ -23811,7 +23811,7 @@
     "name": "高千穂町",
     "city": "高千穂町",
     "ward": null,
-    "county": null,
+    "county": "西臼杵郡",
     "entity_type": "town",
     "kana": "ﾀｶﾁﾎﾁｮｳ"
   },
@@ -23824,7 +23824,7 @@
     "name": "日之影町",
     "city": "日之影町",
     "ward": null,
-    "county": null,
+    "county": "西臼杵郡",
     "entity_type": "town",
     "kana": "ﾋﾉｶｹﾞﾁｮｳ"
   },
@@ -23837,7 +23837,7 @@
     "name": "五ヶ瀬町",
     "city": "五ヶ瀬町",
     "ward": null,
-    "county": null,
+    "county": "西臼杵郡",
     "entity_type": "town",
     "kana": "ｺﾞｶｾﾁｮｳ"
   },
@@ -24097,7 +24097,7 @@
     "name": "三島村",
     "city": "三島村",
     "ward": null,
-    "county": null,
+    "county": "鹿児島郡",
     "entity_type": "village",
     "kana": "ﾐｼﾏﾑﾗ"
   },
@@ -24110,7 +24110,7 @@
     "name": "十島村",
     "city": "十島村",
     "ward": null,
-    "county": null,
+    "county": "鹿児島郡",
     "entity_type": "village",
     "kana": "ﾄｼﾏﾑﾗ"
   },
@@ -24123,7 +24123,7 @@
     "name": "さつま町",
     "city": "さつま町",
     "ward": null,
-    "county": null,
+    "county": "薩摩郡",
     "entity_type": "town",
     "kana": "ｻﾂﾏﾁｮｳ"
   },
@@ -24136,7 +24136,7 @@
     "name": "長島町",
     "city": "長島町",
     "ward": null,
-    "county": null,
+    "county": "出水郡",
     "entity_type": "town",
     "kana": "ﾅｶﾞｼﾏﾁｮｳ"
   },
@@ -24149,7 +24149,7 @@
     "name": "湧水町",
     "city": "湧水町",
     "ward": null,
-    "county": null,
+    "county": "姶良郡",
     "entity_type": "town",
     "kana": "ﾕｳｽｲﾁｮｳ"
   },
@@ -24162,7 +24162,7 @@
     "name": "大崎町",
     "city": "大崎町",
     "ward": null,
-    "county": null,
+    "county": "曽於郡",
     "entity_type": "town",
     "kana": "ｵｵｻｷﾁｮｳ"
   },
@@ -24175,7 +24175,7 @@
     "name": "東串良町",
     "city": "東串良町",
     "ward": null,
-    "county": null,
+    "county": "肝属郡",
     "entity_type": "town",
     "kana": "ﾋｶﾞｼｸｼﾗﾁｮｳ"
   },
@@ -24188,7 +24188,7 @@
     "name": "錦江町",
     "city": "錦江町",
     "ward": null,
-    "county": null,
+    "county": "肝属郡",
     "entity_type": "town",
     "kana": "ｷﾝｺｳﾁｮｳ"
   },
@@ -24201,7 +24201,7 @@
     "name": "南大隅町",
     "city": "南大隅町",
     "ward": null,
-    "county": null,
+    "county": "肝属郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐｵｵｽﾐﾁｮｳ"
   },
@@ -24214,7 +24214,7 @@
     "name": "肝付町",
     "city": "肝付町",
     "ward": null,
-    "county": null,
+    "county": "肝属郡",
     "entity_type": "town",
     "kana": "ｷﾓﾂｷﾁｮｳ"
   },
@@ -24227,7 +24227,7 @@
     "name": "中種子町",
     "city": "中種子町",
     "ward": null,
-    "county": null,
+    "county": "熊毛郡",
     "entity_type": "town",
     "kana": "ﾅｶﾀﾈﾁｮｳ"
   },
@@ -24240,7 +24240,7 @@
     "name": "南種子町",
     "city": "南種子町",
     "ward": null,
-    "county": null,
+    "county": "熊毛郡",
     "entity_type": "town",
     "kana": "ﾐﾅﾐﾀﾈﾁｮｳ"
   },
@@ -24253,7 +24253,7 @@
     "name": "屋久島町",
     "city": "屋久島町",
     "ward": null,
-    "county": null,
+    "county": "熊毛郡",
     "entity_type": "town",
     "kana": "ﾔｸｼﾏﾁｮｳ"
   },
@@ -24266,7 +24266,7 @@
     "name": "大和村",
     "city": "大和村",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "village",
     "kana": "ﾔﾏﾄｿﾝ"
   },
@@ -24279,7 +24279,7 @@
     "name": "宇検村",
     "city": "宇検村",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "village",
     "kana": "ｳｹﾝｿﾝ"
   },
@@ -24292,7 +24292,7 @@
     "name": "瀬戸内町",
     "city": "瀬戸内町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ｾﾄｳﾁﾁｮｳ"
   },
@@ -24305,7 +24305,7 @@
     "name": "龍郷町",
     "city": "龍郷町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ﾀﾂｺﾞｳﾁｮｳ"
   },
@@ -24318,7 +24318,7 @@
     "name": "喜界町",
     "city": "喜界町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ｷｶｲﾁｮｳ"
   },
@@ -24331,7 +24331,7 @@
     "name": "徳之島町",
     "city": "徳之島町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ﾄｸﾉｼﾏﾁｮｳ"
   },
@@ -24344,7 +24344,7 @@
     "name": "天城町",
     "city": "天城町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ｱﾏｷﾞﾁｮｳ"
   },
@@ -24357,7 +24357,7 @@
     "name": "伊仙町",
     "city": "伊仙町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ｲｾﾝﾁｮｳ"
   },
@@ -24370,7 +24370,7 @@
     "name": "和泊町",
     "city": "和泊町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ﾜﾄﾞﾏﾘﾁｮｳ"
   },
@@ -24383,7 +24383,7 @@
     "name": "知名町",
     "city": "知名町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ﾁﾅﾁｮｳ"
   },
@@ -24396,7 +24396,7 @@
     "name": "与論町",
     "city": "与論町",
     "ward": null,
-    "county": null,
+    "county": "大島郡",
     "entity_type": "town",
     "kana": "ﾖﾛﾝﾁｮｳ"
   },
@@ -24552,7 +24552,7 @@
     "name": "国頭村",
     "city": "国頭村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ｸﾆｶﾞﾐｿﾝ"
   },
@@ -24565,7 +24565,7 @@
     "name": "大宜味村",
     "city": "大宜味村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ｵｵｷﾞﾐｿﾝ"
   },
@@ -24578,7 +24578,7 @@
     "name": "東村",
     "city": "東村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ﾋｶﾞｼｿﾝ"
   },
@@ -24591,7 +24591,7 @@
     "name": "今帰仁村",
     "city": "今帰仁村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ﾅｷｼﾞﾝｿﾝ"
   },
@@ -24604,7 +24604,7 @@
     "name": "本部町",
     "city": "本部町",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "town",
     "kana": "ﾓﾄﾌﾞﾁｮｳ"
   },
@@ -24617,7 +24617,7 @@
     "name": "恩納村",
     "city": "恩納村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ｵﾝﾅｿﾝ"
   },
@@ -24630,7 +24630,7 @@
     "name": "宜野座村",
     "city": "宜野座村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ｷﾞﾉｻﾞｿﾝ"
   },
@@ -24643,7 +24643,7 @@
     "name": "金武町",
     "city": "金武町",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "town",
     "kana": "ｷﾝﾁｮｳ"
   },
@@ -24656,7 +24656,7 @@
     "name": "伊江村",
     "city": "伊江村",
     "ward": null,
-    "county": null,
+    "county": "国頭郡",
     "entity_type": "village",
     "kana": "ｲｴｿﾝ"
   },
@@ -24669,7 +24669,7 @@
     "name": "読谷村",
     "city": "読谷村",
     "ward": null,
-    "county": null,
+    "county": "中頭郡",
     "entity_type": "village",
     "kana": "ﾖﾐﾀﾝｿﾝ"
   },
@@ -24682,7 +24682,7 @@
     "name": "嘉手納町",
     "city": "嘉手納町",
     "ward": null,
-    "county": null,
+    "county": "中頭郡",
     "entity_type": "town",
     "kana": "ｶﾃﾞﾅﾁｮｳ"
   },
@@ -24695,7 +24695,7 @@
     "name": "北谷町",
     "city": "北谷町",
     "ward": null,
-    "county": null,
+    "county": "中頭郡",
     "entity_type": "town",
     "kana": "ﾁﾔﾀﾝﾁｮｳ"
   },
@@ -24708,7 +24708,7 @@
     "name": "北中城村",
     "city": "北中城村",
     "ward": null,
-    "county": null,
+    "county": "中頭郡",
     "entity_type": "village",
     "kana": "ｷﾀﾅｶｸﾞｽｸｿﾝ"
   },
@@ -24721,7 +24721,7 @@
     "name": "中城村",
     "city": "中城村",
     "ward": null,
-    "county": null,
+    "county": "中頭郡",
     "entity_type": "village",
     "kana": "ﾅｶｸﾞｽｸｿﾝ"
   },
@@ -24734,7 +24734,7 @@
     "name": "西原町",
     "city": "西原町",
     "ward": null,
-    "county": null,
+    "county": "中頭郡",
     "entity_type": "town",
     "kana": "ﾆｼﾊﾗﾁｮｳ"
   },
@@ -24747,7 +24747,7 @@
     "name": "与那原町",
     "city": "与那原町",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "town",
     "kana": "ﾖﾅﾊﾞﾙﾁｮｳ"
   },
@@ -24760,7 +24760,7 @@
     "name": "南風原町",
     "city": "南風原町",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "town",
     "kana": "ﾊｴﾊﾞﾙﾁｮｳ"
   },
@@ -24773,7 +24773,7 @@
     "name": "渡嘉敷村",
     "city": "渡嘉敷村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ﾄｶｼｷｿﾝ"
   },
@@ -24786,7 +24786,7 @@
     "name": "座間味村",
     "city": "座間味村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ｻﾞﾏﾐｿﾝ"
   },
@@ -24799,7 +24799,7 @@
     "name": "粟国村",
     "city": "粟国村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ｱｸﾞﾆｿﾝ"
   },
@@ -24812,7 +24812,7 @@
     "name": "渡名喜村",
     "city": "渡名喜村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ﾄﾅｷｿﾝ"
   },
@@ -24825,7 +24825,7 @@
     "name": "南大東村",
     "city": "南大東村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ﾐﾅﾐﾀﾞｲﾄｳｿﾝ"
   },
@@ -24838,7 +24838,7 @@
     "name": "北大東村",
     "city": "北大東村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ｷﾀﾀﾞｲﾄｳｿﾝ"
   },
@@ -24851,7 +24851,7 @@
     "name": "伊平屋村",
     "city": "伊平屋村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ｲﾍﾔｿﾝ"
   },
@@ -24864,7 +24864,7 @@
     "name": "伊是名村",
     "city": "伊是名村",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "village",
     "kana": "ｲｾﾞﾅｿﾝ"
   },
@@ -24877,7 +24877,7 @@
     "name": "久米島町",
     "city": "久米島町",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "town",
     "kana": "ｸﾒｼﾞﾏﾁｮｳ"
   },
@@ -24890,7 +24890,7 @@
     "name": "八重瀬町",
     "city": "八重瀬町",
     "ward": null,
-    "county": null,
+    "county": "島尻郡",
     "entity_type": "town",
     "kana": "ﾔｴｾﾁｮｳ"
   },
@@ -24903,7 +24903,7 @@
     "name": "多良間村",
     "city": "多良間村",
     "ward": null,
-    "county": null,
+    "county": "宮古郡",
     "entity_type": "village",
     "kana": "ﾀﾗﾏｿﾝ"
   },
@@ -24916,7 +24916,7 @@
     "name": "竹富町",
     "city": "竹富町",
     "ward": null,
-    "county": null,
+    "county": "八重山郡",
     "entity_type": "town",
     "kana": "ﾀｹﾄﾐﾁｮｳ"
   },
@@ -24929,7 +24929,7 @@
     "name": "与那国町",
     "city": "与那国町",
     "ward": null,
-    "county": null,
+    "county": "八重山郡",
     "entity_type": "town",
     "kana": "ﾖﾅｸﾞﾆﾁｮｳ"
   }

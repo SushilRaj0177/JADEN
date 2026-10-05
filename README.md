@@ -36,7 +36,7 @@ Unlike Western street-grid systems (e.g., `123 Main St, Suite 400`), Japanese ad
 3. **The CJK Dash Jungle & Proper Noun Preservation:**
    * Over 11 Unicode code points represent dashes in Japanese text (`-`, `－`, `‐`, `―`, `ー`, `～`, etc.).
    * The Katakana prolonged sound mark (`ー` / `U+30FC`) is simultaneously a delimiter between block numbers (`1ー2ー3` -> `1-2-3`) and a crucial character in proper nouns (`タワー`, `センター`).
-   * Proper place names embed Kanji numbers (`六本木`, `八王子`, `十条`, `四日市`, `三番町`, `一番街`, `麻布十番`). Blind regex substitution corrupts proper names into `1番 街` or `麻布10番`.
+   * Proper place names embed Kanji numbers (`六本木`, `八王子`, `十条`, `四日市`, `三番町`, `一番街`, `麻布十番`, `八重洲`). JADEN's multi-stage FSM protects proper nouns across both compound numeral patterns and single-digit tail notations (e.g., `六本木1`, `十条1`, `一番町1`, `八重洲1`, `麻布十番1-1`), preventing false tokenization into block numbers.
 4. **Multi-Jurisdiction Collisions on Omitted Prefectures:**
    * 38 municipal and ward names are shared across multiple prefectures. For example, `中央区` exists in Tokyo and 10 designated cities; `府中市` exists in Tokyo and Hiroshima; `伊達市` exists in Hokkaido and Fukushima. A production system must report ambiguity rather than silently guessing Tokyo.
 
@@ -78,6 +78,7 @@ JADEN executes a multi-stage deterministic pipeline:
    [Stage 3: Administrative Boundary Resolver (PrefixTrie)]
    • O(L) prefix matching against all 47 Prefectures (JIS X 0401)
    • 1,918 Municipalities & Administrative Wards (JIS X 0402 / MIC)
+   • 923 Statutory Counties (郡) mapped to 932 towns and villages, supporting [郡名][町村名] syntax
    • Multi-jurisdiction collision detection on omitted prefectures (中央区, 府中市, 伊達市)
    • Returns is_ambiguous=True with candidate lists when ambiguous
                                   │
@@ -122,10 +123,16 @@ All figures, codes, and schemas bundled in JADEN are verified against official J
      $$\text{Sum} = \sum_{i=1}^{5} d_i \times w_i, \quad W = [6, 5, 4, 3, 2]$$
      $$R = \text{Sum} \pmod{11}$$
      $$\text{Check Digit} = \begin{cases} (11 - R) \pmod{10} & \text{if } R \le 1 \\ 11 - R & \text{if } R \ge 2 \end{cases}$$
-3. **Statutory Addressing Acts:**
+3. **County (郡) Association (Japan Post Address Base Registry & Statutory Designations):**
+   * **Source Authority:** Japan Post Postal Address Data (郵便番号データ) & Statutory Local Autonomy Act designations (地方自治法定義町村)
+   * **Coverage:** 932 towns and villages (743 町 + 189 村):
+     - 923 statutory counties (郡) mapped to their corresponding towns/villages.
+     - 9 Tokyo island municipalities explicitly verified without county jurisdiction (`大島町`, `利島村`, `新島村`, `神津島村`, `三宅村`, `御蔵島村`, `八丈町`, `青ヶ島村`, `小笠原村`).
+     - Northern Territories (北方領土) villages mapped to statutory counties (`色丹郡色丹村`, `国後郡泊村`, `国後郡留夜別村`, `択捉郡留別村`, `紗那郡紗那村`, `蘂取郡蘂取村`).
+4. **Statutory Addressing Acts:**
    * *Act on Indication of Residential Address (昭和37年法律第119号)*: Defines urban *Gaiku-hoshiki* (Chome-Ban-Go).
    * *Real Property Registration Act (平成16年法律第123号)*: Governs cadastral *Chiban* (Oaza-Koaza-Banchi-Edaban).
-4. **Digital Agency Address Base Registry (アドレス・ベース・レジストリ):**
+5. **Digital Agency Address Base Registry (アドレス・ベース・レジストリ):**
    * JADEN models ABR statutory taxonomy (Machi-aza, Gaiku, Chiban). Note: JADEN is an offline linguistic engine and intentionally does not bundle the multi-gigabyte spatial polygon GIS shapefiles of the full ABR.
 
 ---
@@ -136,19 +143,19 @@ Benchmarks are executed using the reproducible suite in `benchmarks/run_benchmar
 
 ### Hardware & Runtime Environment
 * **OS:** Windows 11 (10.0.26200)
-* **CPU:** AMD Ryzen (12 Logical Cores)
+* **CPU:** Intel64 Family 6 Model 151 (12 Logical Cores)
 * **Python Runtime:** CPython 3.13.14 (64-bit)
-* **Memory Footprint:** 3.17 MB baseline heap (full registry + tries), 3.64 MB peak heap during batch execution
+* **Memory Footprint:** 4.25 MB baseline heap (full registry + tries), 4.72 MB peak heap during batch execution
 * **Corpus Diversity:** 500 unique, uninterned addresses evaluated over 5,000 operations (10 passes)
 
 ### Empirical Performance Results
 
 | Evaluation Corpus | Unique Addrs | Operations | Throughput (addr/sec) | Latency P50 | Latency P90 | Latency P99 | Mean Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Clean Standard (Gaiku-hoshiki)** | 200 | 2,000 | **2,901.7** | 275.10 μs | 485.50 μs | 861.30 μs | 337.55 μs |
-| **Complex Conventional (Kyoto/Hokkaido/Cadastral)** | 150 | 1,500 | **3,487.5** | 233.40 μs | 386.50 μs | 639.50 μs | 280.98 μs |
-| **Dirty Real-World (Omitted/Dashes/Buildings)** | 150 | 1,500 | **2,693.1** | 315.45 μs | 534.50 μs | 883.80 μs | 364.96 μs |
-| **Aggregate Workload** | **500** | **5,000** | **2,982.7** | **275.10 μs** | **485.50 μs** | **861.30 μs** | **332.81 μs** |
+| **Clean Standard (Gaiku-hoshiki)** | 200 | 2,000 | **4,026.8** | 214.60 μs | 275.50 μs | 488.70 μs | 243.54 μs |
+| **Complex Conventional (Kyoto/Hokkaido/Cadastral)** | 150 | 1,500 | **4,131.5** | 227.70 μs | 247.50 μs | 296.50 μs | 237.59 μs |
+| **Dirty Real-World (Omitted/Dashes/Buildings)** | 150 | 1,500 | **3,682.0** | 268.30 μs | 281.20 μs | 302.60 μs | 267.16 μs |
+| **Aggregate Workload** | **500** | **5,000** | **3,946.0** | **227.70 μs** | **275.50 μs** | **488.70 μs** | **253.44 μs** |
 
 ---
 
@@ -197,6 +204,13 @@ res4 = jaden.normalize("府中市宮西町2-24")
 print(res4.components.is_ambiguous)           # True
 print(res4.components.ambiguous_candidates)   # ('東京都府中市 (132063)', '広島県府中市 (342084)')
 print(res4.confidence_score)                  # 0.50
+
+# 5. County (郡) resolution with omitted prefecture inference
+res5 = jaden.normalize("中郡大磯町国府本郷547")
+print(res5.canonical)                         # '神奈川県中郡大磯町国府本郷547番地'
+print(res5.components.county)                  # '中郡'
+print(res5.components.city)                    # '大磯町'
+print(res5.components.lg_code)                 # '143413'
 ```
 
 ### Command-Line Interface (CLI)
@@ -217,9 +231,9 @@ cat addresses.txt | jaden --jsonl > normalized.jsonl
 
 ## 7. Testing & Quality Assurance
 
-JADEN maintains a 107-test verification suite covering:
-* **All 47 Prefectures:** Deep decomposition asserting prefecture, city, ward, town, oaza/koaza, and block numbers across all 47 prefectural administrative centers.
-* **19 Adversarial Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`), multi-jurisdiction collisions (`中央区`, `府中市`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
+JADEN maintains a 124-test verification suite covering:
+* **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
+* **28 Adversarial Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), multi-jurisdiction collisions (`中央区`, `府中市`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
 * **JIS X 0402 Modulus 11 Check Digit Validation:** Algorithmic verification across all codes.
 
 ```bash
@@ -235,6 +249,7 @@ In accordance with our engineering principles, JADEN documents its exact operati
 2. **Ambiguous Omitted Jurisdictions:** When a user omits the prefecture and enters a duplicated municipality name (e.g. `中央区`, `府中市`, `伊達市`), JADEN explicitly reports `is_ambiguous=True` and lists candidates rather than silently guessing.
 3. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
 4. **Cadastral vs. Residential Distinction in Plain Hyphenated Strings:** When an input consists solely of `町名 X-Y` without `丁目`, `大字`, `字`, `番地`, or `号`, JADEN marks `address_regime="unspecified"`, as determining the regime requires local municipal boundary maps.
+5. **Omitted Prefecture and Municipality:** Inputs that omit both the prefecture and municipality (e.g., `銀座4-1`, `道玄坂1-2`) cannot be unambiguously identified against a national registry and yield `confidence=0.0`.
 
 ---
 

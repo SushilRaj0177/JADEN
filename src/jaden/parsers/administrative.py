@@ -61,6 +61,14 @@ class AdministrativeParser:
                 existing.append(muni)
             self._muni_trie.insert(muni.name, existing)
 
+            # County-prefixed town/village name: e.g. '西多摩郡日の出町', '中郡大磯町', '石狩郡当別町'
+            if muni.county:
+                county_full = f"{muni.county}{muni.name}"
+                existing_cf = self._muni_trie.search_exact(county_full) or []
+                if muni not in existing_cf:
+                    existing_cf.append(muni)
+                self._muni_trie.insert(county_full, existing_cf)
+
             # Designated city base name: e.g. '京都市', '横浜市'
             if muni.entity_type == "designated_city":
                 existing_city = self._muni_trie.search_exact(muni.city) or []

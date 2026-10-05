@@ -181,6 +181,8 @@ class AddressNormalizer:
             go_val = None
             regime_val = AddressRegime.CHIBAN.value
 
+        if county_name:
+            tier_map["county"] = TaxonomyTier.TIER_1_STATUTORY.value
         if town_name:
             tier_map["town"] = TaxonomyTier.TIER_1_STATUTORY.value
         if oaza_val:
@@ -190,9 +192,17 @@ class AddressNormalizer:
         if chome_val is not None:
             tier_map["chome"] = TaxonomyTier.TIER_1_STATUTORY.value
         if ban_val is not None:
-            tier_map["ban"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["ban"] = (
+                TaxonomyTier.TIER_1_STATUTORY.value
+                if regime_val == AddressRegime.GAIKU_HOSHIKI.value
+                else TaxonomyTier.TIER_2_CONVENTIONAL.value
+            )
         if go_val is not None:
-            tier_map["go"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["go"] = (
+                TaxonomyTier.TIER_1_STATUTORY.value
+                if regime_val == AddressRegime.GAIKU_HOSHIKI.value
+                else TaxonomyTier.TIER_2_CONVENTIONAL.value
+            )
         if banchi_val is not None:
             tier_map["banchi"] = TaxonomyTier.TIER_1_STATUTORY.value
         if edaban_val is not None:
@@ -212,6 +222,8 @@ class AddressNormalizer:
         canonical_parts = []
         if pref_name:
             canonical_parts.append(pref_name)
+        if county_name:
+            canonical_parts.append(county_name)
         if city_name:
             canonical_parts.append(city_name)
         if ward_name and ward_name not in (city_name or ""):

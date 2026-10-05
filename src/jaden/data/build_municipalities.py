@@ -40,6 +40,7 @@ SOURCE_METADATA = {
     "effective_date": "2024-01-01",
     "retrieval_date": "2026-10-04",
     "standards": ["JIS X 0401:1973", "JIS X 0402:2020"],
+    "county_source": "Japan Post Address Base Registry (日本郵便 郵便番号データ) & Northern Territories Statutory Administrative Districts (北方領土地方自治法定義町村)",
     "counts": {
         "prefectures": 47,
         "municipalities": 1747,
@@ -49,7 +50,9 @@ SOURCE_METADATA = {
         "towns": 743,
         "villages": 189,
         "administrative_wards": 171,
-        "total_bundled_records": 1918
+        "total_bundled_records": 1918,
+        "counties_mapped": 923,
+        "island_municipalities_without_county": 9
     }
 }
 
@@ -117,6 +120,13 @@ def build_municipalities_dataset(
         if name.endswith("市"):
             designated_cities_set.add(name)
 
+    # Load county mapping for towns and villages
+    county_mapping_file = Path(__file__).parent / "county_mapping.json"
+    county_map: Dict[str, Optional[str]] = {}
+    if county_mapping_file.exists():
+        with open(county_mapping_file, "r", encoding="utf-8") as f:
+            county_map = json.load(f)
+
     records: List[Dict[str, Any]] = []
 
     # Step 2: Parse Sheet 1 (Standard Municipalities)
@@ -162,7 +172,7 @@ def build_municipalities_dataset(
             "name": muni_name,
             "city": muni_name,
             "ward": None,
-            "county": None,
+            "county": county_map.get(base_code),
             "entity_type": entity_type,
             "kana": muni_kana
         })

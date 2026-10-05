@@ -221,3 +221,87 @@ def test_adversarial_tc19_foreign_address_rejected(normalizer):
     assert res.confidence_score == 0.0
     assert res.components.prefecture is None
     assert res.components.city is None
+
+
+def test_adversarial_tc20_roppongi_single_digit(normalizer):
+    """TC-20: Verifies that single bare digit '六本木1' does NOT consume '六'."""
+    res = normalizer.normalize("東京都港区六本木1")
+    assert res.components.town == "六本木"
+    assert res.components.ban == 1
+    assert res.components.building is None
+    assert res.canonical == "東京都港区六本木1番"
+
+
+def test_adversarial_tc21_jujo_single_digit(normalizer):
+    """TC-21: Verifies that single bare digit '十条1' does NOT consume '十'."""
+    res = normalizer.normalize("東京都北区十条1")
+    assert res.components.town == "十条"
+    assert res.components.ban == 1
+    assert res.components.building is None
+    assert res.canonical == "東京都北区十条1番"
+
+
+def test_adversarial_tc22_ichibancho_single_digit(normalizer):
+    """TC-22: Verifies that single bare digit '一番町1' does NOT consume '一'."""
+    res = normalizer.normalize("東京都千代田区一番町1")
+    assert res.components.town == "一番町"
+    assert res.components.ban == 1
+    assert res.components.building is None
+    assert res.canonical == "東京都千代田区一番町1番"
+
+
+def test_adversarial_tc23_yaesu_single_digit(normalizer):
+    """TC-23: Verifies that single bare digit '八重洲1' does NOT consume '八'."""
+    res = normalizer.normalize("東京都中央区八重洲1")
+    assert res.components.town == "八重洲"
+    assert res.components.ban == 1
+    assert res.components.building is None
+    assert res.canonical == "東京都中央区八重洲1番"
+
+
+def test_adversarial_tc24_azabu_juban_bare_town(normalizer):
+    """TC-24: Verifies that bare proper noun '麻布十番' is preserved as town with no ban."""
+    res = normalizer.normalize("東京都港区麻布十番")
+    assert res.components.town == "麻布十番"
+    assert res.components.ban is None
+    assert res.components.banchi is None
+    assert res.canonical == "東京都港区麻布十番"
+
+
+def test_adversarial_tc25_azabu_juban_hyphenated(normalizer):
+    """TC-25: Verifies that '麻布十番1-1' parses '麻布十番' as town and 1-1 as block."""
+    res = normalizer.normalize("東京都港区麻布十番1-1")
+    assert res.components.town == "麻布十番"
+    assert res.components.ban == 1
+    assert res.components.go == 1
+    assert res.components.building is None
+    assert res.canonical == "東京都港区麻布十番1番1号"
+
+
+def test_adversarial_tc26_sanbancho_bare_town(normalizer):
+    """TC-26: Verifies that bare proper noun '三番町' is preserved as town."""
+    res = normalizer.normalize("東京都千代田区三番町")
+    assert res.components.town == "三番町"
+    assert res.components.ban is None
+    assert res.components.building is None
+    assert res.canonical == "東京都千代田区三番町"
+
+
+def test_adversarial_tc27_sanbancho_single_digit(normalizer):
+    """TC-27: Verifies that '三番町1' parses '三番町' as town and 1 as ban."""
+    res = normalizer.normalize("東京都千代田区三番町1")
+    assert res.components.town == "三番町"
+    assert res.components.ban == 1
+    assert res.components.building is None
+    assert res.canonical == "東京都千代田区三番町1番"
+
+
+def test_adversarial_tc28_ikkimachi_aza_single_lot(normalizer):
+    """TC-28: Verifies that '一箕町大字亀賀字郷之原1' does NOT consume '一' from 一箕町."""
+    res = normalizer.normalize("福島県会津若松市一箕町大字亀賀字郷之原1")
+    assert res.components.town == "一箕町大字亀賀字郷之原"
+    assert res.components.oaza == "亀賀"
+    assert res.components.koaza == "郷之原"
+    assert res.components.banchi == 1
+    assert res.components.ban is None
+    assert res.components.building is None

@@ -5,12 +5,12 @@
     "cpu_cores": 12,
     "python_implementation": "CPython",
     "python_version": "3.13.14",
-    "timestamp_utc": "2026-10-04T18:31:56Z"
+    "timestamp_utc": "2026-10-05T03:08:42Z"
   },
   "memory_profile": {
-    "registry_heap_allocation_mb": 3.17,
-    "registry_initialization_seconds": 0.1807,
-    "peak_heap_allocation_mb": 3.64
+    "registry_heap_allocation_mb": 4.25,
+    "registry_initialization_seconds": 0.1523,
+    "peak_heap_allocation_mb": 4.72
   },
   "corpus_statistics": {
     "total_unique_addresses": 500,
@@ -20,45 +20,45 @@
     "Clean Standard (Gaiku-hoshiki: 200 unique)": {
       "unique_addresses": 200,
       "evaluations": 2000,
-      "elapsed_seconds": 0.6892,
-      "throughput_addresses_per_sec": 2901.7,
+      "elapsed_seconds": 0.4967,
+      "throughput_addresses_per_sec": 4026.8,
       "latency_microseconds": {
-        "mean": 337.55,
-        "p50_median": 275.1,
-        "p90": 485.5,
-        "p99": 861.3,
-        "min": 199.0,
-        "max": 26005.9
+        "mean": 243.54,
+        "p50_median": 214.6,
+        "p90": 275.5,
+        "p99": 488.7,
+        "min": 203.4,
+        "max": 20361.8
       }
     },
     "Complex Conventional (Kyoto/Hokkaido/Cadastral: 150 unique)": {
       "unique_addresses": 150,
       "evaluations": 1500,
-      "elapsed_seconds": 0.4301,
-      "throughput_addresses_per_sec": 3487.5,
+      "elapsed_seconds": 0.3631,
+      "throughput_addresses_per_sec": 4131.5,
       "latency_microseconds": {
-        "mean": 280.98,
-        "p50_median": 233.4,
-        "p90": 386.5,
-        "p99": 639.5,
-        "min": 192.6,
-        "max": 9580.1
+        "mean": 237.59,
+        "p50_median": 227.7,
+        "p90": 247.5,
+        "p99": 296.5,
+        "min": 211.1,
+        "max": 8555.3
       }
     },
     "Dirty Real-World (Omitted/Dashes/Buildings: 150 unique)": {
       "unique_addresses": 150,
       "evaluations": 1500,
-      "elapsed_seconds": 0.557,
-      "throughput_addresses_per_sec": 2693.1,
+      "elapsed_seconds": 0.4074,
+      "throughput_addresses_per_sec": 3682.0,
       "latency_microseconds": {
-        "mean": 364.96,
-        "p50_median": 315.45,
-        "p90": 534.5,
-        "p99": 883.8,
-        "min": 244.5,
-        "max": 1606.4
+        "mean": 267.16,
+        "p50_median": 268.3,
+        "p90": 281.2,
+        "p99": 302.6,
+        "min": 234.1,
+        "max": 545.8
       }
     }
   },
-  "overall_throughput_addresses_per_sec": 2982.7
+  "overall_throughput_addresses_per_sec": 3946.0
 }
