@@ -94,61 +94,6 @@ flowchart TD
     I -.-> J["GeospatialResult (JGD2011 / WGS 84)"]
 ```
 
-```
-                      Raw Japanese Address Input
-                                  │
-                                  ▼
-   [Stage 1: Context-Aware Sanitizer & Unicode Homogenizer]
-   • Unicode NFKC Normalization (UAX #15)
-   • Contextual Chōonpu (U+30FC) resolution: converted only between digits,
-     strictly preserved in Katakana loanwords (e.g., 'タワー')
-   • Unconditional dash unification to ASCII '-'
-   • Strips leading postal code prefixes (〒NNN-NNNN, NNN-NNNN)
-                                  │
-                                  ▼
-   [Stage 2: Context-Bounded Kanji Numeral Converter]
-   • Converts block numerals ('三丁目' -> '3丁目', '488番地')
-   • Context-bounded patterns protect proper nouns ('一番街', '麻布十番', '三番町')
-     and building names ('第一-3ビル')
-                                  │
-                                  ▼
-   [Stage 3: Administrative Boundary Resolver (PrefixTrie)]
-   • O(L) prefix matching against all 47 Prefectures (JIS X 0401)
-   • 1,918 Municipalities & Administrative Wards (JIS X 0402 / MIC)
-   • 374 Statutory Counties (郡) (367 distinct names, 7 shared across prefectures) mapped to 932 towns and villages, supporting [郡名][町村名] syntax
-   • Multi-jurisdiction collision detection on omitted prefectures (中央区, 府中市, 伊達市) and duplicate intra-prefecture jurisdictions
-   • Returns is_ambiguous=True with candidate lists when ambiguous
-                                  │
-                                  ▼
-   [Stage 4: Regional Convention Parsers]
-   • Kyoto Parser: Thoroughfare-aware intersection parsing without character exclusions,
-     handling thoroughfares with cardinal names (東洞院通, 下立売通, 上長者町通)
-   • Hokkaido Parser: Extracts cardinal coordinates (北N条西M丁目) restricted to Hokkaido jurisdictions
-                                  │
-                                  ▼
-   [Stage 5: Block & Lot Finite-State Machine (BlockFSM)]
-   • Segments Oaza (大字) and Koaza (字 / 小字)
-   • Explicitly classifies statutory regime: 'gaiku_hoshiki' vs 'chiban' vs 'unspecified'
-   • Cadastral addresses map numbers to banchi/edaban; residential map to ban/go
-                                  │
-                                  ▼
-   [Stage 6: Building, Floor & Unit Disentangler]
-   • Isolates floor (50F, 3階, B1F, B2F) and unit (301号室, 301) from building names
-                                  │
-                                  ▼
-                 Canonical NormalizedAddress Object
-                                  │
-                                  ▼ (optional explicit resolution)
-   [Optional Geospatial Resolution Layer: BaseGeospatialResolver]
-   • Pluggable backends: GSIGeocoder (Official 国土地理院 API)
-   • Zero API keys, zero 3rd-party dependencies (urllib.request)
-   • Resolves to JGD2011 / WGS 84 compatible (EPSG:6668 / EPSG:4326) coordinates without manufactured confidence scores
-   • Transparent status: SUCCESS, NO_MATCH, AMBIGUOUS, ERROR
-                                  │
-                                  ▼
-                     GeospatialResult Object
-```
-
 > [!NOTE]
 > **Core Architecture Principle:** JADEN's core parsing engine (`normalize`, `parse`, `validate`) is strictly local, deterministic, and 100% offline. It never executes network calls or requires API keys or GIS dependencies. Geospatial coordinate resolution is an explicit, optional layer invoked only when calling `jaden.geocode()` or running `jaden geocode`.
 
@@ -326,9 +271,9 @@ Input:       東京都港区六本木1-2-3
 Status:      ACCEPTED
 Valid:       Yes
 Confidence:  1.00
-Regime:      gaiku_hoshiki
 LG Code:     131032
-Canonical:   東京都港区六本木1丁目2番3号
+Regime:      gaiku_hoshiki
+Message:     Local government entity verified against official statutory registry.
 
 # Ambiguity detection with candidate reporting (Exit code 2)
 $ jaden validate "府中市宮西町2-24"
@@ -358,6 +303,8 @@ Status:      SUCCESS
 Provider:    gsi
 Coordinates: 35.660206, 139.729202 (Lat, Lon)
 Matched:     東京都港区六本木六丁目１０番
+Candidates:
+  • 東京都港区六本木六丁目１０番
 
 # Machine-readable JSON with WGS 84 latitude & longitude
 $ jaden geocode "東京都港区六本木6-10-1" --json
@@ -387,13 +334,6 @@ echo "東京都港区六本木1-2-3" | jaden normalize - -c
 ## 7. Testing & Quality Assurance
 
 JADEN maintains a 223-test verification suite (222 offline tests passing, 1 live network test opt-in) running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
-
-### Continuous Integration Matrix
-
-| Platform | Python 3.10 | Python 3.11 | Python 3.12 | Python 3.13 | Suite Status |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Ubuntu (latest)** | PASS | PASS | PASS | PASS | 222 passed, 1 skipped (live network opt-in) |
-| **Windows (latest)** | PASS | PASS | PASS | PASS | 222 passed, 1 skipped (live network opt-in) |
 
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
 * **Adversarial & Edge Case Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), building names (`第一-3ビル`), multi-jurisdiction collisions (`中央区`, `府中市`, `泊村`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
