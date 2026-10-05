@@ -16,6 +16,11 @@ from .validation import (
     ValidationStatus,
     ValidationResult,
 )
+from .geospatial import (
+    GeocodingStatus,
+    Coordinates,
+    GeospatialResult,
+)
 
 __all__ = [
     "TaxonomyTier",
@@ -28,4 +33,7 @@ __all__ = [
     "NormalizedAddress",
     "ValidationStatus",
     "ValidationResult",
+    "GeocodingStatus",
+    "Coordinates",
+    "GeospatialResult",
 ]

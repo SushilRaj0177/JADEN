@@ -208,6 +208,7 @@ def test_cli_help(monkeypatch):
     assert "normalize" in out
     assert "parse" in out
     assert "validate" in out
+    assert "geocode" in out
 
 
 def test_cli_no_args_shows_help(monkeypatch):

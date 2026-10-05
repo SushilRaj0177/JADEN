@@ -100,7 +100,20 @@ JADEN executes a multi-stage deterministic pipeline:
                                   │
                                   ▼
                  Canonical NormalizedAddress Object
+                                  │
+                                  ▼ (optional explicit resolution)
+   [Optional Geospatial Resolution Layer: BaseGeospatialResolver]
+   • Pluggable backends: GSIGeocoder (Official 国土地理院 API)
+   • Zero API keys, zero 3rd-party dependencies (urllib.request)
+   • Resolves to WGS 84 (EPSG:4326) coordinates without manufactured confidence scores
+   • Transparent status: SUCCESS, NO_MATCH, AMBIGUOUS, ERROR
+                                  │
+                                  ▼
+                     GeospatialResult Object
 ```
+
+> [!NOTE]
+> **Core Architecture Principle:** JADEN's core parsing engine (`normalize`, `parse`, `validate`) is strictly local, deterministic, and 100% offline. It never executes network calls or requires API keys or GIS dependencies. Geospatial coordinate resolution is an explicit, optional layer invoked only when calling `jaden.geocode()` or running `jaden geocode`.
 
 ---
 
@@ -209,11 +222,18 @@ print(res4.canonical)         # '神奈川県中郡大磯町国府本郷547番�
 print(res4.components.county) # '中郡'
 print(res4.components.city)   # '大磯町'
 print(res4.components.lg_code)# '143413'
+
+# 5. Optional geospatial coordinate resolution (WGS 84 via GSI)
+geo = jaden.geocode("東京都港区六本木6-10-1")
+print(geo.status)                 # 'SUCCESS'
+print(geo.coordinates.latitude)  # 35.660206
+print(geo.coordinates.longitude) # 139.729202
+print(geo.matched_address)       # '東京都港区六本木六丁目１０番'
 ```
 
 ### Command-Line Interface (CLI)
 
-JADEN provides three high-performance CLI commands: `normalize`, `parse`, and `validate`.
+JADEN provides four high-performance CLI commands: `normalize`, `parse`, `validate`, and `geocode`.
 
 #### 1. `normalize`: Canonical Address Formatting
 ```bash
@@ -251,13 +271,25 @@ jaden validate "123 Main St, New York"
 jaden validate "東京都港区六本木1-2-3" --json
 ```
 
+#### 4. `geocode`: Optional Geospatial Resolution (WGS 84)
+```bash
+# Human-readable coordinate summary (Exit code 0 on SUCCESS)
+jaden geocode "東京都港区六本木6-10-1"
+
+# Machine-readable JSON with WGS 84 latitude & longitude
+jaden geocode "東京都港区六本木6-10-1" --json
+
+# Ambiguous address candidate reporting (Exit code 1)
+jaden geocode "府中市"
+```
+
 #### Exit Codes for Shell Automation
 | Exit Code | Meaning | Example Scenario |
 | :---: | :--- | :--- |
-| `0` | **ACCEPTED** / Success | Valid address verified against statutory registries |
-| `1` | **MALFORMED** / Rejected | Foreign input, gibberish, or confidence 0.0 |
-| `2` | **AMBIGUOUS** / CLI Error | Omitted prefecture with multiple municipal matches |
-| `3` | **UNSUPPORTED** | Structurally unsupported or unparsed components |
+| `0` | **ACCEPTED / SUCCESS** | Valid address verified or coordinates successfully resolved |
+| `1` | **MALFORMED / REJECTED / ERROR** | Foreign input, confidence 0.0, or geocoding resolution error |
+| `2` | **AMBIGUOUS** / CLI Error | Omitted prefecture with multiple municipal matches (`validate`) |
+| `3` | **UNSUPPORTED** | Structurally unsupported or unparsed components (`validate`) |
 
 #### Unix Stdin Piping
 ```bash
@@ -269,10 +301,11 @@ echo "東京都港区六本木1-2-3" | jaden normalize - -c
 
 ## 7. Testing & Quality Assurance
 
-JADEN maintains a 151-test verification suite running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
+JADEN maintains a 171-test verification suite running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
 * **28 Adversarial Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), multi-jurisdiction collisions (`中央区`, `府中市`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
-* **22 CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`), `--json` formatting, `-c` canonical flag, stdin streaming (`-`), and shell automation exit codes (0, 1, 2, 3).
+* **22 CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`, `geocode`), `--json` formatting, `-c` canonical flag, stdin streaming (`-`), and shell automation exit codes (0, 1, 2, 3).
+* **20 Geospatial Layer Verification Tests:** Complete unit tests for `GSIGeocoder`, `BaseGeospatialResolver` custom extensibility, HTTP error handling, connection failures, network timeouts, multi-candidate ambiguity, offline parser independence guarantees, and CLI `geocode` output.
 * **5 Packaging & Distribution Integrity Tests:** Verification of standalone package data loading, executable entrypoints, and public symbol exports.
 * **JIS X 0402 Modulus 11 Check Digit Validation:** Algorithmic verification across all codes.
 
@@ -285,7 +318,7 @@ pytest -v
 ## 8. Explicit Boundaries & Limitations
 
 In accordance with our engineering principles, JADEN documents its exact operational boundaries:
-1. **No Spatial Polygon GIS Coordinates:** JADEN is an offline linguistic and administrative normalization engine; it does not contain geospatial polygon shapefiles or latitude/longitude geocoding coordinates.
+1. **Separation of Core Parsing and Geospatial Resolution:** JADEN's core parser is 100% offline and does not bundle multi-gigabyte spatial polygon GIS shapefiles. Geospatial resolution is provided as an optional, decoupled layer via the official open government GSI API or custom user-provided resolvers.
 2. **Ambiguous Omitted Jurisdictions:** When a user omits the prefecture and enters a duplicated municipality name (e.g. `中央区`, `府中市`, `伊達市`), JADEN explicitly reports `is_ambiguous=True` and lists candidates rather than silently guessing.
 3. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
 4. **Cadastral vs. Residential Distinction in Plain Hyphenated Strings:** When an input consists solely of `町名 X-Y` without `丁目`, `大字`, `字`, `番地`, or `号`, JADEN marks `address_regime="unspecified"`, as determining the regime requires local municipal boundary maps.

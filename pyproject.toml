@@ -58,3 +58,6 @@ minversion = "8.0"
 addopts = "-ra -q --import-mode=importlib"
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "network: marks tests that require live external network access",
+]

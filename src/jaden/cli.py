@@ -4,6 +4,7 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden normalize "<address>" [--json] [-c]
   jaden parse "<address>" [--json]
   jaden validate "<address>" [--json]
+  jaden geocode "<address>" [--json] [--provider gsi]
 """
 
 import sys
@@ -20,9 +21,10 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-from . import __version__, normalize, parse, validate
+from . import __version__, normalize, parse, validate, geocode
 from .models.address import NormalizedAddress, AddressComponents
 from .models.validation import ValidationResult, ValidationStatus
+from .models.geospatial import GeospatialResult, GeocodingStatus
 
 
 # ==============================================================================
@@ -203,6 +205,27 @@ def format_validate_text(v: ValidationResult) -> str:
     return "\n".join(lines)
 
 
+def format_geocode_text(res: GeospatialResult) -> str:
+    """Formats GeospatialResult for terminal display."""
+    lines: List[str] = [
+        f"Input:       {res.query}",
+        f"Status:      {res.status}",
+        f"Provider:    {res.provider}",
+    ]
+    if res.coordinates:
+        lines.append(f"Coordinates: {res.coordinates.latitude:.6f}, {res.coordinates.longitude:.6f} (Lat, Lon)")
+    if res.matched_address:
+        lines.append(f"Matched:     {res.matched_address}")
+    if res.candidates:
+        lines.append("Candidates:")
+        for cand in res.candidates:
+            lines.append(f"  • {cand}")
+    if res.error_message:
+        lines.append(f"Message:     {res.error_message}")
+
+    return "\n".join(lines)
+
+
 # ==============================================================================
 # Command Handlers
 # ==============================================================================
@@ -261,6 +284,18 @@ def handle_validate(address: str, as_json: bool) -> int:
         return 1
     else:
         return 3
+
+
+def handle_geocode(address: str, as_json: bool, provider: str = "gsi", timeout: float = 5.0) -> int:
+    """Executes the geocode command with resolution exit codes."""
+    res = geocode(address, timeout=timeout)
+
+    if as_json:
+        print(res.to_json(indent=2))
+    else:
+        print(format_geocode_text(res))
+
+    return 0 if res.status == GeocodingStatus.SUCCESS.value else 1
 
 
 # ==============================================================================
@@ -338,6 +373,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output machine-readable JSON format.",
     )
 
+    # 4. geocode
+    geo_p = subparsers.add_parser(
+        "geocode",
+        help="Resolve an address to geographic coordinates (WGS 84)",
+        description="Resolves Japanese addresses to latitude/longitude using official open geospatial registries (GSI).",
+    )
+    geo_p.add_argument(
+        "address",
+        help="Japanese address string to geocode. Use '-' to read from stdin.",
+    )
+    geo_p.add_argument(
+        "--json",
+        action="store_true",
+        help="Output machine-readable JSON format.",
+    )
+    geo_p.add_argument(
+        "--provider",
+        default="gsi",
+        choices=["gsi"],
+        help="Geospatial provider backend (default: gsi).",
+    )
+    geo_p.add_argument(
+        "--timeout",
+        type=float,
+        default=5.0,
+        help="Network timeout in seconds (default: 5.0).",
+    )
+
     return parser
 
 
@@ -350,7 +413,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     # Pre-parse heuristic: if the first argument is not a known subcommand or flag,
     # default to 'normalize' for convenience and backward compatibility.
-    known_cmds = {"normalize", "parse", "validate", "-h", "--help", "-v", "--version"}
+    known_cmds = {"normalize", "parse", "validate", "geocode", "-h", "--help", "-v", "--version"}
     if raw_args and raw_args[0] not in known_cmds and not raw_args[0].startswith("-"):
         raw_args.insert(0, "normalize")
 
@@ -387,6 +450,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return handle_parse(target_address, as_json=args.json)
         elif args.command == "validate":
             return handle_validate(target_address, as_json=args.json)
+        elif args.command == "geocode":
+            return handle_geocode(target_address, as_json=args.json, provider=args.provider, timeout=args.timeout)
         else:
             parser.print_help()
             return 2
