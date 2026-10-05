@@ -3,10 +3,13 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3b82f6?style=flat&logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 [![Typing: PEP 561](https://img.shields.io/badge/Typing-PEP%20561-10b981?style=flat&logo=python&logoColor=white)](https://peps.python.org/pep-0561/)
+[![CI](https://github.com/SushilRaj0177/JADEN/actions/workflows/ci.yml/badge.svg)](https://github.com/SushilRaj0177/JADEN/actions/workflows/ci.yml)
 
 **JADEN** is a deterministic Python engine and CLI for Japanese address canonicalization, structured decomposition, statutory validation, and optional geospatial resolution.
 
 Operating completely offline at **~30,000 addresses/second** with a lean **4.28 MB memory footprint** (4.48 MB peak heap during batch execution), JADEN resolves the real-world complexity of Japanese addressing without external black-box APIs, heuristic hallucinations, or mandatory cloud dependencies.
+
+[Quickstart](#6-installation--usage) • [Overview](#1-overview--the-core-engineering-challenge) • [Taxonomy](#2-four-tier-taxonomy-of-truth) • [Architecture](#3-architecture--processing-pipeline) • [Benchmarks](#5-empirical-benchmarks) • [CLI](#command-line-interface-cli) • [Limitations](#known-limitations--planned-for-v011)
 
 *(日本語のドキュメントは [README_JP.md](README_JP.md) をご覧ください。)*
 
@@ -41,18 +44,10 @@ JADEN parses raw address text into a granular Abstract Syntax Tree (`AddressComp
 ### The Core Engineering Challenge
 Unlike Western street-grid systems, a normalization engine must resolve four distinct layers of complexity:
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                   JAPANESE ADDRESS DUAL ARCHITECTURE                     │
-├─────────────────────────────────────┬────────────────────────────────────┤
-│ 住居表示 (Residential Indication)   │ 地番区域 (Land Lot / Cadastral)     │
-│ (Urban: Tokyo 23 wards, Osaka, etc.)│ (Rural / Unconsolidated Urban)     │
-├─────────────────────────────────────┼────────────────────────────────────┤
-│ 都道府県 ──> 市区町村 ──> 町名      │ 都道府県 ──> 市区町村 ──> 大字     │
-│ ──> 街区符号 (番)                   │ ──> 字 / 小字                      │
-│ ──> 住居番号 (号)                   │ ──> 地番 (番地) ──> 支号 (枝番)    │
-└─────────────────────────────────────┴────────────────────────────────────┘
-```
+| Statutory Regime | Scope & Statutory Basis | Structural Progression |
+| :--- | :--- | :--- |
+| **住居表示 (Residential)** | **Act on Indication of Residential Address (1962)**<br>Urban: Tokyo 23 wards, Osaka, Nagoya, etc. | 都道府県 $\to$ 市区町村 $\to$ 町名 $\to$ **街区符号 (番)** $\to$ **住居番号 (号)** |
+| **地番区域 (Cadastral)** | **Real Property Registration Act (2004)**<br>Rural, agricultural, or unconsolidated urban | 都道府県 $\to$ 市区町村 $\to$ 大字 $\to$ 字/小字 $\to$ **地番 (番地)** $\to$ **支号 (枝番)** |
 
 1. **Dual Statutory Regimes:**
    * **Gaiku-hoshiki (街区方式):** Established by the *Act on Indication of Residential Address (住居表示に関する法律, Act No. 119 of 1962)*. Organized into blocks (*ban* / 番) and house numbers (*go* / 号).
@@ -74,17 +69,30 @@ Unlike Western street-grid systems, a normalization engine must resolve four dis
 To ensure architectural transparency, JADEN categorizes every parsed token and transformation into one of four explicit tiers:
 
 | Tier | Classification | Definition & Examples |
-| :--- | :--- | :--- |
-| **Tier 1** | **Statutory / Official** | Entities strictly verified against official national registries: JIS X 0401 (Prefecture codes), JIS X 0402 (Municipality codes), and 6-digit Local Government Code with Modulus 11 check digits; and county (郡) affiliations from the bundled mapping (provenance not reproducible from this repository). |
-| **Tier 2** | **Documented Convention** | Regional navigation conventions and syntactic block parsing: Kyoto Tōri-mei directional clauses, Hokkaido Jo-Chome grid coordinates, and syntactic block numbers (*Chome*, *Ban*, *Go*, *Banchi*, *Edaban*) parsed via deterministic FSM without parcel-polygon maps. |
-| **Tier 3** | **Heuristic Disambiguation** | Linguistic extraction and heuristics: Town (*Machi-aza*), *Oaza*, *Koaza*, inferred prefectures/wards, and building/floor/unit extraction. |
-| **Tier 4** | **System Artifact** | JADEN-specific conventions: Canonical string formatting, confidence scoring (0.0 to 1.0), serialized JSON schema, unparsed tails. |
+| :---: | :--- | :--- |
+| **Tier 1** | 🏛️ **Statutory / Official** | Entities strictly verified against official national registries: JIS X 0401 (Prefecture codes), JIS X 0402 (Municipality codes), and 6-digit Local Government Code with Modulus 11 check digits; and county (郡) affiliations from the bundled mapping (provenance not reproducible from this repository). |
+| **Tier 2** | 📍 **Documented Convention** | Regional navigation conventions and syntactic block parsing: Kyoto Tōri-mei directional clauses, Hokkaido Jo-Chome grid coordinates, and syntactic block numbers (*Chome*, *Ban*, *Go*, *Banchi*, *Edaban*) parsed via deterministic FSM without parcel-polygon maps. |
+| **Tier 3** | 🔍 **Heuristic Disambiguation** | Linguistic extraction and heuristics: Town (*Machi-aza*), *Oaza*, *Koaza*, inferred prefectures/wards, and building/floor/unit extraction. |
+| **Tier 4** | ⚙️ **System Artifact** | JADEN-specific conventions: Canonical string formatting, confidence scoring (0.0 to 1.0), serialized JSON schema, unparsed tails. |
 
 ---
 
 ## 3. Architecture & Processing Pipeline
 
 JADEN executes a multi-stage deterministic pipeline:
+
+```mermaid
+flowchart TD
+    A["Raw Japanese Address Input"] --> B["Stage 1: Context-Aware Sanitizer & Unicode Homogenizer"]
+    B --> C["Stage 2: Context-Bounded Kanji Numeral Converter"]
+    C --> D["Stage 3: Administrative Boundary Resolver (PrefixTrie)"]
+    D --> E["Stage 4: Regional Convention Parsers (Kyoto & Hokkaido)"]
+    E --> F["Stage 5: Block & Lot FSM (BlockFSM)"]
+    F --> G["Stage 6: Building, Floor & Unit Disentangler"]
+    G --> H["Canonical NormalizedAddress AST"]
+    H -.->|Optional Explicit Resolution| I["Optional Geospatial Resolution Layer (BaseGeospatialResolver)"]
+    I -.-> J["GeospatialResult (JGD2011 / WGS 84)"]
+```
 
 ```
                       Raw Japanese Address Input
@@ -195,11 +203,14 @@ Benchmarks are executed using the reproducible suite in `benchmarks/run_benchmar
 > **Benchmark Scope:** The evaluation corpus is synthetic, and the benchmark measures execution speed, latency, and memory allocations. It does not measure parsing accuracy against real-world ground truth.
 
 ### Hardware & Runtime Environment
-* **OS:** Windows 11 (10.0.26200)
-* **CPU:** Intel64 Family 6 Model 151 (12 Logical Cores)
-* **Python Runtime:** CPython 3.13.14 (64-bit)
-* **Memory Footprint:** 4.28 MB baseline heap (full registry + tries), 4.48 MB peak heap during batch execution
-* **Corpus Diversity:** 500 unique addresses evaluated over 5,000 operations (10 passes)
+
+| Metric / Parameter | Environment Specification |
+| :--- | :--- |
+| **Operating System** | Windows 11 (10.0.26200) |
+| **Processor** | Intel64 Family 6 Model 151 (12 Logical Cores) |
+| **Python Runtime** | CPython 3.13.14 (64-bit) |
+| **Memory Footprint** | 4.28 MB baseline heap (full registry + tries), 4.48 MB peak batch heap |
+| **Corpus Diversity** | 500 unique addresses evaluated over 5,000 operations (10 passes) |
 
 ### Empirical Performance Results
 
@@ -278,49 +289,81 @@ JADEN provides four high-performance CLI commands: `normalize`, `parse`, `valida
 #### 1. `normalize`: Canonical Address Formatting
 ```bash
 # Clean human-readable summary
-jaden normalize "東京都港区六本木1-2-3"
+$ jaden normalize "東京都港区六本木1-2-3"
+Prefecture: 東京都
+City:       港区
+Town:       六本木
+Chome:      1
+Ban:        2
+Go:         3
+Regime:     gaiku_hoshiki
+LG Code:    131032
+Confidence: 1.00
+Canonical:  東京都港区六本木1丁目2番3号
 
 # Machine-readable JSON
-jaden normalize "東京都港区六本木1-2-3" --json
+$ jaden normalize "東京都港区六本木1-2-3" --json
 
 # Canonical string only (ideal for shell scripts)
-CANON=$(jaden normalize "新宿区西新宿2-8-1東京都庁 第一本庁舎" -c)
+$ jaden normalize "新宿区西新宿2-8-1東京都庁 第一本庁舎" -c
+東京都新宿区西新宿2丁目8番1号 東京都庁 第一本庁舎
 ```
 
 #### 2. `parse`: Granular Component AST Decomposition
 ```bash
 # Pretty-printed syntactic decomposition
-jaden parse "京都府中京区御池通東洞院東入笹屋町436"
+$ jaden parse "京都府中京区御池通東洞院東入笹屋町436"
 
 # Structured AST JSON
-jaden parse "京都府中京区御池通東洞院東入笹屋町436" --json
+$ jaden parse "京都府中京区御池通東洞院東入笹屋町436" --json
 ```
 
 #### 3. `validate`: Statutory Registry & Integrity Verification
 ```bash
 # Valid address verification (Exit code 0)
-jaden validate "東京都港区六本木1-2-3"
+$ jaden validate "東京都港区六本木1-2-3"
+Input:       東京都港区六本木1-2-3
+Status:      ACCEPTED
+Valid:       Yes
+Confidence:  1.00
+Regime:      gaiku_hoshiki
+LG Code:     131032
+Canonical:   東京都港区六本木1丁目2番3号
 
 # Ambiguity detection with candidate reporting (Exit code 2)
-jaden validate "府中市宮西町2-24"
+$ jaden validate "府中市宮西町2-24"
+Input:       府中市宮西町2-24
+Status:      AMBIGUOUS
+Valid:       No
+Confidence:  0.50
+Regime:      unspecified
+Message:     Omitted prefecture matches 2 statutory municipalities.
+Candidates:
+  • 東京都府中市 (132063)
+  • 広島県府中市 (342084)
 
 # Malformed / foreign input rejection (Exit code 1)
-jaden validate "123 Main St, New York"
+$ jaden validate "123 Main St, New York"
 
 # Machine-readable JSON output
-jaden validate "東京都港区六本木1-2-3" --json
+$ jaden validate "東京都港区六本木1-2-3" --json
 ```
 
 #### 4. `geocode`: Optional Geospatial Resolution (JGD2011 / WGS 84 compatible)
 ```bash
 # Human-readable coordinate summary (Exit code 0 on SUCCESS)
-jaden geocode "東京都港区六本木6-10-1"
+$ jaden geocode "東京都港区六本木6-10-1"
+Input:       東京都港区六本木6-10-1
+Status:      SUCCESS
+Provider:    gsi
+Coordinates: 35.660206, 139.729202 (Lat, Lon)
+Matched:     東京都港区六本木六丁目１０番
 
 # Machine-readable JSON with WGS 84 latitude & longitude
-jaden geocode "東京都港区六本木6-10-1" --json
+$ jaden geocode "東京都港区六本木6-10-1" --json
 
 # Ambiguous address candidate reporting (Exit code 1 on non-resolution)
-jaden geocode "府中市"
+$ jaden geocode "府中市"
 ```
 
 #### Exit Codes for Shell Automation
@@ -344,6 +387,14 @@ echo "東京都港区六本木1-2-3" | jaden normalize - -c
 ## 7. Testing & Quality Assurance
 
 JADEN maintains a 223-test verification suite (222 offline tests passing, 1 live network test opt-in) running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
+
+### Continuous Integration Matrix
+
+| Platform | Python 3.10 | Python 3.11 | Python 3.12 | Python 3.13 | Suite Status |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Ubuntu (latest)** | PASS | PASS | PASS | PASS | 222 passed, 1 skipped (live network opt-in) |
+| **Windows (latest)** | PASS | PASS | PASS | PASS | 222 passed, 1 skipped (live network opt-in) |
+
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
 * **Adversarial & Edge Case Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), building names (`第一-3ビル`), multi-jurisdiction collisions (`中央区`, `府中市`, `泊村`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
 * **CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`, `geocode`), `--json` formatting, `-c` canonical flag, standard input reading (`-`), and shell automation exit codes (0, 1, 2, 3, 64, 70).
