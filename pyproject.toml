@@ -50,7 +50,8 @@ jaden = "jaden.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-jaden = ["py.typed", "data/*.json"]
+jaden = ["py.typed"]
+"jaden.data" = ["*.json"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"

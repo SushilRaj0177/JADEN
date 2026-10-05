@@ -168,8 +168,14 @@ Benchmarks are executed using the reproducible suite in `benchmarks/run_benchmar
 git clone https://github.com/SushilRaj0177/JADEN.git
 cd JADEN
 
-# Install in editable mode
-pip install -e .
+# Install production package (zero external dependencies)
+pip install .
+
+# Or install with development and test tooling
+pip install ".[dev]"
+
+# Verify CLI installation
+jaden normalize "東京都港区六本木1-2-3"
 ```
 
 ### Python Library API
@@ -263,10 +269,11 @@ echo "東京都港区六本木1-2-3" | jaden normalize - -c
 
 ## 7. Testing & Quality Assurance
 
-JADEN maintains a 146-test verification suite covering:
+JADEN maintains a 151-test verification suite running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
 * **28 Adversarial Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), multi-jurisdiction collisions (`中央区`, `府中市`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
 * **22 CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`), `--json` formatting, `-c` canonical flag, stdin streaming (`-`), and shell automation exit codes (0, 1, 2, 3).
+* **5 Packaging & Distribution Integrity Tests:** Verification of standalone package data loading, executable entrypoints, and public symbol exports.
 * **JIS X 0402 Modulus 11 Check Digit Validation:** Algorithmic verification across all codes.
 
 ```bash

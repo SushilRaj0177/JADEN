@@ -1,0 +1,5 @@
+include README.md
+include README_JP.md
+include LICENSE
+recursive-include src/jaden *.json
+recursive-include src/jaden py.typed
