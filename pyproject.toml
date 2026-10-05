@@ -23,7 +23,7 @@ keywords = [
     "finite-state-machine"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -37,6 +37,11 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic"
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/SushilRaj0177/JADEN"
+Repository = "https://github.com/SushilRaj0177/JADEN.git"
+Issues = "https://github.com/SushilRaj0177/JADEN/issues"
 
 [project.optional-dependencies]
 dev = [

@@ -30,7 +30,7 @@ import json
 from pathlib import Path
 import zipfile
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 SOURCE_METADATA = {
     "source_organization": "Ministry of Internal Affairs and Communications (総務省自治行政局)",
