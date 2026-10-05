@@ -156,3 +156,48 @@ def test_stem_collision_explicit_prefecture_preserved():
     res3 = normalize("京都府京都市中京区寺町通御池上る上本能寺前町488")
     assert res3.components.prefecture == "京都府"
     assert res3.components.lg_code == "261041"
+
+
+def test_all_stem_colliding_entities_in_registry():
+    """Data-driven verification across all 1,918 official municipalities.
+
+    Dynamically iterates through every municipality name, ward name, and
+    county-prefixed name that starts with any JIS X 0401 prefecture stem.
+    Asserts that every entity either:
+    1. Unambiguously resolves to its statutory prefecture and local government code, OR
+    2. Correctly flags AMBIGUOUS with candidate list containing its legitimate statutory targets.
+    """
+    from jaden.data.loader import get_registry
+
+    reg = get_registry()
+    stems = {p.stem: p for p in reg.list_all_prefectures() if len(p.stem) >= 2}
+
+    tested_count = 0
+    for muni in reg._municipalities_by_code.values():
+        targets = []
+        if any(muni.name.startswith(s) for s in stems):
+            targets.append((muni.name, muni))
+        if muni.ward and any(muni.ward.startswith(s) for s in stems):
+            targets.append((muni.ward, muni))
+        if muni.county and any(f"{muni.county}{muni.name}".startswith(s) for s in stems):
+            targets.append((f"{muni.county}{muni.name}", muni))
+
+        for target_str, target_muni in targets:
+            res = normalize(target_str)
+            comp = res.components
+            if comp.is_ambiguous:
+                # Must list candidates and not crash or misattribute
+                assert len(comp.ambiguous_candidates) > 1
+                assert any(target_muni.lg_code in c for c in comp.ambiguous_candidates)
+            else:
+                assert comp.prefecture_code == target_muni.prefecture_code, (
+                    f"Entity '{target_str}' ({target_muni.prefecture_name}) misattributed to "
+                    f"'{comp.prefecture}' (prefecture_code={comp.prefecture_code})"
+                )
+                assert comp.lg_code == target_muni.lg_code, (
+                    f"Entity '{target_str}' expected lg_code={target_muni.lg_code}, got {comp.lg_code}"
+                )
+            tested_count += 1
+
+    assert tested_count > 50, f"Expected >50 stem-colliding entities, verified {tested_count}"
+
