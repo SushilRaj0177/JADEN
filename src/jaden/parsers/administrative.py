@@ -232,11 +232,8 @@ class AdministrativeParser:
             matched_key, candidates, rem_idx = muni_match
             rem_text = text[rem_idx:].lstrip()
 
-            # Check distinct prefectures among candidates
-            pref_codes = set(c.prefecture_code for c in candidates)
-
             # Case 2a: Unambiguous municipality across Japan (e.g. '八王子市', '京都市', '新宿区')
-            if len(pref_codes) == 1:
+            if len(candidates) == 1:
                 muni_record = candidates[0]
                 pref_record = self.registry.get_prefecture_by_code(muni_record.prefecture_code)
 
@@ -257,8 +254,8 @@ class AdministrativeParser:
                     is_prefecture_inferred=True, is_ambiguous=False
                 )
 
-            # Case 2b: Ambiguous municipality name existing in multiple prefectures
-            # (e.g. '府中市' in Tokyo & Hiroshima, '伊達市' in Hokkaido & Fukushima, '中央区' across 11 prefectures)
+            # Case 2b: Ambiguous municipality name existing across multiple records or prefectures
+            # (e.g. '府中市' in Tokyo & Hiroshima, '伊達市' in Hokkaido & Fukushima, '泊村' in Hokkaido, '中央区' across 11 prefectures)
             ambiguous_list = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in candidates)
             return AdministrativeParseResult(
                 None, None, rem_text,
@@ -274,10 +271,9 @@ class AdministrativeParser:
         if ward_match_global:
             matched_ward_name, ward_candidates, rem_idx = ward_match_global
             rem_text = text[rem_idx:].lstrip()
-            pref_codes = set(c.prefecture_code for c in ward_candidates)
 
             # Unambiguous ward across Japan
-            if len(pref_codes) == 1:
+            if len(ward_candidates) == 1:
                 muni_record = ward_candidates[0]
                 pref_record = self.registry.get_prefecture_by_code(muni_record.prefecture_code)
                 return AdministrativeParseResult(

@@ -127,3 +127,56 @@ def test_unique_ward_in_prefecture():
     assert res.components.ward == "中区"
     assert res.components.lg_code == "141046"
     assert res.components.is_ambiguous is False
+
+
+def test_tomari_mura_omitted_prefecture_ambiguity():
+    """泊村1-1 is ambiguous between Furuu-gun (014036) and Kunashiri-gun (016969) in Hokkaido."""
+    val = validate("泊村1-1")
+    assert val.status == ValidationStatus.AMBIGUOUS.value
+    assert val.valid is False
+    assert val.is_ambiguous is True
+    assert len(val.ambiguous_candidates) == 2
+    assert any("014036" in c for c in val.ambiguous_candidates)
+    assert any("016969" in c for c in val.ambiguous_candidates)
+
+
+def test_tomari_mura_county_disambiguated():
+    """County-specified Tomari-mura resolves uniquely and is ACCEPTED."""
+    # Furuu-gun Tomari-mura
+    val_furuu = validate("北海道古宇郡泊村1-1")
+    assert val_furuu.status == ValidationStatus.ACCEPTED.value
+    assert val_furuu.valid is True
+    assert val_furuu.lg_code == "014036"
+
+    # Kunashiri-gun Tomari-mura
+    val_kunashiri = validate("北海道国後郡泊村1-1")
+    assert val_kunashiri.status == ValidationStatus.ACCEPTED.value
+    assert val_kunashiri.valid is True
+    assert val_kunashiri.lg_code == "016969"
+
+
+def test_tomari_mura_prefecture_known_ambiguity():
+    """北海道泊村1-1 has known prefecture but ambiguous county/municipality jurisdiction."""
+    val = validate("北海道泊村1-1")
+    assert val.status == ValidationStatus.AMBIGUOUS.value
+    assert val.valid is False
+    assert val.is_ambiguous is True
+    assert len(val.ambiguous_candidates) == 2
+    assert any("014036" in c for c in val.ambiguous_candidates)
+    assert any("016969" in c for c in val.ambiguous_candidates)
+
+
+def test_kyoto_street_clause_end_to_end_validation():
+    """Kyoto addresses without ward are UNSUPPORTED; with ward are ACCEPTED."""
+    # Bare intersection clause without ward cannot resolve lg_code -> UNSUPPORTED
+    val_bare = validate("寺町通御池上る上本能寺前町488")
+    assert val_bare.status == ValidationStatus.UNSUPPORTED.value
+    assert val_bare.valid is False
+    assert val_bare.lg_code is None
+
+    # Intersection clause with unambiguous ward resolves lg_code (261041) -> ACCEPTED
+    val_ward = validate("中京区寺町通御池上る上本能寺前町488")
+    assert val_ward.status == ValidationStatus.ACCEPTED.value
+    assert val_ward.valid is True
+    assert val_ward.lg_code == "261041"
+
