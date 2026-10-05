@@ -10,7 +10,11 @@ Provides clean, professional commands for Japanese address data engineering:
 import sys
 import argparse
 import json
-from typing import Optional, Sequence, List
+from typing import Optional, Sequence, List, Final
+
+# Standard sysexits codes for CLI errors
+EX_USAGE: Final[int] = 64      # Command-line usage error, unknown flag, missing arg, empty stdin
+EX_SOFTWARE: Final[int] = 70   # Internal unhandled software crash
 
 # Ensure UTF-8 I/O encoding on Windows platforms
 if hasattr(sys.stdout, "reconfigure"):
@@ -25,6 +29,21 @@ from . import __version__, normalize, parse, validate, geocode
 from .models.address import NormalizedAddress, AddressComponents
 from .models.validation import ValidationResult, ValidationStatus
 from .models.geospatial import GeospatialResult, GeocodingStatus
+
+
+class JadenArgumentParser(argparse.ArgumentParser):
+    """Custom ArgumentParser that exits with EX_USAGE (64) instead of 2 on usage errors."""
+
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        self.exit(EX_USAGE, f"{self.prog}: error: {message}\n")
+
+    def exit(self, status: int = 0, message: Optional[str] = None) -> None:
+        if message:
+            self._print_message(message, sys.stderr)
+        if status == 2:
+            status = EX_USAGE
+        raise SystemExit(status)
 
 
 # ==============================================================================
@@ -304,7 +323,7 @@ def handle_geocode(address: str, as_json: bool, provider: str = "gsi", timeout: 
 
 def build_parser() -> argparse.ArgumentParser:
     """Builds the top-level argument parser with subcommands."""
-    parser = argparse.ArgumentParser(
+    parser = JadenArgumentParser(
         prog="jaden",
         description="JADEN: Japanese Address Data Engineering & Normalization Engine",
     )
@@ -318,6 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="command",
         title="commands",
         description="Select a JADEN command to execute",
+        parser_class=JadenArgumentParser,
     )
 
     # 1. normalize
@@ -441,7 +461,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             target_address = stdin_content
         else:
             sys.stderr.write("Error: Address input from stdin is empty.\n")
-            return 2
+            return EX_USAGE
 
     try:
         if args.command == "normalize":
@@ -454,10 +474,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return handle_geocode(target_address, as_json=args.json, provider=args.provider, timeout=args.timeout)
         else:
             parser.print_help()
-            return 2
+            return EX_USAGE
     except Exception as exc:
         sys.stderr.write(f"Error: {exc}\n")
-        return 1
+        return EX_SOFTWARE
 
 
 if __name__ == "__main__":

@@ -198,8 +198,24 @@ def test_cli_validate_json_ambiguous(monkeypatch):
 
 def test_cli_missing_address_argument(monkeypatch):
     code, out, err = run_cli(["normalize"], monkeypatch)
-    assert code == 2
+    assert code == 64
     assert "required: address" in err or "usage:" in err
+
+
+def test_cli_usage_errors(monkeypatch):
+    # Unrecognized top-level option
+    code1, out1, err1 = run_cli(["--bogus"], monkeypatch)
+    assert code1 == 64
+
+    # Unrecognized subcommand option
+    code2, out2, err2 = run_cli(["validate", "--bogus", "東京都港区六本木1-2-3"], monkeypatch)
+    assert code2 == 64
+
+
+def test_cli_empty_stdin(monkeypatch):
+    code, out, err = run_cli(["validate", "-"], monkeypatch, stdin_data="")
+    assert code == 64
+    assert "Error: Address input from stdin is empty." in err
 
 
 def test_cli_help(monkeypatch):
