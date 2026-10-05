@@ -75,7 +75,7 @@ To ensure architectural transparency, JADEN categorizes every parsed token and t
 
 | Tier | Classification | Definition & Examples |
 | :--- | :--- | :--- |
-| **Tier 1** | **Statutory / Official** | Entities strictly verified against official national registries: JIS X 0401 (Prefecture codes), JIS X 0402 (Municipality codes), 6-digit Local Government Code with Modulus 11 check digits, statutory counties (郡). |
+| **Tier 1** | **Statutory / Official** | Entities strictly verified against official national registries: JIS X 0401 (Prefecture codes), JIS X 0402 (Municipality codes), and 6-digit Local Government Code with Modulus 11 check digits; and county (郡) affiliations from the bundled mapping (provenance not reproducible from this repository). |
 | **Tier 2** | **Documented Convention** | Regional navigation conventions and syntactic block parsing: Kyoto Tōri-mei directional clauses, Hokkaido Jo-Chome grid coordinates, and syntactic block numbers (*Chome*, *Ban*, *Go*, *Banchi*, *Edaban*) parsed via deterministic FSM without parcel-polygon maps. |
 | **Tier 3** | **Heuristic Disambiguation** | Linguistic extraction and heuristics: Town (*Machi-aza*), *Oaza*, *Koaza*, inferred prefectures/wards, and building/floor/unit extraction. |
 | **Tier 4** | **System Artifact** | JADEN-specific conventions: Canonical string formatting, confidence scoring (0.0 to 1.0), serialized JSON schema, unparsed tails. |
