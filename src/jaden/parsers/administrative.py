@@ -22,6 +22,7 @@ class AdministrativeParseResult:
     is_ambiguous: bool = False
     ambiguous_candidates: Tuple[str, ...] = ()
     matched_raw_name: Optional[str] = None
+    is_contradictory: bool = False
 
     def __iter__(self):
         """Allows backward-compatible 4-tuple unpacking:
@@ -175,6 +176,16 @@ class AdministrativeParser:
                         return AdministrativeParseResult(
                             pref_record, matched_muni, post_muni, False
                         )
+                    else:
+                        # Cross-prefecture contradiction: municipality matched does not belong to specified prefecture
+                        return AdministrativeParseResult(
+                            pref_record, None, muni_text,
+                            is_prefecture_inferred=False,
+                            is_ambiguous=False,
+                            ambiguous_candidates=(),
+                            matched_raw_name=matched_key,
+                            is_contradictory=True,
+                        )
 
                 # 1b. Check if designated city was omitted and ward directly follows prefecture
                 # e.g., '京都府中京区...' -> '京都市中京区'
@@ -196,6 +207,20 @@ class AdministrativeParser:
                             return AdministrativeParseResult(
                                 pref_record, ward_cands[0], muni_text[ward_end_idx:].lstrip(), False
                             )
+
+                # Check global ward match for cross-prefecture contradiction (e.g. '東京都博多区')
+                ward_match_global = self._ward_trie_global.longest_prefix(muni_text, 0)
+                if ward_match_global:
+                    matched_ward_key, global_ward_cands, _ = ward_match_global
+                    if not any(c.prefecture_code == pref_record.code for c in global_ward_cands):
+                        return AdministrativeParseResult(
+                            pref_record, None, muni_text,
+                            is_prefecture_inferred=False,
+                            is_ambiguous=False,
+                            ambiguous_candidates=(),
+                            matched_raw_name=matched_ward_key,
+                            is_contradictory=True,
+                        )
 
                 # If no municipality matched from trie, return prefecture and remainder
                 return AdministrativeParseResult(pref_record, None, muni_text, False)

@@ -77,6 +77,9 @@ class AddressComponents:
     is_ambiguous: bool = False
     ambiguous_candidates: Tuple[str, ...] = field(default_factory=tuple)
 
+    # Cross-prefecture contradiction flag (e.g. 東京都大阪市)
+    is_contradictory: bool = False
+
     unparsed_tail: Optional[str] = None       # Any tail string that could not be deterministically parsed
 
 

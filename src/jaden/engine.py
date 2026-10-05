@@ -72,6 +72,7 @@ class AddressNormalizer:
         is_ambiguous = admin_res.is_ambiguous
         ambiguous_candidates = admin_res.ambiguous_candidates
         matched_raw_name = admin_res.matched_raw_name
+        is_contradictory = admin_res.is_contradictory
 
         pref_code = pref_rec.code if pref_rec else None
         pref_name = pref_rec.name if pref_rec else None
@@ -80,7 +81,9 @@ class AddressNormalizer:
         ward_name = muni_rec.ward if muni_rec else None
         county_name = muni_rec.county if muni_rec else None
 
-        if pref_name and is_ambiguous:
+        if is_contradictory:
+            confidence = 0.0
+        elif pref_name and is_ambiguous:
             # Prefecture known, but municipal jurisdiction is ambiguous (e.g. '神奈川県南区', '大阪府北区')
             if is_pref_inferred:
                 tier_map["prefecture"] = TaxonomyTier.TIER_3_HEURISTIC.value
@@ -195,29 +198,21 @@ class AddressNormalizer:
         if county_name:
             tier_map["county"] = TaxonomyTier.TIER_1_STATUTORY.value
         if town_name:
-            tier_map["town"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["town"] = TaxonomyTier.TIER_3_HEURISTIC.value
         if oaza_val:
-            tier_map["oaza"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["oaza"] = TaxonomyTier.TIER_3_HEURISTIC.value
         if koaza_val:
-            tier_map["koaza"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["koaza"] = TaxonomyTier.TIER_3_HEURISTIC.value
         if chome_val is not None:
-            tier_map["chome"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["chome"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
         if ban_val is not None:
-            tier_map["ban"] = (
-                TaxonomyTier.TIER_1_STATUTORY.value
-                if regime_val == AddressRegime.GAIKU_HOSHIKI.value
-                else TaxonomyTier.TIER_2_CONVENTIONAL.value
-            )
+            tier_map["ban"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
         if go_val is not None:
-            tier_map["go"] = (
-                TaxonomyTier.TIER_1_STATUTORY.value
-                if regime_val == AddressRegime.GAIKU_HOSHIKI.value
-                else TaxonomyTier.TIER_2_CONVENTIONAL.value
-            )
+            tier_map["go"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
         if banchi_val is not None:
-            tier_map["banchi"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["banchi"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
         if edaban_val is not None:
-            tier_map["edaban"] = TaxonomyTier.TIER_1_STATUTORY.value
+            tier_map["edaban"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
 
         # Stage 6: Building, Floor, and Unit Disentanglement
         building_name, floor_val, unit_val = BuildingParser.parse(tail_text)
@@ -300,6 +295,7 @@ class AddressNormalizer:
             address_regime=regime_val,
             is_ambiguous=is_ambiguous,
             ambiguous_candidates=ambiguous_candidates,
+            is_contradictory=is_contradictory,
             unparsed_tail=None if (building_name or floor_val or unit_val) else (tail_text or None),
         )
 
@@ -356,6 +352,19 @@ class AddressNormalizer:
 
         res = self.normalize(raw_address)
 
+        if res.components.is_contradictory:
+            return ValidationResult(
+                raw_input=raw_address,
+                status=ValidationStatus.MALFORMED.value,
+                valid=False,
+                confidence_score=0.0,
+                address_regime=res.components.address_regime,
+                lg_code=None,
+                is_ambiguous=False,
+                ambiguous_candidates=(),
+                message="Contradiction detected: municipality does not belong to specified prefecture.",
+            )
+
         if res.confidence_score == 0.0:
             return ValidationResult(
                 raw_input=raw_address,
@@ -399,7 +408,7 @@ class AddressNormalizer:
                 message=f"Input contains unparsed or unsupported tokens: '{res.components.unparsed_tail}'.",
             )
 
-        if res.confidence_score >= 0.5 and (res.components.prefecture or res.components.city or res.components.county):
+        if res.components.lg_code is not None and res.confidence_score >= 0.5 and not res.components.is_ambiguous:
             return ValidationResult(
                 raw_input=raw_address,
                 status=ValidationStatus.ACCEPTED.value,
@@ -409,7 +418,7 @@ class AddressNormalizer:
                 lg_code=res.components.lg_code,
                 is_ambiguous=False,
                 ambiguous_candidates=(),
-                message="Address recognized by statutory authority.",
+                message="Local government entity verified against official statutory registry.",
             )
 
         return ValidationResult(
@@ -421,7 +430,7 @@ class AddressNormalizer:
             lg_code=res.components.lg_code,
             is_ambiguous=False,
             ambiguous_candidates=(),
-            message="Address structure could not be fully resolved.",
+            message="Administrative entity could not be resolved to a local government code.",
         )
 
 
