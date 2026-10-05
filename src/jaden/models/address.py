@@ -14,7 +14,7 @@ from .codes import TaxonomyTier, AddressRegime
 class KyotoDirectionClause:
     """Represents a Kyoto conventional street-intersection navigation clause.
 
-    Example: '寺町通御池上る' -> street_1='寺町通', street_2='御池通', direction='上る', cardinal='north'
+    Example: '寺町通御池上る' -> street_1='寺町通', street_2='御池', direction='上る', cardinal='north'
     """
     street_1: str                 # Primary street: e.g. '寺町通'
     street_2: str                 # Cross street: e.g. '御池通' (or '御池')

@@ -20,7 +20,7 @@ class GeocodingStatus(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class Coordinates:
-    """Geographic point coordinates in WGS 84 (EPSG:4326) datum."""
+    """Geographic point coordinates (JGD2011 / WGS 84 compatible datum, EPSG:6668 / EPSG:4326)."""
     latitude: float
     longitude: float
 
