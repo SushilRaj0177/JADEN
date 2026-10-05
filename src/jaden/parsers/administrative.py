@@ -117,44 +117,60 @@ class AdministrativeParser:
         # Pass 1: Try matching Prefecture from the front
         pref_match = self._pref_trie.longest_prefix(text, 0)
         if pref_match:
-            _, pref_record, rem_idx = pref_match
-            muni_text = text[rem_idx:].lstrip()
+            matched_pref_str, pref_record, rem_idx = pref_match
 
-            # 1a. Try municipality match under this prefecture
-            muni_match = self._muni_trie.longest_prefix(muni_text, 0)
-            if muni_match:
-                _, candidates, muni_end_idx = muni_match
-                # Filter candidates belonging to this specific prefecture
-                pref_candidates = [c for c in candidates if c.prefecture_code == pref_record.code]
-                if pref_candidates:
-                    matched_muni = pref_candidates[0]
-                    post_muni = muni_text[muni_end_idx:].lstrip()
+            # Stem Hijacking Guard:
+            # If we matched only the bare stem (e.g. '京都' from '京都府', '愛知' from '愛知県')
+            # rather than the full statutory name ('京都府', '愛知県'), verify whether the input
+            # actually starts with a longer municipality, county, or ward entity at index 0.
+            # Examples: '京都市中京区...', '愛知郡愛荘町...', '福島町...', '福島区...', '長野原町...', '京都郡苅田町...'
+            bypass_pref = False
+            if matched_pref_str != pref_record.name:
+                muni_at_0 = self._muni_trie.longest_prefix(text, 0)
+                ward_at_0 = self._ward_trie_global.longest_prefix(text, 0)
+                len_muni = len(muni_at_0[0]) if muni_at_0 else 0
+                len_ward = len(ward_at_0[0]) if ward_at_0 else 0
+                if max(len_muni, len_ward) > len(matched_pref_str):
+                    bypass_pref = True
 
-                    # If matched a designated city base (e.g. '京都市'), check if ward follows ('中京区')
-                    if matched_muni.entity_type == "designated_city" and pref_record.code in self._ward_trie_by_pref:
-                        ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(post_muni, 0)
-                        if ward_match:
-                            _, specific_ward_muni, ward_end_idx = ward_match
-                            return AdministrativeParseResult(
-                                pref_record, specific_ward_muni, post_muni[ward_end_idx:].lstrip(), False
-                            )
+            if not bypass_pref:
+                muni_text = text[rem_idx:].lstrip()
 
-                    return AdministrativeParseResult(
-                        pref_record, matched_muni, post_muni, False
-                    )
+                # 1a. Try municipality match under this prefecture
+                muni_match = self._muni_trie.longest_prefix(muni_text, 0)
+                if muni_match:
+                    _, candidates, muni_end_idx = muni_match
+                    # Filter candidates belonging to this specific prefecture
+                    pref_candidates = [c for c in candidates if c.prefecture_code == pref_record.code]
+                    if pref_candidates:
+                        matched_muni = pref_candidates[0]
+                        post_muni = muni_text[muni_end_idx:].lstrip()
 
-            # 1b. Check if designated city was omitted and ward directly follows prefecture
-            # e.g., '京都府中京区...' -> '京都市中京区'
-            if pref_record.code in self._ward_trie_by_pref:
-                ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(muni_text, 0)
-                if ward_match:
-                    _, specific_ward_muni, ward_end_idx = ward_match
-                    return AdministrativeParseResult(
-                        pref_record, specific_ward_muni, muni_text[ward_end_idx:].lstrip(), False
-                    )
+                        # If matched a designated city base (e.g. '京都市'), check if ward follows ('中京区')
+                        if matched_muni.entity_type == "designated_city" and pref_record.code in self._ward_trie_by_pref:
+                            ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(post_muni, 0)
+                            if ward_match:
+                                _, specific_ward_muni, ward_end_idx = ward_match
+                                return AdministrativeParseResult(
+                                    pref_record, specific_ward_muni, post_muni[ward_end_idx:].lstrip(), False
+                                )
 
-            # If no municipality matched from trie, return prefecture and remainder
-            return AdministrativeParseResult(pref_record, None, muni_text, False)
+                        return AdministrativeParseResult(
+                            pref_record, matched_muni, post_muni, False
+                        )
+
+                # 1b. Check if designated city was omitted and ward directly follows prefecture
+                # e.g., '京都府中京区...' -> '京都市中京区'
+                if pref_record.code in self._ward_trie_by_pref:
+                    ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(muni_text, 0)
+                    if ward_match:
+                        _, specific_ward_muni, ward_end_idx = ward_match
+                        return AdministrativeParseResult(
+                            pref_record, specific_ward_muni, muni_text[ward_end_idx:].lstrip(), False
+                        )
+
+                # If no municipality matched from trie, return prefecture and remainder
+                return AdministrativeParseResult(pref_record, None, muni_text, False)
 
         # Pass 2: Prefecture omitted in user input -> Ambiguity-aware resolution (Tier 3)
         # Try matching Municipality directly from index 0
