@@ -41,8 +41,11 @@ def sanitize_address_text(raw_text: str) -> str:
     if not raw_text:
         return ""
 
+    # Strip Unicode BOM (U+FEFF) and surrounding whitespace
+    text = raw_text.strip("\ufeff \t\r\n")
+
     # Step 1: Unicode NFKC Normalization (converts full-width numbers １２３ -> 123, etc.)
-    text = unicodedata.normalize("NFKC", raw_text)
+    text = unicodedata.normalize("NFKC", text)
 
     # Step 2: Contextual Chōonpu (ー) resolution before unconditional dash pass
     # Replace 'ー' with '-' only when connecting numbers (e.g. 1ー2 -> 1-2)

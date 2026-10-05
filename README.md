@@ -181,59 +181,92 @@ import jaden
 res1 = jaden.normalize("東京都港区六本木6-10-1六本木ヒルズ森タワー50F")
 print(res1.canonical)
 # Output: 東京都港区六本木6丁目10番1号 六本木ヒルズ森タワー 50F
-print(res1.components.lg_code)      # '131032' (Minato-ku)
+print(res1.components.lg_code)        # '131032' (Minato-ku)
 print(res1.components.address_regime) # 'gaiku_hoshiki'
 
-# 2. Rural cadastral lot address (Chiban with Oaza & Koaza)
-res2 = jaden.normalize("長野県長野市大字南長野字幅下692-2")
-print(res2.components.oaza)          # '南長野'
-print(res2.components.koaza)         # '幅下'
-print(res2.components.banchi)        # 692
-print(res2.components.edaban)        # 2
-print(res2.components.address_regime) # 'chiban'
+# 2. Component AST parsing
+components = jaden.parse("京都府中京区御池通東洞院東入笹屋町436")
+print(components.city)                      # '京都市'
+print(components.ward)                      # '中京区'
+print(components.kyoto_direction.street_1) # '御池通'
+print(components.banchi)                    # 436
 
-# 3. Kyoto conventional navigation address
-res3 = jaden.normalize("京都府中京区御池通東洞院東入笹屋町436")
-print(res3.components.kyoto_direction.street_1)  # '御池通'
-print(res3.components.kyoto_direction.street_2)  # '東洞院'
-print(res3.components.kyoto_direction.direction) # '東入'
-print(res3.components.banchi)                    # 436 (cadastral lot)
+# 3. Statutory validation and ambiguity assessment
+val = jaden.validate("府中市宮西町2-24")
+print(val.status)                # 'AMBIGUOUS'
+print(val.valid)                 # False
+print(val.ambiguous_candidates)  # ('東京都府中市 (132063)', '広島県府中市 (342084)')
 
-# 4. Ambiguous omitted prefecture detection
-res4 = jaden.normalize("府中市宮西町2-24")
-print(res4.components.is_ambiguous)           # True
-print(res4.components.ambiguous_candidates)   # ('東京都府中市 (132063)', '広島県府中市 (342084)')
-print(res4.confidence_score)                  # 0.50
-
-# 5. County (郡) resolution with omitted prefecture inference
-res5 = jaden.normalize("中郡大磯町国府本郷547")
-print(res5.canonical)                         # '神奈川県中郡大磯町国府本郷547番地'
-print(res5.components.county)                  # '中郡'
-print(res5.components.city)                    # '大磯町'
-print(res5.components.lg_code)                 # '143413'
+# 4. County (郡) resolution with omitted prefecture inference
+res4 = jaden.normalize("中郡大磯町国府本郷547")
+print(res4.canonical)         # '神奈川県中郡大磯町国府本郷547番地'
+print(res4.components.county) # '中郡'
+print(res4.components.city)   # '大磯町'
+print(res4.components.lg_code)# '143413'
 ```
 
 ### Command-Line Interface (CLI)
 
+JADEN provides three high-performance CLI commands: `normalize`, `parse`, and `validate`.
+
+#### 1. `normalize`: Canonical Address Formatting
 ```bash
-# Single address normalization (formatted JSON)
-jaden "東京都港区六本木6-10-1六本木ヒルズ森タワー50F"
+# Clean human-readable summary
+jaden normalize "東京都港区六本木1-2-3"
 
-# Canonical string output only
-jaden -c "新宿区西新宿2-8-1東京都庁 第一本庁舎"
-# Output: 東京都新宿区西新宿2丁目8番1号 東京都庁 第一本庁舎
+# Machine-readable JSON
+jaden normalize "東京都港区六本木1-2-3" --json
 
-# Streaming JSON Lines processing via stdin
-cat addresses.txt | jaden --jsonl > normalized.jsonl
+# Canonical string only (ideal for shell scripts)
+CANON=$(jaden normalize "新宿区西新宿2-8-1東京都庁 第一本庁舎" -c)
+```
+
+#### 2. `parse`: Granular Component AST Decomposition
+```bash
+# Pretty-printed syntactic decomposition
+jaden parse "京都府中京区御池通東洞院東入笹屋町436"
+
+# Structured AST JSON
+jaden parse "京都府中京区御池通東洞院東入笹屋町436" --json
+```
+
+#### 3. `validate`: Statutory Registry & Integrity Verification
+```bash
+# Valid address verification (Exit code 0)
+jaden validate "東京都港区六本木1-2-3"
+
+# Ambiguity detection with candidate reporting (Exit code 2)
+jaden validate "府中市宮西町2-24"
+
+# Malformed / foreign input rejection (Exit code 1)
+jaden validate "123 Main St, New York"
+
+# Machine-readable JSON output
+jaden validate "東京都港区六本木1-2-3" --json
+```
+
+#### Exit Codes for Shell Automation
+| Exit Code | Meaning | Example Scenario |
+| :---: | :--- | :--- |
+| `0` | **ACCEPTED** / Success | Valid address verified against statutory registries |
+| `1` | **MALFORMED** / Rejected | Foreign input, gibberish, or confidence 0.0 |
+| `2` | **AMBIGUOUS** / CLI Error | Omitted prefecture with multiple municipal matches |
+| `3` | **UNSUPPORTED** | Structurally unsupported or unparsed components |
+
+#### Unix Stdin Piping
+```bash
+# Pipe address string directly via '-'
+echo "東京都港区六本木1-2-3" | jaden normalize - -c
 ```
 
 ---
 
 ## 7. Testing & Quality Assurance
 
-JADEN maintains a 124-test verification suite covering:
+JADEN maintains a 146-test verification suite covering:
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
 * **28 Adversarial Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), multi-jurisdiction collisions (`中央区`, `府中市`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
+* **22 CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`), `--json` formatting, `-c` canonical flag, stdin streaming (`-`), and shell automation exit codes (0, 1, 2, 3).
 * **JIS X 0402 Modulus 11 Check Digit Validation:** Algorithmic verification across all codes.
 
 ```bash

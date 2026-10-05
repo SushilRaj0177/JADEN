@@ -12,6 +12,10 @@ from .address import (
     AddressComponents,
     NormalizedAddress,
 )
+from .validation import (
+    ValidationStatus,
+    ValidationResult,
+)
 
 __all__ = [
     "TaxonomyTier",
@@ -22,4 +26,6 @@ __all__ = [
     "HokkaidoGridClause",
     "AddressComponents",
     "NormalizedAddress",
+    "ValidationStatus",
+    "ValidationResult",
 ]

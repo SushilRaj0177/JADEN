@@ -15,6 +15,7 @@ from typing import Optional, Dict
 
 from .models.codes import TaxonomyTier, AddressRegime
 from .models.address import AddressComponents, NormalizedAddress
+from .models.validation import ValidationResult, ValidationStatus
 from .core.sanitizer import sanitize_address_text
 from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
 from .parsers.administrative import AdministrativeParser
@@ -289,7 +290,7 @@ class AddressNormalizer:
             address_regime=regime_val,
             is_ambiguous=is_ambiguous,
             ambiguous_candidates=ambiguous_candidates,
-            unparsed_tail=tail_text or None,
+            unparsed_tail=None if (building_name or floor_val or unit_val) else (tail_text or None),
         )
 
         latency_us = (time.perf_counter_ns() - start_time_ns) / 1_000.0
@@ -304,6 +305,111 @@ class AddressNormalizer:
             latency_microseconds=round(latency_us, 2),
         )
 
+    def parse(self, raw_address: str) -> AddressComponents:
+        """Parses a Japanese address string into granular AddressComponents AST.
+
+        Args:
+            raw_address: Raw user-input address string.
+
+        Returns:
+            AddressComponents data object with decomposed administrative and block fields.
+        """
+        return self.normalize(raw_address).components
+
+    def validate(self, raw_address: str) -> ValidationResult:
+        """Validates an address string against statutory administrative registries.
+
+        Evaluates:
+        - ACCEPTED: Address recognized with valid municipal authority and high confidence.
+        - AMBIGUOUS: Omitted prefecture matches multiple statutory municipalities.
+        - MALFORMED: Rejected by administrative parser or confidence == 0.0.
+        - UNSUPPORTED: Structurally unparsed or unresolvable tail components.
+
+        Args:
+            raw_address: Raw user-input address string.
+
+        Returns:
+            ValidationResult with status, validity flag, confidence, and diagnostic message.
+        """
+        if not raw_address or not raw_address.strip():
+            return ValidationResult(
+                raw_input=raw_address or "",
+                status=ValidationStatus.MALFORMED.value,
+                valid=False,
+                confidence_score=0.0,
+                address_regime=AddressRegime.UNSPECIFIED.value,
+                lg_code=None,
+                is_ambiguous=False,
+                ambiguous_candidates=(),
+                message="Empty or whitespace address string.",
+            )
+
+        res = self.normalize(raw_address)
+
+        if res.confidence_score == 0.0:
+            return ValidationResult(
+                raw_input=raw_address,
+                status=ValidationStatus.MALFORMED.value,
+                valid=False,
+                confidence_score=0.0,
+                address_regime=AddressRegime.UNSPECIFIED.value,
+                lg_code=None,
+                is_ambiguous=False,
+                ambiguous_candidates=(),
+                message="Input rejected: no recognized Japanese administrative jurisdiction or structure.",
+            )
+
+        if res.components.is_ambiguous:
+            return ValidationResult(
+                raw_input=raw_address,
+                status=ValidationStatus.AMBIGUOUS.value,
+                valid=False,
+                confidence_score=res.confidence_score,
+                address_regime=res.components.address_regime,
+                lg_code=None,
+                is_ambiguous=True,
+                ambiguous_candidates=res.components.ambiguous_candidates,
+                message=f"Omitted prefecture matches {len(res.components.ambiguous_candidates)} statutory municipalities.",
+            )
+
+        if res.components.unparsed_tail and len(res.components.unparsed_tail.strip()) > 5:
+            return ValidationResult(
+                raw_input=raw_address,
+                status=ValidationStatus.UNSUPPORTED.value,
+                valid=False,
+                confidence_score=res.confidence_score,
+                address_regime=res.components.address_regime,
+                lg_code=res.components.lg_code,
+                is_ambiguous=False,
+                ambiguous_candidates=(),
+                message=f"Input contains unparsed or unsupported tokens: '{res.components.unparsed_tail}'.",
+            )
+
+        if res.confidence_score >= 0.5 and (res.components.prefecture or res.components.city or res.components.county):
+            return ValidationResult(
+                raw_input=raw_address,
+                status=ValidationStatus.ACCEPTED.value,
+                valid=True,
+                confidence_score=res.confidence_score,
+                address_regime=res.components.address_regime,
+                lg_code=res.components.lg_code,
+                is_ambiguous=False,
+                ambiguous_candidates=(),
+                message="Address recognized by statutory authority.",
+            )
+
+        return ValidationResult(
+            raw_input=raw_address,
+            status=ValidationStatus.UNSUPPORTED.value,
+            valid=False,
+            confidence_score=res.confidence_score,
+            address_regime=res.components.address_regime,
+            lg_code=res.components.lg_code,
+            is_ambiguous=False,
+            ambiguous_candidates=(),
+            message="Address structure could not be fully resolved.",
+        )
+
 
 _DEFAULT_ENGINE: Optional[AddressNormalizer] = None
 
@@ -314,3 +420,19 @@ def normalize(address: str) -> NormalizedAddress:
     if _DEFAULT_ENGINE is None:
         _DEFAULT_ENGINE = AddressNormalizer()
     return _DEFAULT_ENGINE.normalize(address)
+
+
+def parse(address: str) -> AddressComponents:
+    """Public convenience function to parse a Japanese address into AddressComponents."""
+    global _DEFAULT_ENGINE
+    if _DEFAULT_ENGINE is None:
+        _DEFAULT_ENGINE = AddressNormalizer()
+    return _DEFAULT_ENGINE.parse(address)
+
+
+def validate(address: str) -> ValidationResult:
+    """Public convenience function to validate a Japanese address against statutory registries."""
+    global _DEFAULT_ENGINE
+    if _DEFAULT_ENGINE is None:
+        _DEFAULT_ENGINE = AddressNormalizer()
+    return _DEFAULT_ENGINE.validate(address)

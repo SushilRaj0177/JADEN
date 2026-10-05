@@ -170,63 +170,96 @@ pip install -e .
 ```python
 import jaden
 
-# 1. 都市部住居表示（ビル名・階数付き）
+# 1. 都市部住居表示（正規化・代表要素の抽出）
 res1 = jaden.normalize("東京都港区六本木6-10-1六本木ヒルズ森タワー50F")
 print(res1.canonical)
 # 出力: 東京都港区六本木6丁目10番1号 六本木ヒルズ森タワー 50F
 print(res1.components.lg_code)        # '131032' (港区)
 print(res1.components.address_regime) # 'gaiku_hoshiki'
 
-# 2. 地方部地番表記（大字・字・地番・枝番）
-res2 = jaden.normalize("長野県長野市大字南長野字幅下692-2")
-print(res2.components.oaza)            # '南長野'
-print(res2.components.koaza)           # '幅下'
-print(res2.components.banchi)          # 692
-print(res2.components.edaban)          # 2
-print(res2.components.address_regime)   # 'chiban'
+# 2. 構文要素のAST分解（parse）
+components = jaden.parse("京都府中京区御池通東洞院東入笹屋町436")
+print(components.city)                      # '京都市'
+print(components.ward)                      # '中京区'
+print(components.kyoto_direction.street_1) # '御池通'
+print(components.banchi)                    # 436
 
-# 3. 京都市通り名表記
-res3 = jaden.normalize("京都府中京区御池通東洞院東入笹屋町436")
-print(res3.components.kyoto_direction.street_1)  # '御池通'
-print(res3.components.kyoto_direction.street_2)  # '東洞院'
-print(res3.components.kyoto_direction.direction) # '東入'
-print(res3.components.banchi)                    # 436 (地番)
+# 3. 法的適合性・曖昧性検証（validate）
+val = jaden.validate("府中市宮西町2-24")
+print(val.status)                # 'AMBIGUOUS'
+print(val.valid)                 # False
+print(val.ambiguous_candidates)  # ('東京都府中市 (132063)', '広島県府中市 (342084)')
 
-# 4. 都道府県省略時の曖昧性検出
-res4 = jaden.normalize("府中市宮西町2-24")
-print(res4.components.is_ambiguous)          # True
-print(res4.components.ambiguous_candidates)  # ('東京都府中市 (132063)', '広島県府中市 (342084)')
-print(res4.confidence_score)                 # 0.50
-
-# 5. 郡名の解決および省略された都道府県の補完
-res5 = jaden.normalize("中郡大磯町国府本郷547")
-print(res5.canonical)                        # '神奈川県中郡大磯町国府本郷547番地'
-print(res5.components.county)                 # '中郡'
-print(res5.components.city)                   # '大磯町'
-print(res5.components.lg_code)                # '143413'
+# 4. 郡名解決および都道府県補完
+res4 = jaden.normalize("中郡大磯町国府本郷547")
+print(res4.canonical)         # '神奈川県中郡大磯町国府本郷547番地'
+print(res4.components.county) # '中郡'
+print(res4.components.city)   # '大磯町'
+print(res4.components.lg_code)# '143413'
 ```
 
 ### コマンドラインインターフェース (CLI)
 
+JADENは、3つの高速CLIサブコマンド（`normalize`, `parse`, `validate`）を提供します。
+
+#### 1. `normalize`: 正規化表記の生成
 ```bash
-# 単一住所の正規化（構造化JSON出力）
-jaden "東京都港区六本木6-10-1六本木ヒルズ森タワー50F"
+# ターミナル向け可読サマリー出力
+jaden normalize "東京都港区六本木1-2-3"
 
-# 正規化文字列のみの出力
-jaden -c "新宿区西新宿2-8-1東京都庁 第一本庁舎"
-# 出力: 東京都新宿区西新宿2丁目8番1号 東京都庁 第一本庁舎
+# 機械可読JSON形式出力
+jaden normalize "東京都港区六本木1-2-3" --json
 
-# JSON Lines ストリーミング一括処理
-cat addresses.txt | jaden --jsonl > normalized.jsonl
+# 正規化文字列のみの出力（シェルスクリプト変数代入用）
+CANON=$(jaden normalize "新宿区西新宿2-8-1東京都庁 第一本庁舎" -c)
+```
+
+#### 2. `parse`: 階層的構文AST分解
+```bash
+# 構文木・階層別分解のターミナル表示
+jaden parse "京都府中京区御池通東洞院東入笹屋町436"
+
+# 構文AST JSON形式出力
+jaden parse "京都府中京区御池通東洞院東入笹屋町436" --json
+```
+
+#### 3. `validate`: 法定台帳照合・構造整合性検証
+```bash
+# 有効住所の検証（終了コード 0）
+jaden validate "東京都港区六本木1-2-3"
+
+# 都道府県省略による衝突・曖昧性の検出（終了コード 2）
+jaden validate "府中市宮西町2-24"
+
+# 外部外国住所・不正文字列の拒絶（終了コード 1）
+jaden validate "123 Main St, New York"
+
+# 機械可読JSON形式出力
+jaden validate "東京都港区六本木1-2-3" --json
+```
+
+#### シェル自動化向け終了コード仕様
+| 終了コード | 判定種別 | 状態説明 |
+| :---: | :--- | :--- |
+| `0` | **ACCEPTED** / 成功 | 法定行政コードおよび住所構造が正常に検証完了 |
+| `1` | **MALFORMED** / 不正 | 外国文字列、無効構文、または確信度0.0 |
+| `2` | **AMBIGUOUS** / 曖昧 | 都道府県省略により複数自治体に衝突（または引数構文エラー） |
+| `3` | **UNSUPPORTED** / 未対応 | 未解析トークン残存、または構文的未対応 |
+
+#### 標準入力パイプ処理
+```bash
+# '-' を指定して標準入力から直接パイプ処理
+echo "東京都港区六本木1-2-3" | jaden normalize - -c
 ```
 
 ---
 
 ## 7. テストと品質保証
 
-全124件のテストスイートを完備しています。
+全146件のテストスイートを完備しています。
 * **全47都道府県の網羅的検証:** 都道府県、郡、市区町村、町名、大字・字、地域慣習、および街区・番地号（`chome`, `ban`, `go`, `banchi`, `edaban`）の完全分解検証に加え、複数都道県にまたがる郡（神奈川、東京、北海道、埼玉、長野、沖縄）の専用検証。
 * **28件の対抗的検証（Adversarial Suite）:** 固有名詞衝突（`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`）、自治体名衝突（`中央区`, `府中市`, `伊達市`）、方位含有京都通り（`東洞院通`, `下立売通`）、無効入力の確信度0.0拒絶。
+* **22件のCLI・公開API網羅検証:** サブコマンド（`normalize`, `parse`, `validate`）、`--json`出力、`-c`正規化文字列出力、標準入力パイプ（`-`）、シェル終了コード（0, 1, 2, 3）の完全検証。
 * **モジュラス11アルゴリズム完全適合検証。**
 
 ```bash
