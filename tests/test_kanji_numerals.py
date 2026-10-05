@@ -65,3 +65,10 @@ def test_hyphenated_kanji_proper_noun_safety():
     assert normalize_kanji_numerals_in_blocks("港区麻布十番1-1") == "港区麻布十番1-1"
     assert normalize_kanji_numerals_in_blocks("中央区八重洲二-一") == "中央区八重洲2-1"
     assert normalize_kanji_numerals_in_blocks("北区十条仲原一-二-三") == "北区十条仲原1-2-3"
+
+
+def test_building_name_kanji_numeral_preservation():
+    # Building names like 第一-3ビル must not have their kanji numbers rewritten
+    assert normalize_kanji_numerals_in_blocks("第一-3ビル") == "第一-3ビル"
+    assert normalize_kanji_numerals_in_blocks("第二-5ビル") == "第二-5ビル"
+    assert normalize_kanji_numerals_in_blocks("六本木三-二-一 第一-3ビル") == "六本木3-2-1 第一-3ビル"

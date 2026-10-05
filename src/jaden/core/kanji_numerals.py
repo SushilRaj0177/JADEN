@@ -91,9 +91,10 @@ _EDABAN_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 
 # Hyphenated numbers containing Kanji numerals (e.g. '三-二-一' -> '3-2-1', '六本木三-二-一' -> '六本木3-2-1')
+# Protects building names such as '第一-3ビル' and trailing building keywords
 _NUM_OR_KANJI: Final[str] = rf"(?:\d+|[{_KANJI_NUM_CHARS}]+)"
 _HYPHEN_KANJI_SEQ_PATTERN: Final[re.Pattern[str]] = re.compile(
-    rf"({_NUM_OR_KANJI}(?:-{_NUM_OR_KANJI})+)"
+    rf"(?<!第)({_NUM_OR_KANJI}(?:-{_NUM_OR_KANJI})+)(?!ビル|号館|館|マンション|アパート|ハイツ|レジデンス|タワー)"
 )
 
 

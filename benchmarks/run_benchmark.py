@@ -135,6 +135,14 @@ def run_benchmark(eval_passes_per_corpus: int = 10) -> Dict[str, Any]:
     corpora = build_representative_corpus()
     total_unique_addresses = sum(len(addrs) for addrs in corpora.values())
 
+    # Measure peak heap allocation during active normalization pass
+    for addrs in corpora.values():
+        for addr in addrs[:50]:
+            normalizer.normalize(addr)
+    mem_final, mem_peak_total = tracemalloc.get_traced_memory()
+    peak_heap_mb = mem_peak_total / (1024 * 1024)
+    tracemalloc.stop()
+
     results: Dict[str, Any] = {
         "environment": {
             "os": f"{platform.system()} {platform.release()} ({platform.version()})",
@@ -215,16 +223,13 @@ def run_benchmark(eval_passes_per_corpus: int = 10) -> Dict[str, Any]:
         print(f"  Throughput:  {throughput:,.1f} addresses/sec")
         print(f"  Latency:     P50: {p50:.2f} μs | P90: {p90:.2f} μs | P99: {p99:.2f} μs (Mean: {mean_lat:.2f} μs)")
 
-    mem_final, mem_peak_total = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
     overall_throughput = total_addresses_evaluated / total_benchmark_time_sec
     results["overall_throughput_addresses_per_sec"] = round(overall_throughput, 1)
-    results["memory_profile"]["peak_heap_allocation_mb"] = round(mem_peak_total / (1024 * 1024), 2)
+    results["memory_profile"]["peak_heap_allocation_mb"] = round(peak_heap_mb, 2)
 
     print("\n" + "=" * 75)
     print(f"AGGREGATE THROUGHPUT:  {overall_throughput:,.1f} addresses/sec")
-    print(f"PEAK MEMORY PROFILE:   {mem_peak_total / (1024 * 1024):.2f} MB")
+    print(f"PEAK MEMORY PROFILE:   {peak_heap_mb:.2f} MB")
     print("=" * 75)
 
     # Save benchmark result artifact (relative path)

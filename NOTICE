@@ -6,15 +6,19 @@ This product includes or references data and services from the following organiz
 1. Ministry of Internal Affairs and Communications (総務省自治行政局)
    - Dataset: 全国地方公共団体コード (都道府県コード及び市区町村コード, 令和6年1月1日更新)
    - Source URL: https://www.soumu.go.jp/main_content/000925835.xlsx
-   - Terms: Government of Japan Standard Terms of Use (政府標準利用規約 / CC BY 4.0 compatible)
+   - Terms of Use: 総務省ウェブサイト利用規約 (政府標準利用規約 第2.0版 / CC BY 4.0 互換)
+   - Terms URL: https://www.soumu.go.jp/menu_kyotsuu/important/kizoku.html
    - Attribution: 本製品の全国地方公共団体マスターデータは、総務省「都道府県コード及び市区町村コード」を加工・構造化して作成したものです。
+   - Reproducibility: Bundled municipalities.json is reproducible from the bundled soumu_000925835.xlsx via src/jaden/data/build_municipalities.py (pinned SHA256 in src/jaden/data/provenance.json).
 
 2. Geospatial Information Authority of Japan (国土地理院)
    - Service: 地名検索API (GSI Address Search API)
    - Endpoint: https://msearch.gsi.go.jp/address-search/AddressSearch
-   - Terms: GSI Content Terms of Use (国土地理院コンテンツ利用規約 / CC BY 4.0 compatible)
+   - Terms of Use: 国土地理院コンテンツ利用規約
+   - Terms URL: https://www.gsi.go.jp/kikakukouhou/kikakukouhou40012.html
    - Attribution: 出典：国土地理院 (地名検索API)。座標系は世界測地系 JGD2011 (WGS 84 準拠互換, EPSG:6668 / EPSG:4326) に準拠します。
+   - Terms & Rate Notice: Users should consult GSI's terms of use at the URL above. For automated or high-volume queries, users must maintain reasonable request intervals to prevent server burden.
 
-3. Japan Post (日本郵便)
-   - Dataset: 郵便番号データ (Postal Code Data) & Statutory County Districting
-   - Attribution: 郡（町村部）の所属関係は、日本郵便および法令・公報上の行政区画編成に基づきマッピングされたものです。
+3. Japan Post (日本郵便) and Prefecture Mapping
+   - Bundled Files: src/jaden/data/county_mapping.json and src/jaden/data/jis_prefectures.json
+   - Provenance Notice: The provenance of county_mapping.json and jis_prefectures.json is not reproducible from this repository; no raw source file or rebuild script is included in the repository. Users requiring independent verification should consult official government sources or Japan Post directly.

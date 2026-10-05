@@ -64,3 +64,6 @@ def test_postal_code_prefix_stripping():
     assert sanitize_address_text("〒 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
     assert sanitize_address_text("〒106-0032") == ""
     assert sanitize_address_text("106-0032") == ""
+    # Test Unicode hyphen U+2010
+    assert sanitize_address_text("106\u20100032 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("〒106\u20100032 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"

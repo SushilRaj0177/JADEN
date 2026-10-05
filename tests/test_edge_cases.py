@@ -136,3 +136,27 @@ def test_embedded_newline_normalization():
     addr2 = "東京都\n港区\r\n六本木6-10-1"
     r2 = jaden.normalize(addr2)
     assert r2.canonical == "東京都港区六本木6丁目10番1号"
+
+
+def test_postal_code_with_unicode_hyphen_end_to_end():
+    import jaden
+    # 106‐0032 with U+2010 hyphen
+    res = jaden.parse("106\u20100032 東京都港区六本木6-10-1")
+    assert res.prefecture == "東京都"
+    assert res.city == "港区"
+    assert res.town == "六本木"
+    assert res.chome == 6
+    assert res.ban == 10
+    assert res.go == 1
+    assert res.lg_code == "131032"
+
+    v = jaden.validate("106\u20100032 東京都港区六本木6-10-1")
+    assert v.valid is True
+    assert v.status == "ACCEPTED"
+
+
+def test_building_name_daiichi_preservation():
+    import jaden
+    res = jaden.normalize("東京都千代田区神田錦町1-1 第一-3ビル")
+    assert res.components.building == "第一-3ビル"
+    assert res.canonical == "東京都千代田区神田錦町1番1号 第一-3ビル"

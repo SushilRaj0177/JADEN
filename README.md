@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Typing: PEP 561](https://img.shields.io/badge/typing-PEP%20561-green.svg)](https://peps.python.org/pep-0561/)
 
-**JADEN** is a production-grade, deterministic Python engine and CLI for Japanese address canonicalization, structured decomposition, statutory validation, and optional geospatial resolution.
+**JADEN** is a deterministic Python engine and CLI for Japanese address canonicalization, structured decomposition, statutory validation, and optional geospatial resolution.
 
-Operating completely offline at **~4,000 addresses/second** with a lean **4.25 MB memory footprint**, JADEN resolves the real-world complexity of Japanese addressing without external black-box APIs, heuristic hallucinations, or mandatory cloud dependencies.
+Operating completely offline at **~30,000 addresses/second** with a lean **4.28 MB memory footprint** (4.48 MB peak heap during batch execution), JADEN resolves the real-world complexity of Japanese addressing without external black-box APIs, heuristic hallucinations, or mandatory cloud dependencies.
 
 *(日本語のドキュメントは [README_JP.md](README_JP.md) をご覧ください。)*
 
@@ -21,12 +21,12 @@ Unlike Western street-grid systems (e.g., `123 Main St, Suite 400`), Japanese ad
 - **Proper noun Kanji numeral collisions:** Place names embedding numbers (`一番街`, `麻布十番`, `六本木`, `八王子`) that naive tokenizers mistakenly convert into block numbers.
 - **Omitted-prefecture municipal collisions:** 37 municipality and ward names shared across multiple prefectures (`府中市`, `中央区`, `伊達市`), plus intra-prefecture duplicate ward/town jurisdictions (`南区`, `緑区` in Kanagawa; `北区`, `西区` in Osaka; `泊村` in Hokkaido), which commercial engines often silently misassign.
 
-JADEN provides an authoritative, deterministic solution by parsing raw address text into a granular Abstract Syntax Tree (`AddressComponents`), canonicalizing notation, validating against official government registries, and offering optional coordinate resolution.
+JADEN parses raw address text into a granular Abstract Syntax Tree (`AddressComponents`), canonicalizing notation, validating against official government registries, and offering optional coordinate resolution.
 
 ### What JADEN Can Do
 - **Deterministic Canonicalization & Normalization:** Standardizes Unicode variations (NFKC, 11+ dash forms including box dashes and small hyphens, context-aware Katakana prolonged sound marks, embedded newline/CR collapse, postal code prefix stripping) and formats clean, canonical address strings.
 - **Granular Syntactic AST Parsing:** Decomposes inputs into prefecture, county, city/ward, oaza/koaza, town, chome, ban, go, banchi, edaban, building, floor, and unit fields.
-- **Statutory Registry Verification:** Validates against **1,918 official MIC municipal records** and **374 statutory counties** (367 distinct names, 7 shared across prefectures; JIS X 0401/0402) using Modulus 11 check digits.
+- **Statutory Registry Verification:** Validates against **1,918 official MIC municipal records** (verified with Modulus 11 check digits) and maps **374 statutory counties** (367 distinct names, 7 shared across prefectures; JIS X 0401/0402).
 - **Regional Convention Grammars:** Fully parses Kyoto intersection navigation clauses and Hokkaido cardinal grid coordinates.
 - **Ambiguity Detection:** Explicitly flags inputs with ambiguous jurisdictions as ambiguous (`is_ambiguous=True`) and lists candidates with statutory LG codes rather than guessing.
 - **Professional CLI & Python API:** First-class CLI (`normalize`, `parse`, `validate`, `geocode`) supporting human-readable output, JSON piping, dedicated shell exit codes, and standard input reading via `-`.
@@ -39,7 +39,7 @@ JADEN provides an authoritative, deterministic solution by parsing raw address t
 > Geospatial resolution is an **explicitly decoupled, optional layer**. Running `jaden normalize`, `jaden parse`, or `jaden validate` will never execute a network request. Coordinates are resolved only when explicitly calling `jaden geocode` or `jaden.geocode()`.
 
 ### The Core Engineering Challenge
-Unlike Western street-grid systems, a production normalization engine must resolve four distinct layers of complexity:
+Unlike Western street-grid systems, a normalization engine must resolve four distinct layers of complexity:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -63,9 +63,9 @@ Unlike Western street-grid systems, a production normalization engine must resol
 3. **The CJK Dash Jungle & Proper Noun Preservation:**
    * Over 11 Unicode code points represent dashes in Japanese text (`-`, `－`, `‐`, `―`, `ー`, `～`, `─`, `━`, `﹣`, `﹘`, etc.).
    * The Katakana prolonged sound mark (`ー` / `U+30FC`) is simultaneously a delimiter between block numbers (`1ー2ー3` -> `1-2-3`) and a crucial character in proper nouns (`タワー`, `センター`).
-   * Proper place names embed Kanji numbers (`六本木`, `八王子`, `十条`, `四日市`, `三番町`, `一番街`, `麻布十番`, `八重洲`). JADEN's multi-stage FSM protects proper nouns across both compound numeral patterns and single-digit tail notations (e.g., `六本木1`, `十条1`, `一番町1`, `八重洲1`, `麻布十番1-1`), preventing false tokenization into block numbers.
+   * Proper place names embed Kanji numbers (`六本木`, `八王子`, `十条`, `四日市`, `三番町`, `一番街`, `麻布十番`, `八重洲`). JADEN's multi-stage FSM protects proper nouns across both compound numeral patterns and single-digit tail notations (e.g., `六本木1`, `十条1`, `一番町1`, `八重洲1`, `麻布十番1-1`), preventing false tokenization into block numbers, while preserving ordinal building names like `第一-3ビル`.
 4. **Multi-Jurisdiction Collisions on Omitted Prefectures:**
-   * 37 municipal and ward names are shared across multiple prefectures (e.g. `中央区` in Tokyo and 10 designated cities; `府中市` in Tokyo and Hiroshima; `伊達市` in Hokkaido and Fukushima), and 5 name pairs collide intra-prefecture. A production system must report ambiguity rather than silently guessing.
+   * 37 municipal and ward names are shared across multiple prefectures (e.g. `中央区` in Tokyo and 10 designated cities; `府中市` in Tokyo and Hiroshima; `伊達市` in Hokkaido and Fukushima), and 5 name pairs collide intra-prefecture. A robust system must report ambiguity rather than silently guessing.
 
 ---
 
@@ -95,11 +95,13 @@ JADEN executes a multi-stage deterministic pipeline:
    • Contextual Chōonpu (U+30FC) resolution: converted only between digits,
      strictly preserved in Katakana loanwords (e.g., 'タワー')
    • Unconditional dash unification to ASCII '-'
+   • Strips leading postal code prefixes (〒NNN-NNNN, NNN-NNNN)
                                   │
                                   ▼
    [Stage 2: Context-Bounded Kanji Numeral Converter]
    • Converts block numerals ('三丁目' -> '3丁目', '488番地')
    • Context-bounded patterns protect proper nouns ('一番街', '麻布十番', '三番町')
+     and building names ('第一-3ビル')
                                   │
                                   ▼
    [Stage 3: Administrative Boundary Resolver (PrefixTrie)]
@@ -144,12 +146,13 @@ JADEN executes a multi-stage deterministic pipeline:
 
 ---
 
-## 4. Authoritative Standards & Data Provenance
+## 4. Administrative Standards & Data Provenance
 
-All figures, codes, and schemas bundled in JADEN are verified against official Japanese statutory authorities:
+Administrative reference data in JADEN is based on public government standards and datasets:
 
 1. **Prefecture Codes (JIS X 0401:1973, revised 2014):**
-   * Exactly 47 prefectures (`01` 北海道 to `47` 沖縄県). Verified against official gazettes.
+   * Exactly 47 prefectures (`01` 北海道 to `47` 沖縄県) as defined in JIS X 0401.
+   * *Note on Provenance:* `src/jaden/data/jis_prefectures.json` is bundled directly without a raw source file in the repository; its provenance is not reproducible from this repository.
 2. **Municipality Codes (JIS X 0402:2020 & MIC Local Government Code):**
    * **Issuing Body:** Ministry of Internal Affairs and Communications (総務省自治行政局)
    * **Official File:** 都道府県コード及び市区町村コード (令和6年1月1日更新 / Jan 1, 2024 update)
@@ -163,44 +166,49 @@ All figures, codes, and schemas bundled in JADEN are verified against official J
      $$\text{Sum} = \sum_{i=1}^{5} d_i \times w_i, \quad W = [6, 5, 4, 3, 2]$$
      $$R = \text{Sum} \pmod{11}$$
      $$\text{Check Digit} = \begin{cases} (11 - R) \pmod{10} & \text{if } R \le 1 \\ 11 - R & \text{if } R \ge 2 \end{cases}$$
-3. **County (郡) Association (Japan Post Address Base Registry & Statutory Designations):**
-   * **Source Authority:** Japan Post Postal Address Data (郵便番号データ) & Statutory Local Autonomy Act designations (地方自治法定義町村)
+   * **Reproducibility:** The bundled `src/jaden/data/municipalities.json` is reproducible from the bundled `src/jaden/data/soumu_000925835.xlsx` via `src/jaden/data/build_municipalities.py` (pinned SHA256 in `src/jaden/data/provenance.json`).
+3. **County (郡) Association:**
    * **Coverage:** 932 towns and villages (743 町 + 189 村):
      - 374 statutory counties (郡) (367 distinct names, 7 shared across prefectures), encompassing 923 county-affiliated towns and villages.
      - 9 Tokyo island municipalities explicitly verified without county jurisdiction (`大島町`, `利島村`, `新島村`, `神津島村`, `三宅村`, `御蔵島村`, `八丈町`, `青ヶ島村`, `小笠原村`).
      - Northern Territories (北方領土) villages mapped to statutory counties (`色丹郡色丹村`, `国後郡泊村`, `国後郡留夜別村`, `択捉郡留別村`, `紗那郡紗那村`, `蘂取郡蘂取村`).
+   * *Note on Provenance:* `src/jaden/data/county_mapping.json` is bundled directly without a raw source file in the repository; its provenance is not reproducible from this repository.
 4. **Statutory Addressing Acts:**
    * *Act on Indication of Residential Address (昭和37年法律第119号)*: Defines urban *Gaiku-hoshiki* (Chome-Ban-Go).
    * *Real Property Registration Act (平成16年法律第123号)*: Governs cadastral *Chiban* (Oaza-Koaza-Banchi-Edaban).
 5. **Digital Agency Address Base Registry (アドレス・ベース・レジストリ):**
    * JADEN models ABR statutory taxonomy (Machi-aza, Gaiku, Chiban). Note: JADEN is an offline linguistic engine and intentionally does not bundle the multi-gigabyte spatial polygon GIS shapefiles of the full ABR.
 6. **Open Data Attribution & Licensing Terms:**
-   * **MIC Municipality Data:** Ministry of Internal Affairs and Communications (総務省自治行政局) *都道府県コード及び市区町村コード*. Processed and structured under the Government of Japan Standard Terms of Use (政府標準利用規約 / CC BY 4.0 compatible).
-   * **GSI Geospatial Data:** Geospatial Information Authority of Japan (国土地理院) Address Search API. Utilized under GSI Content Terms of Use (国土地理院コンテンツ利用規約 / CC BY 4.0 compatible).
-   * **Japan Post Data:** Postal code address directory used for county administrative districting associations.
-   * Complete notices are preserved in [NOTICE](NOTICE).
+   * **MIC Municipality Data:** Ministry of Internal Affairs and Communications (総務省自治行政局) *都道府県コード及び市区町村コード*. Governed by the Ministry of Internal Affairs and Communications Terms of Use (政府標準利用規約 第2.0版 / CC BY 4.0 compatible): `https://www.soumu.go.jp/menu_kyotsuu/important/kizoku.html`.
+     Attribution: *本製品の全国地方公共団体マスターデータは、総務省「都道府県コード及び市区町村コード」を加工・構造化して作成したものです。*
+   * **GSI Geospatial Data:** Geospatial Information Authority of Japan (国土地理院) Address Search API. Governed by the GSI Content Terms of Use: `https://www.gsi.go.jp/kikakukouhou/kikakukouhou40012.html`.
+     Attribution: *出典：国土地理院 (地名検索API)。座標系は世界測地系 JGD2011 (WGS 84 準拠互換, EPSG:6668 / EPSG:4326) に準拠します。*
+   * Complete notices and terms citations are preserved in [NOTICE](NOTICE).
 
 ---
 
 ## 5. Empirical Benchmarks
 
-Benchmarks are executed using the reproducible suite in `benchmarks/run_benchmark.py`. Measurements reflect actual performance across a **representative 500-address corpus** without synthetic micro-benchmark bias or repeated-string caching.
+Benchmarks are executed using the reproducible suite in `benchmarks/run_benchmark.py`. Measurements reflect actual performance across a **representative 500-address corpus** without repeated-string caching. Timed loops execute with `tracemalloc` stopped to avoid profiler overhead.
+
+> [!NOTE]
+> **Benchmark Scope:** The evaluation corpus is synthetic, and the benchmark measures execution speed, latency, and memory allocations. It does not measure parsing accuracy against real-world ground truth.
 
 ### Hardware & Runtime Environment
 * **OS:** Windows 11 (10.0.26200)
 * **CPU:** Intel64 Family 6 Model 151 (12 Logical Cores)
 * **Python Runtime:** CPython 3.13.14 (64-bit)
-* **Memory Footprint:** 4.25 MB baseline heap (full registry + tries), 4.72 MB peak heap during batch execution
-* **Corpus Diversity:** 500 unique, uninterned addresses evaluated over 5,000 operations (10 passes)
+* **Memory Footprint:** 4.28 MB baseline heap (full registry + tries), 4.48 MB peak heap during batch execution
+* **Corpus Diversity:** 500 unique addresses evaluated over 5,000 operations (10 passes)
 
 ### Empirical Performance Results
 
 | Evaluation Corpus | Unique Addrs | Operations | Throughput (addr/sec) | Latency P50 | Latency P90 | Latency P99 | Mean Latency |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Clean Standard (Gaiku-hoshiki)** | 200 | 2,000 | **4,026.8** | 214.60 μs | 275.50 μs | 488.70 μs | 243.54 μs |
-| **Complex Conventional (Kyoto/Hokkaido/Cadastral)** | 150 | 1,500 | **4,131.5** | 227.70 μs | 247.50 μs | 296.50 μs | 237.59 μs |
-| **Dirty Real-World (Omitted/Dashes/Buildings)** | 150 | 1,500 | **3,682.0** | 268.30 μs | 281.20 μs | 302.60 μs | 267.16 μs |
-| **Aggregate Workload** | **500** | **5,000** | **3,946.0** | **227.70 μs** | **275.50 μs** | **488.70 μs** | **253.44 μs** |
+| **Clean Standard (Gaiku-hoshiki)** | 200 | 2,000 | **35,023.9** | 27.20 μs | 31.20 μs | 44.50 μs | 28.35 μs |
+| **Complex Conventional (Kyoto/Hokkaido/Cadastral)** | 150 | 1,500 | **31,500.5** | 31.30 μs | 33.50 μs | 41.00 μs | 31.52 μs |
+| **Dirty Real-World (Omitted/Dashes/Buildings)** | 150 | 1,500 | **25,356.2** | 38.40 μs | 43.10 μs | 50.00 μs | 39.19 μs |
+| **Aggregate Workload** | **500** | **5,000** | **30,510.3** | **31.30 μs** | **38.40 μs** | **47.00 μs** | **32.55 μs** |
 
 ---
 
@@ -335,10 +343,10 @@ echo "東京都港区六本木1-2-3" | jaden normalize - -c
 
 ## 7. Testing & Quality Assurance
 
-JADEN maintains a 220-test verification suite (219 offline tests passing, 1 live network test opt-in) running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
+JADEN maintains a 223-test verification suite (222 offline tests passing, 1 live network test opt-in) running continuously in GitHub Actions across Python 3.10, 3.11, 3.12, and 3.13 on both Ubuntu and Windows:
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers (`chome`, `ban`, `go`, `banchi`, `edaban`) across all 47 prefectures, plus dedicated `郡` test cases across multiple prefectures (Kanagawa, Tokyo, Hokkaido, Saitama, Nagano, Okinawa).
-* **Adversarial & Edge Case Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), multi-jurisdiction collisions (`中央区`, `府中市`, `泊村`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
-* **CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`, `geocode`), `--json` formatting, `-c` canonical flag, standard input reading (`-`), and shell automation exit codes (0, 1, 2, 3, 64).
+* **Adversarial & Edge Case Payloads:** Complete regression validation against proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), building names (`第一-3ビル`), multi-jurisdiction collisions (`中央区`, `府中市`, `泊村`), cardinal Kyoto streets (`東洞院通`, `下立売通`), and foreign/gibberish input rejection.
+* **CLI & Public API Verification Tests:** Complete validation of CLI commands (`normalize`, `parse`, `validate`, `geocode`), `--json` formatting, `-c` canonical flag, standard input reading (`-`), and shell automation exit codes (0, 1, 2, 3, 64, 70).
 * **Geospatial Layer Verification Tests:** Complete unit tests for `GSIGeocoder`, `BaseGeospatialResolver` custom extensibility, HTTP error handling, connection failures, network timeouts, multi-candidate ambiguity short-circuiting, offline parser independence guarantees, and query string secondary token stripping.
 * **Packaging & Distribution Integrity Tests:** Verification of standalone package data loading, executable entrypoints, and public symbol exports.
 * **JIS X 0402 Modulus 11 Check Digit Validation:** Algorithmic verification across all codes.
@@ -354,10 +362,10 @@ pytest -v
 In accordance with our engineering principles, JADEN documents its exact operational boundaries:
 1. **Separation of Core Parsing and Geospatial Resolution:** JADEN's core parser is 100% offline and does not bundle multi-gigabyte spatial polygon GIS shapefiles. Geospatial resolution is provided as an optional, decoupled layer via the official open government GSI API or custom user-provided resolvers.
 2. **Ambiguous Omitted Jurisdictions:** When a user omits the prefecture and enters a duplicated municipality name (e.g. `中央区`, `府中市`, `伊達市`), JADEN explicitly reports `is_ambiguous=True` and lists candidates rather than silently guessing.
-3. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
+3. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists. Hyphenated kanji numeral conversions protect ordinal building names such as `第一-3ビル`.
 4. **Cadastral vs. Residential Distinction in Plain Hyphenated Strings:** When an input consists solely of `町名 X-Y` or `X-Y-Z` without `丁目`, `大字`, `字`, `番地`, or `号`, JADEN canonicalizes the notation to conventional residential format (`X丁目Y番Z号` or `X番Y号`) while explicitly marking `address_regime="unspecified"` in `AddressComponents`. Because determining true cadastral boundaries requires municipal cadastral maps, downstream applications requiring strict cadastral preservation should inspect `components.address_regime` and discrete block fields.
 5. **Omitted Prefecture and Municipality:** Inputs that omit both the prefecture and municipality (e.g., `銀座4-1`, `道玄坂1-2`) cannot be unambiguously identified against a national registry and yield `confidence=0.0`.
-6. **GSI Address Search Rate and Availability:** The optional geospatial resolution layer communicates with GSI's public `AddressSearch` endpoint. Users deploying high-volume production batch workloads should respect GSI rate guidelines and consider deploying local geocoding caches.
+6. **GSI Address Search Rate and Availability:** The optional geospatial resolution layer communicates with GSI's public `AddressSearch` endpoint. Users should consult GSI's terms of use at `https://www.gsi.go.jp/kikakukouhou/kikakukouhou40012.html`. Users deploying automated batch workloads should maintain reasonable request intervals to avoid server burden and consider deploying local geocoding caches.
 
 ---
 
