@@ -19,12 +19,49 @@ from typing import Optional, Union, Dict, Any, List
 
 from ..models.address import NormalizedAddress
 from ..models.geospatial import GeocodingStatus, Coordinates, GeospatialResult
+from ..models.validation import ValidationStatus
 from .base import BaseGeospatialResolver
-from ..engine import normalize
+from ..engine import normalize, validate
 
 
 GSI_ENDPOINT = "https://msearch.gsi.go.jp/address-search/AddressSearch"
 DEFAULT_USER_AGENT = "JADEN-Geospatial-Engine/0.1.0"
+
+
+def _build_core_query(norm: NormalizedAddress) -> str:
+    """Builds a geocoding query string stripped of building, floor, and unit text (G-2)."""
+    c = norm.components
+    parts: List[str] = []
+    if c.prefecture:
+        parts.append(c.prefecture)
+    if c.county:
+        parts.append(c.county)
+    if c.city:
+        parts.append(c.city)
+    if c.ward and c.ward not in (c.city or ""):
+        parts.append(c.ward)
+
+    if c.kyoto_direction:
+        parts.append(c.kyoto_direction.raw_clause)
+
+    if c.town:
+        parts.append(c.town)
+
+    if c.hokkaido_grid:
+        parts.append(f"{c.hokkaido_grid.cardinal_ns}{c.hokkaido_grid.jo}条{c.hokkaido_grid.cardinal_ew}{c.hokkaido_grid.chome}丁目")
+    elif c.chome is not None:
+        parts.append(f"{c.chome}丁目")
+
+    if c.ban is not None and c.go is not None:
+        parts.append(f"{c.ban}番{c.go}号")
+    elif c.ban is not None:
+        parts.append(f"{c.ban}番")
+    elif c.banchi is not None and c.edaban is not None:
+        parts.append(f"{c.banchi}番地の{c.edaban}")
+    elif c.banchi is not None:
+        parts.append(f"{c.banchi}番地")
+
+    return "".join(parts) or norm.canonical or norm.input_sanitized or norm.input_raw
 
 
 class GSIGeocoder(BaseGeospatialResolver):
@@ -73,22 +110,36 @@ class GSIGeocoder(BaseGeospatialResolver):
                     error_message="Empty or whitespace-only address provided.",
                 )
             norm = normalize(raw_input)
+            val = validate(raw_input)
         else:
             norm = address
             raw_input = norm.input_raw
+            val = validate(norm.canonical or raw_input)
 
-        # Rejection check: If JADEN's core parser rejected the input with 0.0 confidence
-        if norm.confidence_score == 0.0:
+        # G-1: Ambiguity short-circuit without network call
+        if norm.components.is_ambiguous or val.status == ValidationStatus.AMBIGUOUS.value:
+            candidates = norm.components.ambiguous_candidates or val.ambiguous_candidates
+            clean_candidates = tuple(c.split(" ")[0] for c in candidates)
+            return GeospatialResult(
+                query=raw_input,
+                status=GeocodingStatus.AMBIGUOUS.value,
+                provider=self.provider_name,
+                candidates=clean_candidates,
+                error_message=f"Ambiguous address: jurisdiction matches {len(candidates)} candidates.",
+                metadata={"candidate_count": len(candidates)},
+            )
+
+        # G-3: Gate geocoding on validation acceptance
+        if not val.valid:
             return GeospatialResult(
                 query=raw_input,
                 status=GeocodingStatus.NO_MATCH.value,
                 provider=self.provider_name,
-                error_message="Address rejected by JADEN validator as unrecognized or malformed.",
+                error_message=f"Address rejected by JADEN validator ({val.status}): {val.message}",
             )
 
-        # Build search query string
-        # Prefer canonical normalized string, falling back to raw sanitized if canonical is empty
-        query_str = norm.canonical or norm.input_sanitized or raw_input
+        # G-2: Build search query string stripped of building, floor, and unit text
+        query_str = _build_core_query(norm)
 
         # Dispatch HTTP GET to GSI AddressSearch
         params = urllib.parse.urlencode({"q": query_str})

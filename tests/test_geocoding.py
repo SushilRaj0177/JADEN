@@ -240,6 +240,55 @@ def test_gsi_geocoder_accepts_normalized_address():
     assert mock_opener.open.call_count == 1
 
 
+def test_gsi_geocoder_skips_network_for_ambiguous():
+    mock_opener = MagicMock()
+    geocoder = GSIGeocoder(opener=mock_opener)
+
+    # G-1: Ambiguous omitted-prefecture input must short-circuit without network call
+    res = geocoder.resolve("府中市宮西町2-24")
+    assert res.status == GeocodingStatus.AMBIGUOUS.value
+    assert mock_opener.open.call_count == 0
+    assert len(res.candidates) == 2
+
+
+def test_gsi_geocoder_strips_building_floor_unit_from_query():
+    import urllib.parse
+    mock_opener = MagicMock()
+    mock_opener.open.return_value = MockHttpResponse(GSI_SUCCESS_PAYLOAD)
+
+    geocoder = GSIGeocoder(opener=mock_opener)
+    input_addr = "東京都港区六本木6-10-1 六本木ヒルズ森タワー 50F 5001号室"
+    res = geocoder.resolve(input_addr)
+
+    assert res.status == GeocodingStatus.SUCCESS.value
+    assert mock_opener.open.call_count == 1
+    req = mock_opener.open.call_args[0][0]
+    parsed_url = urllib.parse.urlparse(req.full_url)
+    qs = urllib.parse.parse_qs(parsed_url.query)
+    sent_query = qs["q"][0]
+
+    # G-2: Query must be stripped of building, floor, and unit text
+    assert sent_query == "東京都港区六本木6丁目10番1号"
+    assert "六本木ヒルズ森タワー" not in sent_query
+    assert "50F" not in sent_query
+    assert "5001号室" not in sent_query
+
+
+def test_gsi_geocoder_gates_on_validation():
+    mock_opener = MagicMock()
+    geocoder = GSIGeocoder(opener=mock_opener)
+
+    # G-3: Non-address landmarks or invalid inputs rejected by validator must not make network calls
+    res1 = geocoder.resolve("東京タワー")
+    assert res1.status == GeocodingStatus.NO_MATCH.value
+    assert mock_opener.open.call_count == 0
+
+    res2 = geocoder.resolve("東京都あいうえおかきくけこ1-2-3")
+    assert res2.status == GeocodingStatus.NO_MATCH.value
+    assert mock_opener.open.call_count == 0
+
+
+
 # ==============================================================================
 # 2. Public API & Extensibility Tests
 # ==============================================================================
