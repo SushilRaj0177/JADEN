@@ -80,7 +80,17 @@ class AddressNormalizer:
         ward_name = muni_rec.ward if muni_rec else None
         county_name = muni_rec.county if muni_rec else None
 
-        if pref_name:
+        if pref_name and is_ambiguous:
+            # Prefecture known, but municipal jurisdiction is ambiguous (e.g. '神奈川県南区', '大阪府北区')
+            if is_pref_inferred:
+                tier_map["prefecture"] = TaxonomyTier.TIER_3_HEURISTIC.value
+            else:
+                tier_map["prefecture"] = TaxonomyTier.TIER_1_STATUTORY.value
+            ward_name = matched_raw_name
+            city_name = None
+            tier_map["ward"] = TaxonomyTier.TIER_3_HEURISTIC.value
+            confidence *= 0.50
+        elif pref_name:
             if is_pref_inferred:
                 tier_map["prefecture"] = TaxonomyTier.TIER_3_HEURISTIC.value
                 confidence *= 0.85
@@ -369,7 +379,11 @@ class AddressNormalizer:
                 lg_code=None,
                 is_ambiguous=True,
                 ambiguous_candidates=res.components.ambiguous_candidates,
-                message=f"Omitted prefecture matches {len(res.components.ambiguous_candidates)} statutory municipalities.",
+                message=(
+                    f"Ambiguous administrative jurisdiction matches {len(res.components.ambiguous_candidates)} candidates."
+                    if res.components.prefecture
+                    else f"Omitted prefecture matches {len(res.components.ambiguous_candidates)} statutory municipalities."
+                ),
             )
 
         if res.components.unparsed_tail and len(res.components.unparsed_tail.strip()) > 5:

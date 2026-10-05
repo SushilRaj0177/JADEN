@@ -37,7 +37,7 @@ class AdministrativeParser:
         self.registry = registry or get_registry()
         self._pref_trie: PrefixTrie[PrefectureRecord] = PrefixTrie()
         self._muni_trie: PrefixTrie[List[MunicipalityRecord]] = PrefixTrie()
-        self._ward_trie_by_pref: Dict[str, PrefixTrie[MunicipalityRecord]] = {}
+        self._ward_trie_by_pref: Dict[str, PrefixTrie[List[MunicipalityRecord]]] = {}
         self._ward_trie_global: PrefixTrie[List[MunicipalityRecord]] = PrefixTrie()
         self._initialized: bool = False
         self._build_tries()
@@ -83,11 +83,14 @@ class AdministrativeParser:
                     existing_w.append(muni)
                 self._muni_trie.insert(muni.ward, existing_w)
 
-            # If it has an administrative ward: e.g. '中京区' in Kyoto
+            # If it has an administrative ward: e.g. '中京区' in Kyoto, '南区' in Yokohama / Sagamihara
             if muni.ward:
                 pref_code = muni.prefecture_code
                 if pref_code in self._ward_trie_by_pref:
-                    self._ward_trie_by_pref[pref_code].insert(muni.ward, muni)
+                    existing_pref_w = self._ward_trie_by_pref[pref_code].search_exact(muni.ward) or []
+                    if muni not in existing_pref_w:
+                        existing_pref_w.append(muni)
+                    self._ward_trie_by_pref[pref_code].insert(muni.ward, existing_pref_w)
 
                 # Global ward list for heuristic resolution
                 existing_ward = self._ward_trie_global.search_exact(muni.ward) or []
@@ -139,21 +142,35 @@ class AdministrativeParser:
                 # 1a. Try municipality match under this prefecture
                 muni_match = self._muni_trie.longest_prefix(muni_text, 0)
                 if muni_match:
-                    _, candidates, muni_end_idx = muni_match
+                    matched_key, candidates, muni_end_idx = muni_match
                     # Filter candidates belonging to this specific prefecture
                     pref_candidates = [c for c in candidates if c.prefecture_code == pref_record.code]
-                    if pref_candidates:
+                    if len(pref_candidates) > 1:
+                        # Intra-prefecture duplicate ward ambiguity (e.g. '神奈川県南区', '大阪府北区')
+                        post_muni = muni_text[muni_end_idx:].lstrip()
+                        ambiguous_list = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in pref_candidates)
+                        return AdministrativeParseResult(
+                            pref_record, None, post_muni,
+                            is_prefecture_inferred=False,
+                            is_ambiguous=True,
+                            ambiguous_candidates=ambiguous_list,
+                            matched_raw_name=matched_key,
+                        )
+                    elif len(pref_candidates) == 1:
                         matched_muni = pref_candidates[0]
                         post_muni = muni_text[muni_end_idx:].lstrip()
 
-                        # If matched a designated city base (e.g. '京都市'), check if ward follows ('中京区')
+                        # If matched a designated city base (e.g. '京都市', '大阪市', '横浜市'), check if ward follows ('中京区', '北区', '南区')
                         if matched_muni.entity_type == "designated_city" and pref_record.code in self._ward_trie_by_pref:
                             ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(post_muni, 0)
                             if ward_match:
-                                _, specific_ward_muni, ward_end_idx = ward_match
-                                return AdministrativeParseResult(
-                                    pref_record, specific_ward_muni, post_muni[ward_end_idx:].lstrip(), False
-                                )
+                                _, ward_cands, ward_end_idx = ward_match
+                                # Filter ward candidates belonging to this specific designated city
+                                matching_ward = [w for w in ward_cands if w.city == matched_muni.city]
+                                if matching_ward:
+                                    return AdministrativeParseResult(
+                                        pref_record, matching_ward[0], post_muni[ward_end_idx:].lstrip(), False
+                                    )
 
                         return AdministrativeParseResult(
                             pref_record, matched_muni, post_muni, False
@@ -164,10 +181,21 @@ class AdministrativeParser:
                 if pref_record.code in self._ward_trie_by_pref:
                     ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(muni_text, 0)
                     if ward_match:
-                        _, specific_ward_muni, ward_end_idx = ward_match
-                        return AdministrativeParseResult(
-                            pref_record, specific_ward_muni, muni_text[ward_end_idx:].lstrip(), False
-                        )
+                        matched_ward_key, ward_cands, ward_end_idx = ward_match
+                        if len(ward_cands) > 1:
+                            post_ward = muni_text[ward_end_idx:].lstrip()
+                            ambiguous_list = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in ward_cands)
+                            return AdministrativeParseResult(
+                                pref_record, None, post_ward,
+                                is_prefecture_inferred=False,
+                                is_ambiguous=True,
+                                ambiguous_candidates=ambiguous_list,
+                                matched_raw_name=matched_ward_key,
+                            )
+                        elif len(ward_cands) == 1:
+                            return AdministrativeParseResult(
+                                pref_record, ward_cands[0], muni_text[ward_end_idx:].lstrip(), False
+                            )
 
                 # If no municipality matched from trie, return prefecture and remainder
                 return AdministrativeParseResult(pref_record, None, muni_text, False)
@@ -191,11 +219,13 @@ class AdministrativeParser:
                 if muni_record.entity_type == "designated_city" and pref_record and pref_record.code in self._ward_trie_by_pref:
                     ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(rem_text, 0)
                     if ward_match:
-                        _, specific_ward_muni, ward_end_idx = ward_match
-                        return AdministrativeParseResult(
-                            pref_record, specific_ward_muni, rem_text[ward_end_idx:].lstrip(),
-                            is_prefecture_inferred=True, is_ambiguous=False
-                        )
+                        _, ward_cands, ward_end_idx = ward_match
+                        matching_ward = [w for w in ward_cands if w.city == muni_record.city]
+                        if matching_ward:
+                            return AdministrativeParseResult(
+                                pref_record, matching_ward[0], rem_text[ward_end_idx:].lstrip(),
+                                is_prefecture_inferred=True, is_ambiguous=False
+                            )
 
                 return AdministrativeParseResult(
                     pref_record, muni_record, rem_text,
