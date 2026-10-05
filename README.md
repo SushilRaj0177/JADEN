@@ -1,8 +1,8 @@
 # JADEN — Japanese Address Data Engineering & Normalization Engine
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Typing: PEP 561](https://img.shields.io/badge/typing-PEP%20561-green.svg)](https://peps.python.org/pep-0561/)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3b82f6?style=flat&logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
+[![Typing: PEP 561](https://img.shields.io/badge/Typing-PEP%20561-10b981?style=flat&logo=python&logoColor=white)](https://peps.python.org/pep-0561/)
 
 **JADEN** is a deterministic Python engine and CLI for Japanese address canonicalization, structured decomposition, statutory validation, and optional geospatial resolution.
 

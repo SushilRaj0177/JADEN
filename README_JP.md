@@ -1,8 +1,8 @@
 # JADEN — 日本の住所データエンジニアリング＆正規化エンジン
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Typing: PEP 561](https://img.shields.io/badge/typing-PEP%20561-green.svg)](https://peps.python.org/pep-0561/)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3b82f6?style=flat&logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
+[![Typing: PEP 561](https://img.shields.io/badge/Typing-PEP%20561-10b981?style=flat&logo=python&logoColor=white)](https://peps.python.org/pep-0561/)
 
 **JADEN (Japanese Address Data Engineering & Normalization Engine)** は、日本の住所表記における構造的多様性、歴史的表記揺れ、および法的体系の違いを決定論的に解決するPython製住所正規化エンジンおよびCLIツールです。
 
