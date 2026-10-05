@@ -11,7 +11,7 @@ Provenance & Metadata:
 - Source File: soumu_000925835.xlsx
 - SHA256: 7d04c8a7f6a6e76a7823a0414a8422bf2b26bb6070766971df76eab58ea6ff78
 - Retrieval Date: 2026-10-04
-- License: Government Open Data (Ministry of Internal Affairs and Communications Terms of Use / CC BY 4.0 compatible)
+- Terms: Users should consult the Ministry of Internal Affairs and Communications' own terms of use on their official website
 - Verified Standard: JIS X 0401:1973 (Prefectures) & JIS X 0402:2020 (Municipalities, Modulus 11)
 
 Entity Breakdown:

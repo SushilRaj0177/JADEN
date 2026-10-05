@@ -178,12 +178,12 @@ Administrative reference data in JADEN is based on public government standards a
    * *Real Property Registration Act (平成16年法律第123号)*: Governs cadastral *Chiban* (Oaza-Koaza-Banchi-Edaban).
 5. **Digital Agency Address Base Registry (アドレス・ベース・レジストリ):**
    * JADEN models ABR statutory taxonomy (Machi-aza, Gaiku, Chiban). Note: JADEN is an offline linguistic engine and intentionally does not bundle the multi-gigabyte spatial polygon GIS shapefiles of the full ABR.
-6. **Open Data Attribution & Licensing Terms:**
-   * **MIC Municipality Data:** Ministry of Internal Affairs and Communications (総務省自治行政局) *都道府県コード及び市区町村コード*. Governed by the Ministry of Internal Affairs and Communications Terms of Use (政府標準利用規約 第2.0版 / CC BY 4.0 compatible): `https://www.soumu.go.jp/menu_kyotsuu/important/kizoku.html`.
+6. **Open Data Attribution & Terms Notice:**
+   * **MIC Municipality Data:** Ministry of Internal Affairs and Communications (総務省自治行政局) *都道府県コード及び市区町村コード*. Users should consult the Ministry of Internal Affairs and Communications' own terms of use on their official website.
      Attribution: *本製品の全国地方公共団体マスターデータは、総務省「都道府県コード及び市区町村コード」を加工・構造化して作成したものです。*
-   * **GSI Geospatial Data:** Geospatial Information Authority of Japan (国土地理院) Address Search API. Governed by the GSI Content Terms of Use: `https://www.gsi.go.jp/kikakukouhou/kikakukouhou40012.html`.
+   * **GSI Geospatial Data:** Geospatial Information Authority of Japan (国土地理院) Address Search API. Users should consult GSI's own terms of use on their official website.
      Attribution: *出典：国土地理院 (地名検索API)。座標系は世界測地系 JGD2011 (WGS 84 準拠互換, EPSG:6668 / EPSG:4326) に準拠します。*
-   * Complete notices and terms citations are preserved in [NOTICE](NOTICE).
+   * Complete notices are preserved in [NOTICE](NOTICE).
 
 ---
 
@@ -365,7 +365,7 @@ In accordance with our engineering principles, JADEN documents its exact operati
 3. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists. Hyphenated kanji numeral conversions protect ordinal building names such as `第一-3ビル`.
 4. **Cadastral vs. Residential Distinction in Plain Hyphenated Strings:** When an input consists solely of `町名 X-Y` or `X-Y-Z` without `丁目`, `大字`, `字`, `番地`, or `号`, JADEN canonicalizes the notation to conventional residential format (`X丁目Y番Z号` or `X番Y号`) while explicitly marking `address_regime="unspecified"` in `AddressComponents`. Because determining true cadastral boundaries requires municipal cadastral maps, downstream applications requiring strict cadastral preservation should inspect `components.address_regime` and discrete block fields.
 5. **Omitted Prefecture and Municipality:** Inputs that omit both the prefecture and municipality (e.g., `銀座4-1`, `道玄坂1-2`) cannot be unambiguously identified against a national registry and yield `confidence=0.0`.
-6. **GSI Address Search Rate and Availability:** The optional geospatial resolution layer communicates with GSI's public `AddressSearch` endpoint. Users should consult GSI's terms of use at `https://www.gsi.go.jp/kikakukouhou/kikakukouhou40012.html`. Users deploying automated batch workloads should maintain reasonable request intervals to avoid server burden and consider deploying local geocoding caches.
+6. **GSI Address Search Rate and Availability:** The optional geospatial resolution layer communicates with GSI's public `AddressSearch` endpoint. Users should consult GSI's own terms of use on their official website. Users deploying automated batch workloads should maintain reasonable request intervals to avoid server burden and consider deploying local geocoding caches.
 
 ### Known Limitations & Planned for v0.1.1
 
