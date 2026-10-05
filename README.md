@@ -4,15 +4,42 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Typing: PEP 561](https://img.shields.io/badge/typing-PEP%20561-green.svg)](https://peps.python.org/pep-0561/)
 
-**JADEN** is a high-performance, deterministic Python engine for Japanese address canonicalization, administrative boundary disambiguation, and statutory classification. It resolves the dual-nature complexity of Japanese addressing without external black-box APIs, operating completely offline at **~3,000 addresses/second** across diverse, uninterned real-world corpora with a tiny **3.6 MB memory footprint**.
+**JADEN** is a production-grade, deterministic Python engine and CLI for Japanese address canonicalization, structured decomposition, statutory validation, and optional geospatial resolution.
+
+Operating completely offline at **~4,000 addresses/second** with a lean **4.25 MB memory footprint**, JADEN resolves the real-world complexity of Japanese addressing without external black-box APIs, heuristic hallucinations, or mandatory cloud dependencies.
 
 *(日本語のドキュメントは [README_JP.md](README_JP.md) をご覧ください。)*
 
 ---
 
-## 1. The Core Engineering Challenge
+## 1. Overview & The Core Engineering Challenge
 
-Unlike Western street-grid systems (e.g., `123 Main St, Suite 400`), Japanese addressing is fundamentally topological, cadastral, and historical. A production normalization engine must resolve four distinct layers of complexity:
+### What JADEN Is & What It Solves
+Unlike Western street-grid systems (e.g., `123 Main St, Suite 400`), Japanese addressing is fundamentally topological, cadastral, and historical. Standardizing raw Japanese addresses is notoriously difficult:
+- **Two competing statutory regimes:** Urban residential block indications (*Gaiku-hoshiki* / 住居表示) vs. rural and unadjusted land-lot numbers (*Chiban* / 地番区域).
+- **Regional navigation conventions:** Kyoto street-intersection clauses (*Tōri-mei* / 通り名) and Hokkaido cardinal coordinate grids (条・丁目).
+- **Proper noun Kanji numeral collisions:** Place names embedding numbers (`一番街`, `麻布十番`, `六本木`, `八王子`) that naive tokenizers mistakenly convert into block numbers.
+- **Omitted-prefecture municipal collisions:** 38 municipality and ward names shared across multiple prefectures (`府中市`, `中央区`, `伊達市`), which commercial engines often silently misassign.
+
+JADEN provides an authoritative, deterministic solution by parsing raw address text into a granular Abstract Syntax Tree (`AddressComponents`), canonicalizing notation, validating against official government registries, and offering optional coordinate resolution.
+
+### What JADEN Can Do
+- **Deterministic Canonicalization & Normalization:** Standardizes Unicode variations (NFKC, 11+ dash forms, context-aware Katakana prolonged sound marks) and formats clean, canonical address strings.
+- **Granular Syntactic AST Parsing:** Decomposes inputs into prefecture, county, city/ward, oaza/koaza, town, chome, ban, go, banchi, edaban, building, floor, and unit fields.
+- **Statutory Registry Verification:** Validates against **1,918 official MIC municipal records** and **923 statutory counties** (JIS X 0401/0402) using Modulus 11 check digits.
+- **Regional Convention Grammars:** Fully parses Kyoto intersection navigation clauses and Hokkaido cardinal grid coordinates.
+- **Ambiguity Detection:** Explicitly flags inputs with missing prefectures as ambiguous (`is_ambiguous=True`) and lists candidates rather than guessing.
+- **Professional CLI & Python API:** First-class CLI (`normalize`, `parse`, `validate`, `geocode`) supporting human-readable output, JSON piping, and stdin streaming.
+- **Optional Geospatial Resolution Layer:** A pluggable, zero-credential coordinate resolver (`jaden geocode` / `jaden.geocode()`) backed by the Geospatial Information Authority of Japan (GSI / 国土地理院).
+
+### Local / Offline Core vs. Optional Geospatial Layer
+> [!IMPORTANT]
+> **Strict Offline Guarantee:** JADEN's core parsing, normalization, and validation engine is **100% local, deterministic, and offline**. It requires zero network connectivity, zero API keys, and zero heavyweight GIS libraries.
+> 
+> Geospatial resolution is an **explicitly decoupled, optional layer**. Running `jaden normalize`, `jaden parse`, or `jaden validate` will never execute a network request. Coordinates are resolved only when explicitly calling `jaden geocode` or `jaden.geocode()`.
+
+### The Core Engineering Challenge
+Unlike Western street-grid systems, a production normalization engine must resolve four distinct layers of complexity:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
