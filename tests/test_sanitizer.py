@@ -40,3 +40,27 @@ def test_whitespace_collapse():
 
 def test_consecutive_hyphens():
     assert sanitize_address_text("1---2--3") == "1-2-3"
+
+
+def test_box_drawing_dashes():
+    assert sanitize_address_text("六本木1─2─3") == "六本木1-2-3"
+    assert sanitize_address_text("六本木1━2━3") == "六本木1-2-3"
+    assert sanitize_address_text("六本木1﹣2﹣3") == "六本木1-2-3"
+    assert sanitize_address_text("六本木1﹘2﹘3") == "六本木1-2-3"
+
+
+def test_newline_cr_collapse():
+    assert sanitize_address_text("東京都港区六本木6-10-1\n改行") == "東京都港区六本木6-10-1 改行"
+    assert sanitize_address_text("東京都\n港区\r\n六本木6-10-1") == "東京都 港区 六本木6-10-1"
+    assert sanitize_address_text("東京都\r港区\r六本木") == "東京都 港区 六本木"
+
+
+def test_postal_code_prefix_stripping():
+    assert sanitize_address_text("〒106-0032 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("106-0032 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("〒106-0032東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("106-0032東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("〒1060032 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("〒 東京都港区六本木6-10-1") == "東京都港区六本木6-10-1"
+    assert sanitize_address_text("〒106-0032") == ""
+    assert sanitize_address_text("106-0032") == ""

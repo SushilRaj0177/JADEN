@@ -49,3 +49,19 @@ def test_block_kanji_numerals_normalization():
     assert normalize_kanji_numerals_in_blocks("488番地") == "488番地"
     assert normalize_kanji_numerals_in_blocks("四百八十八番地") == "488番地"
     assert normalize_kanji_numerals_in_blocks("十二丁目五番") == "12丁目5番"
+
+
+def test_hyphenated_kanji_numerals():
+    assert normalize_kanji_numerals_in_blocks("六本木三-二-一") == "六本木3-2-1"
+    assert normalize_kanji_numerals_in_blocks("六本木三-二") == "六本木3-2"
+    assert normalize_kanji_numerals_in_blocks("六本木3-二-1") == "六本木3-2-1"
+    assert normalize_kanji_numerals_in_blocks("四日市市諏訪町三-五") == "四日市市諏訪町3-5"
+
+
+def test_hyphenated_kanji_proper_noun_safety():
+    assert normalize_kanji_numerals_in_blocks("千代田区三番町三-二-一") == "千代田区三番町3-2-1"
+    assert normalize_kanji_numerals_in_blocks("千代田区一番町一-二") == "千代田区一番町1-2"
+    assert normalize_kanji_numerals_in_blocks("港区麻布十番一-一") == "港区麻布十番1-1"
+    assert normalize_kanji_numerals_in_blocks("港区麻布十番1-1") == "港区麻布十番1-1"
+    assert normalize_kanji_numerals_in_blocks("中央区八重洲二-一") == "中央区八重洲2-1"
+    assert normalize_kanji_numerals_in_blocks("北区十条仲原一-二-三") == "北区十条仲原1-2-3"

@@ -90,6 +90,12 @@ _EDABAN_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
     rf"(番地の)([{_KANJI_NUM_CHARS}]+)"
 )
 
+# Hyphenated numbers containing Kanji numerals (e.g. '三-二-一' -> '3-2-1', '六本木三-二-一' -> '六本木3-2-1')
+_NUM_OR_KANJI: Final[str] = rf"(?:\d+|[{_KANJI_NUM_CHARS}]+)"
+_HYPHEN_KANJI_SEQ_PATTERN: Final[re.Pattern[str]] = re.compile(
+    rf"({_NUM_OR_KANJI}(?:-{_NUM_OR_KANJI})+)"
+)
+
 
 def normalize_kanji_numerals_in_blocks(text: str) -> str:
     """Normalizes Kanji numerals strictly within block/lot/chome contexts.
@@ -128,4 +134,25 @@ def normalize_kanji_numerals_in_blocks(text: str) -> str:
         lambda m: f"{m.group(1)}{parse_kanji_number(m.group(2))}" if parse_kanji_number(m.group(2)) is not None else m.group(0),
         text
     )
+
+    # 7. Hyphenated numbers containing Kanji numerals (e.g. '三-二-一' -> '3-2-1')
+    def _convert_hyphen_seq(m: re.Match[str]) -> str:
+        seq = m.group(1)
+        if not any(c in _KANJI_NUM_CHARS for c in seq):
+            return seq
+        parts = seq.split("-")
+        converted = []
+        for p in parts:
+            if p.isdigit():
+                converted.append(p)
+            else:
+                val = parse_kanji_number(p)
+                if val is not None:
+                    converted.append(str(val))
+                else:
+                    return seq
+        return "-".join(converted)
+
+    text = _HYPHEN_KANJI_SEQ_PATTERN.sub(_convert_hyphen_seq, text)
+
     return text

@@ -59,6 +59,10 @@ DASH_VARIANTS: Final[Dict[str, Tuple[str, str, bool]]] = {
     "～": ("U+FF5E", "FULLWIDTH TILDE", True),
     "〜": ("U+301C", "WAVE DASH", True),
     "~": ("U+007E", "TILDE (NFKC COMPATIBILITY OF FULLWIDTH TILDE)", True),
+    "─": ("U+2500", "BOX DRAWINGS LIGHT HORIZONTAL", True),
+    "━": ("U+2501", "BOX DRAWINGS HEAVY HORIZONTAL", True),
+    "﹣": ("U+FE63", "SMALL HYPHEN-MINUS", True),
+    "﹘": ("U+FE58", "SMALL EM DASH", True),
     # U+30FC is the Katakana Chōonpu (prolonged sound mark).
     # It must ONLY be treated as a hyphen in contextual numeric splits (e.g. 1ー2ー3),
     # NEVER inside katakana proper nouns (e.g. タワー, センター).
@@ -76,6 +80,8 @@ WHITESPACE_CHARS: Final[Set[str]] = {
     "\u3000",  # IDEOGRAPHIC SPACE (Japanese full-width space)
     "\u00A0",  # NO-BREAK SPACE
     "\u0009",  # HORIZONTAL TAB
+    "\n",      # LINE FEED
+    "\r",      # CARRIAGE RETURN
 }
 
 # ============================================================================
