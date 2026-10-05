@@ -367,6 +367,18 @@ In accordance with our engineering principles, JADEN documents its exact operati
 5. **Omitted Prefecture and Municipality:** Inputs that omit both the prefecture and municipality (e.g., `銀座4-1`, `道玄坂1-2`) cannot be unambiguously identified against a national registry and yield `confidence=0.0`.
 6. **GSI Address Search Rate and Availability:** The optional geospatial resolution layer communicates with GSI's public `AddressSearch` endpoint. Users should consult GSI's terms of use at `https://www.gsi.go.jp/kikakukouhou/kikakukouhou40012.html`. Users deploying automated batch workloads should maintain reasonable request intervals to avoid server burden and consider deploying local geocoding caches.
 
+### Known Limitations & Planned for v0.1.1
+
+The following known edge cases and improvements are tracked for the upcoming v0.1.1 update:
+1. **`1の2の3` Delimiter Notation:** Colloquial addresses using the genitive particle `の` as block delimiters (e.g. `1の2の3`, `1番地の2の3`) instead of standard hyphens or explicit `番`/`号` kanji markers.
+2. **Malformed Kanji Numeral Sequences (`五三十`):** In `parse_kanji_number`, intermediate digits currently overwrite earlier accumulator state in multiplier mode, causing malformed input like `五三十` to evaluate to `30` instead of being rejected.
+3. **Kyoto Spurious Directional Entry (`上ラル`):** `KYOTO_DIRECTIONS` currently accepts `上ラル` as a synonym for `north`; this non-standard form will be reviewed and removed.
+4. **Complex Building-Tail Edge Cases:** Commercial building names containing embedded numbers, dates, or compound tenant strings concatenated to block numbers without whitespace.
+5. **Obihiro-Style Grids (format to be confirmed):** Inverted east-west / north-south coordinate ordering relative to Sapporo’s `北N条西M丁目` convention (e.g. `西2条南10丁目`).
+6. **CLI Flag & Piping Extras:** `--provider` is accepted by `jaden geocode` but currently ignored by the handler; passing `--json` with `-c` in `jaden normalize` silently ignores `-c`; bare `jaden -` piping shorthand.
+7. **Testing the Installed Package in CI:** CI runs `pip install ".[dev]"` (non-editable), but `pytest` imports from `src/` because of `pythonpath = ["src"]` in `pyproject.toml`. A dedicated CI job will build the wheel and test in an isolated environment without repository source on `sys.path`.
+8. **Automated Lint & Type Checks:** Adding mechanical type checking (`mypy --strict`) and linting (`ruff check`) to the GitHub Actions CI matrix.
+
 ---
 
 ## License
