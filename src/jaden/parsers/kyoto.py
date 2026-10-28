@@ -22,13 +22,22 @@ _KYOTO_MAJOR_STREETS = [
 _STREETS_PATTERN = "|".join(sorted(_KYOTO_MAJOR_STREETS, key=len, reverse=True))
 
 # Pattern 1: Street 1 has explicit '通' or '筋' (supports cardinal streets like 東洞院通, 下立売通)
+# Kyoto clauses can end in a 丁目 of the street itself: '五条下ル2丁目', '今出川上ル四丁目'
+_CLAUSE_CHOME = r"(?:\d+|[一二三四五六七八九十]+)丁目"
+
 _KYOTO_INTERSECTION_P1: Final[re.Pattern[str]] = re.compile(
-    rf"(?:^|\s)(?P<street1>[^\s\d]+?[通筋])(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS})"
+    rf"(?:^|\s)(?P<street1>[^\s\d]+?[通筋])(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS})(?P<chome>{_CLAUSE_CHOME})?"
 )
 
 # Pattern 2: Street 1 is a known major street without explicit '通' (e.g. 烏丸御池上る, 四条河原町東入)
 _KYOTO_INTERSECTION_P2: Final[re.Pattern[str]] = re.compile(
-    rf"(?:^|\s)(?P<street1>{_STREETS_PATTERN})(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS})"
+    rf"(?:^|\s)(?P<street1>{_STREETS_PATTERN})(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS})(?P<chome>{_CLAUSE_CHOME})?"
+)
+
+
+# Pattern 3: Street 1 written without '通' but the cross street is a known major one ('鞘町五条下ル')
+_KYOTO_INTERSECTION_P3: Final[re.Pattern[str]] = re.compile(
+    rf"(?:^|\s)(?P<street1>[^\s\d]+?)(?P<street2>{_STREETS_PATTERN})(?P<direction>{_DIR_TOKENS})(?P<chome>{_CLAUSE_CHOME})?"
 )
 
 
@@ -51,6 +60,8 @@ class KyotoParser:
         match = _KYOTO_INTERSECTION_P1.search(text)
         if not match:
             match = _KYOTO_INTERSECTION_P2.search(text)
+        if not match:
+            match = _KYOTO_INTERSECTION_P3.search(text)
 
         if not match:
             return None, text

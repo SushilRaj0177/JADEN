@@ -149,6 +149,12 @@ class BlockFSM:
             n2 = int(hyphen_match.group("n2"))
             n3 = int(hyphen_match.group("n3")) if hyphen_match.group("n3") else None
 
+            if n3 is not None and has_chome_already:
+                # The 丁目 came from a grid clause ('南3条東1'): '2-1-305' is 番-号 and a room
+                result["ban"] = n1
+                result["go"] = n2
+                result["address_regime"] = AddressRegime.GAIKU_HOSHIKI.value
+                return result, town, f"-{n3}{hyphen_match.group('tail')}".strip()
             if n3 is not None:
                 # 3 numbers: Chome-Ban-Go (Statutory Gaiku-hoshiki)
                 result["chome"] = n1

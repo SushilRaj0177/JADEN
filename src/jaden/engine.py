@@ -19,7 +19,7 @@ from typing import Optional, Dict, List, Tuple, Final
 from .models.codes import TaxonomyTier, AddressRegime
 from .models.address import AddressComponents, NormalizedAddress
 from .models.validation import ValidationResult, ValidationStatus
-from .core.sanitizer import sanitize_address_text
+from .core.sanitizer import sanitize_address_text, _LEADING_LABEL
 from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
 from .parsers.administrative import AdministrativeParser
 from .parsers.kyoto import KyotoParser
@@ -34,8 +34,24 @@ from .readings import kana_reading, romaji_address
 from .romaji import looks_romanized, romaji_to_japanese
 
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
-_POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"〒\s*(\d{3})-?(\d{4})")
+_POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})-?(\d{4})")
 _POSTAL_BARE_EDGE: Final[re.Pattern[str]] = re.compile(r"(?:^\s*(\d{3})-(\d{4})(?!\d)|(?<![\d-])(\d{3})-(\d{4})\s*$)")
+# Whitespace right after a block number, unless a block marker follows ('4 丁目', '2 番')
+_AFTER_BLOCK_NUMBER: Final[re.Pattern[str]] = re.compile(
+    r"(?:(?<=\d)|(?<=-[イロハニホヘト甲乙丙丁]))\s+(?!\d*\s*(?:丁目|番|号(?!室))|[の\-])")
+_BRACKETED: Final[re.Pattern[str]] = re.compile(r"\s*[(（][^)）]*[)）]")
+# Spaces between block markers and the next number ('4丁目 2番 8号'), but not before a room ('2番 301号室')
+_INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?!\d+\s*号室)")
+# Town text containing a number that is part of the name, not a block number:
+# '忠和1条', '芽室南2線', '五十嵐3の町', '古町通6番町', '五福1区'
+_NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(r"^\D+\d+(?!\d|丁目|番(?!町|耕地)|号|-|の\d|\s|$)")
+# Locators that belong to the place even when unregistered: Iwate '8地割', land readjustment
+# '8街区', Ishikawa '10部': the number after them is the lot
+_STRUCTURAL_TOWN: Final[re.Pattern[str]] = re.compile(r"^(?P<town>\D+?\d+(?:地割|街区|部|区|番耕地|耕地))(?=\d)")
+# A lot-series lot after the 丁目 ('相生町1-乙394'): kept as written
+_SERIES_LOT: Final[re.Pattern[str]] = re.compile(
+    r"^-?(?P<lot>[甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラム]\d+(?:-\d+)?)(?P<rest>.*)$")
+
 # Upper bound on municipalities searched for a town written without its municipality
 _MAX_GLOBAL_TOWN_CANDIDATES: Final[int] = 500
 
@@ -43,6 +59,7 @@ _MAX_GLOBAL_TOWN_CANDIDATES: Final[int] = 500
 def extract_postal_code(raw: str) -> Optional[str]:
     """Returns the postal code written in an address as 'NNN-NNNN', if any."""
     text = unicodedata.normalize("NFKC", raw or "").replace("ー", "-").replace("−", "-")
+    text = _LEADING_LABEL.sub("", text.strip())
     m = _POSTAL_MARKED.search(text)
     if m:
         return f"{m.group(1)}-{m.group(2)}"
@@ -170,6 +187,17 @@ class AddressNormalizer:
         elif not is_ambiguous:
             confidence *= 0.70
 
+        # A space after a block number ends the address part: '潮見188 703号室', '北11条西7 ハイツ'
+        extra_tail = ""
+        # Parenthesized notes ('(…キャンパス内)', '（旧〇〇）') are never part of the locator
+        notes_in_brackets = _BRACKETED.findall(post_admin_text)
+        if notes_in_brackets:
+            post_admin_text = re.sub(r"\s+", " ", _BRACKETED.sub(" ", post_admin_text)).strip()
+        post_admin_text = _INNER_BLOCK_SPACE.sub("", post_admin_text)
+        split = _AFTER_BLOCK_NUMBER.search(post_admin_text)
+        if split:
+            post_admin_text, extra_tail = post_admin_text[:split.start()], post_admin_text[split.end():]
+
         # Stage 4: Conventional Systems (Kyoto & Hokkaido)
         kyoto_clause = None
         hokkaido_clause = None
@@ -199,8 +227,13 @@ class AddressNormalizer:
             (pref_rec and pref_rec.code == "01")
             or (pref_rec is None and "条" in text_after_conventions and "丁目" in text_after_conventions and any(d in text_after_conventions for d in ["北", "南"]))
         )
-        if is_hokkaido_candidate:
-            hokkaido_clause, text_after_conventions = HokkaidoParser.parse(text_after_conventions)
+        hokkaido_known = (
+            (pref_rec is not None and pref_rec.code == "01")
+            or any(c.prefecture_code == "01" for c in candidate_records)
+        )
+        if is_hokkaido_candidate or hokkaido_known:
+            hokkaido_clause, text_after_conventions = HokkaidoParser.parse(
+                text_after_conventions, allow_shorthand=hokkaido_known)
             if hokkaido_clause:
                 tier_map["hokkaido_grid"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
                 if is_ambiguous and matched_raw_name == "中央区" and self.gazetteer is None:
@@ -230,10 +263,25 @@ class AddressNormalizer:
 
         # Stage 5: Chome-Ban-Go / Banchi-Edaban Block FSM
         has_chome_from_hokkaido = (hokkaido_clause is not None and hokkaido_clause.chome is not None)
-        block_dict, town_name, tail_text = BlockFSM.parse(
-            text_after_conventions,
-            has_chome_already=has_chome_from_hokkaido
-        )
+        # Numbered town names ('忠和1条', '芽室南2線', '西野9条') look like block numbers to the FSM;
+        # a registered town matching the start of the text decides where the town ends.
+        fixed_town = self._registered_town_prefix(text_after_conventions, muni_rec, candidate_records,
+                                                  pref_rec if muni_rec is None else None)
+        if fixed_town:
+            block_dict, _, tail_text = BlockFSM.parse(
+                text_after_conventions[len(fixed_town):], has_chome_already=has_chome_from_hokkaido)
+            town_name = fixed_town
+            if _STRUCTURAL_TOWN.match(text_after_conventions) and block_dict["ban"] is not None:
+                # After 地割 / 街区 / 部 / 区 the numbers are lot numbers
+                block_dict.update(banchi=block_dict["ban"], edaban=block_dict["go"], ban=None, go=None,
+                                  address_regime=AddressRegime.CHIBAN.value)
+        else:
+            block_dict, town_name, tail_text = BlockFSM.parse(
+                text_after_conventions,
+                has_chome_already=has_chome_from_hokkaido
+            )
+        if extra_tail:
+            tail_text = f"{tail_text} {extra_tail}".strip()
 
         chome_val = block_dict["chome"] or (hokkaido_clause.chome if hokkaido_clause else None)
         ban_val = block_dict["ban"]
@@ -476,6 +524,20 @@ class AddressNormalizer:
             if remainder and entry.records and entry.records[0].kind == "1" and koaza_val is None:
                 koaza_val = remainder[1:] if remainder.startswith("字") else remainder
 
+        # A lot with a kana suffix ('大栃1800-イ'): kept as written
+        suffix = re.match(r"^-([イロハニホヘトチリヌルヲ甲乙丙丁])(?![\d])", tail_text)
+        if suffix and lot_number is None and go_val is None and edaban_val is None and (ban_val or banchi_val):
+            lot_number = f"{ban_val or banchi_val}-{suffix.group(1)}"
+            banchi_val, ban_val = ban_val or banchi_val, None
+            tail_text = tail_text[suffix.end():].strip()
+            regime_val = AddressRegime.CHIBAN.value
+        # A lot-series lot after the 丁目 or town ('相生町1-乙394', '1丁目乙394'): kept as written
+        if lot_number is None and ban_val is None and banchi_val is None:
+            series = _SERIES_LOT.match(tail_text)
+            if series:
+                lot_number, tail_text = series.group("lot"), series.group("rest").strip()
+                regime_val = AddressRegime.CHIBAN.value
+
         # Kyoto conventional navigation addresses strictly use cadastral lot numbers (地番)
         if kyoto_clause and (ban_val is not None and banchi_val is None):
             banchi_val = ban_val
@@ -526,6 +588,8 @@ class AddressNormalizer:
 
         # Stage 6: Building, Floor, and Unit Disentanglement
         building_name, floor_val, unit_val = BuildingParser.parse(tail_text)
+        if notes_in_brackets:
+            building_name = " ".join(x for x in [building_name] + [n.strip() for n in notes_in_brackets] if x)
 
         if building_name:
             tier_map["building"] = TaxonomyTier.TIER_3_HEURISTIC.value
@@ -682,6 +746,29 @@ class AddressNormalizer:
             location_level=location_level,
             notes=tuple(notes),
         )
+
+    def _registered_town_prefix(self, text: str, muni_rec: Optional[MunicipalityRecord],
+                                candidates: Tuple[MunicipalityRecord, ...], pref_rec) -> Optional[str]:
+        """The start of ``text`` when it is a registered town whose name contains a number."""
+        gaz = self.gazetteer
+        if gaz is None or not _NUMBERED_TOWN.match(text):
+            return None
+        if muni_rec is not None:
+            pool = self.registry.wards_of(muni_rec) or [muni_rec]
+        elif candidates:
+            pool = list(candidates)
+        else:
+            return None
+        best = None
+        for m in pool:
+            match = gaz.match_town(m.lg_code, text)
+            if match is not None and any(ch.isdigit() for ch in text[:match.consumed]):
+                if best is None or match.consumed > best:
+                    best = match.consumed
+        if best:
+            return text[:best]
+        structural = _STRUCTURAL_TOWN.match(text)
+        return structural.group("town") if structural else None
 
     def _town_reading(self, gaz: Gazetteer, working_text: str, post_admin_text: str,
                       pref_rec, is_pref_inferred: bool, muni_rec: MunicipalityRecord,

@@ -27,7 +27,21 @@ _CONTEXTUAL_CHOONPU_PATTERN: Final[re.Pattern[str]] = re.compile(
 
 # Regex matching leading Japanese postal code prefix (〒NNN-NNNN, 〒NNNNNNN, 〒, NNN-NNNN)
 _POSTAL_CODE_PREFIX: Final[re.Pattern[str]] = re.compile(
-    r"^(?:〒\s*(?:\d{3}[-ー]?\d{4}|\d{7})?|\d{3}[-ー]\d{4})\s*"
+    r"^(?:(?:〒|郵便番号|郵便)\s*[:：]?\s*(?:\d{3}[-ー]?\d{4}|\d{7})?|\d{3}[-ー]\d{4})\s*"
+)
+
+_PREFECTURES: Final[str] = (
+    "北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|"
+    "新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|"
+    "奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|"
+    "熊本県|大分県|宮崎県|鹿児島県|沖縄県"
+)
+
+# Form labels and a leading country name: '住所：', 'お届け先 ', '日本、', 'Japan '.
+# '日本' is removed only before a separator, a postal code or a prefecture, never from '日本橋'.
+_LEADING_LABEL: Final[re.Pattern[str]] = re.compile(
+    rf"^(?:(?:ご?住所|所在地|お届け先|送付先|配送先|送り先)\s*[:：]?|"
+    rf"(?:日本国?|JAPAN|Japan)(?=[\s,、。]|〒|郵便|{_PREFECTURES}))[\s,、。]*"
 )
 
 # Whitespace cleaner: collapses Japanese full-width space (U+3000), NBSP, tabs, newlines, CRs, multiple spaces
@@ -66,8 +80,12 @@ def sanitize_address_text(raw_text: str) -> str:
     # Step 4: Collapse consecutive hyphens (e.g. '--' -> '-')
     text = re.sub(r"-+", "-", text)
 
-    # Step 5: Strip leading Japanese postal code prefix after dash normalization
-    text = _POSTAL_CODE_PREFIX.sub("", text)
+    # Step 5: Strip leading labels, country name and postal code (in any order)
+    prev = None
+    while prev != text:
+        prev = text
+        text = _LEADING_LABEL.sub("", text.lstrip())
+        text = _POSTAL_CODE_PREFIX.sub("", text)
 
     # Step 6: Whitespace normalization (including embedded newlines and carriage returns)
     text = _WHITESPACE_PATTERN.sub(" ", text)

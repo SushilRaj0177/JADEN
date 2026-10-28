@@ -14,12 +14,19 @@ _HOKKAIDO_GRID_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?P<ew>東|西)(?P<chome>\d+|[〇一二三四五六七八九十]+)丁目"
 )
 
+# Everyday Sapporo shorthand, accepted only where a Hokkaido municipality is already known:
+# '南3西4', '北1条西2', '南1西4-5-2' (= 南1条西4丁目5番地2)
+_HOKKAIDO_SHORTHAND_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"^\s*(?P<ns>北|南)(?P<jo>\d+|[〇一二三四五六七八九十]+)条?"
+    r"(?P<ew>東|西)(?P<chome>\d+|[〇一二三四五六七八九十]+)(?:丁目)?(?![\d〇一二三四五六七八九十])"
+)
+
 
 class HokkaidoParser:
     """Parses Hokkaido cardinal grid Jo-Chome clauses."""
 
     @staticmethod
-    def parse(text: str) -> Tuple[Optional[HokkaidoGridClause], str]:
+    def parse(text: str, allow_shorthand: bool = False) -> Tuple[Optional[HokkaidoGridClause], str]:
         """Detects and extracts Hokkaido Jo-Chome grid coordinates.
 
         Args:
@@ -29,6 +36,8 @@ class HokkaidoParser:
             Tuple of (HokkaidoGridClause or None, remaining_address_text).
         """
         match = _HOKKAIDO_GRID_PATTERN.search(text)
+        if not match and allow_shorthand:
+            match = _HOKKAIDO_SHORTHAND_PATTERN.search(text)
         if not match:
             return None, text
 
@@ -51,5 +60,5 @@ class HokkaidoParser:
             raw_clause=raw_clause,
         )
 
-        remaining = (text[:start] + text[end:]).strip()
+        remaining = (text[:start] + text[end:]).strip().lstrip("-").strip()
         return clause, remaining
