@@ -41,15 +41,27 @@ def test_osaka_non_hokkaido_grid_retention():
 
 
 def test_ambiguous_ward_with_grid():
-    import jaden
+    from jaden.engine import AddressNormalizer
     addr = "北区北7条西5丁目"
-    res = jaden.normalize(addr)
-    val = jaden.validate(addr)
+    engine = AddressNormalizer(use_gazetteer=False)
+    res = engine.normalize(addr)
+    val = engine.validate(addr)
     assert res.components.prefecture is None
     assert val.status == "AMBIGUOUS"
     assert val.valid is False
     assert any("011029" in c for c in val.ambiguous_candidates)
     assert any("131172" in c for c in val.ambiguous_candidates)
+
+
+def test_ambiguous_ward_with_grid_resolved_by_gazetteer():
+    import jaden
+    # 北七条西 is registered only in 札幌市北区, so the grid settles which 北区 is meant
+    res = jaden.normalize("北区北7条西5丁目")
+    val = jaden.validate("北区北7条西5丁目")
+    assert res.components.lg_code == "011029"
+    assert res.components.municipality_inferred is True
+    assert res.components.chome_verified is True
+    assert val.status == "ACCEPTED"
 
 
 def test_chuo_ku_sapporo_disambiguation():

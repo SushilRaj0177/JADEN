@@ -9,7 +9,6 @@ Verifies:
    formats are Tier 2, and heuristic textual extractions are Tier 3.
 """
 
-import pytest
 from jaden import normalize, validate, ValidationStatus, TaxonomyTier
 
 
@@ -20,7 +19,8 @@ def test_validate_accepted_requires_resolved_lg_code():
     assert val.valid is True
     assert val.lg_code == "131032"
     assert "boundaries" not in val.message.lower()
-    assert val.message == "Local government entity verified against official statutory registry."
+    assert val.message == "Municipality, town and 丁目 verified against official registries."
+    assert val.verification_level == "chome"
 
     val_county = validate("神奈川県中郡大磯町国府本郷547")
     assert val_county.status == ValidationStatus.ACCEPTED.value
@@ -70,12 +70,13 @@ def test_validate_malformed_cross_prefecture_contradictions():
 
 
 def test_taxonomy_tier_integrity():
-    """Components verified against statutory MIC registry are Tier 1; block numbers are Tier 2; heuristic town is Tier 3."""
+    """Registry-verified components (MIC municipality, MLIT town and 丁目) are Tier 1; block numbers are Tier 2."""
     res = normalize("東京都港区六本木1-2-3")
     assert res.tier_map["prefecture"] == TaxonomyTier.TIER_1_STATUTORY.value
     assert res.tier_map["municipality"] == TaxonomyTier.TIER_1_STATUTORY.value
     assert res.tier_map["lg_code"] == TaxonomyTier.TIER_1_STATUTORY.value
-    assert res.tier_map["town"] == TaxonomyTier.TIER_3_HEURISTIC.value
+    assert res.tier_map["town"] == TaxonomyTier.TIER_1_STATUTORY.value
+    assert res.tier_map["chome"] == TaxonomyTier.TIER_1_STATUTORY.value
     assert res.tier_map["ban"] == TaxonomyTier.TIER_2_CONVENTIONAL.value
     assert res.tier_map["go"] == TaxonomyTier.TIER_2_CONVENTIONAL.value
 
@@ -84,7 +85,7 @@ def test_county_tier_integrity():
     """Counties in statutory registry are classified as Tier 1."""
     res = normalize("神奈川県中郡大磯町国府本郷547")
     assert res.tier_map["county"] == TaxonomyTier.TIER_1_STATUTORY.value
-    assert res.tier_map["town"] == TaxonomyTier.TIER_3_HEURISTIC.value
+    assert res.tier_map["town"] == TaxonomyTier.TIER_1_STATUTORY.value
     assert res.tier_map["ban"] == TaxonomyTier.TIER_2_CONVENTIONAL.value
 
     res_banchi = normalize("神奈川県中郡大磯町国府本郷547番地")

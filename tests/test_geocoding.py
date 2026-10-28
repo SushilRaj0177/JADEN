@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import jaden
 from jaden import (
     BaseGeospatialResolver,
     Coordinates,
@@ -245,7 +244,7 @@ def test_gsi_geocoder_skips_network_for_ambiguous():
     geocoder = GSIGeocoder(opener=mock_opener)
 
     # G-1: Ambiguous omitted-prefecture input must short-circuit without network call
-    res = geocoder.resolve("府中市宮西町2-24")
+    res = geocoder.resolve("府中市1-1")
     assert res.status == GeocodingStatus.AMBIGUOUS.value
     assert mock_opener.open.call_count == 0
     assert len(res.candidates) == 2

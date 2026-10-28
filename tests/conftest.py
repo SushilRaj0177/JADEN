@@ -15,3 +15,9 @@ def registry() -> AddressDataRegistry:
 def normalizer() -> AddressNormalizer:
     """Session-scoped address normalizer."""
     return AddressNormalizer()
+
+
+@pytest.fixture(scope="session")
+def parser_only() -> AddressNormalizer:
+    """Normalizer without the town gazetteer: structural parsing and the MIC registry only."""
+    return AddressNormalizer(use_gazetteer=False)

@@ -5,8 +5,8 @@ and JIS X 0402 / MIC municipalities. Supports deterministic statutory matching (
 heuristic omitted-prefecture inference (Tier 3), and multi-jurisdiction ambiguity detection.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Tuple, List, Dict, Final
+from dataclasses import dataclass
+from typing import Optional, Tuple, List, Dict
 from ..core.trie import PrefixTrie
 from ..data.loader import AddressDataRegistry, get_registry, MunicipalityRecord
 from ..models.codes import PrefectureRecord
@@ -23,6 +23,7 @@ class AdministrativeParseResult:
     ambiguous_candidates: Tuple[str, ...] = ()
     matched_raw_name: Optional[str] = None
     is_contradictory: bool = False
+    candidate_records: Tuple[MunicipalityRecord, ...] = ()
 
     def __iter__(self):
         """Allows backward-compatible 4-tuple unpacking:
@@ -156,6 +157,7 @@ class AdministrativeParser:
                             is_ambiguous=True,
                             ambiguous_candidates=ambiguous_list,
                             matched_raw_name=matched_key,
+                            candidate_records=tuple(pref_candidates),
                         )
                     elif len(pref_candidates) == 1:
                         matched_muni = pref_candidates[0]
@@ -202,6 +204,7 @@ class AdministrativeParser:
                                 is_ambiguous=True,
                                 ambiguous_candidates=ambiguous_list,
                                 matched_raw_name=matched_ward_key,
+                                candidate_records=tuple(ward_cands),
                             )
                         elif len(ward_cands) == 1:
                             return AdministrativeParseResult(
@@ -235,22 +238,22 @@ class AdministrativeParser:
             # Case 2a: Unambiguous municipality across Japan (e.g. '八王子市', '京都市', '新宿区')
             if len(candidates) == 1:
                 muni_record = candidates[0]
-                pref_record = self.registry.get_prefecture_by_code(muni_record.prefecture_code)
+                inferred_pref = self.registry.get_prefecture_by_code(muni_record.prefecture_code)
 
                 # If matched designated city base ('京都市'), check if ward follows ('中京区')
-                if muni_record.entity_type == "designated_city" and pref_record and pref_record.code in self._ward_trie_by_pref:
-                    ward_match = self._ward_trie_by_pref[pref_record.code].longest_prefix(rem_text, 0)
+                if muni_record.entity_type == "designated_city" and inferred_pref and inferred_pref.code in self._ward_trie_by_pref:
+                    ward_match = self._ward_trie_by_pref[inferred_pref.code].longest_prefix(rem_text, 0)
                     if ward_match:
                         _, ward_cands, ward_end_idx = ward_match
                         matching_ward = [w for w in ward_cands if w.city == muni_record.city]
                         if matching_ward:
                             return AdministrativeParseResult(
-                                pref_record, matching_ward[0], rem_text[ward_end_idx:].lstrip(),
+                                inferred_pref, matching_ward[0], rem_text[ward_end_idx:].lstrip(),
                                 is_prefecture_inferred=True, is_ambiguous=False
                             )
 
                 return AdministrativeParseResult(
-                    pref_record, muni_record, rem_text,
+                    inferred_pref, muni_record, rem_text,
                     is_prefecture_inferred=True, is_ambiguous=False
                 )
 
@@ -262,7 +265,8 @@ class AdministrativeParser:
                 is_prefecture_inferred=True,
                 is_ambiguous=True,
                 ambiguous_candidates=ambiguous_list,
-                matched_raw_name=matched_key
+                matched_raw_name=matched_key,
+                candidate_records=tuple(candidates),
             )
 
         # Pass 2b: Omitted prefecture + designated city, starting directly with a ward
@@ -275,9 +279,9 @@ class AdministrativeParser:
             # Unambiguous ward across Japan
             if len(ward_candidates) == 1:
                 muni_record = ward_candidates[0]
-                pref_record = self.registry.get_prefecture_by_code(muni_record.prefecture_code)
+                inferred_pref = self.registry.get_prefecture_by_code(muni_record.prefecture_code)
                 return AdministrativeParseResult(
-                    pref_record, muni_record, rem_text,
+                    inferred_pref, muni_record, rem_text,
                     is_prefecture_inferred=True, is_ambiguous=False
                 )
 
@@ -288,7 +292,8 @@ class AdministrativeParser:
                 is_prefecture_inferred=True,
                 is_ambiguous=True,
                 ambiguous_candidates=ambiguous_list,
-                matched_raw_name=matched_ward_name
+                matched_raw_name=matched_ward_name,
+                candidate_records=tuple(ward_candidates),
             )
 
         # Pass 3: No administrative prefix recognized

@@ -4,7 +4,7 @@ A deterministic, high-throughput Python engine for Japanese address canonicaliza
 administrative disambiguation, and statutory classification.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Sushil Raj"
 
 from .engine import AddressNormalizer, normalize, parse, validate
@@ -12,7 +12,7 @@ from .models.address import AddressComponents, NormalizedAddress, KyotoDirection
 from .models.codes import TaxonomyTier, PrefectureRecord, LocalGovernmentCode, calculate_modulus11_check_digit
 from .models.validation import ValidationStatus, ValidationResult
 from .models.geospatial import GeocodingStatus, Coordinates, GeospatialResult
-from .geocoding import BaseGeospatialResolver, GSIGeocoder, geocode
+from .geocoding import BaseGeospatialResolver, GSIGeocoder, OfflineGeocoder, geocode
 from .data.loader import get_registry
 
 __all__ = [
@@ -32,6 +32,7 @@ __all__ = [
     "GeospatialResult",
     "BaseGeospatialResolver",
     "GSIGeocoder",
+    "OfflineGeocoder",
     "KyotoDirectionClause",
     "HokkaidoGridClause",
     "TaxonomyTier",

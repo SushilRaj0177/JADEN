@@ -1,5 +1,6 @@
 """Unit tests for Kanji numeral conversion and proper noun collision safety."""
 
+import pytest
 from jaden.core.kanji_numerals import parse_kanji_number, normalize_kanji_numerals_in_blocks
 
 
@@ -72,3 +73,24 @@ def test_building_name_kanji_numeral_preservation():
     assert normalize_kanji_numerals_in_blocks("第一-3ビル") == "第一-3ビル"
     assert normalize_kanji_numerals_in_blocks("第二-5ビル") == "第二-5ビル"
     assert normalize_kanji_numerals_in_blocks("六本木三-二-一 第一-3ビル") == "六本木3-2-1 第一-3ビル"
+
+
+def test_malformed_multiplier_sequences_are_rejected():
+    from jaden.core.kanji_numerals import parse_kanji_number
+    assert parse_kanji_number("五三十") is None
+    assert parse_kanji_number("十十") is None
+    assert parse_kanji_number("十百") is None
+    assert parse_kanji_number("二千十五") == 2015
+    assert parse_kanji_number("三百五") == 305
+
+
+@pytest.mark.parametrize("raw, canonical", [
+    ("東京都港区芝公園4の2の8", "東京都港区芝公園4丁目2番8号"),
+    ("東京都港区芝公園四の二の八", "東京都港区芝公園4丁目2番8号"),
+    ("長野市大字南長野字幅下692の2", "長野県長野市大字南長野字幅下692番地の2"),
+    ("東京都港区六本木6丁目10の1", "東京都港区六本木6丁目10番1号"),
+    ("千葉県市川市一の宮1-1", "千葉県市川市一の宮1番1号"),
+])
+def test_no_particle_block_delimiters(raw, canonical):
+    import jaden
+    assert jaden.normalize(raw).canonical == canonical

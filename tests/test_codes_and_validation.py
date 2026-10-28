@@ -3,7 +3,6 @@
 import pytest
 from jaden.models.codes import (
     calculate_modulus11_check_digit,
-    PrefectureRecord,
     LocalGovernmentCode,
 )
 from jaden.data.loader import get_registry

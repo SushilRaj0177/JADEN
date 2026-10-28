@@ -159,4 +159,5 @@ def test_building_name_daiichi_preservation():
     import jaden
     res = jaden.normalize("東京都千代田区神田錦町1-1 第一-3ビル")
     assert res.components.building == "第一-3ビル"
-    assert res.canonical == "東京都千代田区神田錦町1番1号 第一-3ビル"
+    # 神田錦町 is registered as 1–3丁目, so '1-1' is 1丁目1番
+    assert res.canonical == "東京都千代田区神田錦町1丁目1番 第一-3ビル"

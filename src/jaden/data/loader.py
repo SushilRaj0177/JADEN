@@ -4,13 +4,12 @@ Loads and indexes official JIS X 0401 prefectures and JIS X 0402 / MIC
 Local Government Code municipal registries.
 """
 
-from typing import Dict, List, Optional, Tuple, Final, Any
+from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from ..models.codes import PrefectureRecord, LocalGovernmentCode, calculate_modulus11_check_digit
-from ..core.constants import STANDARD_JIS_X_0401, STANDARD_JIS_X_0402, STANDARD_MIC_LG_CODE
+from ..models.codes import PrefectureRecord
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,6 +139,19 @@ class AddressDataRegistry:
             rec = self._municipalities_by_pref_and_name.get(key)
             return [rec] if rec else []
         return self._municipalities_by_name_global.get(name, [])
+
+    def list_municipalities(self, prefecture_code: Optional[str] = None) -> List[MunicipalityRecord]:
+        """All bundled municipality records, optionally limited to one prefecture."""
+        self.load_all()
+        return [m for m in self._municipalities_by_code.values()
+                if prefecture_code is None or m.prefecture_code == prefecture_code]
+
+    def wards_of(self, city_record: MunicipalityRecord) -> List[MunicipalityRecord]:
+        """Administrative wards of a designated city (empty for any other municipality)."""
+        if city_record.entity_type != "designated_city":
+            return []
+        return [m for m in self.list_municipalities(city_record.prefecture_code)
+                if m.entity_type == "administrative_ward" and m.city == city_record.city]
 
     def get_provenance(self) -> Dict[str, Any]:
         """Loads and returns the authoritative data provenance metadata."""

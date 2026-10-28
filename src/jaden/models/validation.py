@@ -30,6 +30,8 @@ class ValidationResult:
     is_ambiguous: bool = False
     ambiguous_candidates: Tuple[str, ...] = field(default_factory=tuple)
     message: str = ""
+    verification_level: str = "none"   # 'none', 'municipality', 'town', 'chome'
+    warnings: Tuple[str, ...] = field(default_factory=tuple)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes validation result to clean dictionary."""

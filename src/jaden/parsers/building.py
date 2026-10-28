@@ -52,7 +52,7 @@ class BuildingParser:
             working = (working[:room_match.start()] + " " + working[room_match.end():]).strip()
 
         # 3. Clean remaining text as building name
-        building = re.sub(r"\s+", " ", working).strip()
+        building: Optional[str] = re.sub(r"\s+", " ", working).strip()
         if not building:
             building = None
 

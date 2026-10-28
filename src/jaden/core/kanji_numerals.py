@@ -51,12 +51,23 @@ def parse_kanji_number(token: str) -> Optional[int]:
     current_digit = 0
 
     i = 0
+    last_power = 10_000
+    prev_was_digit = False
     while i < len(token):
         ch = token[i]
         if ch in KANJI_DIGITS:
+            if prev_was_digit:
+                # Two bare digits inside multiplier notation ('五三十') have no single reading
+                return None
             current_digit = KANJI_DIGITS[ch]
+            prev_was_digit = True
         elif ch in KANJI_POWERS:
             multiplier = KANJI_POWERS[ch]
+            if multiplier >= last_power:
+                # Units must descend: '十百' or '十十' is not a number
+                return None
+            last_power = multiplier
+            prev_was_digit = False
             if current_digit == 0:
                 # E.g. '十' (10) or '百' (100) where leading 1 is omitted
                 current_digit = 1
@@ -95,6 +106,13 @@ _EDABAN_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
 _NUM_OR_KANJI: Final[str] = rf"(?:\d+|[{_KANJI_NUM_CHARS}]+)"
 _HYPHEN_KANJI_SEQ_PATTERN: Final[re.Pattern[str]] = re.compile(
     rf"(?<!第)({_NUM_OR_KANJI}(?:-{_NUM_OR_KANJI})+)(?!ビル|号館|館|マンション|アパート|ハイツ|レジデンス|タワー)"
+)
+
+
+_NO_DELIMITER_PATTERN: Final[re.Pattern[str]] = re.compile(r"(?<=\d)の(?=\d)")
+# Whole kanji block numbers joined by の at the end of the block text ('芝公園四の二の八')
+_KANJI_NO_SEQUENCE: Final[re.Pattern[str]] = re.compile(
+    rf"([{_KANJI_NUM_CHARS}]+(?:の[{_KANJI_NUM_CHARS}]+)+)(?=$|[\s\dA-Za-z])"
 )
 
 
@@ -155,5 +173,16 @@ def normalize_kanji_numerals_in_blocks(text: str) -> str:
         return "-".join(converted)
 
     text = _HYPHEN_KANJI_SEQ_PATTERN.sub(_convert_hyphen_seq, text)
+
+    # 8. Colloquial の delimiters between block numbers ('4の2の8' -> '4-2-8', '692の2' -> '692-2').
+    # '番地の' is the statutory edaban marker and is left for the block FSM.
+    def _convert_no_seq(m: re.Match[str]) -> str:
+        parts = [parse_kanji_number(p) for p in m.group(1).split("の")]
+        if any(v is None for v in parts):
+            return m.group(0)
+        return "-".join(str(v) for v in parts)
+
+    text = _KANJI_NO_SEQUENCE.sub(_convert_no_seq, text)
+    text = _NO_DELIMITER_PATTERN.sub("-", text)
 
     return text

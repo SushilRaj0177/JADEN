@@ -45,3 +45,55 @@ jobs:
       - name: Run test suite
         run: |
           pytest -v
+
+  lint:
+    name: Lint and type check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: python -m pip install ruff mypy
+
+      - name: Ruff
+        run: ruff check src tests
+
+      - name: Mypy
+        run: mypy
+
+  wheel:
+    name: Test the built wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build wheel
+        run: |
+          python -m pip install build
+          python -m build --wheel
+
+      - name: Install wheel into a clean environment
+        run: |
+          python -m venv /tmp/wheel-env
+          /tmp/wheel-env/bin/pip install dist/*.whl pytest
+
+      - name: Run tests against the installed package
+        # Copy the tests away from the checkout so only the installed package is importable
+        run: |
+          cp -r tests /tmp/wheel-tests
+          cd /tmp/wheel-tests
+          /tmp/wheel-env/bin/python -c "import jaden, sys; assert 'site-packages' in jaden.__file__, jaden.__file__; print(jaden.__file__)"
+          /tmp/wheel-env/bin/python -m pytest -q -p no:cacheprovider --import-mode=importlib .
+          /tmp/wheel-env/bin/jaden data info

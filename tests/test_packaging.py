@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-import pytest
 
 import jaden
 from jaden.data.loader import get_registry
@@ -11,7 +10,7 @@ from jaden.data.loader import get_registry
 def test_package_metadata():
     """Verify package metadata constants."""
     assert hasattr(jaden, "__version__")
-    assert jaden.__version__ == "0.1.0"
+    assert jaden.__version__ == "0.2.0"
     assert hasattr(jaden, "__author__")
     assert jaden.__author__ == "Sushil Raj"
 

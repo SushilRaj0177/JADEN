@@ -4,8 +4,7 @@ Verifies that bare prefecture stems (e.g. 京都, 大阪, 愛知, 長野, 福島
 do not hijack municipal, county, or ward entities starting with identical prefixes.
 """
 
-import pytest
-from jaden import normalize, parse
+from jaden import normalize
 
 
 def test_stem_collision_shiga_aichi_gun():

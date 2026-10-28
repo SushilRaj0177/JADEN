@@ -93,7 +93,7 @@ def parse_sheet_rows(z: zipfile.ZipFile, sheet_path: str, strings: List[str]) ->
             col = "".join(ch for ch in c.attrib.get("r", "") if ch.isalpha())
             t = c.attrib.get("t")
             v = c.find("s:v", ns)
-            val = v.text if v is not None else ""
+            val = (v.text or "") if v is not None else ""
             if t == "s" and val:
                 val = strings[int(val)]
             cells[col] = val
@@ -134,7 +134,6 @@ def build_municipalities_dataset(
         code_raw = r.get("A", "").strip()
         pref_name = r.get("B", "").strip()
         muni_name = r.get("C", "").strip()
-        pref_kana = r.get("D", "").strip()
         muni_kana = r.get("E", "").strip()
 
         # Prefectural summary rows have empty muni_name

@@ -25,7 +25,7 @@ from ..engine import normalize, validate
 
 
 GSI_ENDPOINT = "https://msearch.gsi.go.jp/address-search/AddressSearch"
-DEFAULT_USER_AGENT = "JADEN-Geospatial-Engine/0.1.0"
+DEFAULT_USER_AGENT = "JADEN-Geospatial-Engine/0.2.0"
 
 
 def _build_core_query(norm: NormalizedAddress) -> str:

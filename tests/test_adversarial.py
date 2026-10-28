@@ -57,9 +57,9 @@ def test_adversarial_tc03_ichibangai(normalizer):
     assert res.components.go == 1
 
 
-def test_adversarial_tc04_ambiguous_chuo_ku(normalizer):
-    """TC-04: Verifies that ambiguous '中央区' returns is_ambiguous=True without guessing."""
-    res = normalizer.normalize("中央区銀座4-1-2")
+def test_adversarial_tc04_ambiguous_chuo_ku(parser_only):
+    """TC-04: Without the gazetteer, ambiguous '中央区' returns is_ambiguous=True without guessing."""
+    res = parser_only.normalize("中央区銀座4-1-2")
     assert res.components.is_ambiguous is True
     assert len(res.components.ambiguous_candidates) == 11
     assert res.components.city == "中央区"
@@ -70,9 +70,9 @@ def test_adversarial_tc04_ambiguous_chuo_ku(normalizer):
     assert res.confidence_score <= 0.60
 
 
-def test_adversarial_tc05_ambiguous_fuchu_shi(normalizer):
-    """TC-05: Verifies that duplicate city '府中市' returns is_ambiguous=True."""
-    res = normalizer.normalize("府中市宮西町2-24")
+def test_adversarial_tc05_ambiguous_fuchu_shi(parser_only):
+    """TC-05: Without the gazetteer, duplicate city '府中市' returns is_ambiguous=True."""
+    res = parser_only.normalize("府中市宮西町2-24")
     assert res.components.is_ambiguous is True
     assert len(res.components.ambiguous_candidates) == 2
     assert "東京都府中市 (132063)" in res.components.ambiguous_candidates
@@ -84,9 +84,9 @@ def test_adversarial_tc05_ambiguous_fuchu_shi(normalizer):
     assert res.confidence_score <= 0.60
 
 
-def test_adversarial_tc06_ambiguous_date_shi(normalizer):
-    """TC-06: Verifies that duplicate city '伊達市' returns is_ambiguous=True."""
-    res = normalizer.normalize("伊達市鹿島町20-1")
+def test_adversarial_tc06_ambiguous_date_shi(parser_only):
+    """TC-06: Without the gazetteer, duplicate city '伊達市' returns is_ambiguous=True."""
+    res = parser_only.normalize("伊達市鹿島町20-1")
     assert res.components.is_ambiguous is True
     assert len(res.components.ambiguous_candidates) == 2
     assert "北海道伊達市 (012335)" in res.components.ambiguous_candidates
@@ -227,9 +227,11 @@ def test_adversarial_tc20_roppongi_single_digit(normalizer):
     """TC-20: Verifies that single bare digit '六本木1' does NOT consume '六'."""
     res = normalizer.normalize("東京都港区六本木1")
     assert res.components.town == "六本木"
-    assert res.components.ban == 1
+    # 六本木 is registered only as 1–7丁目, so a lone number is the 丁目
+    assert res.components.chome == 1
+    assert res.components.ban is None
     assert res.components.building is None
-    assert res.canonical == "東京都港区六本木1番"
+    assert res.canonical == "東京都港区六本木1丁目"
 
 
 def test_adversarial_tc21_jujo_single_digit(normalizer):
@@ -254,9 +256,10 @@ def test_adversarial_tc23_yaesu_single_digit(normalizer):
     """TC-23: Verifies that single bare digit '八重洲1' does NOT consume '八'."""
     res = normalizer.normalize("東京都中央区八重洲1")
     assert res.components.town == "八重洲"
-    assert res.components.ban == 1
+    assert res.components.chome == 1
+    assert res.components.ban is None
     assert res.components.building is None
-    assert res.canonical == "東京都中央区八重洲1番"
+    assert res.canonical == "東京都中央区八重洲1丁目"
 
 
 def test_adversarial_tc24_azabu_juban_bare_town(normalizer):
@@ -272,10 +275,12 @@ def test_adversarial_tc25_azabu_juban_hyphenated(normalizer):
     """TC-25: Verifies that '麻布十番1-1' parses '麻布十番' as town and 1-1 as block."""
     res = normalizer.normalize("東京都港区麻布十番1-1")
     assert res.components.town == "麻布十番"
+    # 麻布十番 is registered as 1–4丁目, so '1-1' is 1丁目1番
+    assert res.components.chome == 1
     assert res.components.ban == 1
-    assert res.components.go == 1
+    assert res.components.go is None
     assert res.components.building is None
-    assert res.canonical == "東京都港区麻布十番1番1号"
+    assert res.canonical == "東京都港区麻布十番1丁目1番"
 
 
 def test_adversarial_tc26_sanbancho_bare_town(normalizer):

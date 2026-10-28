@@ -7,8 +7,7 @@ Verifies:
 4. Deterministic unique resolution when the designated city is explicitly supplied.
 """
 
-import pytest
-from jaden import normalize, parse, validate, ValidationStatus
+from jaden import normalize, validate, ValidationStatus
 
 
 def test_intra_pref_ambiguity_kanagawa_minami_ku():
@@ -48,8 +47,10 @@ def test_intra_pref_ambiguity_kanagawa_midori_ku():
 
 
 def test_intra_pref_ambiguity_osaka_kita_ku():
-    """大阪府北区梅田1-1-1 is ambiguous between Osaka City and Sakai City."""
-    res = normalize("大阪府北区梅田1-1-1")
+    """Without the gazetteer, 大阪府北区梅田1-1-1 is ambiguous between Osaka City and Sakai City."""
+    from jaden.engine import AddressNormalizer
+    engine = AddressNormalizer(use_gazetteer=False)
+    res = engine.normalize("大阪府北区梅田1-1-1")
     comp = res.components
     assert comp.prefecture == "大阪府"
     assert comp.prefecture_code == "27"
@@ -62,9 +63,21 @@ def test_intra_pref_ambiguity_osaka_kita_ku():
     assert any("堺市北区" in c for c in comp.ambiguous_candidates)
     assert res.confidence_score == 0.50
 
-    val = validate("大阪府北区梅田1-1-1")
+    val = engine.validate("大阪府北区梅田1-1-1")
     assert val.status == ValidationStatus.AMBIGUOUS.value
     assert val.valid is False
+
+
+def test_intra_pref_ambiguity_osaka_kita_ku_resolved_by_town():
+    """梅田 is registered only in 大阪市北区, so the town settles the ward; 堺市北区 has no 梅田."""
+    res = normalize("大阪府北区梅田1-1-1")
+    assert res.components.lg_code == "271276"
+    assert res.components.city == "大阪市"
+    assert res.components.municipality_inferred is True
+    assert validate("大阪府北区梅田1-1-1").status == ValidationStatus.ACCEPTED.value
+
+    # Without a town there is nothing to decide by: still ambiguous
+    assert validate("大阪府北区1-1-1").status == ValidationStatus.AMBIGUOUS.value
 
 
 def test_intra_pref_ambiguity_osaka_nishi_ku():
@@ -167,12 +180,11 @@ def test_tomari_mura_prefecture_known_ambiguity():
 
 
 def test_kyoto_street_clause_end_to_end_validation():
-    """Kyoto addresses without ward are UNSUPPORTED; with ward are ACCEPTED."""
-    # Bare intersection clause without ward cannot resolve lg_code -> UNSUPPORTED
+    """Kyoto addresses resolve their ward from the registered town name when the ward is omitted."""
+    # 上本能寺前町 exists only in 中京区, so the bare intersection clause still resolves to 261041
     val_bare = validate("寺町通御池上る上本能寺前町488")
-    assert val_bare.status == ValidationStatus.UNSUPPORTED.value
-    assert val_bare.valid is False
-    assert val_bare.lg_code is None
+    assert val_bare.status == ValidationStatus.ACCEPTED.value
+    assert val_bare.lg_code == "261041"
 
     # Intersection clause with unambiguous ward resolves lg_code (261041) -> ACCEPTED
     val_ward = validate("中京区寺町通御池上る上本能寺前町488")

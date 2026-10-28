@@ -26,3 +26,7 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/

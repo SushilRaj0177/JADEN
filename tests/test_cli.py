@@ -1,7 +1,6 @@
 """Unit and integration tests for JADEN CLI v1."""
 
 import json
-import pytest
 from io import StringIO
 from typing import List
 
@@ -156,7 +155,7 @@ def test_cli_validate_accepted_county(monkeypatch):
 
 
 def test_cli_validate_ambiguous(monkeypatch):
-    code, out, err = run_cli(["validate", "府中市宮西町2-24"], monkeypatch)
+    code, out, err = run_cli(["validate", "府中市1-1"], monkeypatch)
     assert code == 2  # Exit code 2 for ambiguity
     assert "Status:      AMBIGUOUS" in out
     assert "Valid:       No" in out
@@ -184,7 +183,7 @@ def test_cli_validate_json_accepted(monkeypatch):
 
 
 def test_cli_validate_json_ambiguous(monkeypatch):
-    code, out, err = run_cli(["validate", "府中市宮西町2-24", "--json"], monkeypatch)
+    code, out, err = run_cli(["validate", "府中市1-1", "--json"], monkeypatch)
     assert code == 2
     data = json.loads(out)
     assert data["status"] == "AMBIGUOUS"
@@ -243,7 +242,7 @@ def test_python_api_validate():
     assert val1.status == ValidationStatus.ACCEPTED.value
     assert val1.valid is True
 
-    val2 = validate("府中市宮西町2-24")
+    val2 = validate("府中市1-1")
     assert val2.status == ValidationStatus.AMBIGUOUS.value
     assert val2.valid is False
     assert val2.is_ambiguous is True
@@ -262,3 +261,53 @@ def test_python_api_parse():
     assert components.kyoto_direction.street_1 == "御池通"
     assert components.kyoto_direction.street_2 == "東洞院"
     assert components.banchi == 436
+
+
+def test_cli_json_and_canonical_only_conflict(monkeypatch):
+    code, out, err = run_cli(["normalize", "東京都港区芝公園4-2-8", "--json", "-c"], monkeypatch)
+    assert code == 64
+
+
+def test_cli_validate_strict(monkeypatch):
+    code, out, err = run_cli(["validate", "東京都港区存在しない町1-1", "--strict"], monkeypatch)
+    assert code == 3
+    code, out, err = run_cli(["validate", "東京都港区芝公園4-2-8", "--strict"], monkeypatch)
+    assert code == 0
+    assert "Verified to: chome" in out
+
+
+def test_cli_validate_nonexistent_chome(monkeypatch):
+    code, out, err = run_cli(["validate", "東京都港区芝公園9-2-8"], monkeypatch)
+    assert code == 1
+    assert "1–4丁目" in out
+
+
+def test_cli_geocode_offline(monkeypatch):
+    code, out, err = run_cli(["geocode", "東京都港区芝公園4-2-8", "--provider", "offline"], monkeypatch)
+    assert code == 0
+    assert "Provider:    offline" in out
+
+
+def test_cli_normalize_shows_readings(monkeypatch):
+    code, out, err = run_cli(["normalize", "東京都港区芝公園4-2-8"], monkeypatch)
+    assert code == 0
+    assert "Romaji:     4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011" in out
+    assert "Kana:       トウキョウトミナトクシバコウエン" in out
+
+
+def test_cli_data_info(monkeypatch):
+    code, out, err = run_cli(["data", "info", "--json"], monkeypatch)
+    assert code == 0
+    info = json.loads(out)
+    assert info["towns"]["records"] > 180_000
+
+
+def test_cli_fetch_blocks_rejects_bad_prefecture(monkeypatch):
+    code, out, err = run_cli(["data", "fetch-blocks", "48"], monkeypatch)
+    assert code == 64
+
+
+def test_cli_bare_dash_reads_stdin(monkeypatch):
+    code, out, err = run_cli(["-"], monkeypatch, stdin_data="東京都港区芝公園4-2-8\n")
+    assert code == 0
+    assert "芝公園4丁目2番8号" in out

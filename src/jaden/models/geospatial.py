@@ -4,7 +4,7 @@ Defines status enums, coordinate structures, and resolution outcomes
 without fabricating artificial confidence metrics.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Dict, Any, Tuple
 import json

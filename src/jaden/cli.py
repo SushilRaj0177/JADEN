@@ -4,28 +4,29 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden normalize "<address>" [--json] [-c]
   jaden parse "<address>" [--json]
   jaden validate "<address>" [--json]
-  jaden geocode "<address>" [--json] [--provider gsi]
+  jaden geocode "<address>" [--json] [--provider gsi|offline]
+  jaden data info | update | fetch-blocks <pref>...
 """
 
 import sys
 import argparse
 import json
-from typing import Optional, Sequence, List, Final
+from typing import Optional, Sequence, List, Final, NoReturn
 
 # Standard sysexits codes for CLI errors
 EX_USAGE: Final[int] = 64      # Command-line usage error, unknown flag, missing arg, empty stdin
 EX_SOFTWARE: Final[int] = 70   # Internal unhandled software crash
 
 # Ensure UTF-8 I/O encoding on Windows platforms
-if hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-        sys.stdin.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+for _stream in (sys.stdout, sys.stderr, sys.stdin):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        try:
+            _reconfigure(encoding="utf-8")
+        except Exception:
+            pass
 
-from . import __version__, normalize, parse, validate, geocode
+from . import __version__, normalize, validate, geocode
 from .models.address import NormalizedAddress, AddressComponents
 from .models.validation import ValidationResult, ValidationStatus
 from .models.geospatial import GeospatialResult, GeocodingStatus
@@ -34,11 +35,11 @@ from .models.geospatial import GeospatialResult, GeocodingStatus
 class JadenArgumentParser(argparse.ArgumentParser):
     """Custom ArgumentParser that exits with EX_USAGE (64) instead of 2 on usage errors."""
 
-    def error(self, message: str) -> None:
+    def error(self, message: str) -> NoReturn:
         self.print_usage(sys.stderr)
         self.exit(EX_USAGE, f"{self.prog}: error: {message}\n")
 
-    def exit(self, status: int = 0, message: Optional[str] = None) -> None:
+    def exit(self, status: int = 0, message: Optional[str] = None) -> NoReturn:
         if message:
             self._print_message(message, sys.stderr)
         if status == 2:
@@ -101,14 +102,40 @@ def format_normalize_text(res: NormalizedAddress) -> str:
     lines.append(f"Regime:     {c.address_regime}")
     if c.lg_code:
         lines.append(f"LG Code:    {c.lg_code}")
+    if c.postal_code:
+        lines.append(f"Postal:     〒{c.postal_code}")
+    if c.town_verified is not None:
+        lines.append(f"Verified:   {_verification_text(c)}")
     if c.is_ambiguous:
         candidates_str = ", ".join(c.ambiguous_candidates)
         lines.append(f"Ambiguity:  AMBIGUOUS ({candidates_str})")
 
     lines.append(f"Confidence: {res.confidence_score:.2f}")
     lines.append(f"Canonical:  {res.canonical}")
+    if res.kana:
+        lines.append(f"Kana:       {res.kana}")
+    if res.romaji:
+        lines.append(f"Romaji:     {res.romaji}")
+    if res.latitude is not None and res.longitude is not None:
+        lines.append(f"Location:   {res.latitude:.6f}, {res.longitude:.6f} ({res.location_level} level, offline)")
+    for note in res.notes:
+        lines.append(f"Note:       {note}")
 
     return "\n".join(lines)
+
+
+def _verification_text(c: AddressComponents) -> str:
+    if c.town_verified is False:
+        return "town not found in the national gazetteer"
+    parts = ["town"]
+    if c.chome_verified is True:
+        parts.append("丁目")
+    if c.block_verified is True:
+        parts.append("block")
+    text = " + ".join(parts) + " registered"
+    if c.chome_verified is False:
+        text += f"; {c.chome}丁目 does not exist"
+    return text
 
 
 def format_parse_text(res: NormalizedAddress) -> str:
@@ -146,6 +173,12 @@ def format_parse_text(res: NormalizedAddress) -> str:
         admin_lines.append(f"  Oaza:          {c.oaza}")
     if c.koaza:
         admin_lines.append(f"  Koaza:         {c.koaza}")
+    if c.machiaza_id:
+        admin_lines.append(f"  Machiaza ID:   {c.machiaza_id}")
+    if c.postal_code:
+        admin_lines.append(f"  Postal Code:   {c.postal_code}")
+    if c.municipality_inferred:
+        admin_lines.append("  Municipality:  [deduced from town / postal code]")
     sections.append("\n".join(admin_lines))
 
     # Regional conventions
@@ -197,6 +230,10 @@ def format_parse_text(res: NormalizedAddress) -> str:
         meta_lines.append(f"  Candidates:    {', '.join(c.ambiguous_candidates)}")
     if c.unparsed_tail:
         meta_lines.append(f"  Unparsed Tail: {c.unparsed_tail}")
+    if c.town_verified is not None:
+        meta_lines.append(f"  Gazetteer:     {_verification_text(c)}")
+    for note in res.notes:
+        meta_lines.append(f"  Note:          {note}")
     sections.append("\n".join(meta_lines))
 
     return "\n\n".join(sections)
@@ -214,8 +251,12 @@ def format_validate_text(v: ValidationResult) -> str:
         lines.append(f"LG Code:     {v.lg_code}")
     if v.address_regime:
         lines.append(f"Regime:      {v.address_regime}")
+    if v.verification_level != "none":
+        lines.append(f"Verified to: {v.verification_level}")
     if v.message:
         lines.append(f"Message:     {v.message}")
+    for w in v.warnings:
+        lines.append(f"Note:        {w}")
     if v.ambiguous_candidates:
         lines.append("Candidates:")
         for cand in v.ambiguous_candidates:
@@ -233,6 +274,8 @@ def format_geocode_text(res: GeospatialResult) -> str:
     ]
     if res.coordinates:
         lines.append(f"Coordinates: {res.coordinates.latitude:.6f}, {res.coordinates.longitude:.6f} (Lat, Lon)")
+    if res.metadata.get("level"):
+        lines.append(f"Precision:   {res.metadata['level']}")
     if res.matched_address:
         lines.append(f"Matched:     {res.matched_address}")
     if res.candidates:
@@ -281,9 +324,9 @@ def handle_parse(address: str, as_json: bool) -> int:
     return 0 if res.confidence_score > 0.0 else 1
 
 
-def handle_validate(address: str, as_json: bool) -> int:
+def handle_validate(address: str, as_json: bool, strict: bool = False) -> int:
     """Executes the validate command with status-specific exit codes."""
-    val = validate(address)
+    val = validate(address, strict=strict)
 
     if as_json:
         print(val.to_json(indent=2))
@@ -307,7 +350,7 @@ def handle_validate(address: str, as_json: bool) -> int:
 
 def handle_geocode(address: str, as_json: bool, provider: str = "gsi", timeout: float = 5.0) -> int:
     """Executes the geocode command with resolution exit codes."""
-    res = geocode(address, timeout=timeout)
+    res = geocode(address, timeout=timeout, provider=provider)
 
     if as_json:
         print(res.to_json(indent=2))
@@ -315,6 +358,50 @@ def handle_geocode(address: str, as_json: bool, provider: str = "gsi", timeout: 
         print(format_geocode_text(res))
 
     return 0 if res.status == GeocodingStatus.SUCCESS.value else 1
+
+
+def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
+    """Shows, refreshes, or extends the gazetteer data from the official open-data sources."""
+    from .data.gazetteer import get_gazetteer, reset_gazetteer, user_data_dir
+    from .data import build_gazetteer
+
+    if action == "info":
+        gaz = get_gazetteer()
+        prov = gaz.provenance()
+        blocks = sorted({p.name.split(".")[0] for d in gaz.block_dirs() if d.exists() for p in d.glob("*.tsv.gz")})
+        info = {
+            "data_dir": str(gaz.data_dir),
+            "towns": prov.get("towns", {}),
+            "postal": prov.get("postal", {}),
+            "built": prov.get("built"),
+            "block_prefectures": blocks,
+        }
+        if as_json:
+            print(json.dumps(info, ensure_ascii=False, indent=2))
+        else:
+            print(f"Data dir:    {info['data_dir']}")
+            print(f"Built:       {info['built']}")
+            print(f"Towns:       {info['towns'].get('records')} ({info['towns'].get('dataset')})")
+            print(f"Postal:      {info['postal'].get('records')} ({info['postal'].get('dataset')})")
+            print(f"Attribution: {info['towns'].get('attribution')}")
+            print(f"Blocks:      {', '.join(blocks) if blocks else 'none installed (jaden data fetch-blocks <pref>)'}")
+        return 0
+
+    target = user_data_dir()
+    cache = target / "downloads"
+    log = lambda m: print(m, file=sys.stderr)  # noqa: E731
+    if action == "update":
+        prov = build_gazetteer.build(target, cache, log=log)
+        print(f"Updated {prov['towns']['records']} towns and {prov['postal']['records']} postal codes in {target}")
+    elif action == "fetch-blocks":
+        if not prefectures or any(not 1 <= p <= 47 for p in prefectures):
+            sys.stderr.write("Error: give one or more prefecture codes between 1 and 47 (e.g. 13 for Tokyo).\n")
+            return EX_USAGE
+        for pref in prefectures:
+            meta = build_gazetteer.build_blocks(pref, target, cache, log=log)
+            print(f"Installed {meta['records']} block points for prefecture {pref:02d} in {target / 'blocks'}")
+    reset_gazetteer()
+    return 0
 
 
 # ==============================================================================
@@ -350,12 +437,13 @@ def build_parser() -> argparse.ArgumentParser:
         "address",
         help="Japanese address string to normalize. Use '-' to read from stdin.",
     )
-    norm_p.add_argument(
+    norm_out = norm_p.add_mutually_exclusive_group()
+    norm_out.add_argument(
         "--json",
         action="store_true",
         help="Output machine-readable JSON format.",
     )
-    norm_p.add_argument(
+    norm_out.add_argument(
         "-c", "--canonical-only",
         action="store_true",
         help="Output only the canonical normalized address string.",
@@ -392,6 +480,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Output machine-readable JSON format.",
     )
+    val_p.add_argument(
+        "--strict",
+        action="store_true",
+        help="Also require the town to be found in the national gazetteer.",
+    )
 
     # 4. geocode
     geo_p = subparsers.add_parser(
@@ -411,8 +504,8 @@ def build_parser() -> argparse.ArgumentParser:
     geo_p.add_argument(
         "--provider",
         default="gsi",
-        choices=["gsi"],
-        help="Geospatial provider backend (default: gsi).",
+        choices=["gsi", "offline"],
+        help="Geospatial provider: gsi (online API) or offline (bundled MLIT points). Default: gsi.",
     )
     geo_p.add_argument(
         "--timeout",
@@ -420,6 +513,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=5.0,
         help="Network timeout in seconds (default: 5.0).",
     )
+
+    # 5. data
+    data_p = subparsers.add_parser(
+        "data",
+        help="Show or refresh the gazetteer data (MLIT towns, Japan Post postal codes)",
+        description="info: show what is installed. update: download the latest official datasets and rebuild. "
+                    "fetch-blocks: install block-level points for prefectures (e.g. 13 for Tokyo).",
+    )
+    data_p.add_argument("action", choices=["info", "update", "fetch-blocks"])
+    data_p.add_argument("prefectures", nargs="*", type=int, help="Prefecture codes for fetch-blocks (1-47).")
+    data_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format (info).")
 
     return parser
 
@@ -433,8 +537,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     # Pre-parse heuristic: if the first argument is not a known subcommand or flag,
     # default to 'normalize' for convenience and backward compatibility.
-    known_cmds = {"normalize", "parse", "validate", "geocode", "-h", "--help", "-v", "--version"}
-    if raw_args and raw_args[0] not in known_cmds and not raw_args[0].startswith("-"):
+    known_cmds = {"normalize", "parse", "validate", "geocode", "data", "-h", "--help", "-v", "--version"}
+    if raw_args and raw_args[0] not in known_cmds and (raw_args[0] == "-" or not raw_args[0].startswith("-")):
         raw_args.insert(0, "normalize")
 
     parser = build_parser()
@@ -447,11 +551,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         args = parser.parse_args(raw_args)
     except SystemExit as exc:
-        return exc.code
+        return exc.code if isinstance(exc.code, int) else EX_USAGE
 
     if not args.command:
         parser.print_help()
         return 0
+
+    if args.command == "data":
+        try:
+            return handle_data(args.action, args.prefectures, as_json=args.json)
+        except Exception as exc:
+            sys.stderr.write(f"Error: {exc}\n")
+            return EX_SOFTWARE
 
     # Resolve address input (from argument or stdin when '-')
     target_address = args.address
@@ -469,7 +580,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         elif args.command == "parse":
             return handle_parse(target_address, as_json=args.json)
         elif args.command == "validate":
-            return handle_validate(target_address, as_json=args.json)
+            return handle_validate(target_address, as_json=args.json, strict=args.strict)
         elif args.command == "geocode":
             return handle_geocode(target_address, as_json=args.json, provider=args.provider, timeout=args.timeout)
         else:

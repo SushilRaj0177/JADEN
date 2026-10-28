@@ -68,3 +68,9 @@ def test_kyoto_parser_cardinal_street_names():
     assert clause2.direction == "上る"
     assert clause2.cardinal == "north"
     assert rem2 == "薮ノ内町"
+
+
+def test_nonstandard_kami_raru_is_not_a_direction():
+    from jaden.core.constants import KYOTO_DIRECTIONS
+    assert "上ラル" not in KYOTO_DIRECTIONS
+    assert KYOTO_DIRECTIONS["上ル"] == "north"

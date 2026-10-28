@@ -4,7 +4,7 @@ Provides O(L) longest-prefix lookups where L is string prefix length,
 independent of dictionary size N.
 """
 
-from typing import Generic, TypeVar, Optional, Dict, Tuple, List
+from typing import Generic, TypeVar, Optional, Dict, Tuple
 
 T = TypeVar("T")
 

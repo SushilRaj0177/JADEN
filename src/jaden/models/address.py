@@ -7,7 +7,7 @@ cadastral lot addressing (地番区域), and conventional systems (Kyoto, Hokkai
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, Any, Tuple
 import json
-from .codes import TaxonomyTier, AddressRegime
+from .codes import AddressRegime
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +82,15 @@ class AddressComponents:
 
     unparsed_tail: Optional[str] = None       # Any tail string that could not be deterministically parsed
 
+    # Gazetteer verification (MLIT 大字・町丁目 + Japan Post postal codes)
+    municipality_inferred: bool = False       # Municipality deduced from the town / postal code, not written
+    town_verified: Optional[bool] = None      # True: town registered in the municipality; None: not checked
+    chome_verified: Optional[bool] = None     # True/False when a 丁目 was given and the town was found
+    machiaza_id: Optional[str] = None         # 12-digit MLIT 大字・町丁目 code of the matched town / 丁目
+    block_verified: Optional[bool] = None     # Block found in MLIT block-level data (None: data not installed)
+    postal_code: Optional[str] = None         # NNN-NNNN: from the input, or looked up when unique
+    postal_code_consistent: Optional[bool] = None  # False when the input postal code belongs elsewhere
+
 
 @dataclass(frozen=True, slots=True)
 class NormalizedAddress:
@@ -93,6 +102,12 @@ class NormalizedAddress:
     tier_map: Dict[str, str] = field(default_factory=dict)
     confidence_score: float = 1.0
     latency_microseconds: Optional[float] = None
+    kana: Optional[str] = None                # Katakana reading of prefecture + municipality + town
+    romaji: Optional[str] = None              # Romanized (English-order) address line
+    latitude: Optional[float] = None          # Representative point (JGD2011) from MLIT, offline
+    longitude: Optional[float] = None
+    location_level: Optional[str] = None      # 'block', 'chome', 'town' or None
+    notes: Tuple[str, ...] = field(default_factory=tuple)  # What the gazetteer checks found
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the normalized address to a clean dictionary."""
