@@ -363,3 +363,20 @@ def test_romaji_round_trip():
     res = jaden.normalize("東京都港区芝公園4-2-8")
     back = jaden.normalize(res.romaji)
     assert back.canonical == res.canonical
+
+
+def test_town_in_same_named_municipality_of_another_prefecture_is_malformed():
+    # 日本橋兜町 is in 東京都中央区, not in 静岡県's 中央区 (浜松市中央区)
+    val = jaden.validate("静岡県中央区日本橋兜町15-18")
+    assert val.status == ValidationStatus.MALFORMED.value
+    assert "東京都中央区" in val.message
+    assert jaden.validate("東京都中央区日本橋兜町15-18").status == ValidationStatus.ACCEPTED.value
+
+
+@pytest.mark.parametrize("name", ["高岡市立野村小学校", "石井町石井小学校"])
+def test_name_starting_with_a_real_town_is_not_an_address(name):
+    assert jaden.validate(name).status == ValidationStatus.UNSUPPORTED.value
+
+
+def test_oaza_with_koaza_still_verifies_without_numbers():
+    assert jaden.validate("長野県長野市大字南長野字幅下").status == ValidationStatus.ACCEPTED.value

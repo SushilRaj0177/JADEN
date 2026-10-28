@@ -205,6 +205,9 @@ def build(out_dir: Path, cache_dir: Path, log: Callable[[str], None] = print) ->
     log(f"towns with readings: {matched}/{len(towns)}")
 
     # ---------------------------------------------------------------- output
+    # The runtime reads each municipality's rows as one contiguous slice
+    towns.sort(key=lambda t: t["lg_code"])
+    postal.sort(key=lambda p: p["lg_code"])
     out_dir.mkdir(parents=True, exist_ok=True)
     _write_tsv(out_dir / "towns.tsv.gz", TOWN_COLUMNS, towns)
     _write_tsv(out_dir / "postal.tsv.gz", POSTAL_COLUMNS, postal)

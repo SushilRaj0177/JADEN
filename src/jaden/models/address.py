@@ -91,6 +91,7 @@ class AddressComponents:
     lot_number: Optional[str] = None          # Multi-part lot number kept as written ('20-113-1') when its parts can't be labelled
     postal_code: Optional[str] = None         # NNN-NNNN: from the input, or looked up when unique
     postal_code_consistent: Optional[bool] = None  # False when the input postal code belongs elsewhere
+    town_registered_elsewhere: Tuple[str, ...] = field(default_factory=tuple)  # same-named municipalities that have the town
 
 
 @dataclass(frozen=True, slots=True)

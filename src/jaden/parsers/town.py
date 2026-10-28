@@ -80,6 +80,7 @@ class TownResolution:
     postal_code: Optional[str] = None
     postal_consistent: Optional[bool] = None
     postal_municipalities: Tuple[str, ...] = ()
+    town_registered_elsewhere: Tuple[str, ...] = ()     # same-named municipalities elsewhere that have the town
     notes: Tuple[str, ...] = field(default_factory=tuple)
 
 
@@ -188,13 +189,25 @@ def resolve_town(
     match = chosen.match
     town_verified: Optional[bool] = None
     record: Optional[TownRecord] = None
+    misplaced: Tuple[str, ...] = ()
     if town_text and gaz.has_municipality(chosen.municipality.lg_code):
         town_verified = match is not None
         if match is None:
-            elsewhere = sorted({lg for lg, m in gaz.municipalities_with_town(town_text)
-                                if m.exact and lg[:2] == chosen.municipality.lg_code[:2]})
+            everywhere = {lg for lg, m in gaz.municipalities_with_town(town_text) if m.exact}
+            elsewhere = sorted(lg for lg in everywhere if lg[:2] == chosen.municipality.lg_code[:2])
             hint = f"; a town of that name exists in {len(elsewhere)} other municipality(ies) of this prefecture" if elsewhere else ""
             notes.append(f"town '{town_text}' is not registered in {chosen.municipality.name}{hint}")
+            # '静岡県中央区日本橋兜町': the town belongs to a municipality of the same name elsewhere
+            # (東京都中央区), so the written prefecture contradicts the rest of the address
+            short = chosen.municipality.ward or chosen.municipality.name
+            from ..data.loader import get_registry
+            reg = get_registry()
+            same_name = [r for r in (reg.get_municipality_by_code(lg) for lg in sorted(everywhere)) if r is not None
+                         and r.lg_code != chosen.municipality.lg_code and (r.ward or r.name) == short]
+            if same_name:
+                misplaced = tuple(r.lg_code for r in same_name)
+                places = ", ".join(f"{r.prefecture_name}{r.name}" for r in same_name[:3])
+                notes.append(f"'{town_text}' is registered in {places}, a different {short}")
     if match is not None:
         record = match.entry.record_for(chome)
         if chosen.chome_ok is False:
@@ -226,6 +239,7 @@ def resolve_town(
         postal_code=postal_code,
         postal_consistent=chosen.postal_ok,
         postal_municipalities=postal_lgs,
+        town_registered_elsewhere=misplaced,
         notes=tuple(notes),
     )
 

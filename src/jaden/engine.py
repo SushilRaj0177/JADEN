@@ -416,6 +416,7 @@ class AddressNormalizer:
             notes.append(f"read '{town_text}' with its first number as the registered town {match.entry.name}")
         elif match is not None and variant == "machi":
             notes.append(f"read '{town_text}' as the registered town {match.entry.name}")
+        partial_tail = ""
         lot_number: Optional[str] = None
         if (match is not None and chome_verified is False and not block_dict["chome_explicit"]
                 and ban_val is not None and gaz is not None and lg_code):
@@ -469,6 +470,8 @@ class AddressNormalizer:
                     registered = registered[len(prefix):]
                     break
             remainder = town_text[match.consumed:]
+            if remainder and not match.exact and not koaza_remainder(remainder):
+                partial_tail = remainder
             town_name = registered + remainder
             if remainder and entry.records and entry.records[0].kind == "1" and koaza_val is None:
                 koaza_val = remainder[1:] if remainder.startswith("字") else remainder
@@ -587,6 +590,10 @@ class AddressNormalizer:
             # A designated city whose wards were searched without success ('札幌市立白石中学校')
             town_verified = False
             notes.append(f"town '{town_text}' is not registered in any ward of {muni_rec.name}")
+        if partial_tail and town_verified and not has_numbers:
+            # '高岡市立野村小学校' starts with the town 立野 but the rest is not part of an address
+            town_verified = False
+            notes.append(f"'{partial_tail}' after the town {match.entry.name if match else ''} is not part of an address")
 
         # Postal code: keep the written one; otherwise fill it in when the town has exactly one
         postal_out = postal_code
@@ -630,6 +637,7 @@ class AddressNormalizer:
             postal_code_consistent=postal_consistent,
             block_verified=block_verified,
             lot_number=lot_number,
+            town_registered_elsewhere=town_res.town_registered_elsewhere if town_res else (),
         )
 
         # Offline location: the 丁目 / town representative point
@@ -817,6 +825,12 @@ class AddressNormalizer:
             return result(ValidationStatus.MALFORMED,
                           "Nonexistent 丁目: " + next(
                               (n for n in res.notes if "does not exist" in n), f"{c.town} has no {c.chome}丁目."),
+                          lg=c.lg_code)
+
+        if c.town_registered_elsewhere:
+            return result(ValidationStatus.MALFORMED,
+                          "Town belongs to a different municipality of the same name: " + next(
+                              (n for n in res.notes if "a different" in n), ""),
                           lg=c.lg_code)
 
         if c.postal_code_consistent is False:

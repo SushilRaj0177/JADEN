@@ -256,7 +256,8 @@ def format_validate_text(v: ValidationResult) -> str:
     if v.message:
         lines.append(f"Message:     {v.message}")
     for w in v.warnings:
-        lines.append(f"Note:        {w}")
+        if w not in v.message:
+            lines.append(f"Note:        {w}")
     if v.ambiguous_candidates:
         lines.append(f"Candidates:  {len(v.ambiguous_candidates)}")
         for cand in v.ambiguous_candidates[:15]:
