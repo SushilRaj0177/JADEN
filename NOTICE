@@ -40,3 +40,12 @@ This product includes or references data and services from the following organiz
    - Source: https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P29-2023.html
    - License: CC BY 4.0
    - Attribution: 「国土数値情報（学校データ）」（国土交通省）（令和5年度）を加工して作成
+
+7. Former municipality names
+   - Dataset: 国土数値情報 行政区域データ N03 (2000年10月1日時点), Ministry of Land, Infrastructure, Transport and Tourism
+   - Source: https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2024.html (N03-2000 files)
+   - License: CC BY 4.0
+   - Attribution: 「国土数値情報（行政区域データ）」（国土交通省）（2000年10月1日時点）を加工して作成
+   - Dataset: 「都道府県コード及び市区町村コード」改正一覧表 (平成17年4月1日以降), Ministry of Internal Affairs and Communications
+   - Source: https://www.soumu.go.jp/main_content/000875488.xlsx
+   - Bundled File: src/jaden/data/former_municipalities.json, rebuilt by src/jaden/data/build_former.py

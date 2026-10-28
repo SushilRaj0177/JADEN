@@ -88,3 +88,26 @@ def test_kyoto_clause_with_street_chome():
     assert c.town == "大阪町"
     assert c.banchi == 378
     assert c.kyoto_direction.raw_clause == "鞘町五条下ル2丁目"
+
+
+# ------------------------------------------------------- former municipality names
+@pytest.mark.parametrize("raw, lg_code, canonical", [
+    ("埼玉県浦和市高砂3-15-1", "111074", "埼玉県さいたま市浦和区高砂3丁目15番1号"),
+    ("浦和市高砂3-15-1", "111074", "埼玉県さいたま市浦和区高砂3丁目15番1号"),
+    ("静岡県清水市旭町6-8", "221031", "静岡県静岡市清水区旭町6番8号"),
+    ("静岡県浜松市中区元城町103-2", "221384", "静岡県浜松市中央区元城町103番2号"),
+    ("浜松市北区細江町気賀305", "221392", "静岡県浜松市浜名区細江町気賀305番"),
+    ("岐阜県土岐郡笠原町2950", "212041", "岐阜県多治見市笠原町2950番"),
+    ("兵庫県篠山市北新町41", "282219", "兵庫県丹波篠山市北新町41番"),
+])
+def test_former_municipality_names(raw, lg_code, canonical):
+    res = jaden.normalize(raw)
+    assert res.components.lg_code == lg_code
+    assert res.canonical == canonical
+    assert res.components.former_municipality is not None
+    assert jaden.validate(raw).status == "ACCEPTED"
+
+
+def test_former_name_without_town_is_ambiguous():
+    # 浦和市 became four wards; without a town there is nothing to choose by
+    assert jaden.validate("埼玉県浦和市").status == "AMBIGUOUS"

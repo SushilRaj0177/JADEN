@@ -4,13 +4,14 @@
   "seed": 2026,
   "per_prefecture": 100,
   "base_addresses": 4700,
-  "items": 32883,
+  "items": 33294,
   "variants": {
     "original": 4700,
     "no_pref": 4700,
     "town_only": 4700,
     "noisy": 4700,
     "romaji": 3657,
+    "former_name": 411,
     "wrong_pref": 4700,
     "chome_99": 1026,
     "non_address": 4700

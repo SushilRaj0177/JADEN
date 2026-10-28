@@ -13,10 +13,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4608,
-        "geo_median_km": 0.35975884291296356,
-        "geo_p90_km": 1.6539790634312133,
-        "geo_within_1km": 0.7931857638888888
+        "geo_n": 4614,
+        "geo_median_km": 0.3591540663494721,
+        "geo_p90_km": 1.6517234776130074,
+        "geo_within_1km": 0.7936714347637625
       },
       "no_pref": {
         "n": 4700,
@@ -30,27 +30,27 @@
         "coverage": 0.9997872340425532,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4607,
-        "geo_median_km": 0.3597965473980698,
-        "geo_p90_km": 1.6539790634312133,
-        "geo_within_1km": 0.7931408725851964
+        "geo_n": 4613,
+        "geo_median_km": 0.3592360488962311,
+        "geo_p90_km": 1.6517234776130074,
+        "geo_within_1km": 0.7936267071320182
       },
       "town_only": {
         "n": 4700,
         "wrong_answers": 1,
-        "abstained": 2328,
-        "abstained_with_candidates": 2125,
-        "candidate_recall": 0.9863529411764705,
-        "mean_candidates": 24.192,
-        "median_candidates": 8,
-        "accuracy": 0.504468085106383,
-        "coverage": 0.5046808510638298,
-        "precision": 0.9995784148397976,
+        "abstained": 2329,
+        "abstained_with_candidates": 2126,
+        "candidate_recall": 0.9863593603010348,
+        "mean_candidates": 24.1928504233302,
+        "median_candidates": 8.0,
+        "accuracy": 0.5042553191489362,
+        "coverage": 0.504468085106383,
+        "precision": 0.9995782370307887,
         "wrong_answer_rate": 0.0002127659574468085,
-        "geo_n": 2340,
-        "geo_median_km": 0.3862278818866203,
-        "geo_p90_km": 1.6870204873252759,
-        "geo_within_1km": 0.7803418803418803
+        "geo_n": 2339,
+        "geo_median_km": 0.3861701497726983,
+        "geo_p90_km": 1.6816962166595277,
+        "geo_within_1km": 0.7806755023514322
       },
       "noisy": {
         "n": 4700,
@@ -64,10 +64,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4608,
-        "geo_median_km": 0.35975884291296356,
-        "geo_p90_km": 1.6539790634312133,
-        "geo_within_1km": 0.7931857638888888
+        "geo_n": 4614,
+        "geo_median_km": 0.3591540663494721,
+        "geo_p90_km": 1.6517234776130074,
+        "geo_within_1km": 0.7936714347637625
       },
       "romaji": {
         "n": 3657,
@@ -85,6 +85,23 @@
         "geo_median_km": 0.2971637956097947,
         "geo_p90_km": 1.329186405200744,
         "geo_within_1km": 0.8358746881064597
+      },
+      "former_name": {
+        "n": 411,
+        "wrong_answers": 0,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 1.0,
+        "coverage": 1.0,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 411,
+        "geo_median_km": 0.4153373491855575,
+        "geo_p90_km": 1.4255613608000828,
+        "geo_within_1km": 0.8321167883211679
       },
       "wrong_pref": {
         "n": 4700,
@@ -115,10 +132,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4608,
-        "geo_median_km": 0.07088430469399137,
-        "geo_p90_km": 1.0964692035677301,
-        "geo_within_1km": 0.8897569444444444
+        "geo_n": 4614,
+        "geo_median_km": 0.07072310282700603,
+        "geo_p90_km": 1.0916235765696496,
+        "geo_within_1km": 0.8903337667967057
       },
       "no_pref": {
         "n": 4700,
@@ -132,27 +149,27 @@
         "coverage": 0.9997872340425532,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4607,
-        "geo_median_km": 0.07090563604008364,
-        "geo_p90_km": 1.0964692035677301,
-        "geo_within_1km": 0.8897330149772086
+        "geo_n": 4613,
+        "geo_median_km": 0.07075539897001905,
+        "geo_p90_km": 1.0916235765696496,
+        "geo_within_1km": 0.89030999349664
       },
       "town_only": {
         "n": 4700,
         "wrong_answers": 1,
-        "abstained": 2328,
-        "abstained_with_candidates": 2125,
-        "candidate_recall": 0.9863529411764705,
-        "mean_candidates": 24.192,
-        "median_candidates": 8,
-        "accuracy": 0.504468085106383,
-        "coverage": 0.5046808510638298,
-        "precision": 0.9995784148397976,
+        "abstained": 2329,
+        "abstained_with_candidates": 2126,
+        "candidate_recall": 0.9863593603010348,
+        "mean_candidates": 24.1928504233302,
+        "median_candidates": 8.0,
+        "accuracy": 0.5042553191489362,
+        "coverage": 0.504468085106383,
+        "precision": 0.9995782370307887,
         "wrong_answer_rate": 0.0002127659574468085,
-        "geo_n": 2340,
-        "geo_median_km": 0.07712181947864644,
-        "geo_p90_km": 1.2129423087804525,
-        "geo_within_1km": 0.8752136752136752
+        "geo_n": 2339,
+        "geo_median_km": 0.0770996815386587,
+        "geo_p90_km": 1.2075054367528868,
+        "geo_within_1km": 0.8755878580589995
       },
       "noisy": {
         "n": 4700,
@@ -166,10 +183,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4608,
-        "geo_median_km": 0.07088430469399137,
-        "geo_p90_km": 1.0964692035677301,
-        "geo_within_1km": 0.8897569444444444
+        "geo_n": 4614,
+        "geo_median_km": 0.07072310282700603,
+        "geo_p90_km": 1.0916235765696496,
+        "geo_within_1km": 0.8903337667967057
       },
       "romaji": {
         "n": 3657,
@@ -187,6 +204,23 @@
         "geo_median_km": 0.059465936697531065,
         "geo_p90_km": 0.641207728437192,
         "geo_within_1km": 0.9362350984197394
+      },
+      "former_name": {
+        "n": 411,
+        "wrong_answers": 0,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 1.0,
+        "coverage": 1.0,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 411,
+        "geo_median_km": 0.05103438806018297,
+        "geo_p90_km": 0.31713949911062206,
+        "geo_within_1km": 0.9318734793187348
       },
       "wrong_pref": {
         "n": 4700,
@@ -290,6 +324,23 @@
         "geo_p90_km": null,
         "geo_within_1km": null
       },
+      "former_name": {
+        "n": 411,
+        "wrong_answers": 377,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 0.0827250608272506,
+        "coverage": 1.0,
+        "precision": 0.0827250608272506,
+        "wrong_answer_rate": 0.9172749391727494,
+        "geo_n": 0,
+        "geo_median_km": null,
+        "geo_p90_km": null,
+        "geo_within_1km": null
+      },
       "wrong_pref": {
         "n": 4700,
         "false_accepts": 1,
@@ -308,8 +359,8 @@
     }
   },
   "items_per_second": {
-    "jaden": 2867.3914796698004,
-    "jaden+blocks": 372.9473203964902,
-    "jaden-parser-only": 8820.197345627817
+    "jaden": 2788.471611214656,
+    "jaden+blocks": 375.2322082874542,
+    "jaden-parser-only": 8082.852717824595
   }
 }

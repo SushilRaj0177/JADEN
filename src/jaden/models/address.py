@@ -92,6 +92,7 @@ class AddressComponents:
     postal_code: Optional[str] = None         # NNN-NNNN: from the input, or looked up when unique
     postal_code_consistent: Optional[bool] = None  # False when the input postal code belongs elsewhere
     town_registered_elsewhere: Tuple[str, ...] = field(default_factory=tuple)  # same-named municipalities that have the town
+    former_municipality: Optional[str] = None # A merged / abolished municipality name the input used ('浦和市')
 
 
 @dataclass(frozen=True, slots=True)

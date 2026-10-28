@@ -30,6 +30,7 @@ from .parsers.town import resolve_town, expand_candidates, town_variants, koaza_
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
 from .core.townkey import town_key
 from .data.loader import MunicipalityRecord
+from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
 from .romaji import looks_romanized, romaji_to_japanese
 
@@ -187,6 +188,71 @@ class AddressNormalizer:
         elif not is_ambiguous:
             confidence *= 0.70
 
+        # Former municipality names ('浦和市', '清水市', '浜松市中区'): the candidates are the current
+        # municipalities its area belongs to, and the town decides among them further down
+        former_name: Optional[str] = None
+        if self.gazetteer is not None and not is_contradictory and not is_ambiguous:
+            former = None
+            base_len = 0
+            if muni_rec is None:
+                former = get_former_municipalities().match(post_admin_text, pref_rec.code if pref_rec else None)
+                if (former and pref_rec is None and post_admin_text[former[1] - 1] in "町村"
+                        and not any(f.county and post_admin_text.startswith(f.county) for f in former[0])):
+                    # Without a prefecture, '笠原町…' is as likely a town name as the old town 笠原町
+                    former = None
+            elif muni_rec.entity_type == "designated_city" and post_admin_text:
+                # A ward that no longer exists ('浜松市中区')
+                base_len = len(muni_rec.city)
+                former = get_former_municipalities().match(muni_rec.city + post_admin_text, muni_rec.prefecture_code)
+                if former and former[1] <= base_len:
+                    former = None
+            if former:
+                found, consumed = former
+                lgs: List[str] = []
+                for f in found:
+                    lgs += [lg for lg in f.successors if lg not in lgs]
+                records = [r for r in (self.registry.get_municipality_by_code(lg) for lg in lgs) if r is not None]
+                if records:
+                    former_name = found[0].name
+                    post_admin_text = post_admin_text[consumed - base_len:].lstrip()
+                    # An absorbed town often lives on as a town name ('土岐郡笠原町2950' -> 多治見市笠原町2950)
+                    pool = [x for r in records for x in (self.registry.wards_of(r) or [r])]
+                    gaz_ = self.gazetteer
+
+                    def _town_len(text: str) -> int:
+                        best = 0
+                        for r in pool:
+                            m = gaz_.match_town(r.lg_code, text) if gaz_ else None
+                            if m is not None and m.entry.records:
+                                best = max(best, m.consumed)
+                        return best
+                    short = former_name if former_name[-1] in "町村" else ""
+                    if short and _town_len(short + post_admin_text) > len(short) - 1 >= _town_len(post_admin_text):
+                        post_admin_text = short + post_admin_text
+                    names = "、".join(f"{r.prefecture_name}{r.name}" for r in records[:6])
+                    notes.append(f"{former_name} no longer exists; its area is now part of {names}")
+                    prefs = {r.prefecture_code for r in records}
+                    if pref_rec is None and len(prefs) == 1:
+                        pref_rec = self.registry.get_prefecture_by_code(prefs.pop())
+                        is_pref_inferred = True
+                    pref_code = pref_rec.code if pref_rec else None
+                    pref_name = pref_rec.name if pref_rec else None
+                    municipality_inferred = True
+                    tier_map["municipality"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+                    if len(records) == 1:
+                        muni_rec = records[0]
+                        lg_code, city_name = muni_rec.lg_code, muni_rec.city
+                        ward_name, county_name = muni_rec.ward, muni_rec.county
+                        tier_map["lg_code"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+                        confidence = 0.85 if is_pref_inferred else 0.90
+                    else:
+                        muni_rec, lg_code, county_name, ward_name = None, None, None, None
+                        city_name = former_name
+                        is_ambiguous = True
+                        candidate_records = tuple(records)
+                        ambiguous_candidates = tuple(f"{r.prefecture_name}{r.name} ({r.lg_code})" for r in records)
+                        confidence = 0.50
+
         # A space after a block number ends the address part: '潮見188 703号室', '北11条西7 ハイツ'
         extra_tail = ""
         # Parenthesized notes ('(…キャンパス内)', '（旧〇〇）') are never part of the locator
@@ -304,7 +370,7 @@ class AddressNormalizer:
 
         skip_town_resolution = False
         if (gaz is not None and allow_reread and muni_rec is not None and not is_ambiguous and not is_contradictory
-                and kyoto_clause is None and hokkaido_clause is None):
+                and kyoto_clause is None and hokkaido_clause is None and former_name is None):
             alt = self._town_reading(gaz, working_text, post_admin_text, pref_rec, is_pref_inferred, muni_rec, town_text)
             if alt is not None:
                 kind, munis, surface = alt
@@ -702,6 +768,7 @@ class AddressNormalizer:
             block_verified=block_verified,
             lot_number=lot_number,
             town_registered_elsewhere=town_res.town_registered_elsewhere if town_res else (),
+            former_municipality=former_name,
         )
 
         # Offline location: the 丁目 / town representative point

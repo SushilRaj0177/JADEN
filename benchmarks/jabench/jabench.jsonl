@@ -32881,3 +32881,414 @@
 {"id": "032880", "variant": "wrong_pref", "input": "山形県沖縄市久保田2-21-1", "valid": false, "gold_lg": null, "lat": 26.324414, "lon": 127.797711, "source_lg": "472115"}
 {"id": "032881", "variant": "chome_99", "input": "沖縄県沖縄市久保田99-21-1", "valid": false, "gold_lg": null, "lat": 26.324414, "lon": 127.797711, "source_lg": "472115"}
 {"id": "032882", "variant": "non_address", "input": "沖縄市立島袋小学校", "valid": false, "gold_lg": null, "lat": 26.324414, "lon": 127.797711, "source_lg": "472115"}
+{"id": "032883", "variant": "former_name", "input": "静岡県浜松市南区西島町1148-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.662574, "lon": 137.769152, "source_lg": null}
+{"id": "032884", "variant": "former_name", "input": "静岡県浜松市東区薬師町291", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.725416, "lon": 137.783248, "source_lg": null}
+{"id": "032885", "variant": "former_name", "input": "静岡県浜松市東区市野町2404-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.741742, "lon": 137.770607, "source_lg": null}
+{"id": "032886", "variant": "former_name", "input": "静岡県浜松市東区豊西町1551", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.766175, "lon": 137.80417, "source_lg": null}
+{"id": "032887", "variant": "former_name", "input": "静岡県浜松市東区笠井町478-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.770849, "lon": 137.795202, "source_lg": null}
+{"id": "032888", "variant": "former_name", "input": "静岡県浜松市東区中野町427-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.729262, "lon": 137.793528, "source_lg": null}
+{"id": "032889", "variant": "former_name", "input": "静岡県浜松市南区芳川町190", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.693024, "lon": 137.765326, "source_lg": null}
+{"id": "032890", "variant": "former_name", "input": "静岡県浜松市中区花川町1908-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.774208, "lon": 137.68738, "source_lg": null}
+{"id": "032891", "variant": "former_name", "input": "静岡県浜松市北区三方原町284-7", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.774578, "lon": 137.710842, "source_lg": null}
+{"id": "032892", "variant": "former_name", "input": "静岡県浜松市北区豊岡町22", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.786989, "lon": 137.71942, "source_lg": null}
+{"id": "032893", "variant": "former_name", "input": "静岡県浜松市北区初生町991", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.768847, "lon": 137.725973, "source_lg": null}
+{"id": "032894", "variant": "former_name", "input": "静岡県浜松市南区寺脇町230", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.681902, "lon": 137.742674, "source_lg": null}
+{"id": "032895", "variant": "former_name", "input": "静岡県浜松市南区飯田町1014", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.703696, "lon": 137.773286, "source_lg": null}
+{"id": "032896", "variant": "former_name", "input": "静岡県浜松市東区有玉南町585", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.755829, "lon": 137.750998, "source_lg": null}
+{"id": "032897", "variant": "former_name", "input": "静岡県浜松市東区中郡町895", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.768388, "lon": 137.773569, "source_lg": null}
+{"id": "032898", "variant": "former_name", "input": "静岡県浜松市東区西ケ崎町1067", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.773666, "lon": 137.767621, "source_lg": null}
+{"id": "032899", "variant": "former_name", "input": "静岡県浜松市西区和地町1833-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.763562, "lon": 137.653227, "source_lg": null}
+{"id": "032900", "variant": "former_name", "input": "静岡県浜松市西区舘山寺町110-6", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.761239, "lon": 137.627356, "source_lg": null}
+{"id": "032901", "variant": "former_name", "input": "静岡県浜松市西区村櫛町3195", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.726288, "lon": 137.591534, "source_lg": null}
+{"id": "032902", "variant": "former_name", "input": "静岡県浜松市西区伊左地町5", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.744471, "lon": 137.655637, "source_lg": null}
+{"id": "032903", "variant": "former_name", "input": "静岡県浜松市西区神ケ谷町7888", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.727006, "lon": 137.670679, "source_lg": null}
+{"id": "032904", "variant": "former_name", "input": "静岡県浜松市天竜区二俣町二俣158-2", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.865863, "lon": 137.821231, "source_lg": null}
+{"id": "032905", "variant": "former_name", "input": "静岡県浜松市天竜区熊2153", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.959457, "lon": 137.73305, "source_lg": null}
+{"id": "032906", "variant": "former_name", "input": "静岡県浜松市天竜区山東2314", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.879759, "lon": 137.829386, "source_lg": null}
+{"id": "032907", "variant": "former_name", "input": "静岡県浜松市天竜区横山町547", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.942853, "lon": 137.81705, "source_lg": null}
+{"id": "032908", "variant": "former_name", "input": "静岡県浜松市天竜区西藤平1266-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.911957, "lon": 137.763901, "source_lg": null}
+{"id": "032909", "variant": "former_name", "input": "静岡県浜松市天竜区両島762", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.882292, "lon": 137.791601, "source_lg": null}
+{"id": "032910", "variant": "former_name", "input": "静岡県浜松市浜北区中瀬3531", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.825089, "lon": 137.812186, "source_lg": null}
+{"id": "032911", "variant": "former_name", "input": "静岡県浜松市浜北区於呂3524-68", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.840284, "lon": 137.800891, "source_lg": null}
+{"id": "032912", "variant": "former_name", "input": "静岡県浜松市浜北区善地1546", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.791679, "lon": 137.810044, "source_lg": null}
+{"id": "032913", "variant": "former_name", "input": "静岡県浜松市浜北区寺島2436-3", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.780372, "lon": 137.79334, "source_lg": null}
+{"id": "032914", "variant": "former_name", "input": "静岡県浜松市浜北区西美薗1624-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.801133, "lon": 137.799206, "source_lg": null}
+{"id": "032915", "variant": "former_name", "input": "静岡県浜松市浜北区小林1522-2", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.810389, "lon": 137.791804, "source_lg": null}
+{"id": "032916", "variant": "former_name", "input": "静岡県浜松市浜北区平口2583", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.793852, "lon": 137.767399, "source_lg": null}
+{"id": "032917", "variant": "former_name", "input": "静岡県浜松市浜北区小松2400", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.788738, "lon": 137.771688, "source_lg": null}
+{"id": "032918", "variant": "former_name", "input": "静岡県浜松市浜北区新原2315", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.817033, "lon": 137.781625, "source_lg": null}
+{"id": "032919", "variant": "former_name", "input": "静岡県浜松市浜北区宮口1526-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.824731, "lon": 137.771049, "source_lg": null}
+{"id": "032920", "variant": "former_name", "input": "静岡県浜松市浜北区於呂2235", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.831701, "lon": 137.79219, "source_lg": null}
+{"id": "032921", "variant": "former_name", "input": "静岡県浜松市浜北区上島217", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.847148, "lon": 137.817043, "source_lg": null}
+{"id": "032922", "variant": "former_name", "input": "静岡県浜松市浜北区内野1648-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.783306, "lon": 137.756424, "source_lg": null}
+{"id": "032923", "variant": "former_name", "input": "静岡県浜松市天竜区春野町堀之内989-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.958841, "lon": 137.898193, "source_lg": null}
+{"id": "032924", "variant": "former_name", "input": "静岡県浜松市天竜区春野町気田624", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.004317, "lon": 137.906651, "source_lg": null}
+{"id": "032925", "variant": "former_name", "input": "静岡県浜松市天竜区佐久間町半場47", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.087517, "lon": 137.802234, "source_lg": null}
+{"id": "032926", "variant": "former_name", "input": "静岡県浜松市天竜区佐久間町浦川2799", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.052209, "lon": 137.760927, "source_lg": null}
+{"id": "032927", "variant": "former_name", "input": "静岡県浜松市南区増楽町1199", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.689322, "lon": 137.694313, "source_lg": null}
+{"id": "032928", "variant": "former_name", "input": "静岡県浜松市西区舞阪町舞阪2668-33", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.680036, "lon": 137.61037, "source_lg": null}
+{"id": "032929", "variant": "former_name", "input": "静岡県浜松市西区雄踏町宇布見7406", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.706891, "lon": 137.631315, "source_lg": null}
+{"id": "032930", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀10052-4", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.803192, "lon": 137.623343, "source_lg": null}
+{"id": "032931", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀3207-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.787339, "lon": 137.64277, "source_lg": null}
+{"id": "032932", "variant": "former_name", "input": "静岡県浜松市北区細江町中川2418-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.809096, "lon": 137.678399, "source_lg": null}
+{"id": "032933", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀304", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.805874, "lon": 137.651084, "source_lg": null}
+{"id": "032934", "variant": "former_name", "input": "静岡県浜松市北区細江町中川7172-701", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.794141, "lon": 137.685408, "source_lg": null}
+{"id": "032935", "variant": "former_name", "input": "静岡県浜松市北区神宮寺町8-48", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.831371, "lon": 137.671082, "source_lg": null}
+{"id": "032936", "variant": "former_name", "input": "静岡県浜松市北区引佐町奥山1110-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.84586, "lon": 137.629716, "source_lg": null}
+{"id": "032937", "variant": "former_name", "input": "静岡県浜松市北区引佐町伊平778-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.864952, "lon": 137.661184, "source_lg": null}
+{"id": "032938", "variant": "former_name", "input": "静岡県浜松市北区引佐町田沢432-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.897782, "lon": 137.656386, "source_lg": null}
+{"id": "032939", "variant": "former_name", "input": "静岡県浜松市北区引佐町金指862-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.822941, "lon": 137.683034, "source_lg": null}
+{"id": "032940", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町下尾奈1461-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.78483, "lon": 137.538032, "source_lg": null}
+{"id": "032941", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町大崎1665-20", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.772341, "lon": 137.563466, "source_lg": null}
+{"id": "032942", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町平山223-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.825437, "lon": 137.536847, "source_lg": null}
+{"id": "032943", "variant": "former_name", "input": "静岡県浜松市中区泉2-3-10", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.743409, "lon": 137.722769, "source_lg": null}
+{"id": "032944", "variant": "former_name", "input": "静岡県浜松市中区鴨江町97-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.704572, "lon": 137.721026, "source_lg": null}
+{"id": "032945", "variant": "former_name", "input": "静岡県浜松市中区成子町13", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.700174, "lon": 137.725854, "source_lg": null}
+{"id": "032946", "variant": "former_name", "input": "静岡県浜松市中区富塚町659", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.725593, "lon": 137.705922, "source_lg": null}
+{"id": "032947", "variant": "former_name", "input": "静岡県浜松市中区佐藤3-15-18", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713012, "lon": 137.750561, "source_lg": null}
+{"id": "032948", "variant": "former_name", "input": "静岡県浜松市中区助信町35-30", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.72284, "lon": 137.736037, "source_lg": null}
+{"id": "032949", "variant": "former_name", "input": "静岡県浜松市中区広沢1-2-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713045, "lon": 137.719288, "source_lg": null}
+{"id": "032950", "variant": "former_name", "input": "静岡県浜松市中区蜆塚1-20-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713733, "lon": 137.713158, "source_lg": null}
+{"id": "032951", "variant": "former_name", "input": "静岡県浜松市中区城北2-5-28", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.721292, "lon": 137.721054, "source_lg": null}
+{"id": "032952", "variant": "former_name", "input": "静岡県浜松市南区東町238-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.679244, "lon": 137.783977, "source_lg": null}
+{"id": "032953", "variant": "former_name", "input": "静岡県浜松市中区上島1-22-5", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.736757, "lon": 137.741742, "source_lg": null}
+{"id": "032954", "variant": "former_name", "input": "静岡県浜松市中区早出町1414-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.733645, "lon": 137.74907, "source_lg": null}
+{"id": "032955", "variant": "former_name", "input": "静岡県浜松市東区神立町480", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.716776, "lon": 137.750957, "source_lg": null}
+{"id": "032956", "variant": "former_name", "input": "静岡県浜松市中区寺島町478", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701517, "lon": 137.740732, "source_lg": null}
+{"id": "032957", "variant": "former_name", "input": "静岡県浜松市中区法枝町116-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.685442, "lon": 137.727936, "source_lg": null}
+{"id": "032958", "variant": "former_name", "input": "静岡県浜松市中区文丘町27-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.726626, "lon": 137.715419, "source_lg": null}
+{"id": "032959", "variant": "former_name", "input": "静岡県浜松市南区中田島町1612", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.665077, "lon": 137.740632, "source_lg": null}
+{"id": "032960", "variant": "former_name", "input": "静岡県浜松市中区常盤町141-20", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.710765, "lon": 137.732584, "source_lg": null}
+{"id": "032961", "variant": "former_name", "input": "静岡県浜松市中区栄町118", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.704087, "lon": 137.725863, "source_lg": null}
+{"id": "032962", "variant": "former_name", "input": "静岡県浜松市中区幸4-27-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.743871, "lon": 137.730925, "source_lg": null}
+{"id": "032963", "variant": "former_name", "input": "静岡県浜松市中区住吉1-22-5", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.727208, "lon": 137.723498, "source_lg": null}
+{"id": "032964", "variant": "former_name", "input": "静岡県浜松市中区東伊場1-24-6", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.700541, "lon": 137.714871, "source_lg": null}
+{"id": "032965", "variant": "former_name", "input": "静岡県浜松市中区鹿谷町1-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713187, "lon": 137.722291, "source_lg": null}
+{"id": "032966", "variant": "former_name", "input": "静岡県浜松市西区大平台4-9-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.710037, "lon": 137.678599, "source_lg": null}
+{"id": "032967", "variant": "former_name", "input": "静岡県浜松市西区志都呂町1302", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701236, "lon": 137.65529, "source_lg": null}
+{"id": "032968", "variant": "former_name", "input": "静岡県浜松市南区遠州浜1-10-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.657003, "lon": 137.761288, "source_lg": null}
+{"id": "032969", "variant": "former_name", "input": "静岡県浜松市中区蜆塚3-14-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714987, "lon": 137.70777, "source_lg": null}
+{"id": "032970", "variant": "former_name", "input": "静岡県浜松市東区大瀬町27-32", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.754777, "lon": 137.76471, "source_lg": null}
+{"id": "032971", "variant": "former_name", "input": "静岡県浜松市西区湖東町1169-179", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.762655, "lon": 137.664504, "source_lg": null}
+{"id": "032972", "variant": "former_name", "input": "静岡県浜松市中区葵東2-10-23", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.76033, "lon": 137.723923, "source_lg": null}
+{"id": "032973", "variant": "former_name", "input": "静岡県浜松市東区篠ケ瀬町286", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728913, "lon": 137.773137, "source_lg": null}
+{"id": "032974", "variant": "former_name", "input": "静岡県浜松市東区天王町943", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.734027, "lon": 137.776416, "source_lg": null}
+{"id": "032975", "variant": "former_name", "input": "静岡県浜松市北区初生町1139", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.771433, "lon": 137.731054, "source_lg": null}
+{"id": "032976", "variant": "former_name", "input": "静岡県浜松市中区佐鳴台2-26-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.704259, "lon": 137.693608, "source_lg": null}
+{"id": "032977", "variant": "former_name", "input": "静岡県浜松市北区根洗町1497-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.792324, "lon": 137.710149, "source_lg": null}
+{"id": "032978", "variant": "former_name", "input": "静岡県浜松市中区高丘北3-16-14", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.765488, "lon": 137.700135, "source_lg": null}
+{"id": "032979", "variant": "former_name", "input": "静岡県浜松市浜北区貴布祢409", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.795243, "lon": 137.785778, "source_lg": null}
+{"id": "032980", "variant": "former_name", "input": "静岡県浜松市天竜区水窪町奥領家3184", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.167621, "lon": 137.866513, "source_lg": null}
+{"id": "032981", "variant": "former_name", "input": "静岡県浜松市西区舞阪町浜田76", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.682624, "lon": 137.615478, "source_lg": null}
+{"id": "032982", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀997-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.809802, "lon": 137.652672, "source_lg": null}
+{"id": "032983", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町三ヶ日432", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.808953, "lon": 137.555494, "source_lg": null}
+{"id": "032984", "variant": "former_name", "input": "静岡県浜松市南区大柳町50", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.678405, "lon": 137.753868, "source_lg": null}
+{"id": "032985", "variant": "former_name", "input": "静岡県浜松市東区天王町1896", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.740968, "lon": 137.767372, "source_lg": null}
+{"id": "032986", "variant": "former_name", "input": "静岡県浜松市西区和光町517", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.786524, "lon": 137.681248, "source_lg": null}
+{"id": "032987", "variant": "former_name", "input": "静岡県浜松市西区入野町10827-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.695443, "lon": 137.673989, "source_lg": null}
+{"id": "032988", "variant": "former_name", "input": "静岡県浜松市南区恩地町291", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.686662, "lon": 137.762517, "source_lg": null}
+{"id": "032989", "variant": "former_name", "input": "静岡県浜松市南区飯田町1507", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.708184, "lon": 137.781588, "source_lg": null}
+{"id": "032990", "variant": "former_name", "input": "静岡県浜松市南区白羽町1231", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.67535, "lon": 137.735459, "source_lg": null}
+{"id": "032991", "variant": "former_name", "input": "静岡県浜松市北区根洗町645-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.793971, "lon": 137.695229, "source_lg": null}
+{"id": "032992", "variant": "former_name", "input": "静岡県浜松市北区都田町8749-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.811019, "lon": 137.736784, "source_lg": null}
+{"id": "032993", "variant": "former_name", "input": "静岡県浜松市北区三方原町1367-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.783302, "lon": 137.711174, "source_lg": null}
+{"id": "032994", "variant": "former_name", "input": "静岡県浜松市北区三方原町2762", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.787133, "lon": 137.694502, "source_lg": null}
+{"id": "032995", "variant": "former_name", "input": "静岡県浜松市浜北区染地台5-4-3", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.791523, "lon": 137.750156, "source_lg": null}
+{"id": "032996", "variant": "former_name", "input": "静岡県浜松市中区曳馬4-8-12", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.729291, "lon": 137.744849, "source_lg": null}
+{"id": "032997", "variant": "former_name", "input": "静岡県浜松市中区中沢町58-9", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.722952, "lon": 137.72788, "source_lg": null}
+{"id": "032998", "variant": "former_name", "input": "静岡県浜松市中区相生町14-30", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.708334, "lon": 137.748323, "source_lg": null}
+{"id": "032999", "variant": "former_name", "input": "静岡県浜松市東区小池町710", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.751665, "lon": 137.760298, "source_lg": null}
+{"id": "033000", "variant": "former_name", "input": "静岡県浜松市東区市野町2636", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.747785, "lon": 137.767062, "source_lg": null}
+{"id": "033001", "variant": "former_name", "input": "静岡県浜松市西区篠原町25654", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.6763, "lon": 137.658373, "source_lg": null}
+{"id": "033002", "variant": "former_name", "input": "静岡県浜松市西区馬郡町2560", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.683393, "lon": 137.627553, "source_lg": null}
+{"id": "033003", "variant": "former_name", "input": "静岡県浜松市南区三島町1200", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.687302, "lon": 137.747686, "source_lg": null}
+{"id": "033004", "variant": "former_name", "input": "静岡県浜松市中区佐藤2-22-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713529, "lon": 137.748895, "source_lg": null}
+{"id": "033005", "variant": "former_name", "input": "静岡県浜松市中区西丘町296", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.767333, "lon": 137.691612, "source_lg": null}
+{"id": "033006", "variant": "former_name", "input": "静岡県浜松市中区神田町513", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.690818, "lon": 137.7187, "source_lg": null}
+{"id": "033007", "variant": "former_name", "input": "静岡県浜松市中区領家3-23-13", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.693661, "lon": 137.75472, "source_lg": null}
+{"id": "033008", "variant": "former_name", "input": "静岡県浜松市中区和合町555-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.741259, "lon": 137.701002, "source_lg": null}
+{"id": "033009", "variant": "former_name", "input": "静岡県浜松市東区丸塚町287-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.727747, "lon": 137.760233, "source_lg": null}
+{"id": "033010", "variant": "former_name", "input": "静岡県浜松市東区大瀬町752", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.760651, "lon": 137.76319, "source_lg": null}
+{"id": "033011", "variant": "former_name", "input": "静岡県浜松市東区上西町853-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.723491, "lon": 137.759187, "source_lg": null}
+{"id": "033012", "variant": "former_name", "input": "静岡県浜松市東区植松町53-4", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.710096, "lon": 137.754391, "source_lg": null}
+{"id": "033013", "variant": "former_name", "input": "静岡県浜松市西区舞阪町舞阪5372", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.685542, "lon": 137.622657, "source_lg": null}
+{"id": "033014", "variant": "former_name", "input": "静岡県浜松市西区大人見町12-654", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.733463, "lon": 137.647929, "source_lg": null}
+{"id": "033015", "variant": "former_name", "input": "静岡県浜松市南区三島町1230", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.689415, "lon": 137.747834, "source_lg": null}
+{"id": "033016", "variant": "former_name", "input": "静岡県浜松市南区下江町522", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.68067, "lon": 137.773306, "source_lg": null}
+{"id": "033017", "variant": "former_name", "input": "静岡県浜松市南区高塚町2312-16", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.68637, "lon": 137.683791, "source_lg": null}
+{"id": "033018", "variant": "former_name", "input": "静岡県浜松市南区三和町782", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701037, "lon": 137.772748, "source_lg": null}
+{"id": "033019", "variant": "former_name", "input": "静岡県浜松市南区若林町2658-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.693717, "lon": 137.701631, "source_lg": null}
+{"id": "033020", "variant": "former_name", "input": "静岡県浜松市浜北区小松3221", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.78268, "lon": 137.770703, "source_lg": null}
+{"id": "033021", "variant": "former_name", "input": "静岡県浜松市浜北区貴布祢2668", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.800374, "lon": 137.782844, "source_lg": null}
+{"id": "033022", "variant": "former_name", "input": "静岡県浜松市浜北区於呂3087-2", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.823397, "lon": 137.799738, "source_lg": null}
+{"id": "033023", "variant": "former_name", "input": "静岡県浜松市浜北区新原2669", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.815338, "lon": 137.77393, "source_lg": null}
+{"id": "033024", "variant": "former_name", "input": "静岡県浜松市浜北区中瀬673", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.809664, "lon": 137.806798, "source_lg": null}
+{"id": "033025", "variant": "former_name", "input": "静岡県浜松市浜北区小松1285-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.792619, "lon": 137.771564, "source_lg": null}
+{"id": "033026", "variant": "former_name", "input": "静岡県浜松市浜北区中瀬2308", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.830053, "lon": 137.808524, "source_lg": null}
+{"id": "033027", "variant": "former_name", "input": "静岡県浜松市天竜区大谷111-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.8724, "lon": 137.816796, "source_lg": null}
+{"id": "033028", "variant": "former_name", "input": "静岡県浜松市天竜区山東3577", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.870509, "lon": 137.825868, "source_lg": null}
+{"id": "033029", "variant": "former_name", "input": "静岡県浜松市中区和合北1-2-37", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.736523, "lon": 137.722329, "source_lg": null}
+{"id": "033030", "variant": "former_name", "input": "静岡県浜松市中区和合町220-1280", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.74223, "lon": 137.708259, "source_lg": null}
+{"id": "033031", "variant": "former_name", "input": "静岡県浜松市東区有玉南町2013", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.749525, "lon": 137.746233, "source_lg": null}
+{"id": "033032", "variant": "former_name", "input": "静岡県浜松市東区大蒲町95-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.71505, "lon": 137.76658, "source_lg": null}
+{"id": "033033", "variant": "former_name", "input": "静岡県浜松市東区市野町1084", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.751251, "lon": 137.778741, "source_lg": null}
+{"id": "033034", "variant": "former_name", "input": "静岡県浜松市東区薬新町315-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.721984, "lon": 137.785733, "source_lg": null}
+{"id": "033035", "variant": "former_name", "input": "静岡県浜松市東区大瀬町2050", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.75913, "lon": 137.775714, "source_lg": null}
+{"id": "033036", "variant": "former_name", "input": "静岡県浜松市北区都田町6497-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.82438, "lon": 137.71513, "source_lg": null}
+{"id": "033037", "variant": "former_name", "input": "静岡県浜松市浜北区寺島2889-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.786704, "lon": 137.794252, "source_lg": null}
+{"id": "033038", "variant": "former_name", "input": "静岡県浜松市浜北区根堅2596-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.853047, "lon": 137.801195, "source_lg": null}
+{"id": "033039", "variant": "former_name", "input": "静岡県浜松市浜北区内野5221-5", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.796714, "lon": 137.741904, "source_lg": null}
+{"id": "033040", "variant": "former_name", "input": "静岡県浜松市浜北区平口160", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.800722, "lon": 137.763078, "source_lg": null}
+{"id": "033041", "variant": "former_name", "input": "静岡県浜松市中区小豆餅4-18-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.754464, "lon": 137.73, "source_lg": null}
+{"id": "033042", "variant": "former_name", "input": "静岡県浜松市中区城北2-25-43", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.724192, "lon": 137.723572, "source_lg": null}
+{"id": "033043", "variant": "former_name", "input": "静岡県浜松市中区富塚町3657-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728519, "lon": 137.696506, "source_lg": null}
+{"id": "033044", "variant": "former_name", "input": "静岡県浜松市北区三幸町159-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.797157, "lon": 137.714792, "source_lg": null}
+{"id": "033045", "variant": "former_name", "input": "静岡県浜松市浜北区平口1973", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.794543, "lon": 137.768425, "source_lg": null}
+{"id": "033046", "variant": "former_name", "input": "静岡県浜松市東区篠ケ瀬町580-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.727623, "lon": 137.777946, "source_lg": null}
+{"id": "033047", "variant": "former_name", "input": "静岡県浜松市西区雄踏町宇布見7430-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.704761, "lon": 137.631369, "source_lg": null}
+{"id": "033048", "variant": "former_name", "input": "静岡県浜松市浜北区於呂2739", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.838196, "lon": 137.796347, "source_lg": null}
+{"id": "033049", "variant": "former_name", "input": "静岡県浜松市中区尾張町127-7", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.711896, "lon": 137.730756, "source_lg": null}
+{"id": "033050", "variant": "former_name", "input": "静岡県浜松市中区高丘北2-25-21", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.761728, "lon": 137.704511, "source_lg": null}
+{"id": "033051", "variant": "former_name", "input": "静岡県浜松市西区湖東町5826-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.761226, "lon": 137.685207, "source_lg": null}
+{"id": "033052", "variant": "former_name", "input": "静岡県浜松市中区西伊場町77-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.69767, "lon": 137.7052, "source_lg": null}
+{"id": "033053", "variant": "former_name", "input": "静岡県浜松市中区上島1-26-14", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.739343, "lon": 137.743156, "source_lg": null}
+{"id": "033054", "variant": "former_name", "input": "静岡県浜松市中区下池川町27-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.715961, "lon": 137.729498, "source_lg": null}
+{"id": "033055", "variant": "former_name", "input": "静岡県浜松市南区新橋町917", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.682395, "lon": 137.706262, "source_lg": null}
+{"id": "033056", "variant": "former_name", "input": "静岡県浜松市中区高丘東3-54-18", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.763518, "lon": 137.717254, "source_lg": null}
+{"id": "033057", "variant": "former_name", "input": "静岡県浜松市中区中島2-7-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701594, "lon": 137.746595, "source_lg": null}
+{"id": "033058", "variant": "former_name", "input": "静岡県浜松市東区中田町776", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.736658, "lon": 137.760342, "source_lg": null}
+{"id": "033059", "variant": "former_name", "input": "静岡県浜松市西区篠原町9376-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.687655, "lon": 137.658447, "source_lg": null}
+{"id": "033060", "variant": "former_name", "input": "静岡県浜松市中区布橋3-2-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.719221, "lon": 137.71412, "source_lg": null}
+{"id": "033061", "variant": "former_name", "input": "静岡県浜松市中区鴨江町70-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.706271, "lon": 137.721173, "source_lg": null}
+{"id": "033062", "variant": "former_name", "input": "静岡県浜松市中区中央2-2-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.71164, "lon": 137.738395, "source_lg": null}
+{"id": "033063", "variant": "former_name", "input": "静岡県浜松市中区東伊場2-5-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.698532, "lon": 137.7217, "source_lg": null}
+{"id": "033064", "variant": "former_name", "input": "静岡県浜松市中区向宿3-8-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701505, "lon": 137.752583, "source_lg": null}
+{"id": "033065", "variant": "former_name", "input": "静岡県浜松市中区龍禅寺町844", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.698006, "lon": 137.743313, "source_lg": null}
+{"id": "033066", "variant": "former_name", "input": "静岡県浜松市中区布橋1-9-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.720528, "lon": 137.720132, "source_lg": null}
+{"id": "033067", "variant": "former_name", "input": "静岡県浜松市中区佐藤2-32-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.715061, "lon": 137.748594, "source_lg": null}
+{"id": "033068", "variant": "former_name", "input": "静岡県浜松市中区広沢2-51-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.716635, "lon": 137.713463, "source_lg": null}
+{"id": "033069", "variant": "former_name", "input": "静岡県浜松市中区曳馬1-1-35", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.726771, "lon": 137.738557, "source_lg": null}
+{"id": "033070", "variant": "former_name", "input": "静岡県浜松市中区幸5-12-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.746869, "lon": 137.725828, "source_lg": null}
+{"id": "033071", "variant": "former_name", "input": "静岡県浜松市中区富塚町1803", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.726293, "lon": 137.703193, "source_lg": null}
+{"id": "033072", "variant": "former_name", "input": "静岡県浜松市南区寺脇町431", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.68188, "lon": 137.744899, "source_lg": null}
+{"id": "033073", "variant": "former_name", "input": "静岡県浜松市東区神立町5", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.716707, "lon": 137.757982, "source_lg": null}
+{"id": "033074", "variant": "former_name", "input": "静岡県浜松市中区西浅田2-12-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.692066, "lon": 137.726821, "source_lg": null}
+{"id": "033075", "variant": "former_name", "input": "静岡県浜松市中区上島1-21-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.735957, "lon": 137.740802, "source_lg": null}
+{"id": "033076", "variant": "former_name", "input": "静岡県浜松市中区西伊場町4-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.703115, "lon": 137.709038, "source_lg": null}
+{"id": "033077", "variant": "former_name", "input": "静岡県浜松市南区新橋町777", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.683028, "lon": 137.703036, "source_lg": null}
+{"id": "033078", "variant": "former_name", "input": "静岡県浜松市南区東町333", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.676116, "lon": 137.782454, "source_lg": null}
+{"id": "033079", "variant": "former_name", "input": "静岡県浜松市中区船越町29-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.716986, "lon": 137.743304, "source_lg": null}
+{"id": "033080", "variant": "former_name", "input": "静岡県浜松市中区住吉1-23-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728657, "lon": 137.7236, "source_lg": null}
+{"id": "033081", "variant": "former_name", "input": "静岡県浜松市東区薬師町273-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.724918, "lon": 137.782917, "source_lg": null}
+{"id": "033082", "variant": "former_name", "input": "静岡県浜松市東区天王町1351", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.741128, "lon": 137.770886, "source_lg": null}
+{"id": "033083", "variant": "former_name", "input": "静岡県浜松市東区豊西町1551", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.767303, "lon": 137.804165, "source_lg": null}
+{"id": "033084", "variant": "former_name", "input": "静岡県浜松市東区笠井町1050", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.772307, "lon": 137.795329, "source_lg": null}
+{"id": "033085", "variant": "former_name", "input": "静岡県浜松市東区中野町427-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.730143, "lon": 137.793169, "source_lg": null}
+{"id": "033086", "variant": "former_name", "input": "静岡県浜松市南区芳川町206-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.692483, "lon": 137.76706, "source_lg": null}
+{"id": "033087", "variant": "former_name", "input": "静岡県浜松市南区飯田町978", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.706393, "lon": 137.774149, "source_lg": null}
+{"id": "033088", "variant": "former_name", "input": "静岡県浜松市中区花川町781", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.774453, "lon": 137.685958, "source_lg": null}
+{"id": "033089", "variant": "former_name", "input": "静岡県浜松市北区三方原町682", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.778096, "lon": 137.71223, "source_lg": null}
+{"id": "033090", "variant": "former_name", "input": "静岡県浜松市北区豊岡町22", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.787266, "lon": 137.719952, "source_lg": null}
+{"id": "033091", "variant": "former_name", "input": "静岡県浜松市北区都田町5609-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.82754, "lon": 137.717245, "source_lg": null}
+{"id": "033092", "variant": "former_name", "input": "静岡県浜松市西区神ケ谷町3490", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.727719, "lon": 137.669268, "source_lg": null}
+{"id": "033093", "variant": "former_name", "input": "静岡県浜松市西区入野町8757", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.699446, "lon": 137.686324, "source_lg": null}
+{"id": "033094", "variant": "former_name", "input": "静岡県浜松市東区積志町1497-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.765875, "lon": 137.760469, "source_lg": null}
+{"id": "033095", "variant": "former_name", "input": "静岡県浜松市西区伊左地町5644", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.745399, "lon": 137.655468, "source_lg": null}
+{"id": "033096", "variant": "former_name", "input": "静岡県浜松市西区湖東町2005", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.76664, "lon": 137.666808, "source_lg": null}
+{"id": "033097", "variant": "former_name", "input": "静岡県浜松市北区都田町8756", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.812396, "lon": 137.736587, "source_lg": null}
+{"id": "033098", "variant": "former_name", "input": "静岡県浜松市西区篠原町10300", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.683811, "lon": 137.656405, "source_lg": null}
+{"id": "033099", "variant": "former_name", "input": "静岡県浜松市中区高丘東3-51-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.762772, "lon": 137.716673, "source_lg": null}
+{"id": "033100", "variant": "former_name", "input": "静岡県浜松市西区村櫛町2551", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728321, "lon": 137.595159, "source_lg": null}
+{"id": "033101", "variant": "former_name", "input": "静岡県浜松市中区泉1-16-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.73875, "lon": 137.721035, "source_lg": null}
+{"id": "033102", "variant": "former_name", "input": "静岡県浜松市東区大瀬町2218", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.756705, "lon": 137.77289, "source_lg": null}
+{"id": "033103", "variant": "former_name", "input": "静岡県浜松市南区白羽町2512", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.667716, "lon": 137.725836, "source_lg": null}
+{"id": "033104", "variant": "former_name", "input": "静岡県浜松市東区中郡町915", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.770851, "lon": 137.773985, "source_lg": null}
+{"id": "033105", "variant": "former_name", "input": "静岡県浜松市東区市野町2715", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.746716, "lon": 137.765786, "source_lg": null}
+{"id": "033106", "variant": "former_name", "input": "静岡県浜松市中区佐鳴台3-31-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.706063, "lon": 137.69675, "source_lg": null}
+{"id": "033107", "variant": "former_name", "input": "静岡県浜松市中区高丘北3-15-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.765301, "lon": 137.698557, "source_lg": null}
+{"id": "033108", "variant": "former_name", "input": "静岡県浜松市中区富塚町3541", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728862, "lon": 137.70014, "source_lg": null}
+{"id": "033109", "variant": "former_name", "input": "静岡県浜松市南区頭陀寺町1046-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.698955, "lon": 137.760976, "source_lg": null}
+{"id": "033110", "variant": "former_name", "input": "静岡県浜松市東区有玉南町614", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.758111, "lon": 137.750094, "source_lg": null}
+{"id": "033111", "variant": "former_name", "input": "静岡県浜松市北区初生町1001-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.768935, "lon": 137.727557, "source_lg": null}
+{"id": "033112", "variant": "former_name", "input": "静岡県浜松市西区西鴨江町1106", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.703335, "lon": 137.664274, "source_lg": null}
+{"id": "033113", "variant": "former_name", "input": "静岡県浜松市東区安間町437-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.720962, "lon": 137.789137, "source_lg": null}
+{"id": "033114", "variant": "former_name", "input": "静岡県浜松市中区葵西2-25-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.767923, "lon": 137.7107, "source_lg": null}
+{"id": "033115", "variant": "former_name", "input": "静岡県浜松市東区有玉西町816", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.755345, "lon": 137.733684, "source_lg": null}
+{"id": "033116", "variant": "former_name", "input": "静岡県浜松市西区大平台3-6-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714794, "lon": 137.680815, "source_lg": null}
+{"id": "033117", "variant": "former_name", "input": "静岡県浜松市南区西島町1148-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.66256, "lon": 137.768383, "source_lg": null}
+{"id": "033118", "variant": "former_name", "input": "静岡県浜松市西区庄内町100", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.754938, "lon": 137.608661, "source_lg": null}
+{"id": "033119", "variant": "former_name", "input": "静岡県浜松市天竜区二俣町二俣867-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.864534, "lon": 137.812623, "source_lg": null}
+{"id": "033120", "variant": "former_name", "input": "静岡県浜松市天竜区西藤平1318", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.912326, "lon": 137.763537, "source_lg": null}
+{"id": "033121", "variant": "former_name", "input": "静岡県浜松市天竜区両島762", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.882938, "lon": 137.792072, "source_lg": null}
+{"id": "033122", "variant": "former_name", "input": "静岡県浜松市天竜区熊2153", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.959687, "lon": 137.73314, "source_lg": null}
+{"id": "033123", "variant": "former_name", "input": "静岡県浜松市天竜区横山町547", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.942758, "lon": 137.81755, "source_lg": null}
+{"id": "033124", "variant": "former_name", "input": "静岡県浜松市天竜区山東2550", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.877786, "lon": 137.824607, "source_lg": null}
+{"id": "033125", "variant": "former_name", "input": "静岡県浜松市浜北区小松1450", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.789669, "lon": 137.768576, "source_lg": null}
+{"id": "033126", "variant": "former_name", "input": "静岡県浜松市浜北区横須賀800", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.792438, "lon": 137.792124, "source_lg": null}
+{"id": "033127", "variant": "former_name", "input": "静岡県浜松市浜北区善地1546", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.792484, "lon": 137.81072, "source_lg": null}
+{"id": "033128", "variant": "former_name", "input": "静岡県浜松市浜北区中瀬3648-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.824023, "lon": 137.810901, "source_lg": null}
+{"id": "033129", "variant": "former_name", "input": "静岡県浜松市浜北区於呂2790", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.837582, "lon": 137.797266, "source_lg": null}
+{"id": "033130", "variant": "former_name", "input": "静岡県浜松市浜北区宮口262", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.829539, "lon": 137.770897, "source_lg": null}
+{"id": "033131", "variant": "former_name", "input": "静岡県浜松市浜北区新原2331", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.817937, "lon": 137.78052, "source_lg": null}
+{"id": "033132", "variant": "former_name", "input": "静岡県浜松市浜北区西美薗1588", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.802633, "lon": 137.795902, "source_lg": null}
+{"id": "033133", "variant": "former_name", "input": "静岡県浜松市浜北区内野1702", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.78466, "lon": 137.757343, "source_lg": null}
+{"id": "033134", "variant": "former_name", "input": "静岡県浜松市浜北区寺島3010", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.784361, "lon": 137.791355, "source_lg": null}
+{"id": "033135", "variant": "former_name", "input": "静岡県浜松市浜北区貴布祢2646", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.801169, "lon": 137.783549, "source_lg": null}
+{"id": "033136", "variant": "former_name", "input": "静岡県浜松市天竜区春野町堀之内993-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.959552, "lon": 137.89757, "source_lg": null}
+{"id": "033137", "variant": "former_name", "input": "静岡県浜松市天竜区春野町気田603-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.003891, "lon": 137.905929, "source_lg": null}
+{"id": "033138", "variant": "former_name", "input": "静岡県浜松市天竜区佐久間町半場50-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.087935, "lon": 137.803204, "source_lg": null}
+{"id": "033139", "variant": "former_name", "input": "静岡県浜松市天竜区佐久間町浦川2819", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.055111, "lon": 137.764763, "source_lg": null}
+{"id": "033140", "variant": "former_name", "input": "静岡県浜松市天竜区水窪町奥領家2697-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.160878, "lon": 137.868457, "source_lg": null}
+{"id": "033141", "variant": "former_name", "input": "静岡県浜松市南区若林町1748", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.689486, "lon": 137.695375, "source_lg": null}
+{"id": "033142", "variant": "former_name", "input": "静岡県浜松市西区舞阪町舞阪76", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.685959, "lon": 137.61081, "source_lg": null}
+{"id": "033143", "variant": "former_name", "input": "静岡県浜松市西区雄踏町宇布見7997-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701722, "lon": 137.632737, "source_lg": null}
+{"id": "033144", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀11529-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.81054, "lon": 137.654511, "source_lg": null}
+{"id": "033145", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀9994-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.801931, "lon": 137.624153, "source_lg": null}
+{"id": "033146", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀3241", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.78727, "lon": 137.643066, "source_lg": null}
+{"id": "033147", "variant": "former_name", "input": "静岡県浜松市北区細江町中川2553", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.809113, "lon": 137.677424, "source_lg": null}
+{"id": "033148", "variant": "former_name", "input": "静岡県浜松市北区引佐町井伊谷680", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.832287, "lon": 137.672439, "source_lg": null}
+{"id": "033149", "variant": "former_name", "input": "静岡県浜松市北区引佐町金指1369", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.821346, "lon": 137.678378, "source_lg": null}
+{"id": "033150", "variant": "former_name", "input": "静岡県浜松市北区引佐町奥山1101-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.845386, "lon": 137.628874, "source_lg": null}
+{"id": "033151", "variant": "former_name", "input": "静岡県浜松市北区引佐町四方浄134-6", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.899041, "lon": 137.655523, "source_lg": null}
+{"id": "033152", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町都筑2266-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.793382, "lon": 137.581839, "source_lg": null}
+{"id": "033153", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町三ヶ日301-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.809182, "lon": 137.553558, "source_lg": null}
+{"id": "033154", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町平山200", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.824744, "lon": 137.536964, "source_lg": null}
+{"id": "033155", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町下尾奈1431", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.784992, "lon": 137.539282, "source_lg": null}
+{"id": "033156", "variant": "former_name", "input": "静岡県浜松市中区海老塚2-5-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.699766, "lon": 137.732186, "source_lg": null}
+{"id": "033157", "variant": "former_name", "input": "静岡県浜松市中区松城町108-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713355, "lon": 137.722975, "source_lg": null}
+{"id": "033158", "variant": "former_name", "input": "静岡県浜松市北区三方原町3453", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.792017, "lon": 137.696185, "source_lg": null}
+{"id": "033159", "variant": "former_name", "input": "静岡県浜松市中区布橋3-2-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.719908, "lon": 137.71274, "source_lg": null}
+{"id": "033160", "variant": "former_name", "input": "静岡県浜松市南区飯田町1038", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.703067, "lon": 137.77392, "source_lg": null}
+{"id": "033161", "variant": "former_name", "input": "静岡県浜松市中区鴨江2-17-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.70266, "lon": 137.715167, "source_lg": null}
+{"id": "033162", "variant": "former_name", "input": "静岡県浜松市中区龍禅寺町706", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.69432, "lon": 137.73821, "source_lg": null}
+{"id": "033163", "variant": "former_name", "input": "静岡県浜松市中区文丘町28-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.727026, "lon": 137.714264, "source_lg": null}
+{"id": "033164", "variant": "former_name", "input": "静岡県浜松市中区松城町108-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.713292, "lon": 137.722977, "source_lg": null}
+{"id": "033165", "variant": "former_name", "input": "静岡県浜松市中区野口町1533", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.719031, "lon": 137.741365, "source_lg": null}
+{"id": "033166", "variant": "former_name", "input": "静岡県浜松市中区曳馬4-2-15", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.729957, "lon": 137.741379, "source_lg": null}
+{"id": "033167", "variant": "former_name", "input": "静岡県浜松市南区新橋町748", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.683389, "lon": 137.701427, "source_lg": null}
+{"id": "033168", "variant": "former_name", "input": "静岡県浜松市中区神田町123", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.688209, "lon": 137.726614, "source_lg": null}
+{"id": "033169", "variant": "former_name", "input": "静岡県浜松市中区蜆塚2-15-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714056, "lon": 137.708575, "source_lg": null}
+{"id": "033170", "variant": "former_name", "input": "静岡県浜松市東区龍光町43", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.721871, "lon": 137.787605, "source_lg": null}
+{"id": "033171", "variant": "former_name", "input": "静岡県浜松市東区市野町1405-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.743393, "lon": 137.778042, "source_lg": null}
+{"id": "033172", "variant": "former_name", "input": "静岡県浜松市東区笠井町1055", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.771221, "lon": 137.792734, "source_lg": null}
+{"id": "033173", "variant": "former_name", "input": "静岡県浜松市南区芳川町80", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.693729, "lon": 137.765007, "source_lg": null}
+{"id": "033174", "variant": "former_name", "input": "静岡県浜松市北区初生町1305", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.768864, "lon": 137.716021, "source_lg": null}
+{"id": "033175", "variant": "former_name", "input": "静岡県浜松市北区都田町5824-18", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.832755, "lon": 137.720649, "source_lg": null}
+{"id": "033176", "variant": "former_name", "input": "静岡県浜松市西区大久保町6633", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.725143, "lon": 137.66543, "source_lg": null}
+{"id": "033177", "variant": "former_name", "input": "静岡県浜松市西区入野町17059", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701805, "lon": 137.676751, "source_lg": null}
+{"id": "033178", "variant": "former_name", "input": "静岡県浜松市東区有玉北町1200", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.765265, "lon": 137.757712, "source_lg": null}
+{"id": "033179", "variant": "former_name", "input": "静岡県浜松市西区佐浜町4540", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.756174, "lon": 137.658214, "source_lg": null}
+{"id": "033180", "variant": "former_name", "input": "静岡県浜松市西区篠原町20200-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.682103, "lon": 137.657519, "source_lg": null}
+{"id": "033181", "variant": "former_name", "input": "静岡県浜松市東区丸塚町1050", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.726047, "lon": 137.754916, "source_lg": null}
+{"id": "033182", "variant": "former_name", "input": "静岡県浜松市中区住吉5-19-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.735502, "lon": 137.73032, "source_lg": null}
+{"id": "033183", "variant": "former_name", "input": "静岡県浜松市西区庄内町100", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.75492, "lon": 137.608552, "source_lg": null}
+{"id": "033184", "variant": "former_name", "input": "静岡県浜松市南区江之島町1266-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.663569, "lon": 137.753546, "source_lg": null}
+{"id": "033185", "variant": "former_name", "input": "静岡県浜松市中区高丘北1-15-20", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.76011, "lon": 137.707748, "source_lg": null}
+{"id": "033186", "variant": "former_name", "input": "静岡県浜松市東区中郡町897", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.769058, "lon": 137.774977, "source_lg": null}
+{"id": "033187", "variant": "former_name", "input": "静岡県浜松市北区豊岡町196", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.788995, "lon": 137.719827, "source_lg": null}
+{"id": "033188", "variant": "former_name", "input": "静岡県浜松市南区西町700", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.680794, "lon": 137.777291, "source_lg": null}
+{"id": "033189", "variant": "former_name", "input": "静岡県浜松市中区佐鳴台3-32-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.70674, "lon": 137.698462, "source_lg": null}
+{"id": "033190", "variant": "former_name", "input": "静岡県浜松市中区富塚町460-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.722418, "lon": 137.703184, "source_lg": null}
+{"id": "033191", "variant": "former_name", "input": "静岡県浜松市東区有玉西町816", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.755402, "lon": 137.733669, "source_lg": null}
+{"id": "033192", "variant": "former_name", "input": "静岡県浜松市中区西伊場町3-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701279, "lon": 137.709519, "source_lg": null}
+{"id": "033193", "variant": "former_name", "input": "静岡県浜松市天竜区二俣町鹿島525", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.84997, "lon": 137.809213, "source_lg": null}
+{"id": "033194", "variant": "former_name", "input": "静岡県浜松市天竜区山東2701", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.875506, "lon": 137.823089, "source_lg": null}
+{"id": "033195", "variant": "former_name", "input": "静岡県浜松市浜北区小松1762-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.790484, "lon": 137.762954, "source_lg": null}
+{"id": "033196", "variant": "former_name", "input": "静岡県浜松市浜北区西美薗279-2", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.796873, "lon": 137.790425, "source_lg": null}
+{"id": "033197", "variant": "former_name", "input": "静岡県浜松市浜北区於呂2961", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.828542, "lon": 137.800708, "source_lg": null}
+{"id": "033198", "variant": "former_name", "input": "静岡県浜松市浜北区宮口4847", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.834334, "lon": 137.768553, "source_lg": null}
+{"id": "033199", "variant": "former_name", "input": "静岡県浜松市浜北区上善地317", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.799224, "lon": 137.808393, "source_lg": null}
+{"id": "033200", "variant": "former_name", "input": "静岡県浜松市天竜区春野町気田380-2", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.002201, "lon": 137.906167, "source_lg": null}
+{"id": "033201", "variant": "former_name", "input": "静岡県浜松市天竜区佐久間町中部683-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.079294, "lon": 137.796055, "source_lg": null}
+{"id": "033202", "variant": "former_name", "input": "静岡県浜松市天竜区水窪町地頭方366", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.154143, "lon": 137.87065, "source_lg": null}
+{"id": "033203", "variant": "former_name", "input": "静岡県浜松市南区増楽町700", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.68766, "lon": 137.690864, "source_lg": null}
+{"id": "033204", "variant": "former_name", "input": "静岡県浜松市西区舞阪町舞阪4601", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.679496, "lon": 137.615609, "source_lg": null}
+{"id": "033205", "variant": "former_name", "input": "静岡県浜松市西区雄踏町宇布見9595", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.694145, "lon": 137.633192, "source_lg": null}
+{"id": "033206", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀7300-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.807627, "lon": 137.646369, "source_lg": null}
+{"id": "033207", "variant": "former_name", "input": "静岡県浜松市北区引佐町四方浄134-6", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.89903, "lon": 137.655613, "source_lg": null}
+{"id": "033208", "variant": "former_name", "input": "静岡県浜松市北区引佐町横尾426", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.834851, "lon": 137.6623, "source_lg": null}
+{"id": "033209", "variant": "former_name", "input": "静岡県浜松市北区三ヶ日町宇志1320-5", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.798502, "lon": 137.555863, "source_lg": null}
+{"id": "033210", "variant": "former_name", "input": "静岡県浜松市中区佐藤3-20-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714414, "lon": 137.751642, "source_lg": null}
+{"id": "033211", "variant": "former_name", "input": "静岡県浜松市中区松城町207-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.709741, "lon": 137.723267, "source_lg": null}
+{"id": "033212", "variant": "former_name", "input": "静岡県浜松市中区向宿2-20-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.705211, "lon": 137.752773, "source_lg": null}
+{"id": "033213", "variant": "former_name", "input": "静岡県浜松市東区半田山3-30-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.774131, "lon": 137.741076, "source_lg": null}
+{"id": "033214", "variant": "former_name", "input": "静岡県浜松市中区高林1-17-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728087, "lon": 137.729282, "source_lg": null}
+{"id": "033215", "variant": "former_name", "input": "静岡県浜松市中区下池川町34-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.718928, "lon": 137.727517, "source_lg": null}
+{"id": "033216", "variant": "former_name", "input": "静岡県浜松市北区三方原町3453", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.792194, "lon": 137.695956, "source_lg": null}
+{"id": "033217", "variant": "former_name", "input": "静岡県浜松市中区広沢1-30-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.718369, "lon": 137.716876, "source_lg": null}
+{"id": "033218", "variant": "former_name", "input": "静岡県浜松市中区西伊場町3-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.70132, "lon": 137.709682, "source_lg": null}
+{"id": "033219", "variant": "former_name", "input": "静岡県浜松市南区米津町961", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.677552, "lon": 137.717651, "source_lg": null}
+{"id": "033220", "variant": "former_name", "input": "静岡県浜松市西区大人見町3600", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.732805, "lon": 137.66069, "source_lg": null}
+{"id": "033221", "variant": "former_name", "input": "静岡県浜松市北区初生町1150", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.773042, "lon": 137.730342, "source_lg": null}
+{"id": "033222", "variant": "former_name", "input": "静岡県浜松市中区住吉5-16-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.73634, "lon": 137.72705, "source_lg": null}
+{"id": "033223", "variant": "former_name", "input": "静岡県浜松市中区文丘町4-11", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.723593, "lon": 137.712033, "source_lg": null}
+{"id": "033224", "variant": "former_name", "input": "静岡県浜松市浜北区西美薗2939-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.805626, "lon": 137.795705, "source_lg": null}
+{"id": "033225", "variant": "former_name", "input": "静岡県浜松市東区笠井新田町1442", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.755651, "lon": 137.782502, "source_lg": null}
+{"id": "033226", "variant": "former_name", "input": "静岡県浜松市浜北区新原4175-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.808358, "lon": 137.76473, "source_lg": null}
+{"id": "033227", "variant": "former_name", "input": "静岡県浜松市西区馬郡町3791-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.692196, "lon": 137.626663, "source_lg": null}
+{"id": "033228", "variant": "former_name", "input": "静岡県浜松市南区江之島町630-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.665785, "lon": 137.753494, "source_lg": null}
+{"id": "033229", "variant": "former_name", "input": "静岡県浜松市西区大平台4-25-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.710339, "lon": 137.67488, "source_lg": null}
+{"id": "033230", "variant": "former_name", "input": "静岡県浜松市天竜区二俣町二俣601", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.869621, "lon": 137.812832, "source_lg": null}
+{"id": "033231", "variant": "former_name", "input": "静岡県浜松市天竜区春野町堀之内284", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.958677, "lon": 137.88874, "source_lg": null}
+{"id": "033232", "variant": "former_name", "input": "静岡県浜松市北区引佐町金指1428", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.818195, "lon": 137.677982, "source_lg": null}
+{"id": "033233", "variant": "former_name", "input": "静岡県浜松市天竜区佐久間町中部683-1", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 35.079401, "lon": 137.795742, "source_lg": null}
+{"id": "033234", "variant": "former_name", "input": "静岡県浜松市中区広沢1-21-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.716436, "lon": 137.718162, "source_lg": null}
+{"id": "033235", "variant": "former_name", "input": "静岡県浜松市中区高林1-17-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728036, "lon": 137.729289, "source_lg": null}
+{"id": "033236", "variant": "former_name", "input": "静岡県浜松市中区佐藤3-20-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714364, "lon": 137.751655, "source_lg": null}
+{"id": "033237", "variant": "former_name", "input": "静岡県浜松市中区松城町207-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.709713, "lon": 137.723353, "source_lg": null}
+{"id": "033238", "variant": "former_name", "input": "静岡県浜松市中区下池川町34-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.718961, "lon": 137.727404, "source_lg": null}
+{"id": "033239", "variant": "former_name", "input": "静岡県浜松市中区向宿2-20-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.705187, "lon": 137.752839, "source_lg": null}
+{"id": "033240", "variant": "former_name", "input": "静岡県浜松市中区蜆塚3-14-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714926, "lon": 137.70626, "source_lg": null}
+{"id": "033241", "variant": "former_name", "input": "静岡県浜松市東区半田山3-30-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.774111, "lon": 137.74117, "source_lg": null}
+{"id": "033242", "variant": "former_name", "input": "静岡県浜松市北区三方原町3453", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.792259, "lon": 137.696031, "source_lg": null}
+{"id": "033243", "variant": "former_name", "input": "静岡県浜松市西区和地町5835", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.758764, "lon": 137.652833, "source_lg": null}
+{"id": "033244", "variant": "former_name", "input": "静岡県浜松市北区三幸町421", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.803643, "lon": 137.728324, "source_lg": null}
+{"id": "033245", "variant": "former_name", "input": "静岡県浜松市中区葵西5-9-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.77567, "lon": 137.70339, "source_lg": null}
+{"id": "033246", "variant": "former_name", "input": "静岡県浜松市浜北区西中瀬2-3-1", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.820576, "lon": 137.803712, "source_lg": null}
+{"id": "033247", "variant": "former_name", "input": "静岡県浜松市中区幸3-25-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.742945, "lon": 137.732312, "source_lg": null}
+{"id": "033248", "variant": "former_name", "input": "静岡県浜松市北区根洗町597-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.790755, "lon": 137.685896, "source_lg": null}
+{"id": "033249", "variant": "former_name", "input": "静岡県浜松市天竜区渡ヶ島201-2", "valid": true, "gold_lg": "221406", "gold_any": ["221406"], "lat": 34.857737, "lon": 137.798217, "source_lg": null}
+{"id": "033250", "variant": "former_name", "input": "静岡県浜松市南区江之島町1266-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.662832, "lon": 137.754627, "source_lg": null}
+{"id": "033251", "variant": "former_name", "input": "静岡県浜松市中区住吉5-16-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.73685, "lon": 137.72681, "source_lg": null}
+{"id": "033252", "variant": "former_name", "input": "静岡県浜松市北区細江町広岡1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.812918, "lon": 137.663756, "source_lg": null}
+{"id": "033253", "variant": "former_name", "input": "静岡県浜松市中区佐鳴台5-8-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.714302, "lon": 137.699452, "source_lg": null}
+{"id": "033254", "variant": "former_name", "input": "静岡県浜松市中区東伊場1-1-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.701303, "lon": 137.723809, "source_lg": null}
+{"id": "033255", "variant": "former_name", "input": "静岡県浜松市中区鴨江1-2-4", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.70388, "lon": 137.724305, "source_lg": null}
+{"id": "033256", "variant": "former_name", "input": "静岡県浜松市東区大瀬町1517-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.765303, "lon": 137.771138, "source_lg": null}
+{"id": "033257", "variant": "former_name", "input": "静岡県浜松市中区広沢1-2-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.712173, "lon": 137.719571, "source_lg": null}
+{"id": "033258", "variant": "former_name", "input": "静岡県浜松市中区板屋町101-11", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.707943, "lon": 137.733908, "source_lg": null}
+{"id": "033259", "variant": "former_name", "input": "静岡県浜松市中区板屋町101-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.707958, "lon": 137.733602, "source_lg": null}
+{"id": "033260", "variant": "former_name", "input": "静岡県浜松市中区鴨江2-11-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.705168, "lon": 137.713678, "source_lg": null}
+{"id": "033261", "variant": "former_name", "input": "静岡県浜松市中区伝馬町311-2", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.705542, "lon": 137.727546, "source_lg": null}
+{"id": "033262", "variant": "former_name", "input": "静岡県浜松市中区中央3-10-31", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.707142, "lon": 137.740948, "source_lg": null}
+{"id": "033263", "variant": "former_name", "input": "静岡県浜松市中区板屋町101-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.707903, "lon": 137.733591, "source_lg": null}
+{"id": "033264", "variant": "former_name", "input": "静岡県浜松市中区中沢町80-14", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.72348, "lon": 137.731064, "source_lg": null}
+{"id": "033265", "variant": "former_name", "input": "静岡県浜松市中区北田町130-12", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.712482, "lon": 137.731122, "source_lg": null}
+{"id": "033266", "variant": "former_name", "input": "静岡県浜松市西区和地町5815", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.758021, "lon": 137.653505, "source_lg": null}
+{"id": "033267", "variant": "former_name", "input": "静岡県浜松市浜北区平口2000", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.795418, "lon": 137.769215, "source_lg": null}
+{"id": "033268", "variant": "former_name", "input": "静岡県浜松市中区板屋町101-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.70785, "lon": 137.7336, "source_lg": null}
+{"id": "033269", "variant": "former_name", "input": "静岡県浜松市中区海老塚1-5-7", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.700349, "lon": 137.730567, "source_lg": null}
+{"id": "033270", "variant": "former_name", "input": "静岡県浜松市浜北区貴布祢232-3", "valid": true, "gold_lg": "221392", "gold_any": ["221392"], "lat": 34.792462, "lon": 137.780214, "source_lg": null}
+{"id": "033271", "variant": "former_name", "input": "静岡県浜松市中区東田町36-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.708992, "lon": 137.733815, "source_lg": null}
+{"id": "033272", "variant": "former_name", "input": "静岡県浜松市中区中央3-10-31", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.707117, "lon": 137.740951, "source_lg": null}
+{"id": "033273", "variant": "former_name", "input": "静岡県浜松市中区北田町134-38", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.712154, "lon": 137.731533, "source_lg": null}
+{"id": "033274", "variant": "former_name", "input": "静岡県浜松市中区田町326-19", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.70796, "lon": 137.731787, "source_lg": null}
+{"id": "033275", "variant": "former_name", "input": "静岡県浜松市中区東田町36-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.708964, "lon": 137.733813, "source_lg": null}
+{"id": "033276", "variant": "former_name", "input": "静岡県浜松市北区三方原町3453", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.792605, "lon": 137.6923, "source_lg": null}
+{"id": "033277", "variant": "former_name", "input": "静岡県浜松市中区旭町6-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.706159, "lon": 137.733717, "source_lg": null}
+{"id": "033278", "variant": "former_name", "input": "静岡県浜松市中区寺島町285-24", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.699077, "lon": 137.743545, "source_lg": null}
+{"id": "033279", "variant": "former_name", "input": "静岡県浜松市中区寺島町200", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.699529, "lon": 137.739743, "source_lg": null}
+{"id": "033280", "variant": "former_name", "input": "静岡県浜松市中区新津町715", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.718778, "lon": 137.740341, "source_lg": null}
+{"id": "033281", "variant": "former_name", "input": "静岡県浜松市中区海老塚2-7-22", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.699209, "lon": 137.732024, "source_lg": null}
+{"id": "033282", "variant": "former_name", "input": "静岡県浜松市西区雄踏町宇布見9611-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.694367, "lon": 137.630695, "source_lg": null}
+{"id": "033283", "variant": "former_name", "input": "静岡県浜松市東区半田山2-24-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.769786, "lon": 137.735586, "source_lg": null}
+{"id": "033284", "variant": "former_name", "input": "静岡県浜松市中区中央3-10-8", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.707161, "lon": 137.740945, "source_lg": null}
+{"id": "033285", "variant": "former_name", "input": "静岡県浜松市北区細江町気賀694-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.809358, "lon": 137.653443, "source_lg": null}
+{"id": "033286", "variant": "former_name", "input": "静岡県浜松市東区半田山1-20-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.768881, "lon": 137.742679, "source_lg": null}
+{"id": "033287", "variant": "former_name", "input": "静岡県浜松市中央区中央2-1-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.712644, "lon": 137.738746, "source_lg": null}
+{"id": "033288", "variant": "former_name", "input": "静岡県浜松市西区呉松町1955-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.776744, "lon": 137.630005, "source_lg": null}
+{"id": "033289", "variant": "former_name", "input": "静岡県浜松市中区布橋3-2-3", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.720774, "lon": 137.713112, "source_lg": null}
+{"id": "033290", "variant": "former_name", "input": "静岡県浜松市北区三方原町3453", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.792642, "lon": 137.69237, "source_lg": null}
+{"id": "033291", "variant": "former_name", "input": "静岡県浜松市中区住吉2-3-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.728108, "lon": 137.727343, "source_lg": null}
+{"id": "033292", "variant": "former_name", "input": "静岡県浜松市中区城北3-5-1", "valid": true, "gold_lg": "221384", "gold_any": ["221384"], "lat": 34.725194, "lon": 137.716004, "source_lg": null}
+{"id": "033293", "variant": "former_name", "input": "静岡県浜松市浜北区都田町1230", "valid": true, "gold_lg": "221384", "gold_any": ["221384", "221392"], "lat": 34.814683, "lon": 137.708735, "source_lg": null}

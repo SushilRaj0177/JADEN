@@ -14,6 +14,8 @@ Variants built from each sampled address (gold label unchanged):
   town_only   prefecture and municipality removed (the hardest: must be deduced or abstained)
   noisy       real-world formatting noise: full-width digits, other dash characters,
               kanji numerals with 丁目/番/号 markers, の delimiters, stray spaces
+  former_name every school still listed under a Hamamatsu ward abolished on 2024-01-01
+              (浜松市中区 etc.); gold: the ward(s) its area became, per MIC
   romaji      the address in English order with Japan Post's official romanization
               ('3-2-1 Suehiro, Hirosaki-shi, Aomori'), where the town has one
 
@@ -71,6 +73,11 @@ def _kanji_number(n: int) -> str:
     if n:
         out += _KANJI_DIGITS[n]
     return out
+
+
+# Hamamatsu's wards before 2024-01-01 and the wards their areas became (MIC 改正一覧表)
+_HAMAMATSU_2023 = {"22131": ["221384"], "22132": ["221384"], "22133": ["221384"], "22134": ["221384"],
+                   "22135": ["221384", "221392"], "22136": ["221392"], "22137": ["221406"]}
 
 
 def _check_digit(d5: str) -> str:
@@ -200,6 +207,7 @@ def build(per_prefecture: int, seed: int, cache: Path) -> Tuple[List[Dict[str, A
     base: List[Dict[str, Any]] = []
     dropped = {"code_not_in_registry": 0, "unexpected_prefix": 0, "duplicate": 0}
     seen = set()
+    former: List[Dict[str, Any]] = []
 
     for pref in range(1, 48):
         url = SRC_URL.format(pref=pref)
@@ -215,6 +223,10 @@ def build(per_prefecture: int, seed: int, cache: Path) -> Tuple[List[Dict[str, A
             lg = code5 + _check_digit(code5)
             muni = registry.get(lg)
             if muni is None:
+                if code5 in _HAMAMATSU_2023:
+                    lon, lat = ft["geometry"]["coordinates"][:2]
+                    former.append({"addr": unicodedata.normalize("NFKC", addr).replace(" ", ""),
+                                   "gold_any": _HAMAMATSU_2023[code5], "lat": round(lat, 6), "lon": round(lon, 6)})
                 dropped["code_not_in_registry"] += 1
                 continue
             addr = unicodedata.normalize("NFKC", addr).replace(" ", "")
@@ -267,6 +279,11 @@ def build(per_prefecture: int, seed: int, cache: Path) -> Tuple[List[Dict[str, A
             add(b, "chome_99", b["prefix"] + f"{m['pre']}99-{m['b']}-{m['c']}{m['post']}", False)
         add(b, "non_address", b["school"], False)
 
+    for f in former:
+        items.append({"id": f"{len(items):06d}", "variant": "former_name", "input": f["addr"], "valid": True,
+                      "gold_lg": f["gold_any"][0], "gold_any": f["gold_any"], "lat": f["lat"], "lon": f["lon"],
+                      "source_lg": None})
+
     meta = {
         "name": "JA-AddrBench",
         "version": "1.0",
@@ -275,7 +292,8 @@ def build(per_prefecture: int, seed: int, cache: Path) -> Tuple[List[Dict[str, A
         "base_addresses": len(base),
         "items": len(items),
         "variants": {v: sum(1 for i in items if i["variant"] == v) for v in
-                     ("original", "no_pref", "town_only", "noisy", "romaji", "wrong_pref", "chome_99", "non_address")},
+                     ("original", "no_pref", "town_only", "noisy", "romaji", "former_name",
+                      "wrong_pref", "chome_99", "non_address")},
         "dropped_source_rows": dropped,
         "source": {"dataset": "国土数値情報 学校データ P29 (2023)", "landing_page": LANDING,
                    "license": "CC BY 4.0", "attribution": ATTRIBUTION, "files": sources},

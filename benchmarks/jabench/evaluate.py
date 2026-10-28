@@ -36,7 +36,7 @@ from typing import Dict, List, Any, Optional, Callable
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parents[1] / "src"))
 
-VALID_VARIANTS = ("original", "no_pref", "town_only", "noisy", "romaji")
+VALID_VARIANTS = ("original", "no_pref", "town_only", "noisy", "romaji", "former_name")
 INVALID_VARIANTS = ("wrong_pref", "chome_99", "non_address")
 
 
@@ -86,7 +86,7 @@ def score(items: List[Dict[str, Any]], results: Dict[str, Dict[str, Any]]) -> Di
         n = len(subset)
         answered = [it for it in subset if results[it["id"]].get("lg_code")]
         if variant in VALID_VARIANTS:
-            correct = [it for it in answered if results[it["id"]]["lg_code"] == it["gold_lg"]]
+            correct = [it for it in answered if results[it["id"]]["lg_code"] in it.get("gold_any", [it["gold_lg"]])]
             dists = [haversine_km(results[it["id"]]["lat"], results[it["id"]]["lon"], it["lat"], it["lon"])
                      for it in correct if results[it["id"]].get("lat") is not None]
             abstained = [it for it in subset if not results[it["id"]].get("lg_code")]
@@ -96,7 +96,8 @@ def score(items: List[Dict[str, Any]], results: Dict[str, Dict[str, Any]]) -> Di
                 "wrong_answers": len(answered) - len(correct),
                 "abstained": len(abstained),
                 "abstained_with_candidates": len(with_cands),
-                "candidate_recall": (sum(it["gold_lg"] in results[it["id"]]["candidates"] for it in with_cands)
+                "candidate_recall": (sum(any(g in results[it["id"]]["candidates"] for g in it.get("gold_any", [it["gold_lg"]]))
+                                         for it in with_cands)
                                      / len(with_cands)) if with_cands else None,
                 "mean_candidates": (statistics.mean(len(results[it["id"]]["candidates"]) for it in with_cands)
                                     if with_cands else None),
