@@ -19,3 +19,24 @@ This product includes or references data and services from the following organiz
 3. Japan Post (日本郵便) and Prefecture Mapping
    - Bundled Files: src/jaden/data/county_mapping.json and src/jaden/data/jis_prefectures.json
    - Provenance Notice: The provenance of county_mapping.json and jis_prefectures.json is not reproducible from this repository; no raw source file or rebuild script is included in the repository. Users requiring independent verification should consult official government sources or Japan Post directly.
+
+4. Ministry of Land, Infrastructure, Transport and Tourism (国土交通省)
+   - Dataset: 大字・町丁目レベル位置参照情報 19.0b (2025年版)
+   - Source: https://nlftp.mlit.go.jp/isj/ (per-prefecture files; URLs and SHA256 in src/jaden/data/gazetteer_provenance.json)
+   - Terms: 位置参照情報利用約款 (https://nlftp.mlit.go.jp/isj/agreement.html). Free use; derived works must cite the source and data year.
+   - Attribution: 「大字・町丁目レベル位置参照情報 国土交通省」2025年版 (19.0b) を加工して作成
+   - Bundled File: src/jaden/data/towns.tsv.gz, rebuilt by src/jaden/data/build_gazetteer.py
+   - Optional, downloaded on request (`jaden data fetch-blocks`): 街区レベル位置参照情報 24.0a.
+     Attribution: 「街区レベル位置参照情報 国土交通省」24.0a を加工して作成
+
+5. Japan Post (日本郵便株式会社)
+   - Dataset: 郵便番号データ (読み仮名データ UTF-8 版, ローマ字版)
+   - Source: https://www.post.japanpost.jp/zipcode/download.html
+   - Terms: 「郵便番号データに限っては日本郵便株式会社は著作権を主張しません。自由に配布していただいて結構です。」
+   - Bundled Files: src/jaden/data/postal.tsv.gz and src/jaden/data/municipality_readings.json, rebuilt by build_gazetteer.py
+
+6. Benchmark data (benchmarks/jabench)
+   - Dataset: 国土数値情報 学校データ P29 (令和5年度), Ministry of Land, Infrastructure, Transport and Tourism
+   - Source: https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P29-2023.html
+   - License: CC BY 4.0
+   - Attribution: 「国土数値情報（学校データ）」（国土交通省）（令和5年度）を加工して作成
