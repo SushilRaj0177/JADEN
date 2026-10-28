@@ -25,6 +25,29 @@ from ..data.loader import MunicipalityRecord
 _MIN_PREFIX_CHARS = 2
 
 
+# Single characters used as lot-series prefixes after a town name ('熊坂町ハ31', '畑寺町丙238')
+_LOT_SERIES = set("甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラムウヰノオクヤマケフコエテアサキユメミシヱヒモセス")
+
+
+def koaza_remainder(rest: str) -> bool:
+    """True when text left after a town name is a 字 / 小字 or a lot-series prefix, not a different town."""
+    return rest.startswith(("字", "小字")) or (len(rest) == 1 and rest in _LOT_SERIES)
+
+
+def town_variants(town_text: str, first_number: Optional[int]) -> List[Tuple[str, str]]:
+    """Registered spellings that real addresses often shorten.
+
+    '伊勢宮' -> '伊勢宮町'; 'つつじが丘南' + 1 -> 'つつじが丘南1番町'; '本町' + 6 -> '本町6の' (本町六の一丁目).
+    Returns (registered text, kind) pairs; kind 'machi' keeps the numbers, the others consume the first one.
+    """
+    if not town_text:
+        return []
+    out = [(town_text + "町", "machi")]
+    if first_number is not None:
+        out += [(f"{town_text}{first_number}番町", "banchou"), (f"{town_text}{first_number}の", "no")]
+    return out
+
+
 @dataclass(frozen=True, slots=True)
 class TownCheck:
     """Outcome of matching the town text inside one candidate municipality."""
@@ -32,6 +55,7 @@ class TownCheck:
     match: Optional[TownMatch]
     chome_ok: Optional[bool]          # None when no 丁目 was given or no town matched
     postal_ok: Optional[bool]         # None when no postal code was given
+    variant: Optional[str] = None     # set when only a town_variants() spelling matched
 
     @property
     def town_found(self) -> bool:
@@ -52,6 +76,7 @@ class TownResolution:
     town_verified: Optional[bool] = None                # None: nothing to check / no data
     chome_verified: Optional[bool] = None
     record: Optional[TownRecord] = None                 # the exact 丁目 / town row, if unique
+    variant: Optional[str] = None                       # 'machi', 'banchou' or 'no' (see town_variants)
     postal_code: Optional[str] = None
     postal_consistent: Optional[bool] = None
     postal_municipalities: Tuple[str, ...] = ()
@@ -81,13 +106,34 @@ def _postal_place(p: PostalRecord) -> str:
 
 
 def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Optional[int],
-           postal: Sequence[PostalRecord]) -> TownCheck:
+           postal: Sequence[PostalRecord], chome_explicit: bool, first_number: Optional[int],
+           strong_prefix_ok: bool = True) -> TownCheck:
     match = gaz.match_town(muni.lg_code, town_text) if town_text else None
     if match is not None and not match.exact and match.consumed < _MIN_PREFIX_CHARS:
         match = None
+    if match is not None and not match.exact and not strong_prefix_ok and not koaza_remainder(town_text[match.consumed:]):
+        # Among many candidates a partial match ('ニセコ高等学校' starting with 字ニセコ) proves nothing
+        match = None
     chome_ok: Optional[bool] = None
-    if match is not None and chome is not None:
-        chome_ok = chome in match.entry.chomes
+    if match is not None and match.exact and chome is not None:
+        # Only a whole-name match can say a 丁目 is missing; '花川' does not speak for '花川北'.
+        # A bare 'N-N-N' in a town without 丁目 is a lot number, so it cannot be wrong either.
+        # In a town that is only partly divided into 丁目 ('御望971-1-2'), a bare number may be a lot
+        if match.entry.chomes_known and (chome_explicit or all(r.chome is not None for r in match.entry.records)):
+            chome_ok = chome in match.entry.chomes
+    if match is None or not match.exact or chome_ok is False:
+        towns = gaz.towns_in(muni.lg_code)
+        for text, kind in town_variants(town_text, first_number):
+            entry = towns.get(town_key(text))
+            if entry is None or (kind == "machi" and chome is not None and entry.has_chome and chome not in entry.chomes):
+                continue
+            if chome_ok is False and not (kind == "machi" and chome in entry.chomes):
+                # '浜田99-1-1': 浜田 is divided into 丁目 and has no 99丁目; reading it as a lot of
+                # 浜田町 would hide the error rather than explain it
+                continue
+            variant_match = TownMatch(muni.lg_code, entry, len(town_text), exact=True)
+            variant_chome = True if kind == "machi" and chome is not None and chome in entry.chomes else None
+            return TownCheck(muni, variant_match, variant_chome, _postal_ok(postal, muni.lg_code, variant_match), kind)
     return TownCheck(muni, match, chome_ok, _postal_ok(postal, muni.lg_code, match))
 
 
@@ -97,6 +143,8 @@ def resolve_town(
     town_text: str,
     chome: Optional[int],
     postal_code: Optional[str] = None,
+    chome_explicit: bool = True,
+    first_number: Optional[int] = None,
 ) -> TownResolution:
     """Checks the town against each candidate municipality and narrows the candidates."""
     if not gaz.available or not candidates:
@@ -108,7 +156,8 @@ def resolve_town(
     if postal_code and not postal:
         notes.append(f"postal code {postal_code} is not in the Japan Post list")
 
-    checks = [_check(gaz, m, town_text, chome, postal) for m in candidates]
+    checks = [_check(gaz, m, town_text, chome, postal, chome_explicit, first_number, len(candidates) == 1)
+              for m in candidates]
 
     if len(checks) == 1:
         chosen: Optional[TownCheck] = checks[0]
@@ -150,8 +199,12 @@ def resolve_town(
         record = match.entry.record_for(chome)
         if chosen.chome_ok is False:
             chomes = match.entry.chomes
-            span = f"{chomes[0]}–{chomes[-1]}丁目" if chomes else "no 丁目"
-            notes.append(f"{match.entry.name} has only {span}; {chome}丁目 does not exist")
+            if chomes:
+                contiguous = list(chomes) == list(range(chomes[0], chomes[-1] + 1))
+                listed = f"{chomes[0]}–{chomes[-1]}" if contiguous else ", ".join(map(str, chomes))
+                notes.append(f"{match.entry.name} has only {listed}丁目; {chome}丁目 does not exist")
+            else:
+                notes.append(f"{match.entry.name} is not divided into 丁目; {chome}丁目 does not exist")
         elif record is None and len(match.entry.records) > 1 and chome is None and not match.entry.has_chome:
             notes.append(f"'{match.entry.name}' occurs {len(match.entry.records)} times in {chosen.municipality.name}")
     if chosen.postal_ok is False:
@@ -169,6 +222,7 @@ def resolve_town(
         town_verified=town_verified,
         chome_verified=chosen.chome_ok,
         record=record,
+        variant=chosen.variant,
         postal_code=postal_code,
         postal_consistent=chosen.postal_ok,
         postal_municipalities=postal_lgs,

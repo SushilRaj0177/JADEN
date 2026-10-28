@@ -30,3 +30,4 @@ Thumbs.db
 # Tool caches
 .mypy_cache/
 .ruff_cache/
+benchmarks/jabench/results/*.jsonl

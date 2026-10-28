@@ -10,6 +10,7 @@ Orchestrates multi-stage deterministic normalization:
 7. Canonical String Formatting & Four-Tier Taxonomy Classification
 """
 
+import dataclasses
 import re
 import time
 import unicodedata
@@ -25,16 +26,18 @@ from .parsers.kyoto import KyotoParser
 from .parsers.hokkaido import HokkaidoParser
 from .parsers.fsm import BlockFSM
 from .parsers.building import BuildingParser
-from .parsers.town import resolve_town, expand_candidates, TownResolution
-from .data.gazetteer import Gazetteer, get_gazetteer
+from .parsers.town import resolve_town, expand_candidates, town_variants, koaza_remainder, TownResolution
+from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
+from .core.townkey import town_key
 from .data.loader import MunicipalityRecord
 from .readings import kana_reading, romaji_address
+from .romaji import looks_romanized, romaji_to_japanese
 
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
 _POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"〒\s*(\d{3})-?(\d{4})")
 _POSTAL_BARE_EDGE: Final[re.Pattern[str]] = re.compile(r"(?:^\s*(\d{3})-(\d{4})(?!\d)|(?<![\d-])(\d{3})-(\d{4})\s*$)")
-# Municipality inference from a town alone is only attempted when this few places share the name
-_MAX_GLOBAL_TOWN_CANDIDATES: Final[int] = 30
+# Upper bound on municipalities searched for a town written without its municipality
+_MAX_GLOBAL_TOWN_CANDIDATES: Final[int] = 500
 
 
 def extract_postal_code(raw: str) -> Optional[str]:
@@ -68,6 +71,15 @@ class AddressNormalizer:
         return self._gazetteer if self._gazetteer.available else None
 
     def normalize(self, raw_address: str) -> NormalizedAddress:
+        if self.use_gazetteer and raw_address and looks_romanized(raw_address):
+            converted = romaji_to_japanese(raw_address)
+            if converted is not None:
+                japanese, romaji_notes = converted
+                res = self._normalize(japanese, allow_reread=True)
+                return dataclasses.replace(res, input_raw=raw_address, notes=tuple(romaji_notes) + res.notes)
+        return self._normalize(raw_address, allow_reread=True)
+
+    def _normalize(self, raw_address: str, allow_reread: bool) -> NormalizedAddress:
         """Normalizes a raw Japanese address string into canonical structured form.
 
         Args:
@@ -240,12 +252,52 @@ class AddressNormalizer:
         else:
             town_text = town_name
         has_numbers = any(v is not None for v in (chome_val, ban_val, banchi_val))
+        first_number = next((v for v in (chome_val, ban_val, banchi_val) if v is not None), None)
 
-        if gaz is not None and not is_contradictory:
+        skip_town_resolution = False
+        if (gaz is not None and allow_reread and muni_rec is not None and not is_ambiguous and not is_contradictory
+                and kyoto_clause is None and hokkaido_clause is None):
+            alt = self._town_reading(gaz, working_text, post_admin_text, pref_rec, is_pref_inferred, muni_rec, town_text)
+            if alt is not None:
+                kind, munis, surface = alt
+                if kind == "town":
+                    # '松川町沼袋...' is the town 松川町沼袋 in 福島市, not the municipality 松川町 (Nagano)
+                    target = munis[0]
+                    prefix = f"〒{postal_code} " if postal_code else ""
+                    reread = self._normalize(f"{prefix}{target.prefecture_name}{target.name}{surface}{post_admin_text}",
+                                             allow_reread=False)
+                    note = (f"'{surface}' read as part of the town name in {target.prefecture_name}{target.name}: "
+                            f"the rest of the address is not registered in the municipality {surface}")
+                    return dataclasses.replace(
+                        reread,
+                        input_raw=raw_address,
+                        input_sanitized=sanitized,
+                        components=dataclasses.replace(reread.components, municipality_inferred=True,
+                                                       prefecture_inferred=is_pref_inferred),
+                        confidence_score=min(reread.confidence_score, 0.85),
+                        notes=(note,) + reread.notes,
+                    )
+                # Both readings are possible: the municipality 栄町, or a town called 栄町 in another city
+                notes.append(f"'{surface}' is a municipality and also a town name in {len(munis) - 1} other place(s)")
+                candidate_records = tuple(munis)
+                ambiguous_candidates = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in munis)
+                is_ambiguous = True
+                muni_rec = None
+                lg_code = county_name = ward_name = None
+                city_name = surface
+                if is_pref_inferred:
+                    pref_rec, pref_name, pref_code = None, None, None
+                    tier_map.pop("prefecture", None)
+                tier_map["municipality"] = TaxonomyTier.TIER_3_HEURISTIC.value
+                tier_map.pop("lg_code", None)
+                confidence = 0.50
+                skip_town_resolution = True
+
+        if gaz is not None and not is_contradictory and not skip_town_resolution:
             if nothing_recognized:
                 # No prefecture or municipality written: deduce it from the postal code or a town name
                 # that exists in only a few places, never from free text without block numbers.
-                candidates = self._global_candidates(gaz, town_text, postal_code, has_numbers)
+                candidates = self._global_candidates(gaz, town_text, postal_code, has_numbers, first_number)
             elif kyoto_clause is not None and muni_rec is None and not is_ambiguous:
                 kyoto_city = self.registry.get_municipality_by_code("261009")
                 candidates = self.registry.wards_of(kyoto_city) if kyoto_city else []
@@ -254,7 +306,33 @@ class AddressNormalizer:
                     self.registry, muni_rec, candidate_records if is_ambiguous else (),
                     pref_code if (pref_rec is not None and muni_rec is None and not is_ambiguous) else None,
                 )
-            town_res = resolve_town(gaz, candidates, town_text, chome_val, postal_code)
+            chome_explicit = block_dict["chome_explicit"] or hokkaido_clause is not None
+            if (pref_rec is not None and muni_rec is None and not is_ambiguous and not is_pref_inferred
+                    and not working_text.startswith(pref_rec.name) and town_text):
+                # Only a prefecture stem was read ('兵庫北4-1-1'): the stem may belong to the town name
+                # (佐賀市兵庫北). A town matching the whole text outranks a short town after the stem.
+                whole = self._global_candidates(gaz, pref_rec.stem + town_text, postal_code, has_numbers, first_number)
+                if whole:
+                    if len(town_text) >= 2:
+                        candidates = list(candidates) + [w for w in whole if w not in candidates]
+                    else:
+                        candidates, town_text = whole, pref_rec.stem + town_text
+                        pref_rec, pref_name, pref_code, is_pref_inferred = None, None, None, True
+            town_res = resolve_town(gaz, candidates, town_text, chome_val, postal_code, chome_explicit, first_number)
+            if (town_res.resolved_from_candidates and admin_res.is_ambiguous and matched_raw_name
+                    and matched_raw_name[-1] in "町村" and town_text):
+                # '金山町金山' resolved among the two municipalities called 金山町 may still be the
+                # town 金山町金山 of a third place (下呂市): then nothing is settled.
+                known = {c.lg_code for c in candidate_records}
+                elsewhere = [lg for lg, m in gaz.municipalities_with_town(matched_raw_name + town_text)
+                             if m.exact and lg not in known and (pref_rec is None or is_pref_inferred or lg[:2] == pref_rec.code)]
+                if elsewhere and town_res.municipality is not None:
+                    others = [r for r in (self.registry.get_municipality_by_code(lg) for lg in elsewhere) if r]
+                    town_res = TownResolution(
+                        remaining_candidates=(town_res.municipality, *others),
+                        postal_code=postal_code,
+                        notes=(f"'{matched_raw_name}{town_text}' is also a town name in {len(others)} other place(s)",),
+                    )
             notes.extend(town_res.notes)
             chosen = town_res.municipality
 
@@ -288,7 +366,7 @@ class AddressNormalizer:
                 nothing_recognized = False
             elif chosen is None and town_res.remaining_candidates and (is_ambiguous or nothing_recognized):
                 narrowed = town_res.remaining_candidates
-                if len(narrowed) <= _MAX_GLOBAL_TOWN_CANDIDATES:
+                if True:
                     if nothing_recognized:
                         is_ambiguous = True
                         is_pref_inferred = True
@@ -296,8 +374,10 @@ class AddressNormalizer:
                         confidence = 0.30
                         tier_map["municipality"] = TaxonomyTier.TIER_3_HEURISTIC.value
                         nothing_recognized = False
-                    if len(narrowed) < len(candidate_records) or not candidate_records:
-                        if candidate_records:
+                    before = {c.lg_code for c in candidate_records}
+                    after = {c.lg_code for c in narrowed}
+                    if after != before:
+                        if candidate_records and after < before:
                             notes.append(f"town narrowed {len(candidate_records)} candidate municipalities to {len(narrowed)}")
                         candidate_records = narrowed
                         ambiguous_candidates = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in narrowed)
@@ -319,9 +399,55 @@ class AddressNormalizer:
         match = town_res.match if town_res else None
         chome_verified = town_res.chome_verified if town_res else None
         record = town_res.record if town_res else None
+        variant = town_res.variant if town_res else None
+        if match is not None and variant in ("banchou", "no"):
+            # The first number belongs to the registered name ('つつじが丘南1番町', '本町六の')
+            nums = [v for v in (chome_val, ban_val, go_val) if v is not None] or \
+                   [v for v in (banchi_val, edaban_val) if v is not None]
+            rest = nums[1:]
+            chome_val = ban_val = go_val = banchi_val = edaban_val = None
+            if variant == "no" and rest and rest[0] in match.entry.chomes:
+                chome_val, rest = rest[0], rest[1:]
+                chome_verified = True
+            ban_val = rest[0] if rest else None
+            go_val = rest[1] if len(rest) > 1 else None
+            regime_val = AddressRegime.UNSPECIFIED.value
+            record = match.entry.record_for(chome_val)
+            notes.append(f"read '{town_text}' with its first number as the registered town {match.entry.name}")
+        elif match is not None and variant == "machi":
+            notes.append(f"read '{town_text}' as the registered town {match.entry.name}")
+        lot_number: Optional[str] = None
+        if (match is not None and chome_verified is False and not block_dict["chome_explicit"]
+                and ban_val is not None and gaz is not None and lg_code):
+            # Towns registered as '本町六の一丁目': '本町6-1-79' is 本町六の 1丁目 79番
+            alt_entry = gaz.towns_in(lg_code).get(town_key(f"{town_text}{chome_val}の"))
+            if alt_entry is not None and ban_val in alt_entry.chomes:
+                notes[:] = [n for n in notes if "does not exist" not in n]
+                notes.append(f"read {town_text}{chome_val}-{ban_val} as the registered {alt_entry.name}{ban_val}丁目")
+                town_text = alt_entry.name
+                match = TownMatch(lg_code, alt_entry, len(town_text), exact=True)
+                chome_val, ban_val, go_val = ban_val, go_val, None
+                if tail_text.startswith("-") and tail_text[1:].split(" ")[0].isdigit():
+                    go_val = int(tail_text[1:].split(" ")[0])
+                    tail_text = tail_text[1 + len(str(go_val)):].strip()
+                chome_verified = True
+                record = alt_entry.record_for(chome_val)
         if match is not None and hokkaido_clause is None:
             entry = match.entry
             chome_town = entry.has_chome and all(r.chome is not None for r in entry.records)
+            lot_possible = not entry.has_chome or (not chome_town and chome_val not in entry.chomes)
+            if (lot_possible and chome_val is not None and not block_dict["chome_explicit"]
+                    and ban_val is not None and go_val is not None):
+                # A town without 丁目 written 'N-N-N' is a three-part lot number (e.g. Iwate's
+                # 地割: '西見前20-113-1'), not 丁目-番-号; keep it as written instead of guessing labels.
+                lot_number = f"{chome_val}-{ban_val}-{go_val}"
+                notes[:] = [n for n in notes if "does not exist" not in n]
+                notes.append(f"{entry.name} is not divided into 丁目; kept {lot_number} as a lot number")
+                banchi_val, edaban_val = chome_val, ban_val
+                chome_val = ban_val = go_val = None
+                regime_val = AddressRegime.CHIBAN.value
+                chome_verified = None
+                record = entry.record_for(None)
             if chome_town and chome_val is None and banchi_val is None and ban_val is not None and ban_val in entry.chomes:
                 # Every part of this town is a 丁目, so '六本木6-10' is 6丁目10番 and '六本木6' is 6丁目
                 notes.append(f"{entry.name} is divided into 丁目; read {ban_val}" + (f"-{go_val}" if go_val is not None else "")
@@ -344,7 +470,7 @@ class AddressNormalizer:
                     break
             remainder = town_text[match.consumed:]
             town_name = registered + remainder
-            if remainder and entry.records[0].kind == "1" and koaza_val is None:
+            if remainder and entry.records and entry.records[0].kind == "1" and koaza_val is None:
                 koaza_val = remainder[1:] if remainder.startswith("字") else remainder
 
         # Kyoto conventional navigation addresses strictly use cadastral lot numbers (地番)
@@ -429,7 +555,9 @@ class AddressNormalizer:
         if chome_val is not None and not hokkaido_clause:
             canonical_parts.append(f"{chome_val}丁目")
 
-        if ban_val is not None and go_val is not None:
+        if lot_number is not None:
+            canonical_parts.append(lot_number)
+        elif ban_val is not None and go_val is not None:
             canonical_parts.append(f"{ban_val}番{go_val}号")
         elif ban_val is not None:
             canonical_parts.append(f"{ban_val}番")
@@ -452,6 +580,13 @@ class AddressNormalizer:
             canonical_str = f"{base_addr} {' '.join(secondary_parts)}"
         else:
             canonical_str = base_addr
+
+        town_verified = town_res.town_verified if town_res else None
+        if (town_res is not None and town_res.municipality is None and town_text and muni_rec is not None
+                and not is_ambiguous and gaz is not None and self.registry.wards_of(muni_rec)):
+            # A designated city whose wards were searched without success ('札幌市立白石中学校')
+            town_verified = False
+            notes.append(f"town '{town_text}' is not registered in any ward of {muni_rec.name}")
 
         # Postal code: keep the written one; otherwise fill it in when the town has exactly one
         postal_out = postal_code
@@ -488,12 +623,13 @@ class AddressNormalizer:
             is_contradictory=is_contradictory,
             unparsed_tail=None if (building_name or floor_val or unit_val) else (tail_text or None),
             municipality_inferred=municipality_inferred,
-            town_verified=town_res.town_verified if town_res else None,
+            town_verified=town_verified,
             chome_verified=chome_verified,
             machiaza_id=record.machiaza_id if record else None,
             postal_code=postal_out,
             postal_code_consistent=postal_consistent,
             block_verified=block_verified,
+            lot_number=lot_number,
         )
 
         # Offline location: the 丁目 / town representative point
@@ -505,7 +641,7 @@ class AddressNormalizer:
         elif record is not None:
             latitude, longitude = record.latitude, record.longitude
             location_level = "chome" if record.chome is not None else "town"
-        elif match is not None and not is_ambiguous:
+        elif match is not None and not is_ambiguous and match.entry.records:
             pts = match.entry.records
             lat_span = max(r.latitude for r in pts) - min(r.latitude for r in pts)
             lon_span = max(r.longitude for r in pts) - min(r.longitude for r in pts)
@@ -539,15 +675,58 @@ class AddressNormalizer:
             notes=tuple(notes),
         )
 
+    def _town_reading(self, gaz: Gazetteer, working_text: str, post_admin_text: str,
+                      pref_rec, is_pref_inferred: bool, muni_rec: MunicipalityRecord,
+                      town_text: str) -> Optional[Tuple[str, List[MunicipalityRecord], str]]:
+        """Checks whether a municipality name like '栄町' should instead be read as a town name.
+
+        Returns None to keep the municipality reading, ('town', [target], surface) when only the
+        town reading is registered, or ('ambiguous', [municipality, *towns], surface).
+        """
+        consumed = working_text[:len(working_text) - len(post_admin_text)].strip()
+        surface = consumed
+        if pref_rec is not None and not is_pref_inferred:
+            for written in (pref_rec.name, pref_rec.stem):
+                if surface.startswith(written):
+                    surface = surface[len(written):].strip()
+                    break
+        # Only bare 町 / 村 names collide with town names; '西多摩郡日の出町' or '府中市' do not.
+        # A name on its own ('福島町') is taken as the municipality.
+        if not surface or surface[-1] not in "町村" or (muni_rec.county and surface.startswith(muni_rec.county)):
+            return None
+        if not town_text and not re.search(r"\d", post_admin_text):
+            return None
+        found = [(lg, m) for lg, m in gaz.municipalities_with_town(surface + town_text)
+                 if lg != muni_rec.lg_code and m.consumed >= len(surface)]
+        if pref_rec is not None and not is_pref_inferred:
+            found = [(lg, m) for lg, m in found if lg[:2] == pref_rec.code]
+        if not found:
+            return None
+        muni_verified = (gaz.match_town(muni_rec.lg_code, town_text) is not None) if town_text else None
+        exact = [lg for lg, m in found if m.exact]
+        if muni_verified and not exact:
+            return None
+        records = [r for r in (self.registry.get_municipality_by_code(lg) for lg, _ in found) if r is not None]
+        if muni_verified is False and len(exact) == 1:
+            target = self.registry.get_municipality_by_code(exact[0])
+            if target is not None:
+                return "town", [target], surface
+        return "ambiguous", [muni_rec] + records, surface
+
     def _global_candidates(self, gaz: Gazetteer, town_text: str, postal_code: Optional[str],
-                           has_numbers: bool) -> List[MunicipalityRecord]:
+                           has_numbers: bool, first_number: Optional[int] = None) -> List[MunicipalityRecord]:
         lgs: List[str] = []
         if not town_text and not has_numbers:
             return []  # a postal code on its own is not an address
         if postal_code:
             lgs = sorted({p.lg_code for p in gaz.postal_records(postal_code)})
         if not lgs and town_text and has_numbers:
-            lgs = [lg for lg, m in gaz.municipalities_with_town(town_text) if m.exact]
+            # Include registered spellings the input may have shortened, so that a town written
+            # '伊勢宮' does not look unique when 伊勢宮町 exists elsewhere
+            lgs = [lg for lg, m in gaz.municipalities_with_town(town_text)
+                   if m.exact or koaza_remainder(town_text[m.consumed:])]
+            lgs += [lg for lg in gaz.municipalities_with_exact_town([t for t, _ in town_variants(town_text, first_number)])
+                    if lg not in lgs]
         if len(lgs) > _MAX_GLOBAL_TOWN_CANDIDATES:
             return []
         records = [self.registry.get_municipality_by_code(lg) for lg in lgs]
@@ -649,6 +828,14 @@ class AddressNormalizer:
         if c.unparsed_tail and len(c.unparsed_tail.strip()) > 5:
             return result(ValidationStatus.UNSUPPORTED,
                           f"Input contains unparsed or unsupported tokens: '{c.unparsed_tail}'.",
+                          lg=c.lg_code)
+
+        no_numbers = all(v is None for v in (c.chome, c.ban, c.go, c.banchi, c.edaban, c.lot_number))
+        if c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None:
+            # '高崎市立国府小学校': a municipality followed by text that is neither a registered town
+            # nor a block number is a name that mentions a place, not an address
+            return result(ValidationStatus.UNSUPPORTED,
+                          f"Text after the municipality ('{c.town}') is not a registered town and has no block number.",
                           lg=c.lg_code)
 
         if strict and c.lg_code is not None and c.town_verified is not True:

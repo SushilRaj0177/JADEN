@@ -73,6 +73,7 @@ class BlockFSM:
             "oaza": None,
             "koaza": None,
             "address_regime": AddressRegime.UNSPECIFIED.value,
+            "chome_explicit": False,  # True only when the input wrote 丁目
         }
 
         if not text:
@@ -88,6 +89,7 @@ class BlockFSM:
             result["oaza"] = oaza
             result["koaza"] = koaza
             result["chome"] = _parse_num(chome_match.group("chome"))
+            result["chome_explicit"] = True
             result["address_regime"] = AddressRegime.GAIKU_HOSHIKI.value
             rest = chome_match.group("rest").strip()
 

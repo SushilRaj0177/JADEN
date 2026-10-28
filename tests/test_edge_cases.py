@@ -117,9 +117,11 @@ def test_kanji_numeral_dashes_normalization():
 
     addr3 = "東京都千代田区三番町三-二-一"
     r3 = jaden.normalize(addr3)
-    assert r3.canonical == "東京都千代田区三番町3丁目2番1号"
+    # 三番町 is registered without 丁目, so the numbers are a lot number, not 3丁目2番1号
+    assert r3.canonical == "東京都千代田区三番町3-2-1"
     assert r3.components.town == "三番町"
-    assert r3.components.chome == 3
+    assert r3.components.chome is None
+    assert r3.components.lot_number == "3-2-1"
 
 
 def test_embedded_newline_normalization():

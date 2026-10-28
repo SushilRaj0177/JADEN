@@ -7,6 +7,7 @@ The same town is routinely written several ways:
 - kanji vs Arabic numerals: 北一条西 / 北1条西, 十条 / 10条
 - traditional vs simplified kanji: 澤 / 沢, 濱 / 浜, 邊 / 辺
 - an optional 大字 / 字 prefix in cadastral areas: 大字南長野 / 南長野
+- the okurigana of 通り: 昭和通り / 昭和通
 
 ``town_key`` folds all of these into one comparison key. It is applied to both
 the gazetteer and the user's input, so the folding only needs to be consistent,
@@ -15,13 +16,14 @@ not linguistically exact. Keys are never shown to users.
 
 import re
 import unicodedata
+from functools import lru_cache
 from typing import Final, Dict, Optional, Tuple
 
 from .constants import KANJI_DIGITS, KANJI_POWERS
 from .kanji_numerals import parse_kanji_number
 
 # Bump whenever town_key output changes; compiled data stores keys built with this version
-TOWN_KEY_VERSION: Final[int] = 1
+TOWN_KEY_VERSION: Final[int] = 2
 
 _KE_VARIANTS: Final[str] = "ヶケヵがガｹ"
 _NO_VARIANTS: Final[str] = "のノ"
@@ -55,11 +57,12 @@ def _kanji_runs_to_digits(text: str) -> str:
     return _KANJI_RUN.sub(repl, text)
 
 
+@lru_cache(maxsize=1 << 16)
 def town_key(name: str, strip_aza: bool = True) -> str:
     """Folds a town name into its orthographic comparison key."""
     if not name:
         return ""
-    s = unicodedata.normalize("NFKC", name).translate(_TRANSLATION)
+    s = unicodedata.normalize("NFKC", name).translate(_TRANSLATION).replace("通り", "通")
     if strip_aza:
         if s.startswith("大字"):
             s = s[2:]

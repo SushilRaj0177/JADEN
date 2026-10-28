@@ -88,6 +88,7 @@ class AddressComponents:
     chome_verified: Optional[bool] = None     # True/False when a 丁目 was given and the town was found
     machiaza_id: Optional[str] = None         # 12-digit MLIT 大字・町丁目 code of the matched town / 丁目
     block_verified: Optional[bool] = None     # Block found in MLIT block-level data (None: data not installed)
+    lot_number: Optional[str] = None          # Multi-part lot number kept as written ('20-113-1') when its parts can't be labelled
     postal_code: Optional[str] = None         # NNN-NNNN: from the input, or looked up when unique
     postal_code_consistent: Optional[bool] = None  # False when the input postal code belongs elsewhere
 

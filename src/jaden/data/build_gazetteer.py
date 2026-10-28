@@ -61,7 +61,7 @@ POSTAL_ROMAN_URL = f"{POSTAL_BASE}/roman/KEN_ALL_ROME.zip"
 USER_AGENT = "jaden-gazetteer-builder (+https://github.com/SushilRaj0177/JADEN)"
 
 TOWN_COLUMNS = ("lg_code", "key", "machiaza_id", "name", "chome", "kind", "lat", "lon", "kana", "romaji")
-POSTAL_COLUMNS = ("postal_code", "lg_code", "key", "town", "kana", "romaji", "kind")
+POSTAL_COLUMNS = ("postal_code", "lg_code", "key", "town", "kana", "romaji", "kind", "chome")
 
 # Japan Post placeholder town names that mean "the whole municipality"
 _POSTAL_WHOLE_MUNI = re.compile(r"^(以下に掲載がない場合|.+の次に番地がくる場合|.+一円)$")
@@ -177,7 +177,8 @@ def build(out_dir: Path, cache_dir: Path, log: Callable[[str], None] = print) ->
         base, kind = _clean_postal_town(r[8])
         kana = _PAREN.sub("", unicodedata.normalize("NFKC", r[5])).strip() if base else ""
         romaji = romaji_by_postal_town.get((r[2], _muni(r[7]), town_key(base)), "") if base else ""
-        postal.append({"postal_code": r[2], "lg_code": lg, "key": town_key(base), "town": base, "kana": kana, "romaji": romaji, "kind": kind})
+        postal.append({"postal_code": r[2], "lg_code": lg, "key": town_key(base), "town": base, "kana": kana,
+                       "romaji": romaji, "kind": kind, "chome": r[11]})
         if base and kind == "town":
             reading_by_town.setdefault((lg, town_key(base)), (kana, romaji))
         if lg not in municipality_readings:

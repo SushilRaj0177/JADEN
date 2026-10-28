@@ -1,6 +1,6 @@
 {
   "built": "2026-10-28",
-  "town_key_version": 1,
+  "town_key_version": 2,
   "towns": {
     "dataset": "大字・町丁目レベル位置参照情報 19.0b (2025年版)",
     "publisher": "国土交通省 不動産・建設経済局 (MLIT)",
@@ -8,7 +8,7 @@
     "terms": "https://nlftp.mlit.go.jp/isj/agreement.html",
     "attribution": "「大字・町丁目レベル位置参照情報 国土交通省」2025年版 (19.0b) を加工して作成",
     "records": 191100,
-    "records_with_readings": 180466
+    "records_with_readings": 180501
   },
   "postal": {
     "dataset": "郵便番号データ (読み仮名データ UTF-8 版 / ローマ字版)",

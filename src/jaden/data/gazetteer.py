@@ -61,9 +61,17 @@ class TownRecord:
 
 @dataclass(slots=True)
 class TownEntry:
-    """All registered records sharing one town name inside one municipality."""
+    """All registered records sharing one town name inside one municipality.
+
+    Entries found only in the Japan Post list (``source == 'postal'``) have no MLIT records:
+    no point, no list of 丁目, only Japan Post's flag saying whether the town has 丁目.
+    """
     name: str
     records: List[TownRecord] = field(default_factory=list)
+    source: str = "mlit"
+    postal_kana: str = ""
+    postal_romaji: str = ""
+    postal_has_chome: bool = False
 
     @property
     def chomes(self) -> Tuple[int, ...]:
@@ -71,15 +79,21 @@ class TownEntry:
 
     @property
     def has_chome(self) -> bool:
+        if not self.records:
+            return self.postal_has_chome
         return any(r.chome is not None for r in self.records)
 
     @property
+    def chomes_known(self) -> bool:
+        return bool(self.records)
+
+    @property
     def kana(self) -> str:
-        return next((r.kana for r in self.records if r.kana), "")
+        return next((r.kana for r in self.records if r.kana), self.postal_kana)
 
     @property
     def romaji(self) -> str:
-        return next((r.romaji for r in self.records if r.romaji), "")
+        return next((r.romaji for r in self.records if r.romaji), self.postal_romaji)
 
     def record_for(self, chome: Optional[int]) -> Optional[TownRecord]:
         if chome is not None:
@@ -120,12 +134,16 @@ class Gazetteer:
 
     def __init__(self, data_dir: Optional[Path] = None) -> None:
         self.data_dir = Path(data_dir) if data_dir else resolve_data_dir()
+        self._available: Optional[bool] = None
         self._raw_towns: Optional[Dict[str, List[str]]] = None
         self._recompute_keys = False
         self._towns: Dict[str, Dict[str, TownEntry]] = {}
         self._lg_by_key: Optional[Dict[str, List[str]]] = None
         self._postal: Optional[Dict[str, List[str]]] = None
         self._postal_by_town: Optional[Dict[Tuple[str, str], List[str]]] = None
+        self._postal_towns: Optional[Dict[str, Dict[str, TownEntry]]] = None
+        self._postal_only: Dict[str, Dict[str, TownEntry]] = {}
+        self._blocks_present: Dict[str, bool] = {}
         self._key_version_ok: Optional[bool] = None
         self._blocks: Dict[str, Optional[Dict[Tuple[str, str, int, int], BlockPoint]]] = {}
         self._lock = threading.Lock()
@@ -133,7 +151,9 @@ class Gazetteer:
     # ------------------------------------------------------------------ load
     @property
     def available(self) -> bool:
-        return (self.data_dir / "towns.tsv.gz").exists()
+        if self._available is None:
+            self._available = (self.data_dir / "towns.tsv.gz").exists()
+        return self._available
 
     def _read_lines(self, name: str) -> List[str]:
         path = self.data_dir / name
@@ -186,6 +206,12 @@ class Gazetteer:
                     lgs = index.setdefault(key, [])
                     if not lgs or lgs[-1] != lg:
                         lgs.append(lg)
+            # Towns only Japan Post lists still count when asking "where else does this town exist?"
+            for lines in self._load_postal().values():
+                for ln in lines:
+                    rec, key = self._parse_postal(ln)
+                    if rec.kind == "town" and key and rec.lg_code not in index.get(key, ()):
+                        index.setdefault(key, []).append(rec.lg_code)
             self._lg_by_key = index
         return self._lg_by_key
 
@@ -199,7 +225,7 @@ class Gazetteer:
             return self._postal
 
     def _parse_postal(self, ln: str) -> Tuple[PostalRecord, str]:
-        code, lg, key, town, kana, romaji, kind = ln.split("\t")
+        code, lg, key, town, kana, romaji, kind = ln.split("\t")[:7]
         if not self._keys_current():
             key = town_key(town)
         return PostalRecord(code, lg, town, kana, romaji, kind), key
@@ -216,16 +242,45 @@ class Gazetteer:
         return lg_code in self._load_raw_towns()
 
     def match_town(self, lg_code: str, text: str) -> Optional[TownMatch]:
-        """Longest registered town name at the start of ``text`` within one municipality."""
-        towns = self.towns_in(lg_code)
-        if not towns or not text:
+        """Longest registered town name at the start of ``text`` within one municipality.
+
+        MLIT towns are tried first; a town only Japan Post lists is used when MLIT has nothing.
+        """
+        if not text:
             return None
         clipped = text[:_MAX_KEY_CHARS]
-        for end in range(len(clipped), 0, -1):
-            entry = towns.get(town_key(clipped[:end]))
-            if entry is not None:
-                return TownMatch(lg_code, entry, end, exact=(end == len(text)))
+        for towns in (self.towns_in(lg_code), self.postal_towns_in(lg_code)):
+            if not towns:
+                continue
+            for end in range(len(clipped), 0, -1):
+                entry = towns.get(town_key(clipped[:end]))
+                if entry is not None:
+                    return TownMatch(lg_code, entry, end, exact=(end == len(text)))
         return None
+
+    def postal_towns_in(self, lg_code: str) -> Dict[str, TownEntry]:
+        """Towns Japan Post lists for a municipality that the MLIT list does not have."""
+        if self._postal_towns is None:
+            by_lg: Dict[str, Dict[str, TownEntry]] = {}
+            for lines in self._load_postal().values():
+                for ln in lines:
+                    parts = ln.split("\t")
+                    rec, key = self._parse_postal(ln)
+                    if rec.kind != "town" or not rec.town:
+                        continue
+                    has_chome = len(parts) > 7 and parts[7] == "1"
+                    entry = by_lg.setdefault(rec.lg_code, {}).get(key)
+                    if entry is None:
+                        by_lg[rec.lg_code][key] = TownEntry(rec.town, [], "postal", rec.kana, rec.romaji, has_chome)
+                    elif has_chome:
+                        entry.postal_has_chome = True
+            self._postal_towns = by_lg
+        cached = self._postal_only.get(lg_code)
+        if cached is None:
+            mlit = self.towns_in(lg_code)
+            cached = self._postal_only[lg_code] = {
+                k: v for k, v in self._postal_towns.get(lg_code, {}).items() if k not in mlit}
+        return cached
 
     def municipalities_with_town(self, text: str) -> List[Tuple[str, TownMatch]]:
         """All municipalities containing a town that matches the start of ``text`` (longest match per municipality)."""
@@ -236,8 +291,20 @@ class Gazetteer:
             key = town_key(clipped[:end])
             for lg in index.get(key, ()):
                 if lg not in found:
-                    found[lg] = TownMatch(lg, self.towns_in(lg)[key], end, exact=(end == len(text)))
+                    entry = self.towns_in(lg).get(key) or self.postal_towns_in(lg).get(key)
+                    if entry is not None:
+                        found[lg] = TownMatch(lg, entry, end, exact=(end == len(text)))
         return list(found.items())
+
+    def municipalities_with_exact_town(self, texts: List[str]) -> List[str]:
+        """Municipality codes having a town whose whole name equals one of ``texts``."""
+        index = self._key_index()
+        out: List[str] = []
+        for text in texts:
+            for lg in index.get(town_key(text), ()):
+                if lg not in out:
+                    out.append(lg)
+        return out
 
     def postal_records(self, postal_code: str) -> List[PostalRecord]:
         lines = self._load_postal().get(postal_code.replace("-", ""), [])
@@ -264,7 +331,10 @@ class Gazetteer:
         return [d for i, d in enumerate(dirs) if d not in dirs[:i]]
 
     def blocks_available(self, prefecture_code: str) -> bool:
-        return any((d / f"{prefecture_code}.tsv.gz").exists() for d in self.block_dirs())
+        if prefecture_code not in self._blocks_present:
+            self._blocks_present[prefecture_code] = any(
+                (d / f"{prefecture_code}.tsv.gz").exists() for d in self.block_dirs())
+        return self._blocks_present[prefecture_code]
 
     def _load_blocks(self, prefecture_code: str) -> Optional[Dict[Tuple[str, str, int, int], BlockPoint]]:
         if prefecture_code in self._blocks:

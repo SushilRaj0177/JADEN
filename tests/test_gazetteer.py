@@ -269,3 +269,97 @@ def test_block_level_data(tmp_path, monkeypatch):
     assert (c.banchi, c.ban, c.address_regime) == (1, None, "chiban")
 
     assert engine.normalize("東京都港区芝公園4-99-1").components.block_verified is False
+
+
+# ------------------------------------------------- readings that need the data
+def test_three_part_lot_number_in_town_without_chome():
+    # Iwate's 地割 style: 西見前 has no 丁目, so 20-113-1 is not 20丁目113番1号
+    res = jaden.normalize("岩手県盛岡市西見前20-113-1")
+    assert res.components.chome is None
+    assert res.components.lot_number == "20-113-1"
+    assert res.canonical == "岩手県盛岡市西見前20-113-1"
+    assert jaden.validate("岩手県盛岡市西見前20-113-1").status == ValidationStatus.ACCEPTED.value
+
+
+def test_numbered_town_names():
+    assert jaden.normalize("新潟県十日町市本町6-1-79-1").canonical == "新潟県十日町市本町六の1丁目79番1号"
+    assert jaden.normalize("三重県名張市つつじが丘南1-241").components.town == "つつじが丘南一番町"
+
+
+def test_shortened_town_name_resolves_to_registered_one():
+    res = jaden.normalize("島根県松江市伊勢宮520-8")
+    assert res.components.town == "伊勢宮町"
+    assert jaden.normalize("沖縄県糸満市西崎5-33-2").components.town == "西崎町"
+
+
+def test_dotori_okurigana():
+    assert jaden.validate("愛媛県八幡浜市昭和通り1182-7").status == ValidationStatus.ACCEPTED.value
+
+
+@pytest.mark.parametrize("address", ["錦町98", "栄町7-7", "富士見町5-4-41", "松川町沼袋字戸ノ内832-3", "金山町金山2151"])
+def test_municipality_names_that_are_also_town_names_are_ambiguous(address):
+    # Without a prefecture these may be the municipality or a town of the same name elsewhere
+    assert jaden.validate(address).status == ValidationStatus.AMBIGUOUS.value
+
+
+def test_municipality_name_alone_is_the_municipality():
+    assert jaden.normalize("福島町").components.lg_code == "013323"
+
+
+def test_written_prefecture_keeps_municipality_reading():
+    assert jaden.normalize("千葉県栄町安食938-1").components.lg_code == "123293"
+
+
+def test_prefecture_stem_inside_town_name():
+    # 兵庫北 is a town in 佐賀市, not 兵庫県 + 北
+    assert jaden.normalize("兵庫北4-1-1").components.lg_code == "412015"
+
+
+def test_japan_post_fallback_town():
+    # 茶山台 is in the Japan Post list but not in the MLIT list
+    val = jaden.validate("大阪府堺市南区茶山台1-2-1")
+    assert val.status == ValidationStatus.ACCEPTED.value
+    assert val.verification_level == "town"
+
+
+@pytest.mark.parametrize("name", ["高崎市立国府小学校", "札幌市立白石中学校", "北海道ニセコ高等学校", "東京都港区存在しない町"])
+def test_names_mentioning_places_are_not_addresses(name):
+    assert jaden.validate(name).status != ValidationStatus.ACCEPTED.value
+
+
+def test_very_common_town_without_municipality_is_ambiguous_not_malformed():
+    val = jaden.validate("本町1-8-19")
+    assert val.status == ValidationStatus.AMBIGUOUS.value
+    assert len(val.ambiguous_candidates) > 30
+
+
+# ------------------------------------------------------------------- romaji
+@pytest.mark.parametrize("romaji, lg_code, canonical", [
+    ("4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011", "131032", "東京都港区芝公園4丁目2番8号"),
+    ("4-2-8 Shibakoen, Minato City, Tokyo, Japan", "131032", "東京都港区芝公園4丁目2番8号"),
+    ("4-2-8 Shibakoen Minato-ku Tokyo", "131032", "東京都港区芝公園4丁目2番8号"),
+    ("Tokyo, Minato-ku, Shibakoen 4-2-8", "131032", "東京都港区芝公園4丁目2番8号"),
+    ("4-6-16 Ginza, Chūō-ku, Tōkyō", "131024", "東京都中央区銀座4丁目6番16号"),
+    ("Tenjin 1-8-1, Chuo Ward, Fukuoka City", "401331", "福岡県福岡市中央区天神1丁目8番1号"),
+    ("1-1-1 Umeda, Kita Ward, Osaka City, Osaka", "271276", "大阪府大阪市北区梅田1丁目1番1号"),
+    ("Kita 1-jo Nishi 2-chome, Chuo-ku, Sapporo, Hokkaido", "011011", "北海道札幌市中央区北1条西2丁目"),
+    ("4-17-3 Minami, Yoshikawa-shi, Saitama", "112437", "埼玉県吉川市美南4丁目17番3号"),
+    ("692-2 Minaminagano, Nagano-shi, Nagano", "202011", "長野県長野市大字南長野692番地の2"),
+])
+def test_romaji_input(romaji, lg_code, canonical):
+    res = jaden.normalize(romaji)
+    assert res.components.lg_code == lg_code
+    assert res.canonical == canonical
+    assert res.input_raw == romaji
+    assert any(n.startswith("romaji input read as") for n in res.notes)
+
+
+def test_romaji_bare_word_is_not_a_city():
+    # 'USA' romanizes like 宇佐市; without a town or a -shi suffix it must not become one
+    assert jaden.validate("12345 Hello World USA").status == ValidationStatus.MALFORMED.value
+
+
+def test_romaji_round_trip():
+    res = jaden.normalize("東京都港区芝公園4-2-8")
+    back = jaden.normalize(res.romaji)
+    assert back.canonical == res.canonical
