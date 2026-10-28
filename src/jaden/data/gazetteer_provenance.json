@@ -1,0 +1,267 @@
+{
+  "built": "2026-10-28",
+  "town_key_version": 1,
+  "towns": {
+    "dataset": "大字・町丁目レベル位置参照情報 19.0b (2025年版)",
+    "publisher": "国土交通省 不動産・建設経済局 (MLIT)",
+    "landing_page": "https://nlftp.mlit.go.jp/isj/",
+    "terms": "https://nlftp.mlit.go.jp/isj/agreement.html",
+    "attribution": "「大字・町丁目レベル位置参照情報 国土交通省」2025年版 (19.0b) を加工して作成",
+    "records": 191100,
+    "records_with_readings": 180466
+  },
+  "postal": {
+    "dataset": "郵便番号データ (読み仮名データ UTF-8 版 / ローマ字版)",
+    "publisher": "日本郵便株式会社 (Japan Post)",
+    "landing_page": "https://www.post.japanpost.jp/zipcode/download.html",
+    "terms": "郵便番号データに限っては日本郵便株式会社は著作権を主張しません。自由に配布していただいて結構です。",
+    "records": 124526
+  },
+  "sources": [
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/01000-19.0b.zip",
+      "sha256": "da269f15dbc0350f31ead4772c1cd4e01b4d8056152c96fb7c8f4231fdae060c",
+      "bytes": 369292
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/02000-19.0b.zip",
+      "sha256": "6e00974d07249b235b79eb6d4f8782c078002a88f33c413dd28ea95396fd0635",
+      "bytes": 54747
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/03000-19.0b.zip",
+      "sha256": "ebfe311f5ed731256f6364ccb4f1979cc8de960e701adeceae070435a8648d3f",
+      "bytes": 41336
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/04000-19.0b.zip",
+      "sha256": "d22cd9c91533ab5c81fe8ef0f6c2b2e493ea60bdc900f3306ddd92cd808f79c7",
+      "bytes": 80953
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/05000-19.0b.zip",
+      "sha256": "274239913a8026a3ef5b2f7e1fe8c3e6b2cd33efc60b4f8b29f923104cfdff39",
+      "bytes": 38251
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/06000-19.0b.zip",
+      "sha256": "1f2f9d5b0876b5235a7035821a9891b20ca42be74d313e480e612c7af35a573a",
+      "bytes": 46389
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/07000-19.0b.zip",
+      "sha256": "15f449189a2cc48e6c9c1e5e9b9e2bd849a4a5826e855cd5d4b07c413b51bf89",
+      "bytes": 72704
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/08000-19.0b.zip",
+      "sha256": "366597c1f35722087e54c4a402b22745dbe15778b692d14dbe93e1e522d35e96",
+      "bytes": 64904
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/09000-19.0b.zip",
+      "sha256": "5a391012d58d86ab1e5daed0d52f90b281fbadefd6d1cc0a2a5910160faeece5",
+      "bytes": 42128
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/10000-19.0b.zip",
+      "sha256": "14d0cf0baf58effb6dc8d3fc7d772c09b78718bcc81cdc508e4f3383570fc36e",
+      "bytes": 32352
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/11000-19.0b.zip",
+      "sha256": "612084eb7a4a68f8ef34e57c1e3e7f237b46a736acc26aaaf139c1188c7eb386",
+      "bytes": 86944
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/12000-19.0b.zip",
+      "sha256": "4096e21f055ae4b26f9e0f4368b118e6b3030bcb7640b3e820541f9317fd9b9c",
+      "bytes": 93616
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/13000-19.0b.zip",
+      "sha256": "37b1dbc7a059d8517e1def20a243a5aa8e371fda5ece56767a9f858caed9c2ed",
+      "bytes": 83077
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/14000-19.0b.zip",
+      "sha256": "d4678c555db60696a26c0d92e8382640d6a45361201c2ce6c6fdf8ddf472fe7f",
+      "bytes": 81439
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/15000-19.0b.zip",
+      "sha256": "371dff44767f30f8d6e21bb406a0eb261222c13f82e0c5ae8eb0f0f51e133196",
+      "bytes": 117963
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/16000-19.0b.zip",
+      "sha256": "2ddc61f4b0b2986046dde6437a4004e7e78b32c0e4900c5c9ebe3c46452bca2f",
+      "bytes": 56350
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/17000-19.0b.zip",
+      "sha256": "15b93f412ce5c41d5243f3c74c719b07341933bf39b7d3f10643b472fabb0009",
+      "bytes": 54585
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/18000-19.0b.zip",
+      "sha256": "9920bc7fd369288bf74a8f0a0390e8db45c424c1feb1e07e46667bfd7f871e33",
+      "bytes": 48366
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/19000-19.0b.zip",
+      "sha256": "679d359ca4088d9aaf7a63f66e0d7090233a2f0b538e7d5928948cff292f948d",
+      "bytes": 26140
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/20000-19.0b.zip",
+      "sha256": "7ba65d8d6276cf35a15d66047c09c29e1c02ea1ba1abc5ebd484c63ff5cf56b3",
+      "bytes": 41478
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/21000-19.0b.zip",
+      "sha256": "51ddac95fd5c096ee1e03cb4098d037909a74a32f212ce9d6c01696fc67ffe41",
+      "bytes": 107006
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/22000-19.0b.zip",
+      "sha256": "dbb38071b817f92446ce71911cf74257418b289163ba9c8acf7b3e178f42e086",
+      "bytes": 62047
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/23000-19.0b.zip",
+      "sha256": "c8504bc97b84e86d95daee414091ac2d9220ce4fb971ee08323208423a61e893",
+      "bytes": 223249
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/24000-19.0b.zip",
+      "sha256": "72ea7241615603e18f365d602cdb28509cce80440182c03fe1c056696207813c",
+      "bytes": 52993
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/25000-19.0b.zip",
+      "sha256": "9d1b1e03b68e520ab275efe1c11574c168359cbdbd47845a07bc6a24ee6ed7ea",
+      "bytes": 44548
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/26000-19.0b.zip",
+      "sha256": "9a6e7301e7d379cbe5baff85c0eff8b2c4ab540f9ffcb86bf4baf1f694688d47",
+      "bytes": 123679
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/27000-19.0b.zip",
+      "sha256": "a0047e103274abecca94579ba409acbc9855b4cbc22f1fe84510b413e7b5aefe",
+      "bytes": 130688
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/28000-19.0b.zip",
+      "sha256": "9013b702bdf20f23f7f2b54d707e6013ba0890320511e5cf50c8950870fad126",
+      "bytes": 141675
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/29000-19.0b.zip",
+      "sha256": "1f2be1c81f7b5e29aca01f8d0a182a30fd6c548690eebdace44529b8b3fa0886",
+      "bytes": 44207
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/30000-19.0b.zip",
+      "sha256": "ed2f47dccb7a7fdc1a35b1a3304c1263e5ea579be3526518fa7d9151e307939c",
+      "bytes": 36583
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/31000-19.0b.zip",
+      "sha256": "ec4bf5b891a7c7bbf241e0dfa74e4abbf8afdec188febce3545a62d596ed4535",
+      "bytes": 30729
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/32000-19.0b.zip",
+      "sha256": "6f616d04a5a1dd7f355de635ce1664a859a228fb586be208d7c194820b20fd9d",
+      "bytes": 26072
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/33000-19.0b.zip",
+      "sha256": "fd970179c6c84e4b8b10828674851114d9792ac7426408ca47ac9d95d1c4426a",
+      "bytes": 46881
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/34000-19.0b.zip",
+      "sha256": "aab85f0c1eb987e3146b2052f5338babcac428c65740322e29ad051f93b7cadd",
+      "bytes": 62852
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/35000-19.0b.zip",
+      "sha256": "68961ad1b18bc48db3dfad24fcad1584fa28196da0d00adcdc404abb485d4df3",
+      "bytes": 44809
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/36000-19.0b.zip",
+      "sha256": "89be5d75c109f0db250c75a2787a5620ed65aa1749f665f9666d9821e6b3b8d4",
+      "bytes": 26458
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/37000-19.0b.zip",
+      "sha256": "4d2093e0aecffff4fa09c45c3fa458746fbb1370482a0c6b3d3061169a4c238d",
+      "bytes": 19777
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/38000-19.0b.zip",
+      "sha256": "a748a4f28daeb610143cd013d4a7a8adb4205048847089fcb1d31411c8140284",
+      "bytes": 43825
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/39000-19.0b.zip",
+      "sha256": "573a47b7cb15c21577de24a97b1a318dc018cf02b04258ca342f1aa9edccc000",
+      "bytes": 37856
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/40000-19.0b.zip",
+      "sha256": "060283682baf849b42d07613cf48babb23b458474c5b5f214602c413f3a842d1",
+      "bytes": 100311
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/41000-19.0b.zip",
+      "sha256": "d356b0a89fd1a1553915d04f57ff2038812694dbe28f7d4d117f849bd038acf6",
+      "bytes": 21453
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/42000-19.0b.zip",
+      "sha256": "1dc54fca5afe0e93eddf5b0e0b4e9ed1eee6388ed61b50ddc2d8093e70ef4583",
+      "bytes": 37594
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/43000-19.0b.zip",
+      "sha256": "1bdaa45d100ae67f74c48712f4df64f785e32edbad55c03acd8ea7292f50daa6",
+      "bytes": 43456
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/44000-19.0b.zip",
+      "sha256": "094cfcecd913a73a4b6dc94d8dbe37e0870c3b59ee0776bbd1ed93a86882bf76",
+      "bytes": 38287
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/45000-19.0b.zip",
+      "sha256": "2150366730324b9c415819f602ffd8b71cca04389dc0dbc7e23254fe1be2edbf",
+      "bytes": 26350
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/46000-19.0b.zip",
+      "sha256": "fe7a65b92458ae4a918af1fdaad249a0b42e967e203797cf7800e4c3b4e1e722",
+      "bytes": 33355
+    },
+    {
+      "url": "https://nlftp.mlit.go.jp/isj/dls/data/19.0b/47000-19.0b.zip",
+      "sha256": "dbfafb8633dbb3a6ad07f4c8415e12e1d2f420a793958dafca3ee0a2d94c8d8e",
+      "bytes": 24640
+    },
+    {
+      "url": "https://www.post.japanpost.jp/service/search/zipcode/download/utf/zip/utf_ken_all.zip",
+      "sha256": "444881769a631d2c36c644fc041e5ce62fe65d204ff498a601641ba1e66b5955",
+      "bytes": 2135514
+    },
+    {
+      "url": "https://www.post.japanpost.jp/service/search/zipcode/download/roman/KEN_ALL_ROME.zip",
+      "sha256": "9764834dfd1d0148600c38b7fc4c00feae8443e81e68da3a49469447cd97707d",
+      "bytes": 1759193
+    }
+  ]
+}
