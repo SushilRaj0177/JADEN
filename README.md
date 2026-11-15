@@ -30,9 +30,17 @@ v0.1 knew Japan's 1,918 municipalities. v0.2 also knows every registered **town 
 | `岩手県盛岡市西見前20-113-1` | 20丁目113番1号 | **lot number 20-113-1** (西見前 has no 丁目) |
 | `4-2-8 Shibakoen, Minato-ku, Tokyo` | rejected | **東京都港区芝公園4丁目2番8号** (romaji input) |
 | `高崎市立国府小学校` (a school name) | accepted | **UNSUPPORTED** — not an address |
+| `埼玉県浦和市高砂3-15-1` (浦和市 merged in 2001) | rejected | **さいたま市浦和区高砂3丁目15番1号** — former names resolved by town |
+| `浜松市北区細江町気賀305` (ward abolished 2024) | accepted as 浜松市 | **浜松市浜名区** — 北区 was split; the town decides |
+| `東京都港区芝公園4-2-8-101` | building "-101" | **room 101** |
+| `北海道網走市潮見188 703号室` | lot 188703 | **lot 188, room 703号室** |
+| `札幌市中央区南3西4` | unrecognized | **南3条西4丁目** (Sapporo shorthand) |
+| `住所：日本、東京都港区芝公園4-2-8` | rejected | form label and country removed |
 | Output | canonical string | + katakana reading, English address line, postal code, MLIT town ID, offline coordinates |
 
-On **JA-AddrBench**, a new benchmark built from 4,700 real addresses with independent ground truth (see [Benchmarks](#5-empirical-benchmarks)), JADEN v0.2 resolves 18,099 of 18,100 published, prefecture-less, noisy and romaji inputs to the correct municipality and gives **no wrong answer on any of them**. With the municipality left out entirely, it resolves half and returns a candidate list for the rest instead of guessing (1 wrong answer in 4,700).
+On **JA-AddrBench**, a new benchmark built from 4,700 real addresses with independent ground truth (see [Benchmarks](#5-empirical-benchmarks)), JADEN v0.2 resolves 18,099 of 18,100 published, prefecture-less, noisy and romaji inputs to the correct municipality and gives **no wrong answer on any of them**. With the municipality left out entirely, it resolves half and returns a candidate list for the rest instead of guessing (1 wrong answer in 4,700). All 411 real addresses still written with Hamamatsu's abolished wards resolve to the right ward, and on 34,032 real addresses with real-world noise added (rooms, buildings, floors, form labels, spacing, full-width text) the result is unchanged and the building, floor and room are extracted correctly in every case.
+
+For files, `jaden batch customers.csv -o checked.csv` processes a whole spreadsheet (UTF-8 or Shift_JIS) and appends the results as columns.
 
 ---
 
@@ -55,6 +63,9 @@ JADEN parses raw address text into a granular Abstract Syntax Tree (`AddressComp
 - **Ambiguity Resolution (v0.2):** Uses the town, the postal code and the registered structure to settle which municipality is meant (`港区芝公園`, `中央区銀座`, `大阪府北区梅田`), and stays AMBIGUOUS with a narrowed candidate list when the data cannot decide.
 - **Readings & Romaji (v0.2):** Outputs the katakana reading and an English-order address line using Japan Post's official romanization, and accepts romanized input (`4-2-8 Shibakoen, Minato-ku, Tokyo`).
 - **Offline Geocoding (v0.2):** Representative points for every town and 丁目 (bundled) and every city block (`jaden data fetch-blocks <pref>`), with no network access.
+- **Former Municipality Names (v0.2):** 1,829 names that disappeared in mergers and reorganizations since 2000 (`浦和市`, `清水市`, `浜松市中区`) map to the municipalities their area now belongs to; the town picks among them.
+- **Real-World Input (v0.2):** Rooms, floors and building names in all the usual forms, form labels, country prefixes, Sapporo shorthand, Iwate 地割, lot-series lots (`乙394`), and numbered town names (`忠和1条`, `古町通6番町`).
+- **Batch Processing (v0.2):** `jaden batch` for CSV, TSV, JSONL and text files, with encoding detection and parallel workers.
 - **Regional Convention Grammars:** Fully parses Kyoto intersection navigation clauses and Hokkaido cardinal grid coordinates.
 - **Ambiguity Detection:** Explicitly flags inputs with ambiguous jurisdictions as ambiguous (`is_ambiguous=True`) and lists candidates with statutory LG codes rather than guessing.
 - **Professional CLI & Python API:** First-class CLI (`normalize`, `parse`, `validate`, `geocode`, `data`) supporting human-readable output, JSON piping, dedicated shell exit codes, and standard input reading via `-`.
@@ -210,6 +221,8 @@ A system **answers** when it commits to one municipality and **abstains** otherw
 
 * When JADEN abstains on `town_only`, it returns a candidate list for 2,125 of 2,328 inputs; the correct municipality is in it **98.6%** of the time (median 8 candidates).
 * All 74 `chome_99` acceptances are towns MLIT records as only partly divided into 丁目, where `99-x-y` is a valid lot-number reading (see [Limitations](#8-explicit-boundaries--limitations)).
+* **Former names:** the `former_name` variant contains all 411 schools whose published address still uses one of Hamamatsu's wards abolished on 2024-01-01; JADEN resolves all 411 to the ward their area became (parser-only mode: 8.3%).
+* **Real-world noise** (`build_reallife.py`, `evaluate_reallife.py`): each clean address with a room as a fourth number, a building with the room glued on, a building and floor, `号室`, `Apt`, spaces between components, form labels and country prefixes, and full-width text — 34,032 inputs. The address must stay the same and the building, floor and room must be extracted exactly: **34,032 / 34,032 pass**.
 * **Offline geocoding** against the surveyed school points (correctly resolved items): median error **360 m** with the bundled 丁目/town points (79% within 1 km), and **71 m** with block-level data installed (89% within 1 km; 94% within 1 km for romaji inputs). The school point is the school site, not the address point, so part of this error is the size of the site.
 
 Reproduce:
@@ -485,6 +498,20 @@ $ jaden data update
 $ jaden data fetch-blocks 13 27
 ```
 
+#### 6. `batch`: Files of Addresses
+```bash
+# CSV in (UTF-8 or Shift_JIS, detected), the address column found by name (住所 / address / 所在地)
+$ jaden batch customers.csv -o checked.csv
+6 rows in 0.5s (12/s): ACCEPTED 4, AMBIGUOUS 1, UNSUPPORTED 1
+
+# Pick the column, write Excel-friendly UTF-8 with BOM, use 4 worker processes
+$ jaden batch customers.csv --column 3 -o checked.csv --output-encoding utf-8-sig --jobs 4
+
+# Text file with one address per line, JSONL out
+$ jaden batch addresses.txt -o checked.jsonl
+```
+Every input row is written back unchanged, followed by `jaden_status`, `jaden_canonical`, `jaden_lg_code`, the address components, `jaden_building` / `jaden_floor` / `jaden_unit`, `jaden_postal_code`, `jaden_kana`, `jaden_romaji`, `jaden_latitude` / `jaden_longitude`, `jaden_verification_level`, `jaden_former_municipality`, `jaden_candidates` and `jaden_message`. From Python, `jaden.batch.flat_record(normalize(a), validate(a))` returns the same flat record.
+
 #### Exit Codes for Shell Automation
 | Exit Code | Meaning | Example Scenario |
 | :---: | :--- | :--- |
@@ -532,12 +559,13 @@ In accordance with our engineering principles, JADEN documents its exact operati
 2. **Ambiguity is reported, not guessed:** When the town, 丁目 and postal code still fit more than one municipality (`府中市1-1`, `栄町7-7`, `本町1-8-19`), JADEN returns AMBIGUOUS with the full candidate list. On JA-AddrBench, addresses written without their municipality are resolved about half the time; for the rest the correct municipality is in the candidate list 98.6% of the time.
 3. **The town lists are not complete:** About 1.6% of the real addresses in JA-AddrBench use a town the MLIT list does not have; Japan Post's list covers half of those (verified at town level, without coordinates), leaving 0.8% unverified. An unregistered town is a warning, not an error, unless `--strict` is used. Town names written without a prefix the registry uses (`小俣町` for 奄美市`名瀬小俣町`) can still be matched to the wrong place when no municipality is written.
 4. **丁目 checks follow the registry:** A 丁目 missing from the MLIT list is MALFORMED. In towns MLIT records as only partly divided into 丁目, an out-of-range first number is read as a lot number instead (e.g. `御望971-1-2`), so a typo there is not caught.
-5. **Data vintage:** Municipalities: MIC, 2024-01-01. Towns: MLIT 2025 edition. Postal codes: Japan Post, as downloaded (`jaden data info`). Municipal mergers and new 住居表示 after those dates are unknown until `jaden data update`.
-6. **Romaji input:** Needs a municipality (with `-shi`, `-ku`, `City`, … or a recognizable town). Building names in romaji are kept as written.
-7. **Kyoto:** Some Kyoto town names occur more than once in the same ward and are told apart only by the street clause; JADEN verifies the town but does not give one point for them.
-8. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
-9. **Memory:** The gazetteer makes a running engine use about 90 MB (parser-only mode stays at a few MB) and the first address takes about 0.4 s to load the data.
-10. **GSI Address Search Rate and Availability:** The online geocoder calls GSI's public `AddressSearch` endpoint; consult GSI's terms and keep request rates reasonable.
+5. **Former names:** Names that disappeared since 2000-10-01 are covered; names from earlier mergers are not. Without a written prefecture, a former town or village name is used only with its county (`磐田郡浅羽町`), because such names usually live on as town names elsewhere.
+6. **Data vintage:** Municipalities: MIC, 2024-01-01. Towns: MLIT 2025 edition. Postal codes: Japan Post, as downloaded (`jaden data info`). Municipal mergers and new 住居表示 after those dates are unknown until `jaden data update`.
+7. **Romaji input:** Needs a municipality (with `-shi`, `-ku`, `City`, … or a recognizable town). Building names in romaji are kept as written.
+8. **Kyoto:** Some Kyoto town names occur more than once in the same ward and are told apart only by the street clause; JADEN verifies the town but does not give one point for them.
+9. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
+10. **Memory:** The gazetteer makes a running engine use about 90 MB (parser-only mode stays at a few MB) and the first address takes about 0.4 s to load the data.
+11. **GSI Address Search Rate and Availability:** The online geocoder calls GSI's public `AddressSearch` endpoint; consult GSI's terms and keep request rates reasonable.
 
 ### Resolved in v0.2 (from the v0.1 list)
 `1の2の3` delimiters, malformed kanji numerals (`五三十`), the non-standard `上ラル`, Obihiro-style grids (verified through the gazetteer), the `--provider` / `--json -c` / `jaden -` CLI issues, testing the installed wheel in CI, and lint/type checks in CI (`ruff`, `mypy`).

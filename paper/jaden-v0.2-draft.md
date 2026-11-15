@@ -109,6 +109,10 @@ Parser-only is the same engine with the gazetteer disabled (JADEN v0.1 behaviour
 | chome_99 | 1,026 | 74 | 1,026 |
 | non_address | 4,700 | 2 | 2,723 |
 
+**Former municipality names.** JA-AddrBench also contains all 411 schools whose published address still uses one of Hamamatsu's wards abolished on 2024-01-01 (`former_name`). Former names are mapped to current municipalities by placing every current MLIT town point inside the 2000-10-01 boundaries (国土数値情報 N03) and adding the MIC code-change list; the town then chooses among the successors. JADEN resolves 411/411 to the ward their area became, including the old 北区, which was split between two new wards; parser-only mode gets 8.3%.
+
+**Real-world noise.** A second set adds what addresses look like on forms and labels to each clean address — a room as a fourth number, a building with the room attached, a building and floor, `号室`, `Apt`, spaces between components, form labels and country prefixes, full-width text — for 34,032 inputs. A pass requires the same municipality and canonical address as the clean input and exactly the added building, floor and room. JADEN passes all 34,032. Reaching this required handling several real conventions the first version mis-read: rooms after a space (`潮見188 703号室` had been read as lot 188703), numbered town names (`忠和1条4`, `古町通6番町976`), Iwate's 地割, lot-series lots (`1-乙394`), parenthesized notes, and Kyoto clauses that end in the street's own 丁目.
+
 **Abstention.** On `town_only`, JADEN abstains on 2,328 inputs; 2,125 carry a candidate list, which contains the gold municipality in 98.6% of cases (median list size 8). The remainder are towns registered in more places than a list is useful for, or not registered at all.
 
 **Geocoding.** For correctly resolved `original` inputs, the median distance from JADEN's point to the surveyed school point is 360 m with the bundled 丁目/town points (79.3% within 1 km) and 71 m with block-level data (89.0% within 1 km). School sites are large, so this distance includes the site extent.
