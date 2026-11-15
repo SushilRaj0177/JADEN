@@ -111,3 +111,9 @@ def test_former_municipality_names(raw, lg_code, canonical):
 def test_former_name_without_town_is_ambiguous():
     # 浦和市 became four wards; without a town there is nothing to choose by
     assert jaden.validate("埼玉県浦和市").status == "AMBIGUOUS"
+
+
+def test_basement_level_token():
+    c = jaden.normalize("愛知県名古屋市中区栄3-5-1 サカエチカ B1").components
+    assert (c.building, c.floor) == ("サカエチカ", "B1")
+    assert jaden.normalize("東京都港区芝公園4-2-8 B棟305号室").components.building == "B棟"

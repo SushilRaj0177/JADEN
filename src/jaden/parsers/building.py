@@ -20,6 +20,9 @@ _FLOOR_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?P<floor>(?:B\d+|\d+|地下\d+)[\s]*(?:階|[Ff]))(?:\s|$|[A-Za-z0-9])?",
 )
 
+# A basement level written alone after the building name: 'サカエチカ B1'
+_BASEMENT_TOKEN: Final[re.Pattern[str]] = re.compile(r"(?:^|\s)(?P<floor>B\d{1,2})(?=\s|$)")
+
 # Room / Unit patterns: e.g. '301号室', '502号', '101号室'
 _ROOM_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?P<room>\d+[\s]*(?:号室|号)|(?:^|\s)\d{3,4}(?:\s|$))"
@@ -62,7 +65,7 @@ class BuildingParser:
             return None, None, working
 
         # 1. Extract Floor if present
-        floor_match = _FLOOR_PATTERN.search(working)
+        floor_match = _FLOOR_PATTERN.search(working) or _BASEMENT_TOKEN.search(working)
         if floor_match:
             floor = floor_match.group("floor").strip()
             working = (working[:floor_match.start()] + " " + working[floor_match.end():]).strip()
