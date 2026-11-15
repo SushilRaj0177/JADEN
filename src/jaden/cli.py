@@ -6,6 +6,7 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden validate "<address>" [--json]
   jaden geocode "<address>" [--json] [--provider gsi|offline]
   jaden data info | update | fetch-blocks <pref>...
+  jaden batch <file> [-o out] [--column 住所] [--jobs N]
 """
 
 import sys
@@ -517,7 +518,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="Network timeout in seconds (default: 5.0).",
     )
 
-    # 5. data
+    # 5. batch
+    batch_p = subparsers.add_parser(
+        "batch",
+        help="Process a CSV / TSV / JSONL / text file of addresses",
+        description="Resolves the address column of every row and writes the rows back with jaden_* result "
+                    "columns appended. Input encoding (UTF-8 or Shift_JIS) is detected.",
+    )
+    batch_p.add_argument("input", help="Input file (.csv, .tsv, .jsonl, or text with one address per line); '-' for stdin.")
+    batch_p.add_argument("-o", "--output", help="Output file (format from its extension); default: stdout.")
+    batch_p.add_argument("--column", help="Address column name or 1-based number (default: a column named "
+                                          "address/住所/所在地, else the first). For JSONL, the key (default: address).")
+    batch_p.add_argument("--format", choices=["csv", "tsv", "jsonl", "txt"], help="Input format (default: from extension).")
+    batch_p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / Shift_JIS).")
+    batch_p.add_argument("--output-encoding", default="utf-8",
+                         help="Output encoding; utf-8-sig opens cleanly in Excel, cp932 is Shift_JIS (default: utf-8).")
+    batch_p.add_argument("--strict", action="store_true", help="Require town-level verification for ACCEPTED.")
+    batch_p.add_argument("--jobs", type=int, default=1, help="Worker processes (default: 1).")
+
+    # 6. data
     data_p = subparsers.add_parser(
         "data",
         help="Show or refresh the gazetteer data (MLIT towns, Japan Post postal codes)",
@@ -540,7 +559,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     # Pre-parse heuristic: if the first argument is not a known subcommand or flag,
     # default to 'normalize' for convenience and backward compatibility.
-    known_cmds = {"normalize", "parse", "validate", "geocode", "data", "-h", "--help", "-v", "--version"}
+    known_cmds = {"normalize", "parse", "validate", "geocode", "data", "batch", "-h", "--help", "-v", "--version"}
     if raw_args and raw_args[0] not in known_cmds and (raw_args[0] == "-" or not raw_args[0].startswith("-")):
         raw_args.insert(0, "normalize")
 
@@ -559,6 +578,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.command:
         parser.print_help()
         return 0
+
+    if args.command == "batch":
+        from pathlib import Path
+        from .batch import run_batch
+        try:
+            run_batch(Path(args.input), Path(args.output) if args.output else None, fmt=args.format,
+                      column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,
+                      strict=args.strict, jobs=max(1, args.jobs))
+            return 0
+        except (ValueError, OSError, UnicodeDecodeError) as exc:
+            sys.stderr.write(f"Error: {exc}\n")
+            return EX_USAGE
 
     if args.command == "data":
         try:

@@ -496,6 +496,15 @@ class AddressNormalizer:
                         candidate_records = narrowed
                         ambiguous_candidates = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in narrowed)
 
+        # Only a prefecture stem was recognized ('東京タワー' -> 東京) and nothing after it is a registered
+        # town or a block number: a name that mentions a place, so the text is not rewritten as an address
+        stem_only_name = (
+            pref_rec is not None and muni_rec is None and not is_ambiguous and not is_pref_inferred
+            and not working_text.startswith(pref_rec.name) and not has_numbers
+            and kyoto_clause is None and hokkaido_clause is None
+            and (town_res is None or town_res.match is None)
+        )
+
         # Validation Guard: Reject inputs with zero verified Japanese administrative or conventional entities
         if nothing_recognized:
             latency_us = (time.perf_counter_ns() - start_time_ns) / 1_000.0
@@ -708,7 +717,7 @@ class AddressNormalizer:
         if unit_val:
             secondary_parts.append(unit_val)
 
-        base_addr = "".join(canonical_parts)
+        base_addr = sanitized if stem_only_name else "".join(canonical_parts)
         if secondary_parts:
             canonical_str = f"{base_addr} {' '.join(secondary_parts)}"
         else:

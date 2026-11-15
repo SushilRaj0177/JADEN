@@ -9,6 +9,7 @@ Post uses for mail rather than a guessed transliteration.
 """
 
 import json
+import re
 import unicodedata
 from pathlib import Path
 from typing import Dict, Optional, List, Any, Final
@@ -57,6 +58,24 @@ def kana_reading(pref: Optional[PrefectureRecord], muni: Optional[MunicipalityRe
     return "".join(parts)
 
 
+def _english_unit(unit: Optional[str]) -> Optional[str]:
+    """'101号室' / '101号' / '101' -> '#101' for an English address line."""
+    if not unit:
+        return None
+    digits = re.match(r"^(\d+[A-Za-z]?)", unit)
+    return f"#{digits.group(1)}" if digits else unit
+
+
+def _english_floor(floor: Optional[str]) -> Optional[str]:
+    """'5階' -> '5F', '地下1階' -> 'B1F'."""
+    if not floor:
+        return None
+    m = re.match(r"^(地下|B)?\s*(\d+)\s*(?:階|[Ff])$", floor)
+    if not m:
+        return floor
+    return f"{'B' if m.group(1) else ''}{m.group(2)}F"
+
+
 def _words(romaji: str) -> List[str]:
     """'SAPPORO SHI CHUO KU' -> ['Sapporo-shi', 'Chuo-ku']"""
     out: List[str] = []
@@ -100,6 +119,6 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
     if c.postal_code:
         pref_part = f"{pref_part} {c.postal_code}".strip()
 
-    lead = " ".join(x for x in (c.building, c.floor, c.unit) if x)
+    lead = " ".join(x for x in (c.building, _english_floor(c.floor), _english_unit(c.unit)) if x)
     parts = ([lead] if lead else []) + first + admin + ([pref_part] if pref_part else [])
     return ", ".join(p for p in parts if p)
