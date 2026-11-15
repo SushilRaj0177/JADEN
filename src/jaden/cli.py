@@ -9,6 +9,9 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden batch <file> [-o out] [--column 住所] [--jobs N]
   jaden compare "<address A>" "<address B>"
   jaden dedupe <file> [-o out] [--level unit|house|block|town]
+  jaden postal <code>            postal code -> addresses
+  jaden suggest "<partial>"      autocomplete
+  jaden reverse <lat> <lon>      coordinate -> nearest town / 丁目 / block
 """
 
 import sys
@@ -564,6 +567,7 @@ def build_parser() -> argparse.ArgumentParser:
     batch_p.add_argument("--jobs", type=int, default=1, help="Worker processes (default: 1).")
 
     _add_toolkit_parsers(subparsers)
+    _add_lookup_parsers(subparsers)
 
     # data
     data_p = subparsers.add_parser(
@@ -616,6 +620,69 @@ def _add_toolkit_parsers(subparsers: Any) -> None:
                       help="How precisely addresses must agree (default: unit = same house and same room).")
 
 
+def _add_lookup_parsers(subparsers: Any) -> None:
+    po_p = subparsers.add_parser(
+        "postal", help="Look up the addresses a postal code covers",
+        description="Postal code (105-0011, 1050011, 〒105-0011) -> prefecture, municipality, town, readings.")
+    po_p.add_argument("code", help="7-digit postal code.")
+    po_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+    su_p = subparsers.add_parser(
+        "suggest", help="Complete a partly typed address or postal code",
+        description="Autocomplete: municipalities, towns (by spelling or reading), 丁目, or postal codes.")
+    su_p.add_argument("text", help="Partial address ('東京都港区芝', '港区しば') or postal code ('105-00').")
+    su_p.add_argument("--limit", type=int, default=10, help="Maximum number of suggestions (default: 10).")
+    su_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+    rv_p = subparsers.add_parser(
+        "reverse", help="Find the registered town nearest to a coordinate (offline)",
+        description="Latitude and longitude -> nearest town / 丁目 point (block with block data installed).")
+    rv_p.add_argument("latitude", type=float)
+    rv_p.add_argument("longitude", type=float)
+    rv_p.add_argument("--limit", type=int, default=1, help="Number of nearest places to return (default: 1).")
+    rv_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+
+def _handle_postal(args: argparse.Namespace) -> int:
+    from .lookup import lookup_postal
+    found = lookup_postal(args.code)
+    if args.json:
+        print(json.dumps([p.to_dict() for p in found], ensure_ascii=False, indent=2))
+    elif not found:
+        print(f"No address for postal code '{args.code}'.")
+    else:
+        for p in found:
+            print(f"〒{p.postal_code}  {p.address}" + (f"  [{p.building}]" if p.building else ""))
+            print(f"            {p.kana}")
+            print(f"            {p.romaji}")
+    return 0 if found else 1
+
+
+def _handle_suggest(args: argparse.Namespace) -> int:
+    from .lookup import suggest
+    found = suggest(args.text, limit=args.limit)
+    if args.json:
+        print(json.dumps([s.to_dict() for s in found], ensure_ascii=False, indent=2))
+    else:
+        for s in found:
+            print(s.text + (f"  〒{s.postal_code}" if s.postal_code else ""))
+    return 0 if found else 1
+
+
+def _handle_reverse(args: argparse.Namespace) -> int:
+    from .lookup import reverse_geocode
+    found = reverse_geocode(args.latitude, args.longitude, limit=args.limit)
+    if args.json:
+        print(json.dumps([r.to_dict() for r in found], ensure_ascii=False, indent=2))
+    elif not found:
+        print("No registered town within 30 km of that point.")
+    else:
+        for r in found:
+            print(f"{r.address}  ({r.level} point, {r.distance_m:.0f} m away)"
+                  + (f"  〒{r.postal_code}" if r.postal_code else ""))
+    return 0 if found else 1
+
+
 def _handle_compare(args: argparse.Namespace) -> int:
     from .matching import compare
     result = compare(args.a, args.b)
@@ -646,6 +713,9 @@ def _handle_dedupe(args: argparse.Namespace) -> int:
 _TOOLKIT_HANDLERS = {
     "compare": _handle_compare,
     "dedupe": _handle_dedupe,
+    "postal": _handle_postal,
+    "suggest": _handle_suggest,
+    "reverse": _handle_reverse,
 }
 
 

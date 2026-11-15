@@ -15,6 +15,7 @@ from .models.geospatial import GeocodingStatus, Coordinates, GeospatialResult
 from .geocoding import BaseGeospatialResolver, GSIGeocoder, OfflineGeocoder, geocode
 from .data.loader import get_registry
 from .matching import AddressComparison, compare, find_duplicates, match_key
+from .lookup import PostalAddress, ReverseResult, Suggestion, lookup_postal, reverse_geocode, suggest
 
 __all__ = [
     "__version__",
@@ -45,4 +46,10 @@ __all__ = [
     "compare",
     "find_duplicates",
     "match_key",
+    "PostalAddress",
+    "ReverseResult",
+    "Suggestion",
+    "lookup_postal",
+    "reverse_geocode",
+    "suggest",
 ]

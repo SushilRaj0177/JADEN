@@ -17,6 +17,7 @@ Data directory resolution (first match wins):
 
 import gzip
 import json
+import math
 import os
 import re
 import threading
@@ -27,6 +28,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from ..core.townkey import TOWN_KEY_VERSION, kana_key, town_key
 
 _BUNDLED_DIR = Path(__file__).parent
+# Grid cell of the nearest-town index, in degrees (about 2 km)
+_CELL_DEG = 0.02
 # Longest town key in the national list is under 30 characters; inputs are clipped to this
 _MAX_KEY_CHARS = 40
 
@@ -200,12 +203,13 @@ class Gazetteer:
         self._lg_by_key: Optional[Dict[str, List[str]]] = None
         self._postal_only: Dict[str, Dict[str, TownEntry]] = {}
         self._kana_index: Dict[str, Dict[str, List[TownEntry]]] = {}
+        self._grid: Optional[Tuple[Dict[Tuple[int, int], List[int]], List[float], List[float], List[int]]] = None
         self._postal_by_town: Dict[str, Dict[str, List[str]]] = {}
         self._blocks_present: Dict[str, bool] = {}
         self._key_version_ok: Optional[bool] = None
         self._block_tables: Dict[str, Optional[_Table]] = {}
         self._blocks: Dict[str, Dict[Tuple[str, int, int], BlockPoint]] = {}
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # re-entrant: loaders call each other
 
     # ------------------------------------------------------------------ load
     @property
@@ -392,6 +396,120 @@ class Gazetteer:
         key = town_key(town) if town else ""
         codes = by_town.get(key) if key else None
         return sorted(set(codes or by_town.get("", [])))
+
+    # ------------------------------------------------------ prefix searches
+    def postal_prefix(self, digits: str, limit: int = 20) -> List[PostalRecord]:
+        """Postal records whose code starts with ``digits`` (3 to 7 digits), in code order."""
+        if not digits.isdigit() or not 3 <= len(digits) <= 7:
+            return []
+        pattern = re.compile(rf"^{digits}\d{{{7 - len(digits)}}}\t.*$", re.MULTILINE)
+        found = sorted(m.group(0) for m in pattern.finditer(self._postal().text))
+        return [self._parse_postal(ln)[0] for ln in found[:limit]]
+
+    def town_prefix(self, key_prefix: str, prefecture_code: Optional[str] = None,
+                    limit: int = 50) -> List[Tuple[str, str]]:
+        """(municipality code, registered town name) for towns whose key starts with ``key_prefix``, nationwide
+        or in one prefecture. One entry per town (丁目 collapsed)."""
+        if not key_prefix:
+            return []
+        lg = rf"{prefecture_code}\d{{4}}" if prefecture_code else r"\d{6}"
+        pattern = re.compile(rf"^({lg})\t{re.escape(key_prefix)}[^\t]*\t[^\t]*\t([^\t]*)\t", re.MULTILINE)
+        out: List[Tuple[str, str]] = []
+        seen = set()
+        for m in pattern.finditer(self._towns_table().text):
+            item = (m.group(1), m.group(2))
+            if item not in seen:
+                seen.add(item)
+                out.append(item)
+                if len(out) >= limit:
+                    break
+        return out
+
+    def town_kana_prefix(self, reading: str, limit: int = 50) -> List[Tuple[str, str]]:
+        """(municipality code, town name) for towns whose reading starts with ``reading`` (a ``kana_key``)."""
+        if not reading:
+            return []
+        small = {"ア": "ァ", "イ": "ィ", "ウ": "ゥ", "エ": "ェ", "オ": "ォ", "ツ": "ッ", "ヤ": "ャ", "ユ": "ュ",
+                 "ヨ": "ョ", "ワ": "ヮ", "カ": "ヵ", "ケ": "ヶ"}
+        kana = "".join(f"[{c}{small[c]}]" if c in small else re.escape(c) for c in reading)
+        pattern = re.compile(rf"^(\d{{6}})\t[^\t]*\t[^\t]*\t([^\t]*)\t(?:[^\t]*\t){{4}}{kana}", re.MULTILINE)
+        out: List[Tuple[str, str]] = []
+        seen = set()
+        for m in pattern.finditer(self._towns_table().text):
+            item = (m.group(1), m.group(2))
+            if item not in seen:
+                seen.add(item)
+                out.append(item)
+                if len(out) >= limit:
+                    break
+        return out
+
+    # -------------------------------------------------------- nearest town
+    def _spatial(self) -> Tuple[Dict[Tuple[int, int], List[int]], List[float], List[float], List[int]]:
+        """Grid index over every town point: cell -> point numbers, plus lat, lon and line offsets."""
+        with self._lock:
+            if self._grid is None:
+                text = self._towns_table().text
+                grid: Dict[Tuple[int, int], List[int]] = {}
+                lats: List[float] = []
+                lons: List[float] = []
+                offsets: List[int] = []
+                pos = text.find("\n") + 1
+                size = len(text)
+                while pos < size:
+                    nl = text.find("\n", pos)
+                    if nl < 0:
+                        nl = size
+                    parts = text[pos:nl].split("\t", 8)
+                    if len(parts) > 7:
+                        lat, lon = float(parts[6]), float(parts[7])
+                        grid.setdefault((int(lat / _CELL_DEG), int(lon / _CELL_DEG)), []).append(len(lats))
+                        lats.append(lat)
+                        lons.append(lon)
+                        offsets.append(pos)
+                    pos = nl + 1
+                self._grid = (grid, lats, lons, offsets)
+            return self._grid
+
+    def nearest_towns(self, latitude: float, longitude: float, limit: int = 1,
+                      max_km: float = 30.0) -> List[Tuple[float, TownRecord]]:
+        """The town / 丁目 points nearest to a coordinate as (distance in metres, record), nearest first."""
+        grid, lats, lons, offsets = self._spatial()
+        text = self._towns_table().text
+        cy, cx = int(latitude / _CELL_DEG), int(longitude / _CELL_DEG)
+        cos_lat = math.cos(math.radians(latitude))
+        best: List[Tuple[float, int]] = []
+        cell_m = _CELL_DEG * 111_000 * min(1.0, cos_lat)
+        ring = 0
+        while ring * cell_m <= max_km * 1000 + cell_m:
+            for dy in range(-ring, ring + 1):
+                for dx in range(-ring, ring + 1):
+                    if max(abs(dy), abs(dx)) != ring:
+                        continue
+                    for i in grid.get((cy + dy, cx + dx), ()):
+                        d = math.hypot((lats[i] - latitude) * 111_320, (lons[i] - longitude) * 111_320 * cos_lat)
+                        best.append((d, i))
+            best.sort()
+            del best[max(limit, 8):]
+            # Points in rings not yet visited are at least ring * cell away
+            if len(best) >= limit and best[limit - 1][0] <= ring * cell_m:
+                break
+            ring += 1
+        out: List[Tuple[float, TownRecord]] = []
+        for d, i in best[:limit]:
+            if d > max_km * 1000:
+                break
+            nl = text.find("\n", offsets[i])
+            lg, _key, mid, name, chome, kind, lat, lon, kana, romaji = text[offsets[i]:nl if nl >= 0 else len(text)].split("\t")
+            out.append((d, TownRecord(lg, mid, name, int(chome) if chome else None, kind,
+                                      float(lat), float(lon), kana, romaji)))
+        return out
+
+    def block_points_in(self, lg_code: str) -> Dict[Tuple[str, int, int], BlockPoint]:
+        """Block points of one municipality keyed by (town key, 丁目 or 0, block); empty without block data."""
+        if lg_code not in self._blocks:
+            self.block_point(lg_code, "", None, 0)
+        return self._blocks.get(lg_code, {})
 
     # ---------------------------------------------------------------- blocks
     def block_dirs(self) -> List[Path]:
