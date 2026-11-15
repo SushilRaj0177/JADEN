@@ -113,6 +113,8 @@ def format_normalize_text(res: NormalizedAddress) -> str:
 
     lines.append(f"Confidence: {res.confidence_score:.2f}")
     lines.append(f"Canonical:  {res.canonical}")
+    for s in res.suggestions:
+        lines.append(f"Suggestion: {s}")
     if res.kana:
         lines.append(f"Kana:       {res.kana}")
     if res.romaji:
@@ -254,6 +256,10 @@ def format_validate_text(v: ValidationResult) -> str:
         lines.append(f"Regime:      {v.address_regime}")
     if v.verification_level != "none":
         lines.append(f"Verified to: {v.verification_level}")
+    if v.precision != "none":
+        lines.append(f"Precision:   {v.precision}")
+    for s in v.suggestions:
+        lines.append(f"Suggestion:  {s}")
     if v.message:
         lines.append(f"Message:     {v.message}")
     for w in v.warnings:
@@ -296,14 +302,15 @@ def format_geocode_text(res: GeospatialResult) -> str:
 # Command Handlers
 # ==============================================================================
 
-def handle_normalize(address: str, as_json: bool, canonical_only: bool) -> int:
+def handle_normalize(address: str, as_json: bool, canonical_only: bool, fix: bool = False,
+                     style: str = "canonical") -> int:
     """Executes the normalize command."""
-    res = normalize(address)
+    res = normalize(address, autocorrect=fix)
 
     if as_json:
-        print(res.to_json(indent=2))
+        print(json.dumps(res.to_dict(), ensure_ascii=False, indent=2))
     elif canonical_only:
-        print(res.canonical)
+        print(res.format(style) if res.confidence_score > 0 else res.canonical)
     else:
         print(format_normalize_text(res))
 
@@ -328,9 +335,9 @@ def handle_parse(address: str, as_json: bool) -> int:
     return 0 if res.confidence_score > 0.0 else 1
 
 
-def handle_validate(address: str, as_json: bool, strict: bool = False) -> int:
+def handle_validate(address: str, as_json: bool, strict: bool = False, fix: bool = False) -> int:
     """Executes the validate command with status-specific exit codes."""
-    val = validate(address, strict=strict)
+    val = validate(address, strict=strict, autocorrect=fix)
 
     if as_json:
         print(val.to_json(indent=2))
@@ -452,6 +459,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Output only the canonical normalized address string.",
     )
+    norm_p.add_argument(
+        "--style",
+        choices=["canonical", "hyphen", "en"],
+        default="canonical",
+        help="With -c: 4丁目2番8号 (canonical), 4-2-8 (hyphen) or the English line (en).",
+    )
+    norm_p.add_argument(
+        "--fix",
+        action="store_true",
+        help="Correct a misspelt town when exactly one registered town is one character away.",
+    )
 
     # 2. parse
     parse_p = subparsers.add_parser(
@@ -488,6 +506,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict",
         action="store_true",
         help="Also require the town to be found in the national gazetteer.",
+    )
+    val_p.add_argument(
+        "--fix",
+        action="store_true",
+        help="Correct a misspelt town when exactly one registered town is one character away.",
     )
 
     # 4. geocode
@@ -534,6 +557,8 @@ def build_parser() -> argparse.ArgumentParser:
     batch_p.add_argument("--output-encoding", default="utf-8",
                          help="Output encoding; utf-8-sig opens cleanly in Excel, cp932 is Shift_JIS (default: utf-8).")
     batch_p.add_argument("--strict", action="store_true", help="Require town-level verification for ACCEPTED.")
+    batch_p.add_argument("--fix", action="store_true",
+                         help="Correct misspelt towns (unique one-character corrections only; the original is reported).")
     batch_p.add_argument("--jobs", type=int, default=1, help="Worker processes (default: 1).")
 
     # 6. data
@@ -585,7 +610,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         try:
             run_batch(Path(args.input), Path(args.output) if args.output else None, fmt=args.format,
                       column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,
-                      strict=args.strict, jobs=max(1, args.jobs))
+                      strict=args.strict, jobs=max(1, args.jobs), autocorrect=args.fix)
             return 0
         except (ValueError, OSError, UnicodeDecodeError) as exc:
             sys.stderr.write(f"Error: {exc}\n")
@@ -610,11 +635,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         if args.command == "normalize":
-            return handle_normalize(target_address, as_json=args.json, canonical_only=args.canonical_only)
+            return handle_normalize(target_address, as_json=args.json, canonical_only=args.canonical_only,
+                                    fix=args.fix, style=args.style)
         elif args.command == "parse":
             return handle_parse(target_address, as_json=args.json)
         elif args.command == "validate":
-            return handle_validate(target_address, as_json=args.json, strict=args.strict)
+            return handle_validate(target_address, as_json=args.json, strict=args.strict, fix=args.fix)
         elif args.command == "geocode":
             return handle_geocode(target_address, as_json=args.json, provider=args.provider, timeout=args.timeout)
         else:

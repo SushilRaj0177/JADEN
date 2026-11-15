@@ -23,10 +23,10 @@ from .models.address import NormalizedAddress
 from .models.validation import ValidationResult
 
 RESULT_FIELDS: Tuple[str, ...] = (
-    "status", "valid", "canonical", "lg_code", "prefecture", "county", "city", "ward", "town",
+    "status", "valid", "canonical", "hyphenated", "precision", "lg_code", "prefecture", "county", "city", "ward", "town",
     "chome", "ban", "go", "banchi", "edaban", "lot_number", "building", "floor", "unit",
     "postal_code", "kana", "romaji", "latitude", "longitude", "location_level",
-    "verification_level", "former_municipality", "candidates", "message",
+    "verification_level", "former_municipality", "corrected_from", "suggestions", "candidates", "message",
 )
 
 
@@ -37,6 +37,8 @@ def flat_record(res: NormalizedAddress, val: ValidationResult) -> Dict[str, Any]
         "status": val.status,
         "valid": val.valid,
         "canonical": res.canonical if res.confidence_score > 0 else "",
+        "hyphenated": res.format("hyphen") if res.confidence_score > 0 else "",
+        "precision": val.precision,
         "lg_code": c.lg_code,
         "prefecture": c.prefecture,
         "county": c.county,
@@ -60,6 +62,8 @@ def flat_record(res: NormalizedAddress, val: ValidationResult) -> Dict[str, Any]
         "location_level": res.location_level,
         "verification_level": val.verification_level,
         "former_municipality": c.former_municipality,
+        "corrected_from": c.town_corrected_from,
+        "suggestions": " | ".join(res.suggestions),
         "candidates": " | ".join(val.ambiguous_candidates),
         "message": "; ".join([val.message] + [w for w in val.warnings if w not in val.message]),
     }
@@ -69,10 +73,10 @@ _ENGINE: Any = None
 _STRICT = False
 
 
-def _init_worker(strict: bool) -> None:
+def _init_worker(strict: bool, autocorrect: bool = False) -> None:
     global _ENGINE, _STRICT
     from .engine import AddressNormalizer
-    _ENGINE = AddressNormalizer()
+    _ENGINE = AddressNormalizer(autocorrect=autocorrect)
     _STRICT = strict
 
 
@@ -155,7 +159,7 @@ def read_rows(text: str, fmt: str, column: Optional[str]) -> Tuple[List[str], It
 
 def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
               encoding: Optional[str] = None, out_encoding: str = "utf-8", strict: bool = False, jobs: int = 1,
-              prefix: str = "jaden_", log: TextIO = sys.stderr) -> Counter:
+              prefix: str = "jaden_", log: TextIO = sys.stderr, autocorrect: bool = False) -> Counter:
     """Processes a file and writes the rows with result columns appended; returns counts by status."""
     in_fmt = detect_format(input_path, fmt)
     to_stdout = output is None or str(output) == "-"
@@ -175,10 +179,10 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
         addresses = [a for _, a in materialized]
         results: Iterable[Dict[str, Any]]
         if jobs > 1 and len(addresses) > 1:
-            pool = Pool(jobs, initializer=_init_worker, initargs=(strict,))
+            pool = Pool(jobs, initializer=_init_worker, initargs=(strict, autocorrect))
             results = pool.imap(process_address, addresses, chunksize=256)
         else:
-            _init_worker(strict)
+            _init_worker(strict, autocorrect)
             results = map(process_address, addresses)
         writer = None
         for (row, _), rec in zip(materialized, results):

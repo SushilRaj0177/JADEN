@@ -26,7 +26,8 @@ from .parsers.kyoto import KyotoParser
 from .parsers.hokkaido import HokkaidoParser
 from .parsers.fsm import BlockFSM
 from .parsers.building import BuildingParser
-from .parsers.town import resolve_town, expand_candidates, town_variants, koaza_remainder, TownResolution
+from .parsers.town import (resolve_town, expand_candidates, town_variants, koaza_remainder, near_towns,
+                           TownResolution)
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
 from .core.townkey import town_key
 from .data.loader import MunicipalityRecord
@@ -74,11 +75,22 @@ def extract_postal_code(raw: str) -> Optional[str]:
 class AddressNormalizer:
     """Production-grade Japanese address normalization engine."""
 
-    def __init__(self, gazetteer: Optional[Gazetteer] = None, use_gazetteer: bool = True) -> None:
+    def __init__(self, gazetteer: Optional[Gazetteer] = None, use_gazetteer: bool = True,
+                 autocorrect: bool = False) -> None:
+        """
+        Args:
+            gazetteer: Town gazetteer to use (default: the bundled / user-updated one).
+            use_gazetteer: False gives the parser-only behaviour of v0.1.
+            autocorrect: Replace a misspelt town by the registered one when exactly one registered
+                town is one character away. The original spelling is kept in
+                ``components.town_corrected_from`` and in the notes. Off by default: without it the
+                correction is only offered in ``suggestions``.
+        """
         self.admin_parser = AdministrativeParser()
         self.registry = self.admin_parser.registry
         self._gazetteer = gazetteer
         self.use_gazetteer = use_gazetteer
+        self.autocorrect = autocorrect
 
     @property
     def gazetteer(self) -> Optional[Gazetteer]:
@@ -88,14 +100,54 @@ class AddressNormalizer:
             self._gazetteer = get_gazetteer()
         return self._gazetteer if self._gazetteer.available else None
 
-    def normalize(self, raw_address: str) -> NormalizedAddress:
+    def normalize(self, raw_address: str, autocorrect: Optional[bool] = None) -> NormalizedAddress:
+        """Normalizes a raw Japanese (or romanized) address into canonical structured form.
+
+        Args:
+            raw_address: Raw user-input address string.
+            autocorrect: Overrides the engine's ``autocorrect`` setting for this call.
+        """
         if self.use_gazetteer and raw_address and looks_romanized(raw_address):
             converted = romaji_to_japanese(raw_address)
             if converted is not None:
                 japanese, romaji_notes = converted
                 res = self._normalize(japanese, allow_reread=True)
                 return dataclasses.replace(res, input_raw=raw_address, notes=tuple(romaji_notes) + res.notes)
-        return self._normalize(raw_address, allow_reread=True)
+        res = self._normalize(raw_address, allow_reread=True)
+        if res.components.town_verified is False and res.components.lg_code and not res.components.is_ambiguous:
+            res = self._with_corrections(res, self.autocorrect if autocorrect is None else autocorrect)
+        return res
+
+    def _with_corrections(self, res: NormalizedAddress, apply: bool) -> NormalizedAddress:
+        """Offers (or applies) the registered town a misspelt one most likely stands for."""
+        gaz = self.gazetteer
+        c = res.components
+        muni = self.registry.get_municipality_by_code(c.lg_code) if c.lg_code else None
+        written = c.town or ""
+        if gaz is None or muni is None or not written or written not in res.input_sanitized:
+            return res
+        corrected: List[Tuple[str, NormalizedAddress]] = []
+        for m in (self.registry.wards_of(muni) or [muni]):
+            for name in near_towns(gaz, m.lg_code, written):
+                # Write the registered name the way the input wrote the town (without an added 大字)
+                plain = name[2:] if name.startswith("大字") and not written.startswith("大字") else name
+                fixed = self._normalize(res.input_sanitized.replace(written, plain, 1), allow_reread=False)
+                if fixed.components.town_verified and fixed.canonical not in [x.canonical for _, x in corrected]:
+                    corrected.append((plain, fixed))
+        if not corrected:
+            return res
+        suggestions = tuple(x.canonical for _, x in corrected)
+        if apply and len(corrected) == 1 and len(town_key(written)) >= 3:
+            name, fixed = corrected[0]
+            note = f"corrected town '{written}' to the registered '{name}' (one character differs)"
+            return dataclasses.replace(
+                fixed, input_raw=res.input_raw, input_sanitized=res.input_sanitized,
+                components=dataclasses.replace(fixed.components, town_corrected_from=written),
+                notes=(note,) + fixed.notes)
+        names = "、".join(name for name, _ in corrected[:5])
+        return dataclasses.replace(
+            res, suggestions=suggestions,
+            notes=res.notes + (f"did you mean {names}? '{written}' is one character away",))
 
     def _normalize(self, raw_address: str, allow_reread: bool) -> NormalizedAddress:
         """Normalizes a raw Japanese address string into canonical structured form.
@@ -337,7 +389,8 @@ class AddressNormalizer:
             block_dict, _, tail_text = BlockFSM.parse(
                 text_after_conventions[len(fixed_town):], has_chome_already=has_chome_from_hokkaido)
             town_name = fixed_town
-            if _STRUCTURAL_TOWN.match(text_after_conventions) and block_dict["ban"] is not None:
+            written_aza = fixed_town.startswith(("大字", "字")) and block_dict["chome"] is None
+            if (_STRUCTURAL_TOWN.match(text_after_conventions) or written_aza) and block_dict["ban"] is not None:
                 # After 地割 / 街区 / 部 / 区 the numbers are lot numbers
                 block_dict.update(banchi=block_dict["ban"], edaban=block_dict["go"], ban=None, go=None,
                                   address_regime=AddressRegime.CHIBAN.value)
@@ -539,6 +592,8 @@ class AddressNormalizer:
             notes.append(f"read '{town_text}' with its first number as the registered town {match.entry.name}")
         elif match is not None and variant == "machi":
             notes.append(f"read '{town_text}' as the registered town {match.entry.name}")
+        elif match is not None and variant == "kana":
+            notes.append(f"read '{town_text}' by its reading as the registered town {match.entry.name}")
         partial_tail = ""
         lot_number: Optional[str] = None
         if (match is not None and chome_verified is False and not block_dict["chome_explicit"]
@@ -588,9 +643,14 @@ class AddressNormalizer:
                 regime_val = AddressRegime.CHIBAN.value
             registered = entry.name
             user_part = town_text[:match.consumed]
+            # 大字 / 字 is kept the way the input wrote it, whichever way the registry spells the town:
+            # writing 大字 says the area is cadastral, and dropping it would lose that
             for prefix in ("大字", "字"):
                 if registered.startswith(prefix) and not user_part.startswith(prefix):
                     registered = registered[len(prefix):]
+                    break
+                if user_part.startswith(prefix) and not registered.startswith(("大字", "字")) and variant is None:
+                    registered = prefix + registered
                     break
             remainder = town_text[match.consumed:]
             if remainder and not match.exact and not koaza_remainder(remainder):
@@ -914,7 +974,8 @@ class AddressNormalizer:
         """
         return self.normalize(raw_address).components
 
-    def validate(self, raw_address: str, strict: bool = False) -> ValidationResult:
+    def validate(self, raw_address: str, strict: bool = False,
+                 autocorrect: Optional[bool] = None) -> ValidationResult:
         """Validates an address string against statutory administrative registries.
 
         Evaluates:
@@ -947,10 +1008,12 @@ class AddressNormalizer:
                 message="Empty or whitespace address string.",
             )
 
-        res = self.normalize(raw_address)
+        res = self.normalize(raw_address, autocorrect=autocorrect)
         c = res.components
         level = _verification_level(c)
         warnings = tuple(res.notes)
+        if c.lg_code and c.precision in ("municipality", "town", "chome") and res.confidence_score > 0:
+            warnings += ("no block or lot number: this locates an area, not a building",)
 
         def result(status: ValidationStatus, message: str, lg: Optional[str] = None,
                    confidence: Optional[float] = None, regime: Optional[str] = None) -> ValidationResult:
@@ -966,6 +1029,8 @@ class AddressNormalizer:
                 message=message,
                 verification_level=level if status == ValidationStatus.ACCEPTED else "none",
                 warnings=warnings,
+                precision=c.precision if res.confidence_score > 0 else "none",
+                suggestions=res.suggestions,
             )
 
         if c.is_contradictory:
@@ -1043,25 +1108,24 @@ def _verification_level(c: AddressComponents) -> str:
 _DEFAULT_ENGINE: Optional[AddressNormalizer] = None
 
 
-def normalize(address: str) -> NormalizedAddress:
-    """Public convenience function to normalize a Japanese address."""
+def get_engine() -> AddressNormalizer:
+    """The shared default engine (created on first use)."""
     global _DEFAULT_ENGINE
     if _DEFAULT_ENGINE is None:
         _DEFAULT_ENGINE = AddressNormalizer()
-    return _DEFAULT_ENGINE.normalize(address)
+    return _DEFAULT_ENGINE
+
+
+def normalize(address: str, autocorrect: bool = False) -> NormalizedAddress:
+    """Public convenience function to normalize a Japanese address."""
+    return get_engine().normalize(address, autocorrect=autocorrect)
 
 
 def parse(address: str) -> AddressComponents:
     """Public convenience function to parse a Japanese address into AddressComponents."""
-    global _DEFAULT_ENGINE
-    if _DEFAULT_ENGINE is None:
-        _DEFAULT_ENGINE = AddressNormalizer()
-    return _DEFAULT_ENGINE.parse(address)
+    return get_engine().parse(address)
 
 
-def validate(address: str, strict: bool = False) -> ValidationResult:
+def validate(address: str, strict: bool = False, autocorrect: bool = False) -> ValidationResult:
     """Public convenience function to validate a Japanese address against statutory registries."""
-    global _DEFAULT_ENGINE
-    if _DEFAULT_ENGINE is None:
-        _DEFAULT_ENGINE = AddressNormalizer()
-    return _DEFAULT_ENGINE.validate(address, strict=strict)
+    return get_engine().validate(address, strict=strict, autocorrect=autocorrect)

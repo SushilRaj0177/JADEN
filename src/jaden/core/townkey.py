@@ -84,3 +84,43 @@ def split_chome(name: str) -> Tuple[str, Optional[int]]:
     if val is None:
         return name, None
     return m.group("base"), val
+
+
+_SMALL_KANA: Final[Dict[int, str]] = {ord(a): b for a, b in zip("ァィゥェォッャュョヮヵヶ", "アイウエオツヤユヨワカケ")}
+_KANA_ONLY: Final[re.Pattern[str]] = re.compile(r"^[\u3041-\u3096\u30a1-\u30fa\u30fc\d]+$")
+
+
+def is_kana(text: str) -> bool:
+    """True when ``text`` is written only in hiragana / katakana (digits allowed)."""
+    return bool(text) and bool(_KANA_ONLY.match(unicodedata.normalize("NFKC", text))) and not text.isdigit()
+
+
+def kana_key(text: str) -> str:
+    """Folds a reading for comparison: hiragana -> katakana, small kana -> large, no spaces.
+
+    'しばこうえん', 'シバコウエン' and 'ｼﾊﾞｺｳｴﾝ' share one key; so do 'キョウ' and 'キヨウ',
+    because data and people disagree on small kana.
+    """
+    s = unicodedata.normalize("NFKC", text).replace(" ", "")
+    s = "".join(chr(ord(c) + 0x60) if "\u3041" <= c <= "\u3096" else c for c in s)
+    return s.translate(_SMALL_KANA)
+
+
+def one_edit_apart(a: str, b: str) -> bool:
+    """True when two different strings differ by one substitution, insertion, deletion or adjacent swap."""
+    if a == b:
+        return False
+    la, lb = len(a), len(b)
+    if abs(la - lb) > 1:
+        return False
+    if la == lb:
+        diff = [i for i in range(la) if a[i] != b[i]]
+        if len(diff) == 1:
+            return True
+        return len(diff) == 2 and diff[1] == diff[0] + 1 and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]]
+    if la > lb:
+        a, b = b, a
+    i = 0
+    while i < len(a) and a[i] == b[i]:
+        i += 1
+    return a[i:] == b[i + 1:]

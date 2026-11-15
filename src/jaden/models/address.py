@@ -93,6 +93,25 @@ class AddressComponents:
     postal_code_consistent: Optional[bool] = None  # False when the input postal code belongs elsewhere
     town_registered_elsewhere: Tuple[str, ...] = field(default_factory=tuple)  # same-named municipalities that have the town
     former_municipality: Optional[str] = None # A merged / abolished municipality name the input used ('浦和市')
+    town_corrected_from: Optional[str] = None # The misspelt town as written, when autocorrect replaced it
+
+    @property
+    def precision(self) -> str:
+        """How far down the address goes: 'unit', 'house', 'block', 'chome', 'town', 'municipality',
+        'prefecture' or 'none'. 'house' identifies a building or lot; 'block' is a 番 without 号."""
+        if self.lg_code is None and not self.is_ambiguous:
+            return "prefecture" if self.prefecture else "none"
+        has_house = (self.lot_number is not None or self.banchi is not None
+                     or (self.ban is not None and self.go is not None))
+        if has_house:
+            return "unit" if self.unit else "house"
+        if self.ban is not None:
+            return "block"
+        if self.chome is not None:
+            return "chome"
+        if self.town or self.hokkaido_grid is not None:
+            return "town"
+        return "municipality"
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,10 +130,29 @@ class NormalizedAddress:
     longitude: Optional[float] = None
     location_level: Optional[str] = None      # 'block', 'chome', 'town' or None
     notes: Tuple[str, ...] = field(default_factory=tuple)  # What the gazetteer checks found
+    suggestions: Tuple[str, ...] = field(default_factory=tuple)  # Corrected addresses when the town looks misspelt
+
+    @property
+    def precision(self) -> str:
+        return self.components.precision
+
+    def format(self, style: str = "canonical") -> str:
+        """The address as one string: 'canonical' (4丁目2番8号), 'hyphen' (4-2-8) or 'en' (English order)."""
+        from ..formatting import format_address
+        return format_address(self, style)
+
+    def lines(self) -> Tuple[str, ...]:
+        """Label lines: postal code, address, building / floor / room (empty parts left out)."""
+        from ..formatting import address_lines
+        return address_lines(self)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the normalized address to a clean dictionary."""
-        return asdict(self)
+        data = asdict(self)
+        data["precision"] = self.precision
+        if self.confidence_score > 0:
+            data["hyphenated"] = self.format("hyphen")
+        return data
 
     def to_json(self, indent: Optional[int] = None) -> str:
         """Serializes the normalized address to JSON string."""

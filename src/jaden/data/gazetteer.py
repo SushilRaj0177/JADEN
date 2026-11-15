@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
-from ..core.townkey import TOWN_KEY_VERSION, town_key
+from ..core.townkey import TOWN_KEY_VERSION, kana_key, town_key
 
 _BUNDLED_DIR = Path(__file__).parent
 # Longest town key in the national list is under 30 characters; inputs are clipped to this
@@ -199,6 +199,7 @@ class Gazetteer:
         self._towns: Dict[str, Dict[str, TownEntry]] = {}
         self._lg_by_key: Optional[Dict[str, List[str]]] = None
         self._postal_only: Dict[str, Dict[str, TownEntry]] = {}
+        self._kana_index: Dict[str, Dict[str, List[TownEntry]]] = {}
         self._postal_by_town: Dict[str, Dict[str, List[str]]] = {}
         self._blocks_present: Dict[str, bool] = {}
         self._key_version_ok: Optional[bool] = None
@@ -329,6 +330,18 @@ class Gazetteer:
                 entry.postal_has_chome = True
         self._postal_only[lg_code] = out
         return out
+
+    def towns_by_kana(self, lg_code: str) -> Dict[str, List[TownEntry]]:
+        """Towns of one municipality (MLIT and Japan Post) by folded katakana reading."""
+        cached = self._kana_index.get(lg_code)
+        if cached is None:
+            cached = {}
+            for towns in (self.towns_in(lg_code), self.postal_towns_in(lg_code)):
+                for entry in towns.values():
+                    if entry.kana:
+                        cached.setdefault(kana_key(entry.kana), []).append(entry)
+            self._kana_index[lg_code] = cached
+        return cached
 
     def municipalities_with_town(self, text: str) -> List[Tuple[str, TownMatch]]:
         """All municipalities containing a town that matches the start of ``text`` (longest match per municipality)."""

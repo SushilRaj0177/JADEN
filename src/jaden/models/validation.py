@@ -32,6 +32,8 @@ class ValidationResult:
     message: str = ""
     verification_level: str = "none"   # 'none', 'municipality', 'town', 'chome'
     warnings: Tuple[str, ...] = field(default_factory=tuple)
+    precision: str = "none"            # 'unit', 'house', 'block', 'chome', 'town', 'municipality', 'prefecture', 'none'
+    suggestions: Tuple[str, ...] = field(default_factory=tuple)  # corrected addresses for a misspelt town
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes validation result to clean dictionary."""

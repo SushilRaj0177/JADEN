@@ -17,7 +17,7 @@ municipality still fits, the result stays ambiguous with a narrower list.
 from dataclasses import dataclass, field
 from typing import Optional, List, Tuple, Sequence, Set
 
-from ..core.townkey import town_key
+from ..core.townkey import is_kana, kana_key, one_edit_apart, town_key
 from ..data.gazetteer import Gazetteer, TownMatch, TownRecord, PostalRecord
 from ..data.loader import MunicipalityRecord
 
@@ -122,6 +122,17 @@ def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Opti
         # In a town that is only partly divided into 丁目 ('御望971-1-2'), a bare number may be a lot
         if match.entry.chomes_known and (chome_explicit or all(r.chome is not None for r in match.entry.records)):
             chome_ok = chome in match.entry.chomes
+    if (match is None or not match.exact) and is_kana(town_text):
+        # The town typed by its reading ('しばこうえん'): Japan Post's kana names exactly one town here
+        hits = gaz.towns_by_kana(muni.lg_code).get(kana_key(town_text), [])
+        if len(hits) == 1:
+            hit = hits[0]
+            kana_match = TownMatch(muni.lg_code, hit, len(town_text), exact=True)
+            kana_chome: Optional[bool] = None
+            if chome is not None and hit.chomes_known and (
+                    chome_explicit or all(r.chome is not None for r in hit.records)):
+                kana_chome = chome in hit.chomes
+            return TownCheck(muni, kana_match, kana_chome, _postal_ok(postal, muni.lg_code, kana_match), "kana")
     if match is None or not match.exact or chome_ok is False:
         towns = gaz.towns_in(muni.lg_code)
         for text, kind in town_variants(town_text, first_number):
@@ -242,6 +253,27 @@ def resolve_town(
         town_registered_elsewhere=misplaced,
         notes=tuple(notes),
     )
+
+
+def near_towns(gaz: Gazetteer, lg_code: str, town_text: str) -> List[str]:
+    """Registered town names one edit away from ``town_text`` in one municipality (likely typos).
+
+    Differences in digits are never typos to correct: '北9条西' is not a misspelt '北8条西'.
+    """
+    key = town_key(town_text)
+    if len(key) < 2:
+        return []
+    out: List[str] = []
+    for towns in (gaz.towns_in(lg_code), gaz.postal_towns_in(lg_code)):
+        for other, entry in towns.items():
+            if not one_edit_apart(key, other):
+                continue
+            changed = set(key) ^ set(other)
+            if any(ch.isdigit() for ch in changed):
+                continue
+            if entry.name not in out:
+                out.append(entry.name)
+    return out
 
 
 def expand_candidates(registry, municipality: Optional[MunicipalityRecord],
