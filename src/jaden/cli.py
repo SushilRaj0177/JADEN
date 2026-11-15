@@ -7,12 +7,14 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden geocode "<address>" [--json] [--provider gsi|offline]
   jaden data info | update | fetch-blocks <pref>...
   jaden batch <file> [-o out] [--column 住所] [--jobs N]
+  jaden compare "<address A>" "<address B>"
+  jaden dedupe <file> [-o out] [--level unit|house|block|town]
 """
 
 import sys
 import argparse
 import json
-from typing import Optional, Sequence, List, Final, NoReturn
+from typing import Optional, Sequence, List, Final, NoReturn, Any
 
 # Standard sysexits codes for CLI errors
 EX_USAGE: Final[int] = 64      # Command-line usage error, unknown flag, missing arg, empty stdin
@@ -561,7 +563,9 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Correct misspelt towns (unique one-character corrections only; the original is reported).")
     batch_p.add_argument("--jobs", type=int, default=1, help="Worker processes (default: 1).")
 
-    # 6. data
+    _add_toolkit_parsers(subparsers)
+
+    # data
     data_p = subparsers.add_parser(
         "data",
         help="Show or refresh the gazetteer data (MLIT towns, Japan Post postal codes)",
@@ -575,6 +579,76 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# ==============================================================================
+# Toolkit commands (matching, lookup, extraction, server)
+# ==============================================================================
+
+def _file_arguments(p: argparse.ArgumentParser) -> None:
+    p.add_argument("input", help="Input file (.csv, .tsv, .jsonl, or text with one address per line); '-' for stdin.")
+    p.add_argument("-o", "--output", help="Output file (format from its extension); default: stdout.")
+    p.add_argument("--column", help="Address column name or 1-based number (default: a column named "
+                                    "address/住所/所在地, else the first). For JSONL, the key (default: address).")
+    p.add_argument("--format", choices=["csv", "tsv", "jsonl", "txt"], help="Input format (default: from extension).")
+    p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / Shift_JIS).")
+    p.add_argument("--output-encoding", default="utf-8",
+                   help="Output encoding; utf-8-sig opens cleanly in Excel, cp932 is Shift_JIS (default: utf-8).")
+
+
+def _add_toolkit_parsers(subparsers: Any) -> None:
+    cmp_p = subparsers.add_parser(
+        "compare",
+        help="Tell whether two addresses are the same place",
+        description="Compares two addresses level by level (municipality, town, 丁目, block, house, room). "
+                    "Exit code: 0 same, 1 different, 2 same building / possibly the same, 3 undetermined.",
+    )
+    cmp_p.add_argument("a", help="First address.")
+    cmp_p.add_argument("b", help="Second address.")
+    cmp_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+    dd_p = subparsers.add_parser(
+        "dedupe",
+        help="Group the rows of a file that have the same address (名寄せ)",
+        description="Appends jaden_match_key, jaden_group and jaden_group_size to every row. Rows with the "
+                    "same group number have the same address at the chosen level.",
+    )
+    _file_arguments(dd_p)
+    dd_p.add_argument("--level", choices=["unit", "house", "block", "chome", "town"], default="unit",
+                      help="How precisely addresses must agree (default: unit = same house and same room).")
+
+
+def _handle_compare(args: argparse.Namespace) -> int:
+    from .matching import compare
+    result = compare(args.a, args.b)
+    if args.json:
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+    else:
+        print(f"A:        {result.canonical_a or result.a}")
+        print(f"B:        {result.canonical_b or result.b}")
+        print(f"Verdict:  {result.verdict}")
+        print(f"Agree to: {result.level}")
+        if result.conflict:
+            print(f"Conflict: {result.conflict}")
+        if result.missing:
+            print(f"Missing:  {', '.join(result.missing)} (on one side)")
+        for note in result.notes:
+            print(f"Note:     {note}")
+    return {"same": 0, "different": 1, "undetermined": 3}.get(result.verdict, 2)
+
+
+def _handle_dedupe(args: argparse.Namespace) -> int:
+    from pathlib import Path
+    from .batch import run_dedupe
+    run_dedupe(Path(args.input), Path(args.output) if args.output else None, fmt=args.format, column=args.column,
+               encoding=args.encoding, out_encoding=args.output_encoding, level=args.level)
+    return 0
+
+
+_TOOLKIT_HANDLERS = {
+    "compare": _handle_compare,
+    "dedupe": _handle_dedupe,
+}
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """CLI main entry point."""
     if argv is None:
@@ -584,7 +658,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     # Pre-parse heuristic: if the first argument is not a known subcommand or flag,
     # default to 'normalize' for convenience and backward compatibility.
-    known_cmds = {"normalize", "parse", "validate", "geocode", "data", "batch", "-h", "--help", "-v", "--version"}
+    known_cmds = {"normalize", "parse", "validate", "geocode", "data", "batch", "-h", "--help", "-v", "--version",
+                  *_TOOLKIT_HANDLERS}
     if raw_args and raw_args[0] not in known_cmds and (raw_args[0] == "-" or not raw_args[0].startswith("-")):
         raw_args.insert(0, "normalize")
 
@@ -612,6 +687,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                       column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,
                       strict=args.strict, jobs=max(1, args.jobs), autocorrect=args.fix)
             return 0
+        except (ValueError, OSError, UnicodeDecodeError) as exc:
+            sys.stderr.write(f"Error: {exc}\n")
+            return EX_USAGE
+
+    if args.command in _TOOLKIT_HANDLERS:
+        try:
+            return _TOOLKIT_HANDLERS[args.command](args)
         except (ValueError, OSError, UnicodeDecodeError) as exc:
             sys.stderr.write(f"Error: {exc}\n")
             return EX_USAGE

@@ -14,6 +14,7 @@ from .models.validation import ValidationStatus, ValidationResult
 from .models.geospatial import GeocodingStatus, Coordinates, GeospatialResult
 from .geocoding import BaseGeospatialResolver, GSIGeocoder, OfflineGeocoder, geocode
 from .data.loader import get_registry
+from .matching import AddressComparison, compare, find_duplicates, match_key
 
 __all__ = [
     "__version__",
@@ -40,4 +41,8 @@ __all__ = [
     "LocalGovernmentCode",
     "calculate_modulus11_check_digit",
     "get_registry",
+    "AddressComparison",
+    "compare",
+    "find_duplicates",
+    "match_key",
 ]

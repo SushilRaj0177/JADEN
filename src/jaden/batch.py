@@ -208,3 +208,69 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     rate = f"{total / elapsed:,.0f}/s" if elapsed > 0 else "-"
     log.write(f"{total} rows in {elapsed:.1f}s ({rate}): {summary}\n")
     return counts
+
+
+def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
+               encoding: Optional[str] = None, out_encoding: str = "utf-8", level: str = "unit",
+               prefix: str = "jaden_", log: TextIO = sys.stderr) -> Dict[str, int]:
+    """Groups the rows of a file by address (名寄せ) and writes them back with group columns.
+
+    Appended columns: status, canonical, match_key, group (same number = same address at
+    ``level``), group_size. Rows whose address cannot be keyed keep an empty group.
+    """
+    from .engine import get_engine
+    from .matching import match_key
+
+    in_fmt = detect_format(input_path, fmt)
+    to_stdout = output is None or str(output) == "-"
+    out_fmt = in_fmt if to_stdout else detect_format(output, None)
+    if out_fmt == "txt":
+        out_fmt = "csv"
+    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column)
+    materialized = list(rows)
+    engine = get_engine()
+
+    records: List[Dict[str, Any]] = []
+    groups: Dict[str, int] = {}
+    sizes: Counter = Counter()
+    for _, address in materialized:
+        address = (address or "").strip()
+        res = engine.normalize(address) if address else None
+        val = engine.validate(address) if address else None
+        key = match_key(res, level) if res is not None else None
+        group = groups.setdefault(key, len(groups) + 1) if key else None
+        if group:
+            sizes[group] += 1
+        records.append({"status": val.status if val else "EMPTY",
+                        "canonical": res.canonical if res is not None and res.confidence_score > 0 else "",
+                        "match_key": key, "group": group})
+    for rec in records:
+        rec["group_size"] = sizes[rec["group"]] if rec["group"] else None
+
+    out_stream: TextIO = sys.stdout
+    if not to_stdout and output is not None:
+        out_stream = open(output, "w", encoding=out_encoding, newline="")
+    try:
+        writer = None
+        for (row, _), rec in zip(materialized, records):
+            if out_fmt == "jsonl":
+                out_stream.write(json.dumps({**row, "jaden": rec}, ensure_ascii=False) + "\n")
+                continue
+            if writer is None:
+                fields = list(header or row.keys()) + [prefix + k for k in rec]
+                writer = csv.DictWriter(out_stream, fieldnames=fields, delimiter="," if out_fmt == "csv" else "\t",
+                                        extrasaction="ignore")
+                writer.writeheader()
+            writer.writerow({**row, **{prefix + k: ("" if v is None else v) for k, v in rec.items()}})
+    finally:
+        if out_stream is not sys.stdout:
+            out_stream.close()
+
+    duplicate_groups = sum(1 for n in sizes.values() if n > 1)
+    duplicate_rows = sum(n for n in sizes.values() if n > 1)
+    unkeyed = sum(1 for r in records if not r["group"])
+    summary = {"rows": len(records), "groups": len(sizes), "duplicate_groups": duplicate_groups,
+               "rows_in_duplicate_groups": duplicate_rows, "unkeyed_rows": unkeyed}
+    log.write(f"{len(records)} rows: {duplicate_groups} duplicate groups covering {duplicate_rows} rows; "
+              f"{unkeyed} rows could not be keyed at the {level} level\n")
+    return summary
