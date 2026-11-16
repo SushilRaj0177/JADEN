@@ -55,7 +55,7 @@ jaden = "jaden.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-jaden = ["py.typed"]
+jaden = ["py.typed", "web/*.html"]
 "jaden.data" = ["*.json", "*.tsv.gz"]
 
 [tool.pytest.ini_options]

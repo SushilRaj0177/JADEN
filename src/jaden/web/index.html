@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JADEN — Japanese address toolkit</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #16202b; --muted: #5d6b7a; --line: #dfe4ea;
+    --accent: #0b6e4f; --accent-ink: #ffffff; --soft: #eef2f5;
+    --ok: #0b6e4f; --ok-bg: #e2f4ec; --warn: #9a5b00; --warn-bg: #fdf0d8;
+    --bad: #b3261e; --bad-bg: #fbe4e2; --info: #1d5fa8; --info-bg: #e3eefb;
+    --mark: #fff1a8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10161c; --panel: #18212a; --ink: #e6ecf2; --muted: #9aa8b6; --line: #2a3642;
+      --accent: #3fc79a; --accent-ink: #06231a; --soft: #1f2a35;
+      --ok: #5fd6ab; --ok-bg: #12382c; --warn: #f0b860; --warn-bg: #3d2e10;
+      --bad: #ff8a80; --bad-bg: #44201d; --info: #8fc0f5; --info-bg: #17304d;
+      --mark: #5c4d00;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 28px 16px 64px; }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: .5px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  #meta { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; margin: 22px 0 14px; }
+  nav button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 7px 13px;
+               border-radius: 999px; cursor: pointer; font: inherit; }
+  nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  section { display: none; }
+  section.active { display: block; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  label.field { display: block; font-size: 12.5px; color: var(--muted); margin: 0 0 4px; }
+  input[type=text], textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+         background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { min-height: 130px; resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .row.two > div { flex: 1 1 240px; }
+  button.go { background: var(--accent); color: var(--accent-ink); border: 0; padding: 9px 18px; border-radius: 8px;
+              font: inherit; font-weight: 600; cursor: pointer; }
+  .opt { font-size: 13.5px; color: var(--muted); display: inline-flex; gap: 5px; align-items: center; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .chip { border: 1px dashed var(--line); background: transparent; color: var(--muted); border-radius: 999px;
+          padding: 3px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }
+  .chip:hover { color: var(--ink); border-style: solid; }
+  .combo { position: relative; }
+  #ac { position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; background: var(--panel); border: 1px solid var(--line);
+        border-radius: 8px; z-index: 5; max-height: 300px; overflow: auto; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+  #ac div { padding: 7px 12px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+  #ac div.sel, #ac div:hover { background: var(--soft); }
+  #ac small { color: var(--muted); white-space: nowrap; }
+  .result { margin-top: 14px; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; letter-spacing: .3px; }
+  .pill.ok { color: var(--ok); background: var(--ok-bg); } .pill.warn { color: var(--warn); background: var(--warn-bg); }
+  .pill.bad { color: var(--bad); background: var(--bad-bg); } .pill.info { color: var(--info); background: var(--info-bg); }
+  .big { font-size: 20px; font-weight: 650; margin: 8px 0 2px; word-break: break-all; }
+  .sub { color: var(--muted); font-size: 13.5px; }
+  dl.grid { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 12px 0 0; }
+  dl.grid dt { color: var(--muted); font-size: 13px; } dl.grid dd { margin: 0; word-break: break-word; }
+  ul.notes { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; }
+  .clicklist button { display: block; width: 100%; text-align: left; border: 0; background: var(--soft); color: var(--ink);
+                      padding: 7px 10px; border-radius: 6px; margin-top: 5px; cursor: pointer; font: inherit; }
+  .parts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .part { border: 1px solid var(--line); border-radius: 8px; padding: 4px 9px; background: var(--bg); }
+  .part b { display: block; font-size: 10.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  mark { background: var(--mark); color: inherit; padding: 1px 2px; border-radius: 3px; }
+  pre.text { white-space: pre-wrap; word-break: break-word; margin: 0; font: inherit; }
+  a { color: var(--accent); }
+  .err { color: var(--bad); }
+  footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
+  code { background: var(--soft); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>JADEN</h1>
+    <p>Japanese address toolkit — verify, correct, match and look up addresses, fully offline.</p>
+    <div id="meta"></div>
+  </header>
+
+  <nav role="tablist">
+    <button data-tab="check" aria-selected="true">Check an address</button>
+    <button data-tab="compare" aria-selected="false">Compare two</button>
+    <button data-tab="postal" aria-selected="false">Postal code</button>
+    <button data-tab="extract" aria-selected="false">Find in text</button>
+    <button data-tab="reverse" aria-selected="false">Coordinates</button>
+  </nav>
+
+  <section id="check" class="active">
+    <div class="panel">
+      <label class="field" for="q">Address (Japanese, kana or romaji) — suggestions appear as you type</label>
+      <div class="combo">
+        <input type="text" id="q" autocomplete="off" placeholder="例: 港区芝公園4-2-8 101号室">
+        <div id="ac" role="listbox"></div>
+      </div>
+      <div class="row">
+        <button class="go" id="go-check">Check</button>
+        <label class="opt"><input type="checkbox" id="fix"> correct typos</label>
+        <label class="opt"><input type="checkbox" id="strict"> strict (town must be registered)</label>
+      </div>
+      <div class="chips" id="examples"></div>
+    </div>
+    <div class="result" id="check-out"></div>
+  </section>
+
+  <section id="compare">
+    <div class="panel">
+      <div class="row two">
+        <div><label class="field" for="ca">Address A</label><input type="text" id="ca" value="東京都港区芝公園4-2-8 グランドメゾン芝公園302"></div>
+        <div><label class="field" for="cb">Address B</label><input type="text" id="cb" value="港区芝公園４丁目２番８号　グランドメゾン芝公園　３０２号室"></div>
+      </div>
+      <div class="row"><button class="go" id="go-compare">Compare</button></div>
+    </div>
+    <div class="result" id="compare-out"></div>
+  </section>
+
+  <section id="postal">
+    <div class="panel">
+      <label class="field" for="pc">Postal code</label>
+      <input type="text" id="pc" placeholder="105-0011" inputmode="numeric">
+      <div class="row"><button class="go" id="go-postal">Look up</button></div>
+    </div>
+    <div class="result" id="postal-out"></div>
+  </section>
+
+  <section id="extract">
+    <div class="panel">
+      <label class="field" for="tx">Any text — an email, a web page, a note</label>
+      <textarea id="tx">山田様
+
+お世話になっております。次回の打ち合わせは東京都港区芝公園4-2-8の東京タワーで行います。
+資料の送付先は〒530-0001 大阪市北区梅田3-1-1 大阪ステーションシティ 5F にお願いします。
+ご不明点は03-1234-5678まで。</textarea>
+      <div class="row"><button class="go" id="go-extract">Find addresses</button></div>
+    </div>
+    <div class="result" id="extract-out"></div>
+  </section>
+
+  <section id="reverse">
+    <div class="panel">
+      <div class="row two">
+        <div><label class="field" for="lat">Latitude</label><input type="text" id="lat" value="35.0116"></div>
+        <div><label class="field" for="lon">Longitude</label><input type="text" id="lon" value="135.7681"></div>
+      </div>
+      <div class="row"><button class="go" id="go-reverse">Find nearest address</button></div>
+    </div>
+    <div class="result" id="reverse-out"></div>
+  </section>
+
+  <footer>
+    Every result comes from this server's bundled data (MLIT town list, Japan Post postal codes); nothing is sent elsewhere.
+    The same functions are available as a JSON API under <code>/v1</code>.
+    <span id="attribution"></span>
+  </footer>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+async function api(path, params, body) {
+  const url = new URL(path, location.origin);
+  for (const [k, v] of Object.entries(params || {})) if (v !== "" && v != null && v !== false) url.searchParams.set(k, v === true ? "1" : v);
+  const res = await fetch(url, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ? data.error.message : res.statusText);
+  return data;
+}
+function showError(target, err) { target.replaceChildren(el("div", "panel err", err.message || String(err))); }
+
+// ---------------------------------------------------------------- tabs
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll("section").forEach((s) => s.classList.toggle("active", s.id === b.dataset.tab));
+}));
+
+// ------------------------------------------------------- check an address
+const STATUS = { ACCEPTED: "ok", AMBIGUOUS: "warn", MALFORMED: "bad", UNSUPPORTED: "info" };
+const PART_LABELS = [["prefecture", "Prefecture"], ["county", "County"], ["city", "City"], ["ward", "Ward"], ["town", "Town"],
+  ["chome", "丁目"], ["ban", "番"], ["go", "号"], ["banchi", "番地"], ["edaban", "枝番"], ["lot_number", "Lot"],
+  ["building", "Building"], ["floor", "Floor"], ["unit", "Room"]];
+
+function renderRecord(r, target) {
+  const card = el("div", "panel");
+  const head = el("div");
+  head.append(el("span", "pill " + (STATUS[r.status] || "info"), r.status));
+  if (r.verification_level && r.verification_level !== "none") head.append(" ", el("span", "sub", "verified to " + r.verification_level));
+  if (r.precision && r.precision !== "none") head.append(" ", el("span", "sub", "· precision: " + r.precision));
+  card.append(head);
+  if (r.canonical) card.append(el("div", "big", r.canonical));
+  card.append(el("div", "sub", r.message));
+
+  if (r.components) {
+    const parts = el("div", "parts");
+    for (const [key, label] of PART_LABELS) {
+      const v = r.components[key];
+      if (v == null || v === "") continue;
+      if (key === "ward" && r.components.city && r.components.city.includes(v)) continue;
+      const p = el("div", "part"); p.append(el("b", null, label), document.createTextNode(String(v))); parts.append(p);
+    }
+    if (parts.childNodes.length) card.append(parts);
+  }
+
+  const grid = el("dl", "grid");
+  const add = (k, v) => { if (v) { grid.append(el("dt", null, k)); const dd = el("dd"); if (v instanceof Node) dd.append(v); else dd.textContent = v; grid.append(dd); } };
+  add("Compact", r.hyphenated);
+  add("English", r.english);
+  add("Reading", r.kana);
+  add("Postal code", r.postal_code ? "〒" + r.postal_code : "");
+  add("LG code", r.lg_code);
+  if (r.components && r.components.former_municipality) add("Former name used", r.components.former_municipality);
+  if (r.components && r.components.town_corrected_from) add("Corrected from", r.components.town_corrected_from);
+  if (r.location) {
+    const a = el("a", null, `${r.location.latitude.toFixed(6)}, ${r.location.longitude.toFixed(6)} (${r.location.level} point)`);
+    a.href = `https://maps.gsi.go.jp/#17/${r.location.latitude}/${r.location.longitude}/`; a.target = "_blank"; a.rel = "noopener";
+    add("Location", a);
+  }
+  if (grid.childNodes.length) card.append(grid);
+
+  const clickable = (title, items, pick) => {
+    if (!items || !items.length) return;
+    const box = el("div", "clicklist"); box.append(el("div", "sub", title));
+    items.slice(0, 12).forEach((t) => { const b = el("button", null, t); b.addEventListener("click", () => pick(t)); box.append(b); });
+    if (items.length > 12) box.append(el("div", "sub", `… and ${items.length - 12} more`));
+    card.append(box);
+  };
+  clickable("Did you mean", r.suggestions, (t) => { $("q").value = t; check(); });
+  clickable("Could be any of these — pick one", r.candidates, (t) => {
+    const name = t.replace(/\s*\(\d{6}\)$/, "");
+    const tail = r.canonical ? r.canonical.replace(/^[^\d]*?(?:[市区町村])/, "") : "";
+    $("q").value = name + tail; check();
+  });
+  if (r.warnings && r.warnings.length) { const ul = el("ul", "notes"); r.warnings.forEach((w) => ul.append(el("li", null, w))); card.append(ul); }
+  target.replaceChildren(card);
+}
+
+async function check() {
+  hideAc();
+  const q = $("q").value.trim();
+  if (!q) return;
+  try { renderRecord(await api("/v1/normalize", { q, fix: $("fix").checked, strict: $("strict").checked }), $("check-out")); }
+  catch (e) { showError($("check-out"), e); }
+}
+$("go-check").addEventListener("click", check);
+
+// autocomplete
+let acItems = [], acIndex = -1, acTimer = null, acSeq = 0;
+function hideAc() { $("ac").style.display = "none"; acItems = []; acIndex = -1; }
+function drawAc() {
+  const box = $("ac"); box.replaceChildren();
+  acItems.forEach((s, i) => {
+    const row = el("div", i === acIndex ? "sel" : null); row.append(el("span", null, s.text));
+    row.append(el("small", null, s.postal_code ? "〒" + s.postal_code : s.kind));
+    row.addEventListener("mousedown", (ev) => { ev.preventDefault(); pickAc(i); });
+    box.append(row);
+  });
+  box.style.display = acItems.length ? "block" : "none";
+}
+function pickAc(i) { $("q").value = acItems[i].text; hideAc(); $("q").focus(); queueAc(); }
+function queueAc() {
+  clearTimeout(acTimer);
+  acTimer = setTimeout(async () => {
+    const q = $("q").value.trim(); const seq = ++acSeq;
+    if (q.length < 2) return hideAc();
+    try { const data = await api("/v1/suggest", { q, limit: 8 }); if (seq !== acSeq) return;
+          acItems = data.suggestions.filter((s) => s.text !== q); acIndex = -1; drawAc(); } catch (e) { hideAc(); }
+  }, 120);
+}
+$("q").addEventListener("input", queueAc);
+$("q").addEventListener("blur", () => setTimeout(hideAc, 150));
+$("q").addEventListener("keydown", (ev) => {
+  if (ev.isComposing) return;
+  if (ev.key === "ArrowDown" && acItems.length) { acIndex = (acIndex + 1) % acItems.length; drawAc(); ev.preventDefault(); }
+  else if (ev.key === "ArrowUp" && acItems.length) { acIndex = (acIndex - 1 + acItems.length) % acItems.length; drawAc(); ev.preventDefault(); }
+  else if (ev.key === "Enter") { if (acIndex >= 0) pickAc(acIndex); else check(); }
+  else if (ev.key === "Escape") hideAc();
+});
+
+["港区芝公園4-2-8 101号室", "埼玉県浦和市高砂3-15-1", "東京都港区芝公演4-2-8", "港区しばこうえん4丁目2番8号", "4-6-16 Ginza, Chuo-ku, Tokyo",
+ "東京都港区芝公園9-2-8", "府中市1-1", "札幌市中央区南3西4", "〒100-0001 東京都港区芝公園4-2-8", "東京タワー"].forEach((t) => {
+  const c = el("button", "chip", t); c.addEventListener("click", () => { $("q").value = t; check(); }); $("examples").append(c);
+});
+
+// -------------------------------------------------------------- compare
+const VERDICT = { same: ["ok", "Same address"], same_building: ["warn", "Same building"], possibly_same: ["warn", "Possibly the same"],
+                  different: ["bad", "Different"], undetermined: ["info", "Cannot tell"] };
+$("go-compare").addEventListener("click", async () => {
+  const out = $("compare-out");
+  try {
+    const r = await api("/v1/compare", { a: $("ca").value, b: $("cb").value });
+    const card = el("div", "panel"); const [cls, label] = VERDICT[r.verdict] || ["info", r.verdict];
+    card.append(el("span", "pill " + cls, label));
+    const grid = el("dl", "grid");
+    const add = (k, v) => { if (v) { grid.append(el("dt", null, k), el("dd", null, v)); } };
+    add("A", r.canonical_a || r.a); add("B", r.canonical_b || r.b);
+    add("Agree down to", r.level); add("Differ at", r.conflict); add("Only one side has", (r.missing || []).join(", "));
+    add("Match key A", r.key_a); add("Match key B", r.key_b);
+    card.append(grid);
+    if (r.notes && r.notes.length) { const ul = el("ul", "notes"); r.notes.forEach((n) => ul.append(el("li", null, n))); card.append(ul); }
+    out.replaceChildren(card);
+  } catch (e) { showError(out, e); }
+});
+
+// --------------------------------------------------------------- postal
+async function postal() {
+  const out = $("postal-out");
+  try {
+    const r = await api("/v1/postal/" + encodeURIComponent($("pc").value.trim()));
+    const card = el("div", "panel");
+    r.addresses.forEach((p) => {
+      card.append(el("div", "big", `〒${p.postal_code}  ${p.address}`));
+      if (p.building) card.append(el("div", "sub", "Building: " + p.building));
+      card.append(el("div", "sub", p.kana), el("div", "sub", p.romaji));
+    });
+    out.replaceChildren(card);
+  } catch (e) { showError(out, e); }
+}
+$("go-postal").addEventListener("click", postal);
+$("pc").addEventListener("keydown", (ev) => { if (ev.key === "Enter") postal(); });
+
+// -------------------------------------------------------------- extract
+$("go-extract").addEventListener("click", async () => {
+  const out = $("extract-out"), text = $("tx").value;
+  try {
+    const r = await api("/v1/extract", null, { text });
+    const card = el("div", "panel"); const pre = el("pre", "text"); let pos = 0;
+    r.addresses.forEach((a) => { pre.append(text.slice(pos, a.start)); pre.append(el("mark", null, text.slice(a.start, a.end))); pos = a.end; });
+    pre.append(text.slice(pos)); card.append(pre);
+    const list = el("ul", "notes");
+    r.addresses.forEach((a) => list.append(el("li", null, `${a.canonical}${a.postal_code ? "  〒" + a.postal_code : ""}  [${a.status}]`)));
+    if (!r.addresses.length) list.append(el("li", null, "No address found."));
+    card.append(list); out.replaceChildren(card);
+  } catch (e) { showError(out, e); }
+});
+
+// -------------------------------------------------------------- reverse
+$("go-reverse").addEventListener("click", async () => {
+  const out = $("reverse-out");
+  try {
+    const r = await api("/v1/reverse", { lat: $("lat").value, lon: $("lon").value, limit: 3 });
+    const card = el("div", "panel");
+    if (!r.results.length) card.append(el("div", "sub", "No registered town within 30 km of that point."));
+    r.results.forEach((x, i) => {
+      card.append(el("div", i ? "sub" : "big", x.address + (x.postal_code ? "  〒" + x.postal_code : "")));
+      card.append(el("div", "sub", `${x.level} point, ${Math.round(x.distance_m)} m away`));
+    });
+    out.replaceChildren(card);
+  } catch (e) { showError(out, e); }
+});
+
+// ------------------------------------------------------------------ meta
+api("/v1").then((info) => {
+  $("meta").textContent = `v${info.version} · ${Number(info.data.town_records).toLocaleString()} towns · ${Number(info.data.postal_records).toLocaleString()} postal codes · data built ${info.data.built}`;
+  if (info.data.attribution) $("attribution").textContent = " " + info.data.attribution;
+}).catch(() => {});
+</script>
+</body>
+</html>

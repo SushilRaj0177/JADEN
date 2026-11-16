@@ -3,4 +3,5 @@ include README_JP.md
 include LICENSE
 recursive-include src/jaden *.json
 recursive-include src/jaden *.tsv.gz
+recursive-include src/jaden *.html
 recursive-include src/jaden py.typed

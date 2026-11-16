@@ -12,6 +12,8 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden postal <code>            postal code -> addresses
   jaden suggest "<partial>"      autocomplete
   jaden reverse <lat> <lon>      coordinate -> nearest town / 丁目 / block
+  jaden extract <file>           find the addresses inside a text
+  jaden serve [--port 8000]      JSON API for all of the above, with a demo page
 """
 
 import sys
@@ -634,6 +636,24 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     su_p.add_argument("--limit", type=int, default=10, help="Maximum number of suggestions (default: 10).")
     su_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
 
+    ex_p = subparsers.add_parser(
+        "extract", help="Find the addresses inside a text file",
+        description="Prints every address found with its line, character span, status and canonical form. "
+                    "Exit code 1 when the text contains no address.")
+    ex_p.add_argument("input", help="Text file; '-' for stdin.")
+    ex_p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / Shift_JIS).")
+    ex_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+    sv_p = subparsers.add_parser(
+        "serve", help="Run the JSON API server (and demo page)",
+        description="Serves every JADEN function as a JSON API under /v1 and a demo page at /. "
+                    "Standard library only; all lookups use the local data.")
+    sv_p.add_argument("--host", default="127.0.0.1", help="Address to bind (default: 127.0.0.1; use 0.0.0.0 to expose).")
+    sv_p.add_argument("--port", type=int, default=8000, help="Port (default: 8000).")
+    sv_p.add_argument("--cors", metavar="ORIGIN", help="Send Access-Control-Allow-Origin for this origin ('*' for any).")
+    sv_p.add_argument("--max-batch", type=int, default=1000, help="Most addresses accepted by /v1/batch (default: 1000).")
+    sv_p.add_argument("--quiet", action="store_true", help="Do not log requests.")
+
     rv_p = subparsers.add_parser(
         "reverse", help="Find the registered town nearest to a coordinate (offline)",
         description="Latitude and longitude -> nearest town / 丁目 point (block with block data installed).")
@@ -641,6 +661,26 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     rv_p.add_argument("longitude", type=float)
     rv_p.add_argument("--limit", type=int, default=1, help="Number of nearest places to return (default: 1).")
     rv_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+
+def _handle_serve(args: argparse.Namespace) -> int:
+    from .server import serve
+    return serve(host=args.host, port=args.port, cors=args.cors, quiet=args.quiet, max_batch=args.max_batch)
+
+
+def _handle_extract(args: argparse.Namespace) -> int:
+    from pathlib import Path
+    from .batch import read_text
+    from .extract import extract_addresses
+    text = read_text(Path(args.input), args.encoding)
+    found = extract_addresses(text)
+    if args.json:
+        print(json.dumps([x.to_dict() for x in found], ensure_ascii=False, indent=2))
+    else:
+        for x in found:
+            line = text.count("\n", 0, x.start) + 1
+            print(f"{line}:{x.start}-{x.end}\t{x.status}\t{x.canonical}\t{x.text!r}")
+    return 0 if found else 1
 
 
 def _handle_postal(args: argparse.Namespace) -> int:
@@ -716,6 +756,8 @@ _TOOLKIT_HANDLERS = {
     "postal": _handle_postal,
     "suggest": _handle_suggest,
     "reverse": _handle_reverse,
+    "extract": _handle_extract,
+    "serve": _handle_serve,
 }
 
 
