@@ -29,7 +29,7 @@ from .parsers.building import BuildingParser
 from .parsers.town import (resolve_town, expand_candidates, town_variants, koaza_remainder, near_towns,
                            TownResolution)
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
-from .core.townkey import town_key
+from .core.townkey import spelling_key, town_key
 from .data.loader import MunicipalityRecord
 from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
@@ -56,6 +56,13 @@ _SERIES_LOT: Final[re.Pattern[str]] = re.compile(
 
 # Upper bound on municipalities searched for a town written without its municipality
 _MAX_GLOBAL_TOWN_CANDIDATES: Final[int] = 500
+
+
+def _before_koaza(town: str) -> str:
+    """The part of a written town before its 字: '常海橋字稲葉' -> '常海橋', '大字南長野字幅下' -> '大字南長野'."""
+    start = 2 if town.startswith("大字") else 1
+    cut = town.find("字", start)
+    return town[:cut] if cut > 0 else town
 
 
 def extract_postal_code(raw: str) -> Optional[str]:
@@ -127,27 +134,35 @@ class AddressNormalizer:
         if gaz is None or muni is None or not written or written not in res.input_sanitized:
             return res
         corrected: List[Tuple[str, NormalizedAddress]] = []
-        for m in (self.registry.wards_of(muni) or [muni]):
-            for name in near_towns(gaz, m.lg_code, written):
-                # Write the registered name the way the input wrote the town (without an added 大字)
-                plain = name[2:] if name.startswith("大字") and not written.startswith("大字") else name
-                fixed = self._normalize(res.input_sanitized.replace(written, plain, 1), allow_reread=False)
-                if fixed.components.town_verified and fixed.canonical not in [x.canonical for _, x in corrected]:
-                    corrected.append((plain, fixed))
+        head = written
+        # The whole town text first; then only the part before a 字 ('常海橋字稲葉' -> '常海橋')
+        for part in dict.fromkeys((written, _before_koaza(written))):
+            prefix = "大字" if part.startswith("大字") else ("字" if part.startswith("字") else "")
+            for m in (self.registry.wards_of(muni) or [muni]):
+                for name in near_towns(gaz, m.lg_code, part):
+                    # Keep 大字 / 字 the way the input wrote it, whichever way the registry spells the town
+                    bare = name[2:] if name.startswith("大字") else (name[1:] if name.startswith("字") else name)
+                    plain = prefix + bare
+                    fixed = self._normalize(res.input_sanitized.replace(part, plain, 1), allow_reread=False)
+                    if fixed.components.town_verified and fixed.canonical not in [x.canonical for _, x in corrected]:
+                        corrected.append((plain, fixed))
+            if corrected:
+                head = part
+                break
         if not corrected:
             return res
         suggestions = tuple(x.canonical for _, x in corrected)
-        if apply and len(corrected) == 1 and len(town_key(written)) >= 3:
+        if apply and len(corrected) == 1 and len(spelling_key(head)) >= 3:
             name, fixed = corrected[0]
-            note = f"corrected town '{written}' to the registered '{name}' (one character differs)"
+            note = f"corrected town '{head}' to the registered '{name}' (one character differs)"
             return dataclasses.replace(
                 fixed, input_raw=res.input_raw, input_sanitized=res.input_sanitized,
-                components=dataclasses.replace(fixed.components, town_corrected_from=written),
+                components=dataclasses.replace(fixed.components, town_corrected_from=head),
                 notes=(note,) + fixed.notes)
         names = "、".join(name for name, _ in corrected[:5])
         return dataclasses.replace(
             res, suggestions=suggestions,
-            notes=res.notes + (f"did you mean {names}? '{written}' is one character away",))
+            notes=res.notes + (f"did you mean {names}? '{head}' is one character away",))
 
     def _normalize(self, raw_address: str, allow_reread: bool) -> NormalizedAddress:
         """Normalizes a raw Japanese address string into canonical structured form.

@@ -1,0 +1,104 @@
+{
+  "matching": {
+    "variants_with_key": 33976,
+    "variants_same_key_as_clean": 33976,
+    "bases_with_inconsistent_room_keys": 0,
+    "distinct_addresses_keyed": 4692,
+    "key_shared_by_distinct_addresses": 5,
+    "shared_groups": [
+      [
+        "群馬県吾妻郡長野原町大津4",
+        "群馬県吾妻郡長野原町大字大津4"
+      ],
+      [
+        "長野県長野市大字富田1-531",
+        "長野県長野市富田1-531"
+      ],
+      [
+        "京都府京都市上京区御前通今出川上る鳥居前町671",
+        "京都府京都市上京区御前通今出川上ル鳥居前町671"
+      ],
+      [
+        "島根県大田市久手町刺鹿522-1",
+        "島根県大田市久手町刺鹿522-1(大田市立第二中学校内)"
+      ],
+      [
+        "愛媛県松山市1番町1-1-3",
+        "愛媛県松山市一番町1-1-3"
+      ]
+    ],
+    "seconds": 3.4
+  },
+  "typos": {
+    "tested": 2629,
+    "suggested": 2453,
+    "autocorrect_right": 1903,
+    "autocorrect_left_alone": 726
+  },
+  "kana": {
+    "tested": 3900,
+    "same_result": 3898,
+    "not_resolved": 2
+  },
+  "hyphen_round_trip": {
+    "tested": 4700,
+    "same_result": 4700
+  },
+  "extraction": {
+    "sentence": {
+      "tested": 4700,
+      "found": 4700,
+      "exact_span": 4696
+    },
+    "label": {
+      "tested": 4700,
+      "found": 4700,
+      "exact_span": 4697
+    },
+    "parentheses": {
+      "tested": 4700,
+      "found": 4700,
+      "exact_span": 4697
+    },
+    "postal": {
+      "tested": 4596,
+      "found": 4596,
+      "exact_span": 4593
+    },
+    "with_room": {
+      "tested": 4700,
+      "found": 4700,
+      "exact_span": 4697
+    },
+    "no_address": {
+      "tested": 4700
+    }
+  },
+  "suggest": {
+    "tested": 2830,
+    "after_2_chars": 2561,
+    "after_3_chars": 2169
+  },
+  "postal": {
+    "tested": 4596,
+    "same_municipality": 4596
+  },
+  "reverse_town_points": {
+    "tested": 4700,
+    "municipality": 4629,
+    "town_tested": 4645,
+    "town": 3115,
+    "chome_tested": 1148,
+    "chome": 1044,
+    "median_distance_m": 287.3
+  },
+  "reverse_with_blocks": {
+    "tested": 4700,
+    "municipality": 4663,
+    "town_tested": 4645,
+    "town": 3855,
+    "chome_tested": 1239,
+    "chome": 1192,
+    "median_distance_m": 53.1
+  }
+}

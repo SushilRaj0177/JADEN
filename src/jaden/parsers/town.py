@@ -17,7 +17,7 @@ municipality still fits, the result stays ambiguous with a narrower list.
 from dataclasses import dataclass, field
 from typing import Optional, List, Tuple, Sequence, Set
 
-from ..core.townkey import is_kana, kana_key, one_edit_apart, town_key
+from ..core.townkey import is_kana, is_numeral, kana_key, one_edit_apart, spelling_key, town_key
 from ..data.gazetteer import Gazetteer, TownMatch, TownRecord, PostalRecord
 from ..data.loader import MunicipalityRecord
 
@@ -258,19 +258,22 @@ def resolve_town(
 def near_towns(gaz: Gazetteer, lg_code: str, town_text: str) -> List[str]:
     """Registered town names one edit away from ``town_text`` in one municipality (likely typos).
 
-    Differences in digits are never typos to correct: '北9条西' is not a misspelt '北8条西'.
+    A number changed into another number is never a typo to correct: '北九条西' is not a
+    misspelt '北八条西'.
     """
-    key = town_key(town_text)
+    key = spelling_key(town_text)
     if len(key) < 2:
         return []
     out: List[str] = []
     for towns in (gaz.towns_in(lg_code), gaz.postal_towns_in(lg_code)):
-        for other, entry in towns.items():
+        for entry in towns.values():
+            other = spelling_key(entry.name)
             if not one_edit_apart(key, other):
                 continue
-            changed = set(key) ^ set(other)
-            if any(ch.isdigit() for ch in changed):
-                continue
+            if len(key) == len(other):
+                diff = [(a, b) for a, b in zip(key, other) if a != b]
+                if all(is_numeral(a) and is_numeral(b) for a, b in diff):
+                    continue
             if entry.name not in out:
                 out.append(entry.name)
     return out

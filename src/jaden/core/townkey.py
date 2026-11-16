@@ -57,6 +57,24 @@ def _kanji_runs_to_digits(text: str) -> str:
     return _KANJI_RUN.sub(repl, text)
 
 
+@lru_cache(maxsize=1 << 15)
+def spelling_key(name: str) -> str:
+    """Like ``town_key`` but keeps kanji numerals as written, for comparing spellings character by character
+    ('千歳町' must stay three characters, not become '1000歳町')."""
+    if not name:
+        return ""
+    s = unicodedata.normalize("NFKC", name).translate(_TRANSLATION).replace("通り", "通")
+    if s.startswith("大字"):
+        s = s[2:]
+    elif s.startswith("字") and len(s) > 2:
+        s = s[1:]
+    return s
+
+
+def is_numeral(ch: str) -> bool:
+    return ch.isdigit() or ch in _KANJI_NUM_CHARS
+
+
 @lru_cache(maxsize=1 << 16)
 def town_key(name: str, strip_aza: bool = True) -> str:
     """Folds a town name into its orthographic comparison key."""
