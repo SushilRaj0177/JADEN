@@ -1080,11 +1080,14 @@ class AddressNormalizer:
                              text: str) -> Optional[Tuple[MunicipalityRecord, str, str]]:
         """The municipality or ward a mistyped name stands for, proved by the town that follows it.
 
-        Returns (municipality, text after its name, note) or None. Four mistakes are read:
-          a ward without 区 after its city     '浜松市中央小池町', '仙台市青葉上杉'
-          a ward one character off             '熊本市通央区水前寺'
+        Returns (municipality, text after its name, note) or None. The mistakes read:
+          a name typed twice                     '札幌市札幌市南区', '京都市下京区下京区'
+          a second municipality after the first  '新潟県新潟市燕市東太田'
+          a ward without 区 after its city       '浜松市中央小池町', '仙台市青葉上杉'
+          a ward one character off               '熊本市通央区水前寺'
+          a county without its municipality      '名西郡浦庄', '最上郡真室川'
           a municipality without 市 / 区 / 町 / 村 '大阪府東大阪岩田町', '愛知県名古屋中川区千音寺'
-          a municipality one character off     '鳥取県烏取市古海', '福岡県大宰府市向佐野'
+          a municipality one character off       '鳥取県烏取市古海', '福岡県大宰府市向佐野'
         Each needs the registered town after the name to run up to the block number, exactly one
         municipality to fit, and no registered town to read the text as written.
         """

@@ -6,14 +6,14 @@
 
 ## Typos (one character of the town replaced)
 
-* Correct address offered in `suggestions`: 2,453 / 2,629 (93.3%)
-* Autocorrect applied and right: 1,903 / 2,629 (72.4%)
+* Correct address offered in `suggestions`: 2,478 / 2,640 (93.9%)
+* Autocorrect applied and right: 1,888 / 2,640 (71.5%)
 * Autocorrect applied and wrong: 0
-* Left uncorrected (more than one candidate, or none): 726
+* Left uncorrected (more than one candidate, or none): 752
 
 ## Town written in hiragana
 
-* Same result as the kanji spelling: 3,898 / 3,900 (99.9%)
+* Same result as the kanji spelling: 3,927 / 3,929 (99.9%)
 * Not resolved (two towns share the reading, or no reading on file): 2
 * Resolved to a different town: 0
 
@@ -28,23 +28,23 @@
 | sentence | 4,700 | 100.0% | 99.9% | 0 |
 | label | 4,700 | 100.0% | 99.9% | 0 |
 | parentheses | 4,700 | 100.0% | 99.9% | 0 |
-| postal | 4,596 | 100.0% | 99.9% | 0 |
+| postal | 4,609 | 100.0% | 99.9% | 0 |
 | with_room | 4,700 | 100.0% | 99.9% | 0 |
 
 * Text with a school name, date, phone number and price but no address: 0 false positives in 4,700
 
 ## Autocomplete (real town among the first 10 suggestions)
 
-* After typing the municipality and 2 characters of the town: 2,561 / 2,830 (90.5%)
-* After 3 characters: 2,169 / 2,830 (76.6%)
+* After typing the municipality and 2 characters of the town: 2,583 / 2,841 (90.9%)
+* After 3 characters: 2,181 / 2,841 (76.8%)
 
 ## Postal lookup
 
-* Filled-in postal code looks up to the same municipality: 4,596 / 4,596 (100.0%)
+* Filled-in postal code looks up to the same municipality: 4,609 / 4,609 (100.0%)
 
 ## Reverse geocoding (surveyed school point -> address)
 
 | Data | Municipality | Town | 丁目 (when town right) | Median distance to matched point |
 |---|---:|---:|---:|---:|
-| bundled town points | 98.5% | 67.1% | 90.9% | 287 m |
-| + block data | 99.2% | 83.0% | 96.2% | 53 m |
+| bundled town points | 98.5% | 67.6% | 91.0% | 287 m |
+| + block data | 99.2% | 87.3% | 96.2% | 53 m |

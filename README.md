@@ -31,7 +31,7 @@ v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems n
 | Store a compact form | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8; lossless round trip |
 | Use from any language | `jaden serve` | JSON API under `/v1` plus an interactive demo page, standard library only |
 
-Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.3% of the time and autocorrect made **0 wrong corrections** in 2,629 trials; extraction returns the exact span in 99.9% of 23,396 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
+Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,640 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
 
 ---
 
@@ -231,7 +231,7 @@ A system **answers** when it commits to one municipality and **abstains** otherw
 | no_pref | **99.98%** | 0 | 99.7% | 0 |
 | noisy | **100.0%** | 0 | 100.0% | 0 |
 | romaji | **100.0%** | 0 | 0.0% | 0 |
-| town_only | **50.4%** | **1** | 0.1% | 100 |
+| town_only | **51.5%** | **1** | 0.1% | 100 |
 
 | Invalid inputs (false accepts) | JADEN v0.2 | JADEN parser-only (v0.1) |
 | :--- | ---: | ---: |
@@ -239,7 +239,7 @@ A system **answers** when it commits to one municipality and **abstains** otherw
 | chome_99 | **74 / 1,026** | 1,026 / 1,026 |
 | non_address | **2 / 4,700** | 2,723 / 4,700 |
 
-* When JADEN abstains on `town_only`, it returns a candidate list for 2,125 of 2,328 inputs; the correct municipality is in it **98.6%** of the time (median 8 candidates).
+* When JADEN abstains on `town_only`, it returns a candidate list for 2,156 of 2,277 inputs; the correct municipality is in it **98.6%** of the time (median 8 candidates).
 * All 74 `chome_99` acceptances are towns MLIT records as only partly divided into 丁目, where `99-x-y` is a valid lot-number reading (see [Limitations](#8-explicit-boundaries--limitations)).
 * **Former names:** the `former_name` variant contains all 411 schools whose published address still uses one of Hamamatsu's wards abolished on 2024-01-01; JADEN resolves all 411 to the ward their area became (parser-only mode: 8.3%).
 * **Real-world noise** (`build_reallife.py`, `evaluate_reallife.py`): each clean address with a room as a fourth number, a building with the room glued on, a building and floor, `号室`, `Apt`, spaces between components, form labels and country prefixes, and full-width text — 34,032 inputs. The address must stay the same and the building, floor and room must be extracted exactly: **34,032 / 34,032 pass**.
@@ -264,17 +264,17 @@ Runners for other open-source tools (Geolonia's normalize-japanese-addresses, ja
 | Matching | every noisy spelling must get the house-level `match_key` of its clean address | **33,976 / 33,976** |
 | | rooms written four ways (`-305`, `メゾン桜305`, `305号室`, `Apt 305`) must share a key | 0 inconsistent |
 | | distinct published addresses sharing a key | 5 pairs of 4,692, each the same place written two ways |
-| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.3%** (2,453 / 2,629) |
-| | with autocorrect | applied and right 72.4%, **applied and wrong 0**, left alone 27.6% |
-| Kana | the town rewritten in hiragana | same result **99.9%** (3,898 / 3,900), wrong town 0 |
+| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.9%** (2,478 / 2,640) |
+| | with autocorrect | applied and right 71.5%, **applied and wrong 0**, left alone 28.5% |
+| Kana | the town rewritten in hiragana | same result **99.9%** (3,927 / 3,929), wrong town 0 |
 | Hyphen form | `format("hyphen")` normalized again | same result **4,700 / 4,700** |
 | Extraction | the address inside a sentence, a labelled block, parentheses, after a postal code, with building and room | found 100%, exact span **99.9%** in each context |
 | | a school name with a date, phone number and price but no address | **0 false positives** in 4,700 |
-| Autocomplete | municipality plus the first 2 characters of the town | real town in the first 10: 90.5% |
-| Postal lookup | the postal code JADEN fills in, looked up again | same municipality 4,596 / 4,596 |
-| Reverse geocoding | the surveyed school point | municipality 98.5%, town 67.1% (bundled town points); **99.2% / 83.0%** with block data |
+| Autocomplete | municipality plus the first 2 characters of the town | real town in the first 10: 90.9% |
+| Postal lookup | the postal code JADEN fills in, looked up again | same municipality 4,609 / 4,609 |
+| Reverse geocoding | the surveyed school point | municipality 98.5%, town 67.6% (bundled town points); **99.2% / 87.3%** with block data |
 
-Notes on reading these numbers: autocorrect leaves 27.6% alone because two registered towns are one character away, or none is; that is the intended behaviour. Autocomplete drops to 76.6% after 3 characters only where a municipality has more than 10 towns sharing those characters (e.g. Hokkaido's `春光一条` … `春光台五条`); raise `limit` to see them all. Reverse geocoding returns the nearest registered point, not the containing boundary, so the town is wrong near borders; block data narrows that.
+Notes on reading these numbers: autocorrect leaves 28.5% alone because two registered towns are one character away, or none is; that is the intended behaviour. Autocomplete drops to 76.8% after 3 characters only where a municipality has more than 10 towns sharing those characters (e.g. Hokkaido's `春光一条` … `春光台五条`); raise `limit` to see them all. Reverse geocoding returns the nearest registered point, not the containing boundary, so the town is wrong near borders; block data narrows that.
 
 ```bash
 python benchmarks/jabench/evaluate_toolkit.py                 # writes results/toolkit_report.md
@@ -556,6 +556,7 @@ Matched:     東京都港区芝公園4丁目2番8号
 #### 5. `data`: Gazetteer Data Management
 ```bash
 # What is installed, where it came from, and its required attribution
+# (after an upgrade it also lists block data built by an older version, to fetch again)
 $ jaden data info
 
 # Download the latest MLIT and Japan Post datasets and rebuild (user data directory)
@@ -699,6 +700,7 @@ JADEN's test suite runs in GitHub Actions on Python 3.10–3.13 on Ubuntu and Wi
 * **Gazetteer (v0.2):** Town and 丁目 verification, ambiguity resolution by town and postal code, nonexistent 丁目, contradictory postal codes and towns, lot numbers in towns without 丁目, registered-spelling variants, Japan Post fallback towns, non-address rejection, readings, romaji input and output, offline and block-level geocoding.
 * **Adversarial & Edge Case Payloads:** Proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), building names (`第一-3ビル`), multi-jurisdiction collisions, cardinal Kyoto streets, `の` delimiters, malformed kanji numerals, and foreign/gibberish input rejection.
 * **Toolkit (v0.3):** Matching verdicts and keys, dedupe files, typo suggestions and autocorrect limits, kana towns, precision and formats, postal lookup, autocomplete, reverse geocoding, text extraction, and every API endpoint over a real socket (including errors, limits and concurrent requests).
+* **Real data (`tests/test_real_data_cases.py`):** every pattern found by the real-data evaluations below is pinned by a test: variant spellings of municipality names, mistyped and repeated names, buildings glued to house numbers, glued floors and rooms, unlisted 丁目, Sakai and Sapporo town forms, unmarked 字, postal codes of split towns, and inputs that must stay unresolved.
 * **README examples:** Every `$ jaden ...` example shown in this README (and the Japanese one) is run by the test suite and its output compared with what is printed here.
 * **Parser-only mode:** Structural tests also run with `AddressNormalizer(use_gazetteer=False)` so the v0.1 behaviour stays covered.
 * **CLI & Public API:** All commands, `--json`, `-c`, `--strict`, `--provider offline`, `data`, stdin (`-`), and exit codes (0, 1, 2, 3, 64, 70).
@@ -721,19 +723,20 @@ In accordance with our engineering principles, JADEN documents its exact operati
 1. **Offline by default:** The core engine, the town gazetteer and the offline geocoder are local. JADEN does not bundle boundary polygons; locations are MLIT representative points (block, 丁目 or town), not rooftop coordinates. Block-level points are a separate download per prefecture (`jaden data fetch-blocks`, 0.7–11 MB per prefecture; about 75 MB installed for all 47).
 2. **Ambiguity is reported, not guessed:** When the town, 丁目 and postal code still fit more than one municipality (`府中市1-1`, `栄町7-7`, `本町1-8-19`), JADEN returns AMBIGUOUS with the full candidate list. On JA-AddrBench, addresses written without their municipality are resolved about half the time; for the rest the correct municipality is in the candidate list 98.6% of the time.
 3. **The town lists are not complete:** About 1.6% of the real addresses in JA-AddrBench use a town the MLIT list does not have; Japan Post's list covers half of those (verified at town level, without coordinates), leaving 0.8% unverified. An unregistered town is a warning, not an error, unless `--strict` is used. Town names written without a prefix the registry uses (`小俣町` for 奄美市`名瀬小俣町`) can still be matched to the wrong place when no municipality is written.
-4. **丁目 checks follow the registry:** A 丁目 missing from the MLIT list is MALFORMED. In towns MLIT records as only partly divided into 丁目, an out-of-range first number is read as a lot number instead (e.g. `御望971-1-2`), so a typo there is not caught.
+4. **丁目 checks follow the registry, with room for what it lacks:** Real addresses use 丁目 the MLIT list does not have yet, and towns whose 丁目 are recorded as 字 names. A 丁目 up to two past the last registered one, or up to 20 in a town the list does not divide, is accepted with a warning and `chome_unlisted` set (verification level `town`; `--strict` refuses it). A 丁目 further out (`芝公園9丁目`) is MALFORMED. In towns MLIT records as only partly divided into 丁目, an out-of-range first number is read as a lot number instead (e.g. `御望971-1-2`), so a typo there is not caught.
 5. **Former names:** Names that disappeared since 2000-10-01 are covered; names from earlier mergers are not. Without a written prefecture, a former town or village name is used only with its county (`磐田郡浅羽町`), because such names usually live on as town names elsewhere.
 6. **Data vintage:** Municipalities: MIC, 2024-01-01. Towns: MLIT 2025 edition. Postal codes: Japan Post, as downloaded (`jaden data info`). Municipal mergers and new 住居表示 after those dates are unknown until `jaden data update`.
 7. **Romaji input:** Needs a municipality (with `-shi`, `-ku`, `City`, … or a recognizable town). Building names in romaji are kept as written.
 8. **Kyoto:** Some Kyoto town names occur more than once in the same ward and are told apart only by the street clause; JADEN verifies the town but does not give one point for them.
 9. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
 10. **Memory:** The gazetteer makes a running engine use about 90 MB (parser-only mode stays at a few MB) and the first address takes about 0.4 s to load the data.
-11. **Typo correction is deliberately narrow:** Only the town is checked, only one-character differences are considered, and autocorrect applies a correction only when it is the single candidate and the name has three or more characters. Homophone mistakes two or more characters long, and misspelt municipality names, are not corrected.
-12. **Matching is exact, not fuzzy:** Two addresses match when their resolved components agree. An address that cannot be resolved to one municipality has no key. When only one side writes the 字 below a town, the verdict is `possibly_same`, because lot numbers often restart in each 字. Building names never decide a match.
-13. **Reverse geocoding is nearest-point:** It returns the nearest registered point, not the area containing the coordinate. On the benchmark the municipality is right 98.5% of the time and the town 67.1% with the bundled points (99.2% / 83.0% with block data). Use `distance_m` to judge a result.
-14. **Extraction is rule-based:** A span ends at punctuation, labels, dates and sentence particles. A building name on the line after the address is not included, and an address written across several lines is found only when the postal code is on its own line above it.
-15. **The API server is a building block:** It has no authentication, rate limiting or TLS; put it behind your own gateway before exposing it beyond localhost.
-16. **GSI Address Search Rate and Availability:** The online geocoder calls GSI's public `AddressSearch` endpoint; consult GSI's terms and keep request rates reasonable.
+11. **Repairs need proof from the registry:** A municipality written without 市 / 区, one character off, typed twice, after a stray character, or followed by a second municipality name is read as a registered one only when the town after it is registered there and the text does not read as written; the result carries a note saying what was read, and a slightly lower confidence. Town-only input (no prefecture or municipality) is resolved only when the town is registered in one place; a 字 written straight after its 大字 counts only after an 大字 named for a former town or village.
+12. **Typo correction is deliberately narrow:** Only the town is checked, only one-character differences are considered, and autocorrect applies a correction only when it is the single candidate and the name has three or more characters. Homophone mistakes two or more characters long, and misspelt municipality names, are not corrected.
+13. **Matching is exact, not fuzzy:** Two addresses match when their resolved components agree. An address that cannot be resolved to one municipality has no key. When only one side writes the 字 below a town, the verdict is `possibly_same`, because lot numbers often restart in each 字. Building names never decide a match.
+14. **Reverse geocoding is nearest-point:** It returns the nearest registered point, not the area containing the coordinate. On the benchmark the municipality is right 98.5% of the time and the town 67.6% with the bundled points (99.2% / 87.3% with block data). Use `distance_m` to judge a result.
+15. **Extraction is rule-based:** A span ends at punctuation, labels, dates and sentence particles. A building name on the line after the address is not included, and an address written across several lines is found only when the postal code is on its own line above it.
+16. **The API server is a building block:** It has no authentication, rate limiting or TLS; put it behind your own gateway before exposing it beyond localhost.
+17. **GSI Address Search Rate and Availability:** The online geocoder calls GSI's public `AddressSearch` endpoint; consult GSI's terms and keep request rates reasonable.
 
 ### Resolved in v0.2 (from the v0.1 list)
 `1の2の3` delimiters, malformed kanji numerals (`五三十`), the non-standard `上ラル`, Obihiro-style grids (verified through the gazetteer), the `--provider` / `--json -c` / `jaden -` CLI issues, testing the installed wheel in CI, and lint/type checks in CI (`ruff`, `mypy`).

@@ -1,0 +1,246 @@
+{
+ "rows": 223161,
+ "every": 1,
+ "seconds": 41.0,
+ "provenance": {
+  "source": "https://www.mhlw.go.jp/stf/kaigo-kouhyou_opendata.html",
+  "publisher": "厚生労働省 介護サービス情報公表システム",
+  "licence": "CC BY",
+  "as_of": "2026年６月末時点",
+  "files": [
+   {
+    "file": "jigyosho_110.csv",
+    "bytes": 16125945,
+    "sha256": "7194d965e290d919acf270ce8ed8e8844738276ea7fcaa4456d75fcc17138b19"
+   },
+   {
+    "file": "jigyosho_120.csv",
+    "bytes": 689145,
+    "sha256": "e27d6c6f4e4be920fe746140592e4c0c92e583ee75a36ccae6f7544e3667848b"
+   },
+   {
+    "file": "jigyosho_130.csv",
+    "bytes": 8062426,
+    "sha256": "c04555da108be65ac0e2650475b765a9d973e44d3711af4240559c597be218db"
+   },
+   {
+    "file": "jigyosho_140.csv",
+    "bytes": 2183758,
+    "sha256": "4604b683c1e30f2636c3e21a32abf38b9c0edc1c9bd5dc8c1b3fc25ee456005f"
+   },
+   {
+    "file": "jigyosho_150.csv",
+    "bytes": 10598568,
+    "sha256": "d882ea15c4815361ec6d0aed80c684ae1c6d2065e21e3ecc257ca8371e10faeb"
+   },
+   {
+    "file": "jigyosho_155.csv",
+    "bytes": 22999,
+    "sha256": "42e69b13465928425c38d94ba432d340fb24dda32687c708711f5a3e13e09b9d"
+   },
+   {
+    "file": "jigyosho_160.csv",
+    "bytes": 3414163,
+    "sha256": "c3a93971ea3fdccf79a5471351a9fd643e0529b454627a0832e824d8a36777b7"
+   },
+   {
+    "file": "jigyosho_170.csv",
+    "bytes": 2835304,
+    "sha256": "11965efb7d1187d8f9a3e6bb3916468d5535c4ab8d407dc2857a030ab2fa5b46"
+   },
+   {
+    "file": "jigyosho_210.csv",
+    "bytes": 4593861,
+    "sha256": "04a0367667cd552c8d0772fffcfab56a39fb69eb2d519ba8b66dcc1d8b7eeae7"
+   },
+   {
+    "file": "jigyosho_220.csv",
+    "bytes": 1521296,
+    "sha256": "f4cba7c3be99504a53078dc37ab63fef2d8ecb4dc9bceb20b148f1c598b30900"
+   },
+   {
+    "file": "jigyosho_230.csv",
+    "bytes": 48670,
+    "sha256": "99cdb6cecffc5117d5ece028e038648b9bb871f92413670e60ed13d576b9f0ab"
+   },
+   {
+    "file": "jigyosho_320.csv",
+    "bytes": 5280881,
+    "sha256": "d19e61d4b4cdb4b0eeff1ca1939a6ed0e3f66f8806f4b08a21bf890ab54d4ded"
+   },
+   {
+    "file": "jigyosho_331.csv",
+    "bytes": 1844828,
+    "sha256": "10c2d8944082bb0bfd02350626441d0e001c7ef9f7b588b32a02685523468e87"
+   },
+   {
+    "file": "jigyosho_332.csv",
+    "bytes": 201411,
+    "sha256": "8debb2f21f633bbbac395cec060e497ee7365c82d596f1dd73081175ed400440"
+   },
+   {
+    "file": "jigyosho_334.csv",
+    "bytes": 287080,
+    "sha256": "723ba2a7ffd8ae16a671e9a18c583d7b0ba6172369f42d550a30f08b07e25f37"
+   },
+   {
+    "file": "jigyosho_335.csv",
+    "bytes": 4110,
+    "sha256": "878c254a821cc74e1bbb28d2fab2fb52682daf7b8d1f06b8e33ad8f43c441300"
+   },
+   {
+    "file": "jigyosho_336.csv",
+    "bytes": 2758,
+    "sha256": "55ae97df0b4677d77c26d005d366134c0c73dfc4436d32c31d4635ab072907c1"
+   },
+   {
+    "file": "jigyosho_337.csv",
+    "bytes": 5204,
+    "sha256": "ec7bdb26fda436b17d7b12aeffb262a61a628decc2f59ca57073544f369ef3b0"
+   },
+   {
+    "file": "jigyosho_361.csv",
+    "bytes": 109264,
+    "sha256": "77902e6ee2600f01271bc436ce2cee16f5c949dff5cad8770b725cb0cd7095d3"
+   },
+   {
+    "file": "jigyosho_362.csv",
+    "bytes": 26790,
+    "sha256": "66720efb36f6a9294741c05f438a7987bc02f59fef58eaf922f5f8873105ca8c"
+   },
+   {
+    "file": "jigyosho_364.csv",
+    "bytes": 24681,
+    "sha256": "81809208637da1dbc049da972ca4292002a8020fef6bd440681ceff94f77e84d"
+   },
+   {
+    "file": "jigyosho_410.csv",
+    "bytes": 2410298,
+    "sha256": "3a7529c7bbe18a2e73e343543ff7e050499f3104faed6f76d7662aa3607b84e3"
+   },
+   {
+    "file": "jigyosho_430.csv",
+    "bytes": 15492433,
+    "sha256": "46d045f07e829ae0ffc5650c29f22dba7f78cf8ca2d807f80ff7feedffb5ffe9"
+   },
+   {
+    "file": "jigyosho_510.csv",
+    "bytes": 3277581,
+    "sha256": "056495ef72f60e3e71e92bb0b6c5bb5c4e265934a8c504dde9594cf6fb6d56b0"
+   },
+   {
+    "file": "jigyosho_520.csv",
+    "bytes": 1575019,
+    "sha256": "81c51ab04daa1dc98ce78655a7744f356d8640846a8ed66d6ab96ceabe4753d0"
+   },
+   {
+    "file": "jigyosho_530.csv",
+    "bytes": 26395,
+    "sha256": "80282d6974536334b013f9fe588098bee09d9c0f54af7d08b6fc85a087d3eabd"
+   },
+   {
+    "file": "jigyosho_540.csv",
+    "bytes": 1124308,
+    "sha256": "17df511a9ba64fd6914f64e46184c88b14d051f0f3724265ba8d6283c403c702"
+   },
+   {
+    "file": "jigyosho_550.csv",
+    "bytes": 332560,
+    "sha256": "e095ea2b668284c2b69078c7d2b9485e44a95e8611eadd79dbb8527d6122aa23"
+   },
+   {
+    "file": "jigyosho_551.csv",
+    "bytes": 70183,
+    "sha256": "9e2682ac962ee534b407de6983e0058bfc0858b1594a7b88f767f7b2a8ccaf0b"
+   },
+   {
+    "file": "jigyosho_710.csv",
+    "bytes": 101456,
+    "sha256": "59e8de5731fba2fe57f591a67e9193bfe2aee869bbe1f8b647846530958dc549"
+   },
+   {
+    "file": "jigyosho_720.csv",
+    "bytes": 1323087,
+    "sha256": "b04ccf364ca6ee7576aa61de204c9d1c2495ddb458f518470782907d6ab21e9e"
+   },
+   {
+    "file": "jigyosho_730.csv",
+    "bytes": 2220072,
+    "sha256": "0a343f3c44160aff5de01f70366e67d4e2771ec512c43a281f615094488cadf6"
+   },
+   {
+    "file": "jigyosho_760.csv",
+    "bytes": 635877,
+    "sha256": "aea9c968808d538de188c2705fe983e861111e77c3ba7975c7e5ff7f663754f4"
+   },
+   {
+    "file": "jigyosho_770.csv",
+    "bytes": 571852,
+    "sha256": "b3e242fb5ca46f56ef1652fe730ba31936ab783833c85e22ce8edf21a954f354"
+   },
+   {
+    "file": "jigyosho_780.csv",
+    "bytes": 7825150,
+    "sha256": "a2aed803f75b9f504f9d1a81cd984e206387c20688eb7e4e1bf5360a50d994ff"
+   }
+  ],
+  "downloaded": "2026-11-17"
+ },
+ "outcomes": {
+  "as typed": {
+   "correct": 218425,
+   "ambiguous, truth listed": 4091,
+   "rejected: MALFORMED": 294,
+   "not scored: the typed address and the row's columns name different municipalities": 128,
+   "rejected: UNSUPPORTED": 127,
+   "ambiguous, truth not listed": 59,
+   "wrong": 13,
+   "city only: the ward was not resolved": 12,
+   "row carries a municipality code that no longer exists": 12
+  },
+  "with the prefecture and municipality columns": {
+   "correct": 222876,
+   "not scored: the typed address and the row's columns name different municipalities": 120,
+   "rejected: UNSUPPORTED": 95,
+   "rejected: MALFORMED": 26,
+   "row carries a municipality code that no longer exists": 15,
+   "ambiguous, truth listed": 13,
+   "city only: the ward was not resolved": 12,
+   "wrong": 4
+  },
+  "town": {
+   "town verified": 221294,
+   "town not in the registry": 1018,
+   "no town written": 564
+  },
+  "building": {
+   "same address, building separated": 47682,
+   "not scored: the 方書 column holds only part of the building text": 1285,
+   "not decidable: the publisher glued a number to the house number": 632,
+   "address changes when the building is attached": 103,
+   "not scored: the 方書 column holds the house number too": 66,
+   "same address, building text dropped": 25
+  },
+  "same office": {
+   "all spellings share one key": 9807,
+   "not scored: the spellings carry different numbers (a move, or a typo in the data)": 1316,
+   "spellings get different keys": 355,
+   "a spelling could not be keyed": 160
+  },
+  "precision": {
+   "house": 190249,
+   "unit": 17278,
+   "block": 15128,
+   "chome": 155,
+   "town": 65,
+   "municipality": 1
+  },
+  "location": {
+   "more than 20 km from the published point": 901
+  }
+ },
+ "distance_km_median": {
+  "chome": 0.1574,
+  "town": 0.5327
+ }
+}

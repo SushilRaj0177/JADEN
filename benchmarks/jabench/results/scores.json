@@ -13,10 +13,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4614,
-        "geo_median_km": 0.3591540663494721,
-        "geo_p90_km": 1.6517234776130074,
-        "geo_within_1km": 0.7936714347637625
+        "geo_n": 4652,
+        "geo_median_km": 0.3599476753506642,
+        "geo_p90_km": 1.6538252399764772,
+        "geo_within_1km": 0.7927773000859846
       },
       "no_pref": {
         "n": 4700,
@@ -30,27 +30,27 @@
         "coverage": 0.9997872340425532,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4613,
-        "geo_median_km": 0.3592360488962311,
-        "geo_p90_km": 1.6517234776130074,
-        "geo_within_1km": 0.7936267071320182
+        "geo_n": 4651,
+        "geo_median_km": 0.3600988033032585,
+        "geo_p90_km": 1.6539790634312133,
+        "geo_within_1km": 0.7927327456460976
       },
       "town_only": {
         "n": 4700,
         "wrong_answers": 1,
-        "abstained": 2329,
-        "abstained_with_candidates": 2126,
-        "candidate_recall": 0.9863593603010348,
-        "mean_candidates": 24.1928504233302,
+        "abstained": 2277,
+        "abstained_with_candidates": 2156,
+        "candidate_recall": 0.9860853432282004,
+        "mean_candidates": 24.014842300556587,
         "median_candidates": 8.0,
-        "accuracy": 0.5042553191489362,
-        "coverage": 0.504468085106383,
-        "precision": 0.9995782370307887,
+        "accuracy": 0.5153191489361703,
+        "coverage": 0.515531914893617,
+        "precision": 0.9995872884853487,
         "wrong_answer_rate": 0.0002127659574468085,
-        "geo_n": 2339,
-        "geo_median_km": 0.3861701497726983,
-        "geo_p90_km": 1.6816962166595277,
-        "geo_within_1km": 0.7806755023514322
+        "geo_n": 2415,
+        "geo_median_km": 0.39069879140776625,
+        "geo_p90_km": 1.6722270073670933,
+        "geo_within_1km": 0.779296066252588
       },
       "noisy": {
         "n": 4700,
@@ -64,10 +64,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4614,
-        "geo_median_km": 0.3591540663494721,
-        "geo_p90_km": 1.6517234776130074,
-        "geo_within_1km": 0.7936714347637625
+        "geo_n": 4652,
+        "geo_median_km": 0.3599476753506642,
+        "geo_p90_km": 1.6538252399764772,
+        "geo_within_1km": 0.7927773000859846
       },
       "romaji": {
         "n": 3657,
@@ -81,10 +81,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 3607,
-        "geo_median_km": 0.2971637956097947,
-        "geo_p90_km": 1.329186405200744,
-        "geo_within_1km": 0.8358746881064597
+        "geo_n": 3619,
+        "geo_median_km": 0.2977508890267179,
+        "geo_p90_km": 1.3309878611297132,
+        "geo_within_1km": 0.8355899419729207
       },
       "former_name": {
         "n": 411,
@@ -102,125 +102,6 @@
         "geo_median_km": 0.4153373491855575,
         "geo_p90_km": 1.4255613608000828,
         "geo_within_1km": 0.8321167883211679
-      },
-      "wrong_pref": {
-        "n": 4700,
-        "false_accepts": 0,
-        "false_accept_rate": 0.0
-      },
-      "chome_99": {
-        "n": 1026,
-        "false_accepts": 74,
-        "false_accept_rate": 0.07212475633528265
-      },
-      "non_address": {
-        "n": 4700,
-        "false_accepts": 2,
-        "false_accept_rate": 0.000425531914893617
-      }
-    },
-    "jaden+blocks": {
-      "original": {
-        "n": 4700,
-        "wrong_answers": 0,
-        "abstained": 0,
-        "abstained_with_candidates": 0,
-        "candidate_recall": null,
-        "mean_candidates": null,
-        "median_candidates": null,
-        "accuracy": 1.0,
-        "coverage": 1.0,
-        "precision": 1.0,
-        "wrong_answer_rate": 0.0,
-        "geo_n": 4614,
-        "geo_median_km": 0.07072310282700603,
-        "geo_p90_km": 1.0916235765696496,
-        "geo_within_1km": 0.8903337667967057
-      },
-      "no_pref": {
-        "n": 4700,
-        "wrong_answers": 0,
-        "abstained": 1,
-        "abstained_with_candidates": 1,
-        "candidate_recall": 1.0,
-        "mean_candidates": 2,
-        "median_candidates": 2,
-        "accuracy": 0.9997872340425532,
-        "coverage": 0.9997872340425532,
-        "precision": 1.0,
-        "wrong_answer_rate": 0.0,
-        "geo_n": 4613,
-        "geo_median_km": 0.07075539897001905,
-        "geo_p90_km": 1.0916235765696496,
-        "geo_within_1km": 0.89030999349664
-      },
-      "town_only": {
-        "n": 4700,
-        "wrong_answers": 1,
-        "abstained": 2329,
-        "abstained_with_candidates": 2126,
-        "candidate_recall": 0.9863593603010348,
-        "mean_candidates": 24.1928504233302,
-        "median_candidates": 8.0,
-        "accuracy": 0.5042553191489362,
-        "coverage": 0.504468085106383,
-        "precision": 0.9995782370307887,
-        "wrong_answer_rate": 0.0002127659574468085,
-        "geo_n": 2339,
-        "geo_median_km": 0.0770996815386587,
-        "geo_p90_km": 1.2075054367528868,
-        "geo_within_1km": 0.8755878580589995
-      },
-      "noisy": {
-        "n": 4700,
-        "wrong_answers": 0,
-        "abstained": 0,
-        "abstained_with_candidates": 0,
-        "candidate_recall": null,
-        "mean_candidates": null,
-        "median_candidates": null,
-        "accuracy": 1.0,
-        "coverage": 1.0,
-        "precision": 1.0,
-        "wrong_answer_rate": 0.0,
-        "geo_n": 4614,
-        "geo_median_km": 0.07072310282700603,
-        "geo_p90_km": 1.0916235765696496,
-        "geo_within_1km": 0.8903337667967057
-      },
-      "romaji": {
-        "n": 3657,
-        "wrong_answers": 0,
-        "abstained": 0,
-        "abstained_with_candidates": 0,
-        "candidate_recall": null,
-        "mean_candidates": null,
-        "median_candidates": null,
-        "accuracy": 1.0,
-        "coverage": 1.0,
-        "precision": 1.0,
-        "wrong_answer_rate": 0.0,
-        "geo_n": 3607,
-        "geo_median_km": 0.059465936697531065,
-        "geo_p90_km": 0.641207728437192,
-        "geo_within_1km": 0.9362350984197394
-      },
-      "former_name": {
-        "n": 411,
-        "wrong_answers": 0,
-        "abstained": 0,
-        "abstained_with_candidates": 0,
-        "candidate_recall": null,
-        "mean_candidates": null,
-        "median_candidates": null,
-        "accuracy": 1.0,
-        "coverage": 1.0,
-        "precision": 1.0,
-        "wrong_answer_rate": 0.0,
-        "geo_n": 411,
-        "geo_median_km": 0.05103438806018297,
-        "geo_p90_km": 0.31713949911062206,
-        "geo_within_1km": 0.9318734793187348
       },
       "wrong_pref": {
         "n": 4700,
@@ -356,11 +237,130 @@
         "false_accepts": 2723,
         "false_accept_rate": 0.5793617021276596
       }
+    },
+    "jaden+blocks": {
+      "original": {
+        "n": 4700,
+        "wrong_answers": 0,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 1.0,
+        "coverage": 1.0,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 4652,
+        "geo_median_km": 0.0713170829686587,
+        "geo_p90_km": 1.1098805232297115,
+        "geo_within_1km": 0.8884350816852966
+      },
+      "no_pref": {
+        "n": 4700,
+        "wrong_answers": 0,
+        "abstained": 1,
+        "abstained_with_candidates": 1,
+        "candidate_recall": 1.0,
+        "mean_candidates": 2,
+        "median_candidates": 2,
+        "accuracy": 0.9997872340425532,
+        "coverage": 0.9997872340425532,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 4651,
+        "geo_median_km": 0.0713182183081754,
+        "geo_p90_km": 1.1099109932030682,
+        "geo_within_1km": 0.8884110943883036
+      },
+      "town_only": {
+        "n": 4700,
+        "wrong_answers": 1,
+        "abstained": 2277,
+        "abstained_with_candidates": 2156,
+        "candidate_recall": 0.9860853432282004,
+        "mean_candidates": 24.014842300556587,
+        "median_candidates": 8.0,
+        "accuracy": 0.5153191489361703,
+        "coverage": 0.515531914893617,
+        "precision": 0.9995872884853487,
+        "wrong_answer_rate": 0.0002127659574468085,
+        "geo_n": 2415,
+        "geo_median_km": 0.08024956226919935,
+        "geo_p90_km": 1.2129423087804525,
+        "geo_within_1km": 0.8724637681159421
+      },
+      "noisy": {
+        "n": 4700,
+        "wrong_answers": 0,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 1.0,
+        "coverage": 1.0,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 4652,
+        "geo_median_km": 0.0713170829686587,
+        "geo_p90_km": 1.1098805232297115,
+        "geo_within_1km": 0.8884350816852966
+      },
+      "romaji": {
+        "n": 3657,
+        "wrong_answers": 0,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 1.0,
+        "coverage": 1.0,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 3619,
+        "geo_median_km": 0.059705154709101795,
+        "geo_p90_km": 0.6481259633293475,
+        "geo_within_1km": 0.9353412544901907
+      },
+      "former_name": {
+        "n": 411,
+        "wrong_answers": 0,
+        "abstained": 0,
+        "abstained_with_candidates": 0,
+        "candidate_recall": null,
+        "mean_candidates": null,
+        "median_candidates": null,
+        "accuracy": 1.0,
+        "coverage": 1.0,
+        "precision": 1.0,
+        "wrong_answer_rate": 0.0,
+        "geo_n": 411,
+        "geo_median_km": 0.05103438806018297,
+        "geo_p90_km": 0.31943195358004584,
+        "geo_within_1km": 0.9318734793187348
+      },
+      "wrong_pref": {
+        "n": 4700,
+        "false_accepts": 0,
+        "false_accept_rate": 0.0
+      },
+      "chome_99": {
+        "n": 1026,
+        "false_accepts": 74,
+        "false_accept_rate": 0.07212475633528265
+      },
+      "non_address": {
+        "n": 4700,
+        "false_accepts": 2,
+        "false_accept_rate": 0.000425531914893617
+      }
     }
   },
   "items_per_second": {
-    "jaden": 2788.471611214656,
-    "jaden+blocks": 375.2322082874542,
-    "jaden-parser-only": 8082.852717824595
+    "jaden": 2110.8569490311056,
+    "jaden-parser-only": 6649.242001869722,
+    "jaden+blocks": 380.8724382193613
   }
 }
