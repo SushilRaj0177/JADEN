@@ -44,6 +44,8 @@ _LEADING_LABEL: Final[re.Pattern[str]] = re.compile(
     rf"(?:日本国?|JAPAN|Japan)(?=[\s,、。]|〒|郵便|{_PREFECTURES}))[\s,、。]*"
 )
 
+_CHOONPU_AFTER_MARKER: Final[re.Pattern[str]] = re.compile(r"(?:(?<=番地)|(?<=丁目)|(?<=番)|(?<=号))ー+(?=\d)")
+
 # '1,111' with exactly three digits after the comma and no digit around it
 _THOUSANDS: Final[re.Pattern[str]] = re.compile(r"(?<![\d,.-])(\d{1,2}),(\d{3})(?![\d,])")
 
@@ -76,6 +78,9 @@ def sanitize_address_text(raw_text: str) -> str:
     while prev != text:
         prev = text
         text = _CONTEXTUAL_CHOONPU_PATTERN.sub(r"\1-\2", text)
+
+    # 'ー' between a block marker and a number is a hyphen too ('421番地ー1')
+    text = _CHOONPU_AFTER_MARKER.sub("-", text)
 
     # Step 3: Unconditional dash normalization
     text = _UNCONDITIONAL_DASH_PATTERN.sub("-", text)

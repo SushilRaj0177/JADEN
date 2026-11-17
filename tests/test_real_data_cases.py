@@ -234,3 +234,154 @@ def test_romaji_is_hepburn_whatever_the_source_file_spells():
     assert not _spells_long_vowels(old_style)
     assert _spells_long_vowels(new_style)
     assert jaden.normalize("東京都港区芝公園4-2-8").romaji == "4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011"
+
+
+# --- the municipality written wrongly --------------------------------------------------------
+
+@pytest.mark.parametrize("address, lg_code, canonical", [
+    ("大阪府東大阪岩田町4丁目15-13", "272272", "大阪府東大阪市岩田町4丁目15番13号"),          # 市 left out
+    ("東京都府中白糸台1丁目63-1", "132063", "東京都府中市白糸台1丁目63番1号"),
+    ("東京都練馬田柄3-6-18", "131202", "東京都練馬区田柄3丁目6番18号"),                       # 区 left out
+    ("愛知県名古屋中川区千音寺二丁目1513番地", "231100", "愛知県名古屋市中川区千音寺2丁目1513番地"),
+    ("静岡県浜松市中央小池町３８番地の1", "221384", "静岡県浜松市中央区小池町38番地の1"),    # ward without 区
+    ("宮城県仙台市青葉上杉5丁目6-3", "041017", "宮城県仙台市青葉区上杉5丁目6番3号"),
+    ("鳥取県烏取市古海693-1", "312011", "鳥取県鳥取市古海693番1号"),                          # one character off
+    ("福岡県大宰府市大字向佐野515番地", "402214", "福岡県太宰府市大字向佐野515番地"),
+    ("愛知県清洲市清洲1111-1", "232335", "愛知県清須市清洲1111番1号"),
+    ("熊本県熊本市通央区水前寺5丁目8番15号", "431010", "熊本県熊本市中央区水前寺5丁目8番15号"),
+    ("大坂府堺市北区黒土町3002番地5", "271462", "大阪府堺市北区黒土町3002番地の5"),           # prefecture off
+    ("ｼ静岡県浜松市中央区中山町4番地", "221384", "静岡県浜松市中央区中山町4番地"),              # stray character
+    ("京都府京都市下京区下京区西七条南衣田町11番地", "261068", "京都府京都市下京区西七条南衣田町11番地"),
+])
+def test_mistyped_municipality_is_read_when_the_town_proves_it(address, lg_code, canonical):
+    res = jaden.normalize(address)
+    assert res.components.lg_code == lg_code
+    assert res.canonical == canonical
+    assert jaden.validate(address).status == "ACCEPTED"
+
+
+def test_mistyped_municipality_repair_says_what_it_did():
+    assert any("烏取市" in n and "鳥取市" in n for n in jaden.normalize("鳥取県烏取市古海693-1").notes)
+
+
+def test_former_ward_keeps_its_explanation():
+    notes = jaden.normalize("静岡県浜松市中区小豆餅2-9-13").notes
+    assert any("no longer exists" in n for n in notes)
+
+
+def test_a_bare_town_is_not_read_as_a_shortened_municipality():
+    # 栄町 is a town name in many places; it is not a shortened 東栄町
+    assert jaden.normalize("愛知県栄町1-1").components.lg_code != "235628"
+
+
+# --- registered towns with a number or 丁目 inside their name -----------------------------------
+
+def test_sapporo_towns_with_chome_inside_the_name():
+    res = jaden.normalize("札幌市白石区平和通7丁目南５－１")
+    assert res.canonical == "北海道札幌市白石区平和通七丁目南5番1号"
+    assert res.components.town_verified is True
+
+
+@pytest.mark.parametrize("address, canonical", [
+    ("大阪府堺市西区北条町1-2-31", "大阪府堺市西区北条町一丁2番31号"),
+    ("大阪府堺市西区北条町1丁2番31号", "大阪府堺市西区北条町一丁2番31号"),
+    ("大阪府堺市中区深阪１丁13-83", "大阪府堺市中区深阪一丁13番83号"),
+])
+def test_sakai_towns_registered_as_n_cho(address, canonical):
+    assert jaden.normalize(address).canonical == canonical
+
+
+# --- separators ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("address, canonical", [
+    ("和光市丸山台２丁目－11番－１号", "埼玉県和光市丸山台2丁目11番1号"),
+    ("徳島県吉野川市鴨島町上下島421番地ー1", "徳島県吉野川市鴨島町上下島421番地の1"),
+])
+def test_hyphen_after_a_block_marker(address, canonical):
+    assert jaden.normalize(address).canonical == canonical
+
+
+# --- places without a lot number, facilities -------------------------------------------------
+
+@pytest.mark.parametrize("address, lot", [
+    ("北海道千歳市支笏湖温泉番外地", "番外地"),
+    ("神奈川県横須賀市田浦港町無番地", "無番地"),
+    ("滋賀県高島市マキノ町海津官有地無番地", "官有地無番地"),
+])
+def test_unnumbered_lot_is_an_address(address, lot):
+    res = jaden.normalize(address)
+    assert jaden.validate(address).status == "ACCEPTED"
+    assert res.components.lot_number == lot
+    assert res.precision == "town"
+
+
+def test_facility_after_the_town():
+    res = jaden.normalize("愛媛県四国中央市村松町愛媛製紙株式会社内")
+    assert jaden.validate("愛媛県四国中央市村松町愛媛製紙株式会社内").status == "ACCEPTED"
+    assert res.components.town == "村松町"
+    assert res.components.building == "愛媛製紙株式会社内"
+
+
+# --- Kyoto ----------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("address, town", [
+    ("京都府京都市上京区今出川通七本松東入上る突抜町５０１番地", "突抜町"),
+    ("京都府京都市上京区下立売通千本東入下る中務町４８６－１８", "中務町"),
+    ("京都府京都市東山区大仏南門通大和大路東入三丁目下ル本瓦町６６０番地の６", "本瓦町"),
+    ("京都府京都市上京区荒神口上がる東入る宮垣町９１", "宮垣町"),
+])
+def test_kyoto_clause_with_several_turns(address, town):
+    res = jaden.normalize(address)
+    assert res.components.town == town
+    assert res.components.town_verified is True
+
+
+# --- town spellings ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("address, canonical", [
+    ("東京都新宿区市ヶ谷加賀町二丁目４番１６号", "東京都新宿区市谷加賀町2丁目4番16号"),   # registered without ヶ
+    ("東京都中央区小舟町１５番４号", "東京都中央区日本橋小舟町15番4号"),                  # area name in front
+    ("東京都新宿区本塩町２１番地", "東京都新宿区四谷本塩町21番地"),
+    ("千葉県旭市ニの２７４０番地", "千葉県旭市ニ2740番地"),                              # の joins the town to the lot
+    ("秋田県大館市花岡字姥沢２４番地", "秋田県大館市花岡町字姥沢24番地"),                  # 町 before its 字
+])
+def test_town_spelling_variants(address, canonical):
+    res = jaden.normalize(address)
+    assert res.canonical == canonical
+    assert res.components.town_verified is True
+
+
+def test_one_character_town_before_aza():
+    res = jaden.normalize("福島県いわき市平字三町目１０番地の１")
+    assert res.components.town_verified is True
+    assert res.components.lg_code == "072044"
+
+
+@pytest.mark.parametrize("address, lg_code", [
+    ("福福島県本宮市白岩字堤崎494-22", "072141"),        # doubled first character
+    ("な名古屋市北区金城町4丁目47番地の2", "231037"),     # stray character before the city
+    ("北九州若松区西園町11-28", "401030"),              # city without 市 and no prefecture, ward follows
+])
+def test_damaged_head_is_read(address, lg_code):
+    assert _lg(address) == lg_code
+
+
+@pytest.mark.parametrize("address, lg_code, town", [
+    ("大分県長島町3－11－13", "442054", "長島町"),         # 長島町 is a municipality of 鹿児島県, a town of 佐伯市
+    ("富山県長柄町3-6-6", "162019", "長柄町"),            # 長柄町 is a municipality of 千葉県, a town of 富山市
+])
+def test_town_named_like_a_municipality_of_another_prefecture(address, lg_code, town):
+    res = jaden.normalize(address)
+    assert res.components.lg_code == lg_code
+    assert res.components.town == town
+    assert jaden.validate(address).status == "ACCEPTED"
+
+
+def test_wrong_prefecture_is_still_a_contradiction():
+    assert jaden.validate("滋賀県弘前市末広3-2-1").status == "MALFORMED"
+
+
+def test_town_written_without_its_ke():
+    res = jaden.normalize("熊本県熊本市武蔵丘1-2-30")
+    assert res.components.lg_code == "431052"
+    assert res.components.town == "武蔵ケ丘"

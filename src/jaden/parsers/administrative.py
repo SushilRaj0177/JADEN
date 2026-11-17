@@ -137,14 +137,13 @@ class AdministrativeParser:
         if not text:
             return AdministrativeParseResult(None, None, "", False)
         res = self._parse_folded(fold_same_length(text), text)
-        repaired = None
         if res.municipality is None and not res.is_ambiguous:
             repaired = self._repair(text)
             if repaired is not None:
                 again = self._parse_folded(fold_same_length(repaired), repaired)
                 if again.municipality is not None or again.is_ambiguous:
                     res, text = again, repaired
-        elif res.municipality is not None:
+        if res.municipality is not None:
             res = self._skip_repeated_name(res)
         # The remainder is always a suffix of the folded text, which has the length of the written one
         rest = text[len(text) - len(res.remaining_text):] if res.remaining_text else ""
@@ -159,10 +158,14 @@ class AdministrativeParser:
         names = [muni.prefecture_name + muni.name, muni.name]
         if muni.city and muni.city != muni.name:
             names += [muni.prefecture_name + muni.city, muni.city]
+        if muni.ward and muni.ward != muni.name and len(muni.ward) >= 2:
+            names.append(muni.ward)                      # '京都市下京区下京区西七条…'
         for name in names:
             folded = fold_same_length(name)
             if rest.startswith(folded) and len(rest) > len(folded):
                 rest = rest[len(folded):].lstrip()
+                if name == muni.ward:
+                    return dataclasses.replace(res, remaining_text=rest)
                 if muni.city and muni.city != muni.name and not muni.ward:
                     break
                 # After a repeated city name the ward may follow ('横浜市横浜市金沢区…')
@@ -182,6 +185,10 @@ class AdministrativeParser:
         there is nothing to repair. Only the administrative head is touched."""
         folded = fold_same_length(text)
         pref_hit = self._pref_trie.longest_prefix(folded, 0)
+        if pref_hit is None:
+            fixed = self._repair_prefecture(text, folded)
+            if fixed is not None:
+                return fixed
         head_end = 0
         pref = None
         if pref_hit and pref_hit[0] == pref_hit[1].name:
@@ -209,6 +216,35 @@ class AdministrativeParser:
             county = fold_same_length(cand.county)
             if county == written or one_edit_apart(county, written):
                 return text[:offset] + cand.county + text[offset + m.end():]
+        return None
+
+    def _repair_prefecture(self, text: str, folded: str) -> Optional[str]:
+        """'大坂府堺市…' (one character off), 'ｼ静岡県浜松市…', '福福島県…', 'な名古屋市…' (stray or doubled
+        characters in front): the text with the registered name, or None."""
+        for start in (1, 2):
+            if len(folded) <= start:
+                continue
+            stray = not any("一" <= ch <= "鿿" for ch in folded[:start])
+            doubled = start == 1 and folded[0] == folded[1]          # '福福島県…'
+            if not (stray or doubled):
+                continue
+            hit = self._pref_trie.longest_prefix(folded, start)
+            if hit and hit[0] == hit[1].name:
+                return text[start:]
+            muni = self._muni_trie.longest_prefix(folded, start)
+            if stray and muni and len(muni[0]) >= 3:                  # 'な名古屋市北区…'
+                return text[start:]
+        for end in (3, 4):
+            written = folded[:end]
+            if len(folded) <= end or written[-1] not in "都道府県":
+                continue
+            fits = [p for p in self.registry.list_all_prefectures()
+                    if len(p.name) == end and one_edit_apart(p.name, written)]
+            if len(fits) != 1:
+                continue
+            after = self._muni_trie.longest_prefix(folded, end)
+            if after and any(m.prefecture_code == fits[0].code for m in after[1]):
+                return fits[0].name + text[end:]
         return None
 
     def _parse_folded(self, text: str, written: str) -> AdministrativeParseResult:

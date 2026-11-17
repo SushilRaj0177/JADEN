@@ -49,22 +49,34 @@ def read_rows(folder: Path, every: int = 1) -> Iterator[Item]:
 
 
 def compose(pref: str, city: str, address: str) -> str:
-    """The address a system would build from the three columns: nothing is repeated, nothing is dropped."""
+    """The address a system would build from the three columns: nothing is repeated, nothing is dropped.
+
+    The typed text keeps its own head when it already names the municipality somewhere near its start
+    ('東京目黒区…', '下京区西七条…', '厚岸郡厚岸町…'); otherwise the columns are put in front.
+    """
+    from jaden.core.townkey import fold_same_length
     a = address.strip()
     if a.startswith(pref):
         return a
-    # '厚岸町' in the column, '厚岸郡厚岸町…' typed: the municipality is there when its last part is
-    if city and (a.startswith(city) or any(a.startswith(part) for part in _city_parts(city))):
-        return pref + a
+    folded = fold_same_length(unicodedata.normalize("NFKC", a))
+    parts = [city]
+    if "市" in city[:-1]:
+        head, _, ward = city.partition("市")
+        parts += [head + "市", ward]                 # '京都市下京区' -> '京都市', '下京区'
+    if "郡" in city:
+        parts.append(city.split("郡", 1)[1])
+    for part in parts:
+        if not part:
+            continue
+        where = folded.find(fold_same_length(part))
+        if where == 0:
+            return pref + a
+        if 0 < where <= 4:
+            return a                                   # its own (misspelt) prefecture in front
     county_free = a.split("郡", 1)[1] if "郡" in a[:6] else ""
     if city and county_free.startswith(city):
         return pref + a
     return pref + city + a
-
-
-def _city_parts(city: str) -> List[str]:
-    # '札幌市中央区' -> also '中央区' is not enough to know the city, so only the full name and the city part count
-    return [city.split("市", 1)[0] + "市"] if "市" in city[:-1] and not city.endswith("市") else []
 
 
 def _row_check(outcome: str, res: Any, address: str, city: str) -> str:
@@ -76,7 +88,7 @@ def _row_check(outcome: str, res: Any, address: str, city: str) -> str:
     c = res.components
     mine = fold_same_length((c.city or "") + (c.ward or "") if c.ward and c.city != c.ward else (c.city or c.ward or ""))
     column = fold_same_length(city.split("郡")[-1])
-    if mine and mine in typed and column and column not in typed:
+    if mine and mine in typed and column and column not in typed.replace(mine, ""):
         return "not scored: the typed address and the row's columns name different municipalities"
     return outcome
 

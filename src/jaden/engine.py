@@ -14,7 +14,7 @@ import dataclasses
 import re
 import time
 import unicodedata
-from typing import Optional, Dict, List, Tuple, Final
+from typing import Any, Optional, Dict, List, Tuple, Final
 
 from .models.codes import TaxonomyTier, AddressRegime
 from .models.address import AddressComponents, NormalizedAddress
@@ -29,7 +29,7 @@ from .parsers.building import BuildingParser
 from .parsers.town import (resolve_town, expand_candidates, town_variants, koaza_remainder, near_towns,
                            TownResolution)
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
-from .core.townkey import spelling_key, town_key
+from .core.townkey import fold_same_length, one_edit_apart, spelling_key, town_key
 from .data.loader import MunicipalityRecord
 from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
@@ -46,13 +46,18 @@ _BRACKETED: Final[re.Pattern[str]] = re.compile(r"\s*[(（][^)）]*[)）]")
 _INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?!\d+\s*号室)")
 # Town text containing a number that is part of the name, not a block number:
 # '忠和1条', '芽室南2線', '五十嵐3の町', '古町通6番町', '五福1区'
-_NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(r"^\D+\d+(?!\d|丁目|番(?!町|耕地)|号|-|の\d|\s|$)")
+_NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(
+    r"^\D+\d+(?:(?!\d|丁目|番(?!町|耕地)|号|-|の\d|\s|$)|丁目(?=[^\d\s\-番号の]))")
 # Locators that belong to the place even when unregistered: Iwate '8地割', land readjustment
 # '8街区', Ishikawa '10部': the number after them is the lot
 _STRUCTURAL_TOWN: Final[re.Pattern[str]] = re.compile(r"^(?P<town>\D+?\d+(?:地割|街区|部|区|番耕地|耕地))(?=\d)")
 # A lot-series lot after the 丁目 ('相生町1-乙394'): kept as written
 _SERIES_LOT: Final[re.Pattern[str]] = re.compile(
     r"^-?(?P<lot>[甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラム]\d+(?:-\d+)?)(?P<rest>.*)$")
+
+# A place with no lot number of its own: the words stand where the number would ('支笏湖温泉番外地')
+_UNNUMBERED_LOT: Final[re.Pattern[str]] = re.compile(
+    r"^(?P<town>\D*?)(?P<lot>官有地無番地|官有無番地|無番地|番外地)(?P<rest>.*)$")
 
 # Upper bound on municipalities searched for a town written without its municipality
 _MAX_GLOBAL_TOWN_CANDIDATES: Final[int] = 500
@@ -215,6 +220,28 @@ class AddressNormalizer:
         matched_raw_name = admin_res.matched_raw_name
         is_contradictory = admin_res.is_contradictory
         municipality_inferred = False
+        if (self.gazetteer is not None and not is_ambiguous and not is_contradictory
+                and (pref_rec is not None or muni_rec is None)):
+            # '大阪府東大阪岩田町…' (市 left out), '静岡県浜松市中央小池町…' (区 left out),
+            # '鳥取県烏取市古海…', '熊本市通央区…' (one character wrong): read as the registered name
+            # when the town after it is registered there and nothing else reads the text
+            repaired_admin = self._repair_municipality(pref_rec, muni_rec, post_admin_text)
+            if repaired_admin is not None:
+                muni_rec, post_admin_text, why = repaired_admin
+                notes.append(why)
+                confidence *= 0.9
+                if pref_rec is None:
+                    pref_rec = self.registry.get_prefecture_by_code(muni_rec.prefecture_code)
+                    is_pref_inferred = True
+        elif self.gazetteer is not None and is_contradictory and pref_rec is not None:
+            # '大分県長島町3-11-13': 長島町 is a municipality of 鹿児島県, and a town of 佐伯市 in 大分県
+            local = self._town_of_prefecture(pref_rec, post_admin_text)
+            if local is not None:
+                muni_rec = local
+                is_contradictory = False
+                notes.append(f"'{matched_raw_name}' read as a town of {local.name}: the municipality of that name "
+                             f"is in another prefecture")
+                confidence *= 0.9
 
         pref_code = pref_rec.code if pref_rec else None
         pref_name = pref_rec.name if pref_rec else None
@@ -394,6 +421,13 @@ class AddressNormalizer:
             and kyoto_clause is None and hokkaido_clause is None
         )
 
+        unnumbered_lot: Optional[str] = None
+        no_number = _UNNUMBERED_LOT.match(text_after_conventions)
+        if no_number and no_number.group("town"):
+            unnumbered_lot = no_number.group("lot")
+            text_after_conventions = no_number.group("town")
+            extra_tail = f"{no_number.group('rest')} {extra_tail}".strip()
+
         # Stage 5: Chome-Ban-Go / Banchi-Edaban Block FSM
         has_chome_from_hokkaido = (hokkaido_clause is not None and hokkaido_clause.chome is not None)
         # Numbered town names ('忠和1条', '芽室南2線', '西野9条') look like block numbers to the FSM;
@@ -433,7 +467,7 @@ class AddressNormalizer:
             town_text = f"{hokkaido_clause.cardinal_ns}{hokkaido_clause.jo}条{hokkaido_clause.cardinal_ew}"
         else:
             town_text = town_name
-        has_numbers = any(v is not None for v in (chome_val, ban_val, banchi_val))
+        has_numbers = any(v is not None for v in (chome_val, ban_val, banchi_val)) or unnumbered_lot is not None
         first_number = next((v for v in (chome_val, ban_val, banchi_val) if v is not None), None)
 
         skip_town_resolution = False
@@ -615,7 +649,9 @@ class AddressNormalizer:
         elif match is not None and variant == "kana":
             notes.append(f"read '{town_text}' by its reading as the registered town {match.entry.name}")
         partial_tail = ""
-        lot_number: Optional[str] = None
+        lot_number: Optional[str] = unnumbered_lot
+        if unnumbered_lot:
+            regime_val = AddressRegime.CHIBAN.value
         if (match is not None and (chome_verified is False or chome_unlisted) and not block_dict["chome_explicit"]
                 and ban_val is not None and gaz is not None and lg_code):
             # Towns registered as '本町六の一丁目': '本町6-1-79' is 本町六の 1丁目 79番
@@ -676,7 +712,13 @@ class AddressNormalizer:
                     registered = prefix + registered
                     break
             remainder = town_text[match.consumed:]
-            if remainder and not match.exact and not koaza_remainder(remainder):
+            if (remainder and not has_numbers and len(remainder) >= 3 and remainder.endswith("内")
+                    and not koaza_remainder(remainder)):
+                # '村松町愛媛製紙株式会社内', '基町ショッピングセンター内': inside a facility of that town
+                tail_text = f"{remainder} {tail_text}".strip()
+                remainder = ""
+            elif (remainder and not match.exact and not koaza_remainder(remainder)
+                    and not town_text.startswith(("大字", "字"))):
                 partial_tail = remainder
             town_name = registered + remainder
             if remainder and entry.records and entry.records[0].kind == "1" and koaza_val is None:
@@ -914,6 +956,148 @@ class AddressNormalizer:
             location_level=location_level,
             notes=tuple(notes),
         )
+
+    def _town_of_prefecture(self, pref_rec: Any, text: str) -> Optional[MunicipalityRecord]:
+        """The one municipality of the prefecture where ``text`` (a name like '長島町' that is a municipality
+        elsewhere, then block numbers) is a registered town with that 丁目, or None."""
+        gaz = self.gazetteer
+        if gaz is None or not re.match(r"^\D{2,}?[町村]", text):
+            return None
+        block, town_text, _ = BlockFSM.parse(text)
+        numbers = [block[k] for k in ("chome", "ban", "banchi") if block[k] is not None]
+        if not town_text or not numbers:
+            return None
+        candidates = expand_candidates(self.registry, None, (), pref_rec.code)
+        res = resolve_town(gaz, candidates, town_text, block["chome"], None, block["chome_explicit"], numbers[0])
+        if (res.municipality is None or not res.town_verified or res.match is None or not res.match.exact
+                or res.chome_verified is False or res.chome_unlisted):
+            return None
+        return res.municipality
+
+    def _town_reaches_number(self, lg_code: str, text: str) -> bool:
+        """True when a registered town of the municipality covers ``text`` up to its block number."""
+        gaz = self.gazetteer
+        hit = gaz.match_town(lg_code, text) if gaz is not None and text else None
+        if hit is None or hit.consumed < 2:
+            return False
+        after = text[hit.consumed:]
+        return (not after or after[0].isdigit() or after[0] in " -" or koaza_remainder(after)
+                or after.startswith(("丁目", "番")))
+
+    def _repair_municipality(self, pref_rec: Any, muni_rec: Optional[MunicipalityRecord],
+                             text: str) -> Optional[Tuple[MunicipalityRecord, str, str]]:
+        """The municipality or ward a mistyped name stands for, proved by the town that follows it.
+
+        Returns (municipality, text after its name, note) or None. Four mistakes are read:
+          a ward without 区 after its city     '浜松市中央小池町', '仙台市青葉上杉'
+          a ward one character off             '熊本市通央区水前寺'
+          a municipality without 市 / 区 / 町 / 村 '大阪府東大阪岩田町', '愛知県名古屋中川区千音寺'
+          a municipality one character off     '鳥取県烏取市古海', '福岡県大宰府市向佐野'
+        Each needs the registered town after the name to run up to the block number, exactly one
+        municipality to fit, and no registered town to read the text as written.
+        """
+        if not text or self.gazetteer is None:
+            return None
+        # A name that no longer exists ('浜松市中区', '浦和市') is explained by the former-name step instead
+        formers = get_former_municipalities()
+        if muni_rec is not None:
+            former = formers.match(muni_rec.city + text, muni_rec.prefecture_code)
+            if former and former[1] > len(muni_rec.city):
+                return None
+        elif formers.match(text, pref_rec.code if pref_rec is not None else None):
+            return None
+        folded = fold_same_length(text)
+        reaches = self._town_reaches_number
+        if pref_rec is None:
+            # No prefecture: only a designated city without 市 followed by one of its wards is certain
+            # ('北九州若松区西園町…', '名古屋中川区…')
+            found_city: List[Tuple[MunicipalityRecord, int]] = []
+            for city in self.registry.list_municipalities():
+                if city.entity_type != "designated_city" or len(city.name) < 3:
+                    continue
+                stem = fold_same_length(city.name[:-1])
+                if not folded.startswith(stem):
+                    continue
+                for w in self.registry.wards_of(city):
+                    if w.ward and folded[len(stem):].startswith(fold_same_length(w.ward)):
+                        found_city.append((w, len(stem) + len(w.ward)))
+            if len(found_city) != 1:
+                return None
+            ward, used = found_city[0]
+            ward_name = ward.ward or ""
+            return ward, text[used:].lstrip(), f"read '{text[:used - len(ward_name)]}' as {ward.city}: {ward_name} follows it"
+
+        if muni_rec is not None:
+            if muni_rec.entity_type != "designated_city":
+                return None
+            wards = [w for w in self.registry.wards_of(muni_rec) if w.ward]
+            if any(reaches(w.lg_code, text) for w in wards):
+                return None
+            fits: List[Tuple[MunicipalityRecord, int, str]] = []
+            for w in wards:
+                stem = fold_same_length((w.ward or "")[:-1])
+                if len(stem) >= 2 and folded.startswith(stem) and reaches(w.lg_code, text[len(stem):]):
+                    fits.append((w, len(stem), f"read '{text[:len(stem)]}' as {w.ward}: the town after it is registered there"))
+            cut = folded.find("区", 0, 6)
+            if not fits and cut >= 1:
+                written = folded[:cut + 1]
+                for w in wards:
+                    if one_edit_apart(fold_same_length(w.ward or ""), written) and reaches(w.lg_code, text[cut + 1:]):
+                        fits.append((w, cut + 1, f"read '{text[:cut + 1]}' as {w.ward}: {muni_rec.city} has no ward spelt that way"))
+            if len({w.lg_code for w, _, _ in fits}) != 1:
+                return None
+            ward, used, why = fits[0]
+            return ward, text[used:].lstrip(), why
+
+        municipalities = self.registry.list_municipalities(pref_rec.code)
+        found: List[Tuple[MunicipalityRecord, int, str]] = []
+        for m in municipalities:
+            if m.entity_type == "administrative_ward":
+                continue
+            stem = fold_same_length(m.name[:-1])
+            if len(stem) < 2 or not folded.startswith(stem):
+                continue
+            rest = text[len(stem):]
+            if m.entity_type == "designated_city":
+                # The city without 市, then one of its wards ('名古屋中川区千音寺…')
+                for w in self.registry.wards_of(m):
+                    if w.ward and fold_same_length(rest).startswith(fold_same_length(w.ward)):
+                        found.append((w, len(stem) + len(w.ward),
+                                      f"read '{text[:len(stem)]}' as {m.name}: {w.ward} follows it"))
+            elif reaches(m.lg_code, rest):
+                found.append((m, len(stem), f"read '{text[:len(stem)]}' as {m.name}: the town after it is registered there"))
+        if not found:
+            for end in range(3, min(len(folded), 8) + 1):
+                written = folded[:end]
+                if written[-1] not in "市区町村" or any(ch.isdigit() for ch in written):
+                    continue
+                for m in municipalities:
+                    if m.entity_type == "administrative_ward":
+                        continue
+                    target = fold_same_length(m.name)
+                    if target[-1] != written[-1] or not one_edit_apart(target, written):
+                        continue
+                    if written[-1] in "町村" and len(target) != len(written):
+                        continue  # '栄町' is a town name before it is a shortened '東栄町'
+                    if m.entity_type == "designated_city":
+                        rest = fold_same_length(text[end:])
+                        for w in self.registry.wards_of(m):
+                            if w.ward and rest.startswith(fold_same_length(w.ward)):
+                                found.append((w, end + len(w.ward), f"read '{text[:end]}' as {m.name}: "
+                                              f"no municipality of {pref_rec.name} is spelt that way"))
+                    elif reaches(m.lg_code, text[end:]):
+                        found.append((m, end, f"read '{text[:end]}' as {m.name}: no municipality of {pref_rec.name} is spelt that way"))
+                if found:
+                    break
+        if len({m.lg_code for m, _, _ in found}) != 1:
+            return None
+        # The text as written may be a town of the prefecture with the municipality left out
+        gaz = self.gazetteer
+        for lg, hit in gaz.municipalities_with_town(text):
+            if lg[:2] == pref_rec.code and reaches(lg, text):
+                return None
+        muni, used, why = found[0]
+        return muni, text[used:].lstrip(), why
 
     def _registered_town_prefix(self, text: str, muni_rec: Optional[MunicipalityRecord],
                                 candidates: Tuple[MunicipalityRecord, ...], pref_rec) -> Optional[str]:

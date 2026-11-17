@@ -24,20 +24,30 @@ _STREETS_PATTERN = "|".join(sorted(_KYOTO_MAJOR_STREETS, key=len, reverse=True))
 # Pattern 1: Street 1 has explicit '通' or '筋' (supports cardinal streets like 東洞院通, 下立売通)
 # Kyoto clauses can end in a 丁目 of the street itself: '五条下ル2丁目', '今出川上ル四丁目'
 _CLAUSE_CHOME = r"(?:\d+|[一二三四五六七八九十]+)丁目"
+# After the first direction the clause may go on: a 丁目 of the street and further turns
+# ('今出川通七本松東入上る', '大和大路東入三丁目下ル', '荒神口上がる東入る')
+_CLAUSE_TAIL = rf"(?P<chome>{_CLAUSE_CHOME})?(?P<turns>(?:(?:{_DIR_TOKENS})(?:{_CLAUSE_CHOME})?)*)"
 
 _KYOTO_INTERSECTION_P1: Final[re.Pattern[str]] = re.compile(
-    rf"(?:^|\s)(?P<street1>[^\s\d]+?[通筋])(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS})(?P<chome>{_CLAUSE_CHOME})?"
+    rf"(?:^|\s)(?P<street1>[^\s\d]+?[通筋])(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS}){_CLAUSE_TAIL}"
 )
 
 # Pattern 2: Street 1 is a known major street without explicit '通' (e.g. 烏丸御池上る, 四条河原町東入)
 _KYOTO_INTERSECTION_P2: Final[re.Pattern[str]] = re.compile(
-    rf"(?:^|\s)(?P<street1>{_STREETS_PATTERN})(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS})(?P<chome>{_CLAUSE_CHOME})?"
+    rf"(?:^|\s)(?P<street1>{_STREETS_PATTERN})(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS}){_CLAUSE_TAIL}"
 )
 
 
 # Pattern 3: Street 1 written without '通' but the cross street is a known major one ('鞘町五条下ル')
 _KYOTO_INTERSECTION_P3: Final[re.Pattern[str]] = re.compile(
-    rf"(?:^|\s)(?P<street1>[^\s\d]+?)(?P<street2>{_STREETS_PATTERN})(?P<direction>{_DIR_TOKENS})(?P<chome>{_CLAUSE_CHOME})?"
+    rf"(?:^|\s)(?P<street1>[^\s\d]+?)(?P<street2>{_STREETS_PATTERN})(?P<direction>{_DIR_TOKENS}){_CLAUSE_TAIL}"
+)
+
+
+# Pattern 4: one street and its directions only ('荒神口上がる東入る宮垣町'). Kyoto has no registered town
+# name containing a direction word, so everything up to the last direction belongs to the clause.
+_KYOTO_SINGLE_STREET: Final[re.Pattern[str]] = re.compile(
+    rf"^(?P<street1>[^\s\d]{{2,8}}?)(?P<street2>)(?P<direction>{_DIR_TOKENS}){_CLAUSE_TAIL}"
 )
 
 
@@ -62,6 +72,8 @@ class KyotoParser:
             match = _KYOTO_INTERSECTION_P2.search(text)
         if not match:
             match = _KYOTO_INTERSECTION_P3.search(text)
+        if not match:
+            match = _KYOTO_SINGLE_STREET.search(text)
 
         if not match:
             return None, text

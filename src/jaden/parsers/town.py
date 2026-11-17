@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Tuple, Sequence, Set
 
 from ..core.townkey import is_kana, is_numeral, kana_key, one_edit_apart, spelling_key, town_key
-from ..data.gazetteer import Gazetteer, TownMatch, TownRecord, PostalRecord
+from ..data.gazetteer import Gazetteer, TownEntry, TownMatch, TownRecord, PostalRecord
 from ..data.loader import MunicipalityRecord
 
 # Prefix matches shorter than this are too weak to resolve anything ('芝' inside '芝公園')
@@ -44,8 +44,54 @@ def town_variants(town_text: str, first_number: Optional[int]) -> List[Tuple[str
         return []
     out = [(town_text + "町", "machi")]
     if first_number is not None:
-        out += [(f"{town_text}{first_number}番町", "banchou"), (f"{town_text}{first_number}の", "no")]
+        # '北条町1-2-31' is 北条町一丁 2番31号 in Sakai, where towns are registered as 'N丁'
+        out += [(f"{town_text}{first_number}番町", "banchou"), (f"{town_text}{first_number}の", "no"),
+                (f"{town_text}{first_number}丁", "banchou")]
     return out
+
+
+def _respelt_town(gaz: Gazetteer, lg_code: str, town_text: str) -> Optional[Tuple[TownEntry, int]]:
+    """A registered town the written one stands for when nothing matched it as written.
+
+    (entry, characters of ``town_text`` it covers), tried in this order:
+      'ニの' + number            the town ニ: の joins it to the lot number
+      '市ヶ谷加賀町', '桜ケ丘町'   registered without the ケ: 市谷加賀町, 桜丘町
+      '花岡字姥沢'               花岡町 before its 字
+      '小舟町', '本塩町'          registered with the area name in front: 日本橋小舟町, 四谷本塩町
+    """
+    towns = gaz.towns_in(lg_code)
+    if not towns:
+        return None
+    if len(town_text) >= 2 and town_text[-1] in "のノ":
+        entry = towns.get(town_key(town_text[:-1]))
+        if entry is not None:
+            return entry, len(town_text)
+    cut = town_text.find("字", 1)
+    head = town_text[:cut] if cut > 0 else town_text
+    covered = len(head)
+    key = town_key(head)
+    if "ケ" in key:
+        entry = towns.get(key.replace("ケ", ""))
+        if entry is not None:
+            return entry, covered
+    elif len(key) >= 2:
+        # '武蔵丘' for 武蔵ケ丘: the registered name has a ケ the written one leaves out
+        with_ke = {k for k in (key[:i] + "ケ" + key[i:] for i in range(1, len(key))) if k in towns}
+        if len(with_ke) == 1:
+            return towns[with_ke.pop()], covered
+    if cut > 0 and len(head) >= 2:
+        entry = towns.get(town_key(head + "町"))
+        if entry is not None:
+            return entry, covered
+    if cut < 0 and len(key) >= 3:
+        # The registered name ends with the written one, and what stands before it is an area name
+        # that starts other towns of the municipality too (日本橋, 四谷, 神田)
+        ending = [(k, e) for k, e in towns.items() if k.endswith(key) and len(k) > len(key)]
+        if len(ending) == 1:
+            area = ending[0][0][:-len(key)]
+            if len(area) >= 2 and sum(1 for k in towns if k.startswith(area)) >= 3:
+                return ending[0][1], covered
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,9 +177,12 @@ def _postal_place(p: PostalRecord) -> str:
 
 def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Optional[int],
            postal: Sequence[PostalRecord], chome_explicit: bool, first_number: Optional[int],
-           strong_prefix_ok: bool = True) -> TownCheck:
+           strong_prefix_ok: bool = True, respell_ok: bool = True) -> TownCheck:
     match = gaz.match_town(muni.lg_code, town_text) if town_text else None
-    if match is not None and not match.exact and match.consumed < _MIN_PREFIX_CHARS:
+    if (match is not None and not match.exact and match.consumed < _MIN_PREFIX_CHARS
+            and (town_text.startswith(("大字", "小字")) or not koaza_remainder(town_text[match.consumed:]))):
+        # One character is too little to go on, unless a 字 or a lot series follows it ('平字三町目',
+        # '巻甲'). The 大 of '大字…' is the marker, not the town 大
         match = None
     if match is not None and not match.exact and not strong_prefix_ok and not koaza_remainder(town_text[match.consumed:]):
         # Among many candidates a partial match ('ニセコ高等学校' starting with 字ニセコ) proves nothing
@@ -159,7 +208,8 @@ def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Opti
                 kana_chome, kana_unlisted = chome_state(hit.chomes, chome)
             return TownCheck(muni, kana_match, kana_chome, _postal_ok(postal, muni.lg_code, kana_match), "kana",
                              kana_unlisted)
-    if match is None or not match.exact or chome_ok is False or unlisted:
+    postal_only = match is not None and match.entry.source == "postal"
+    if match is None or not match.exact or chome_ok is False or unlisted or postal_only:
         towns = gaz.towns_in(muni.lg_code)
         variants = town_variants(town_text, first_number)
         if unlisted and town_text.endswith("町") and len(town_text) > 2:
@@ -176,6 +226,17 @@ def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Opti
             variant_match = TownMatch(muni.lg_code, entry, len(town_text), exact=True)
             variant_chome = True if kind == "machi" and chome is not None and chome in entry.chomes else None
             return TownCheck(muni, variant_match, variant_chome, _postal_ok(postal, muni.lg_code, variant_match), kind)
+    if match is None and town_text and respell_ok:
+        respelt = _respelt_town(gaz, muni.lg_code, town_text)
+        if respelt is not None:
+            entry, consumed = respelt
+            other = TownMatch(muni.lg_code, entry, consumed, exact=consumed == len(town_text))
+            other_chome: Optional[bool] = None
+            other_unlisted = False
+            if other.exact and chome is not None and entry.chomes_known and (
+                    chome_explicit or all(r.chome is not None for r in entry.records)):
+                other_chome, other_unlisted = chome_state(entry.chomes, chome)
+            return TownCheck(muni, other, other_chome, _postal_ok(postal, muni.lg_code, other), "machi", other_unlisted)
     return TownCheck(muni, match, chome_ok, _postal_ok(postal, muni.lg_code, match), None, unlisted)
 
 
@@ -198,7 +259,9 @@ def resolve_town(
     if postal_code and not postal:
         notes.append(f"postal code {postal_code} is not in the Japan Post list")
 
-    checks = [_check(gaz, m, town_text, chome, postal, chome_explicit, first_number, len(candidates) == 1)
+    # Respelling a town is safe within one place: one municipality, or the wards of one city
+    one_place = len({(c.prefecture_code, c.city) for c in candidates}) == 1
+    checks = [_check(gaz, m, town_text, chome, postal, chome_explicit, first_number, len(candidates) == 1, one_place)
               for m in candidates]
 
     if len(checks) == 1:

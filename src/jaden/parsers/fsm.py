@@ -27,6 +27,7 @@ _TOWN_NONE: Final[str] = r"(?P<town>)"
 # A number that is part of a place name, not a block number: '9条', '2線', '5区', '8地割', '6番町'
 _NUMBER_IN_NAME: Final[re.Pattern[str]] = re.compile(
     r"^\d+(?:条|線|区|組|班|部|地割|街区|工区|番町|番丁|番耕地|耕地|号地|号線|丁(?!目)|の町|ノ町|の割|ノ割|軒|号(?=\D*\d+線)|-\d+線)")
+_HYPHEN_AFTER_MARKER: Final[re.Pattern[str]] = re.compile(r"(?<=\d)(丁目|番地|番)\s*-\s*(?=\d+(?:番|号))")
 # A floor or room mark standing right after the block numbers with no number of its own
 _BARE_MARK: Final[re.Pattern[str]] = re.compile(r"^(?:階|[Ff](?![A-Za-z])|号室|号(?!館|棟|地|線))")
 
@@ -81,7 +82,7 @@ class BlockFSM:
         Returns:
             Tuple of (result_dict, town_name, remaining_tail).
         """
-        text = text.strip()
+        text = _HYPHEN_AFTER_MARKER.sub(r"\1", text.strip())   # '2丁目-11番-1号' is '2丁目11番1号'
         result, town, tail = BlockFSM._parse(text, has_chome_already, _TOWN_ANY)
         # The block number is the first number after the town. A later, better-labelled number
         # belongs to the building: '谷口212堀切マンション101号室' is 谷口 212, not 谷口212堀切マンション 101号.

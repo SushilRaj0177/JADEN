@@ -9,6 +9,9 @@ from typing import Optional, Dict, Any, Tuple
 import json
 from .codes import AddressRegime
 
+# Lot words that stand where a number would: the place has no lot number ('支笏湖温泉番外地')
+UNNUMBERED_LOTS = frozenset({"番外地", "無番地", "官有地無番地", "官有無番地"})
+
 
 @dataclass(frozen=True, slots=True)
 class KyotoDirectionClause:
@@ -102,8 +105,8 @@ class AddressComponents:
         'prefecture' or 'none'. 'house' identifies a building or lot; 'block' is a 番 without 号."""
         if self.lg_code is None and not self.is_ambiguous:
             return "prefecture" if self.prefecture else "none"
-        has_house = (self.lot_number is not None or self.banchi is not None
-                     or (self.ban is not None and self.go is not None))
+        has_house = ((self.lot_number is not None and self.lot_number not in UNNUMBERED_LOTS)
+                     or self.banchi is not None or (self.ban is not None and self.go is not None))
         if has_house:
             return "unit" if self.unit else "house"
         if self.ban is not None:

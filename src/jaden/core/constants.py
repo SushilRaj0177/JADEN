@@ -117,9 +117,13 @@ KANJI_POWERS: Final[Dict[str, int]] = {
 KYOTO_DIRECTIONS: Final[Dict[str, str]] = {
     "上る": "north",
     "上ル": "north",
+    "上がる": "north",
+    "上ガル": "north",
     "あがる": "north",
     "下る": "south",
     "下ル": "south",
+    "下がる": "south",
+    "下ガル": "south",
     "くだる": "south",
     "東入": "east",
     "東入る": "east",
