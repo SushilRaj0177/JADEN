@@ -66,9 +66,9 @@ def test_autocorrect_applies_a_unique_correction_and_keeps_the_original():
 
 
 def test_autocorrect_does_not_choose_between_two_candidates():
-    # 南長埜 is one character from both 南長野 and 南長池
-    res = jaden.normalize("長野県長野市南長埜692-2", autocorrect=True)
-    assert res.components.town == "南長埜"
+    # 南長里 is one character from both 南長野 and 南長池
+    res = jaden.normalize("長野県長野市南長里692-2", autocorrect=True)
+    assert res.components.town == "南長里"
     assert len(res.suggestions) == 2
 
 

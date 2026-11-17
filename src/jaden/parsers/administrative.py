@@ -5,8 +5,11 @@ and JIS X 0402 / MIC municipalities. Supports deterministic statutory matching (
 heuristic omitted-prefecture inference (Tier 3), and multi-jurisdiction ambiguity detection.
 """
 
+import dataclasses
+import re
 from dataclasses import dataclass
 from typing import Optional, Tuple, List, Dict
+from ..core.townkey import fold_same_length, one_edit_apart
 from ..core.trie import PrefixTrie
 from ..data.loader import AddressDataRegistry, get_registry, MunicipalityRecord
 from ..models.codes import PrefectureRecord
@@ -48,6 +51,10 @@ class AdministrativeParser:
         if self._initialized:
             return
 
+        # Keys are folded (ヶ/ケ/が, の/ノ, old kanji forms) and so is the text they are matched against:
+        # '茅ケ崎市', '保土ヶ谷区', '須惠町' and '塩釜市' find 茅ヶ崎市, 保土ケ谷区, 須恵町 and 塩竈市.
+        fold = fold_same_length
+
         # 1. Populate Prefecture Trie with both full names ('東京都') and stems ('東京')
         for pref in self.registry.list_all_prefectures():
             self._pref_trie.insert(pref.name, pref)
@@ -58,14 +65,14 @@ class AdministrativeParser:
         # 2. Populate Municipality Trie & Ward Tries
         for code, muni in self.registry._municipalities_by_code.items():
             # Full name: e.g. '京都市中京区', '横浜市中区', '千代田区', '八王子市'
-            existing = self._muni_trie.search_exact(muni.name) or []
+            existing = self._muni_trie.search_exact(fold(muni.name)) or []
             if muni not in existing:
                 existing.append(muni)
-            self._muni_trie.insert(muni.name, existing)
+            self._muni_trie.insert(fold(muni.name), existing)
 
             # County-prefixed town/village name: e.g. '西多摩郡日の出町', '中郡大磯町', '石狩郡当別町'
             if muni.county:
-                county_full = f"{muni.county}{muni.name}"
+                county_full = fold(f"{muni.county}{muni.name}")
                 existing_cf = self._muni_trie.search_exact(county_full) or []
                 if muni not in existing_cf:
                     existing_cf.append(muni)
@@ -73,44 +80,55 @@ class AdministrativeParser:
 
             # Designated city base name: e.g. '京都市', '横浜市'
             if muni.entity_type == "designated_city":
-                existing_city = self._muni_trie.search_exact(muni.city) or []
+                existing_city = self._muni_trie.search_exact(fold(muni.city)) or []
                 if muni not in existing_city:
                     existing_city.append(muni)
-                self._muni_trie.insert(muni.city, existing_city)
+                self._muni_trie.insert(fold(muni.city), existing_city)
 
             # Bare administrative ward name: e.g. '中央区' in '札幌市中央区'
             if muni.ward and muni.ward != muni.name:
-                existing_w = self._muni_trie.search_exact(muni.ward) or []
+                existing_w = self._muni_trie.search_exact(fold(muni.ward)) or []
                 if muni not in existing_w:
                     existing_w.append(muni)
-                self._muni_trie.insert(muni.ward, existing_w)
+                self._muni_trie.insert(fold(muni.ward), existing_w)
 
             # If it has an administrative ward: e.g. '中京区' in Kyoto, '南区' in Yokohama / Sagamihara
             if muni.ward:
                 pref_code = muni.prefecture_code
                 if pref_code in self._ward_trie_by_pref:
-                    existing_pref_w = self._ward_trie_by_pref[pref_code].search_exact(muni.ward) or []
+                    existing_pref_w = self._ward_trie_by_pref[pref_code].search_exact(fold(muni.ward)) or []
                     if muni not in existing_pref_w:
                         existing_pref_w.append(muni)
-                    self._ward_trie_by_pref[pref_code].insert(muni.ward, existing_pref_w)
+                    self._ward_trie_by_pref[pref_code].insert(fold(muni.ward), existing_pref_w)
 
                 # Global ward list for heuristic resolution
-                existing_ward = self._ward_trie_global.search_exact(muni.ward) or []
+                existing_ward = self._ward_trie_global.search_exact(fold(muni.ward)) or []
                 if muni not in existing_ward:
                     existing_ward.append(muni)
-                self._ward_trie_global.insert(muni.ward, existing_ward)
+                self._ward_trie_global.insert(fold(muni.ward), existing_ward)
 
             # Also index Tokyo's special wards in global ward trie for ward-level resolution
             if muni.entity_type == "special_ward":
-                existing_ward = self._ward_trie_global.search_exact(muni.name) or []
+                existing_ward = self._ward_trie_global.search_exact(fold(muni.name)) or []
                 if muni not in existing_ward:
                     existing_ward.append(muni)
-                self._ward_trie_global.insert(muni.name, existing_ward)
+                self._ward_trie_global.insert(fold(muni.name), existing_ward)
+
+        # The registry notation of two Izu island municipalities carries the island name
+        for alias, name in (("八丈島八丈町", "八丈町"), ("三宅島三宅村", "三宅村")):
+            records = [m for m in self._muni_trie.search_exact(fold(name)) or [] if m.prefecture_code == "13"]
+            if records:
+                self._muni_trie.insert(fold(alias), records)
 
         self._initialized = True
 
     def parse(self, text: str) -> AdministrativeParseResult:
         """Resolves the administrative hierarchy from the front of the address text.
+
+        The text is matched in folded form, so spelling variants of a municipality name are found;
+        ``remaining_text`` is cut from the text as written. When nothing is found, a repeated
+        prefecture or municipality name and a misspelt or spaced county name are repaired and the
+        text is read again.
 
         Returns:
             AdministrativeParseResult (supports 4-tuple unpacking for backward compatibility).
@@ -118,6 +136,83 @@ class AdministrativeParser:
         text = text.strip()
         if not text:
             return AdministrativeParseResult(None, None, "", False)
+        res = self._parse_folded(fold_same_length(text))
+        repaired = None
+        if res.municipality is None and not res.is_ambiguous:
+            repaired = self._repair(text)
+            if repaired is not None:
+                again = self._parse_folded(fold_same_length(repaired))
+                if again.municipality is not None or again.is_ambiguous:
+                    res, text = again, repaired
+        elif res.municipality is not None:
+            res = self._skip_repeated_name(res)
+        # The remainder is always a suffix of the folded text, which has the length of the written one
+        rest = text[len(text) - len(res.remaining_text):] if res.remaining_text else ""
+        return dataclasses.replace(res, remaining_text=rest)
+
+    def _skip_repeated_name(self, res: AdministrativeParseResult) -> AdministrativeParseResult:
+        """'札幌市札幌市南区石山…', '龍ヶ崎市龍ケ崎市貝原塚町…': the name typed twice is read once."""
+        muni = res.municipality
+        rest = res.remaining_text
+        if muni is None or not rest:
+            return res
+        names = [muni.prefecture_name + muni.name, muni.name]
+        if muni.city and muni.city != muni.name:
+            names += [muni.prefecture_name + muni.city, muni.city]
+        for name in names:
+            folded = fold_same_length(name)
+            if rest.startswith(folded) and len(rest) > len(folded):
+                rest = rest[len(folded):].lstrip()
+                if muni.city and muni.city != muni.name and not muni.ward:
+                    break
+                # After a repeated city name the ward may follow ('横浜市横浜市金沢区…')
+                ward_trie = self._ward_trie_by_pref.get(muni.prefecture_code)
+                if muni.entity_type == "designated_city" and ward_trie is not None:
+                    hit = ward_trie.longest_prefix(rest, 0)
+                    wards = [w for w in hit[1] if w.city == muni.city] if hit else []
+                    if hit and wards:
+                        return dataclasses.replace(res, municipality=wards[0], remaining_text=rest[hit[2]:].lstrip())
+                return dataclasses.replace(res, remaining_text=rest)
+        return res
+
+    _COUNTY = re.compile(r"^([^\s\d]{1,4})([郡群])\s*")
+
+    def _repair(self, text: str) -> Optional[str]:
+        """The text with a repeated prefecture name removed, or its county name corrected; None when
+        there is nothing to repair. Only the administrative head is touched."""
+        folded = fold_same_length(text)
+        pref_hit = self._pref_trie.longest_prefix(folded, 0)
+        head_end = 0
+        pref = None
+        if pref_hit and pref_hit[0] == pref_hit[1].name:
+            pref = pref_hit[1]
+            head_end = pref_hit[2]
+            while folded[head_end:].lstrip().startswith(pref.name):   # '三重県三重県津市…'
+                head_end += len(folded[head_end:]) - len(folded[head_end:].lstrip()) + len(pref.name)
+            if head_end != pref_hit[2]:
+                return pref.name + text[head_end:]
+        body = folded[head_end:]
+        offset = head_end + len(body) - len(body.lstrip())
+        body = body.lstrip()
+        m = self._COUNTY.match(body)
+        if not m:
+            return None
+        # '粕屋郡須恵町' (糟屋郡), '河西群芽室町' (河西郡), '西牟婁郡　白浜町': the town decides, the county must be close
+        after = body[m.end():]
+        hit = self._muni_trie.longest_prefix(after, 0)
+        if not hit:
+            return None
+        written = m.group(1) + "郡"
+        for cand in hit[1]:
+            if not cand.county or (pref is not None and cand.prefecture_code != pref.code):
+                continue
+            county = fold_same_length(cand.county)
+            if county == written or one_edit_apart(county, written):
+                return text[:offset] + cand.county + text[offset + m.end():]
+        return None
+
+    def _parse_folded(self, text: str) -> AdministrativeParseResult:
+        """``parse`` on text that is already folded and stripped."""
 
         # Pass 1: Try matching Prefecture from the front
         pref_match = self._pref_trie.longest_prefix(text, 0)
