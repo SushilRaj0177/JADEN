@@ -4,7 +4,7 @@ A deterministic, high-throughput Python engine for Japanese address canonicaliza
 administrative disambiguation, and statutory classification.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Sushil Raj"
 
 from .engine import AddressNormalizer, normalize, parse, validate

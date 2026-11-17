@@ -9,9 +9,31 @@
 
 v0.2 からは、国土交通省の大字・町丁目レベル位置参照情報（全国 191,100 件）と日本郵便の郵便番号データを同梱し、町名・丁目まで完全オフラインで照合します。複数の場所に当てはまる住所は推測せず、「曖昧」として候補を返します。
 
-[クイックスタート](#6-インストールおよび利用方法) • [v0.2 の新機能](#v02-の新機能) • [概要と課題](#1-概要と日本の住所が抱える技術的課題) • [アーキテクチャ](#3-アーキテクチャと処理パイプライン) • [実測ベンチマーク](#5-実測ベンチマーク結果) • [CLI](#コマンドラインインターフェース-cli) • [制限事項](#8-システムの境界と制限事項limitations)
+v0.3 では、その照合エンジンの上に実務で必要な道具を加えました。名寄せ（同一住所の判定）、打ち間違いの訂正候補、ひらがな入力、郵便番号検索、入力補完、座標からの逆引き、文章中の住所抽出、そして HTTP API とデモページです。すべて標準ライブラリのみで動作します。
+
+[クイックスタート](#6-インストールと利用方法) • [v0.3 の新機能](#v03-の新機能) • [v0.2 の新機能](#v02-の新機能) • [概要と課題](#1-概要と日本の住所が抱える技術的課題) • [アーキテクチャ](#3-アーキテクチャと処理パイプライン) • [実測ベンチマーク](#5-実測ベンチマーク結果) • [CLI](#コマンドラインインターフェース-cli) • [制限事項](#8-システムの境界と制限事項limitations)
 
 *(English documentation is available at [README.md](README.md).)*
+
+---
+
+## v0.3 の新機能
+
+v0.2 は 1 件の住所を照合できるようになりました。v0.3 は、その上にシステムが必要とする機能を載せます。「この 2 件は同じ場所か」「利用者は何と書きたかったのか」「この郵便番号・座標には何があるか」「この文章のどこに住所があるか」に、Python・コマンドライン・HTTP のいずれからでも答えます。
+
+| 用途 | v0.3 | 例 |
+| :--- | :--- | :--- |
+| 顧客データの名寄せ | `jaden.match_key`, `jaden.compare`, `jaden dedupe` | `港区芝公園４丁目２番８号 ３０２号室` と `東京都港区芝公園4-2-8-302` は同じキー `131032\|芝公園\|4\|2\|8\|302` |
+| 打ち間違いの安全な訂正 | `suggestions`, `--fix` / `autocorrect=True` | `東京都港区芝公演4-2-8` → 芝公園を提案。1 文字違いの町が 1 つだけのときに限り適用 |
+| ひらがな・カタカナ入力 | 自動 | `港区しばこうえん4丁目2番8号` → 東京都港区芝公園4丁目2番8号 |
+| 郵便番号からの自動入力 | `jaden.lookup_postal`, `jaden postal` | `105-0011` → 東京都港区芝公園、読み、ローマ字 |
+| 入力補完 | `jaden.suggest`, `jaden suggest` | `東京都港区しば` → 芝、芝浦、芝公園、芝大門 |
+| 座標 → 住所 | `jaden.reverse_geocode`, `jaden reverse` | `35.0116, 135.7681` → 京都市中京区上本能寺前町（17 m） |
+| メール・メモから住所を抽出 | `jaden.extract_addresses`, `jaden extract` | 文字位置つき、1 件ずつ照合済み |
+| 短い形式で保存 | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8（再正規化しても同じ結果） |
+| 他の言語から利用 | `jaden serve` | `/v1` 以下の JSON API とデモページ（標準ライブラリのみ） |
+
+実在住所 4,700 件での測定結果（`benchmarks/jabench/evaluate_toolkit.py`、詳細は [実測ベンチマーク](#5-実測ベンチマーク結果)）: 表記ゆれ 33,976 件すべてが元の住所と同じ名寄せキーになり、町名の 1 文字誤りは 93.3% で正しい候補を提示、自動訂正の**誤訂正は 2,629 件中 0 件**。文章に埋め込んだ住所 23,396 件の 99.9% で範囲が完全に一致し、地名に触れるだけで住所を含まない文章 4,700 件での**誤検出は 0 件**でした。
 
 ---
 
@@ -193,6 +215,27 @@ JADENが参照する行政区画マスターデータは、公的機関が公表
 
 再現方法: `python benchmarks/jabench/build_benchmark.py` → `python benchmarks/jabench/evaluate.py`
 
+### ツールキット: 名寄せ・誤字・抽出・検索（v0.3）
+
+`benchmarks/jabench/evaluate_toolkit.py` は、同じ実在住所 4,700 件（とその表記ゆれ 34,032 件）から各テストを作るため、正解が常に分かっています。
+
+| テスト | 作り方 | 結果 |
+| :--- | :--- | :--- |
+| 名寄せ | 表記ゆれが、元の住所と同じ号レベルの `match_key` になること | **33,976 / 33,976** |
+| | 部屋番号の 4 通りの書き方（`-305`、`メゾン桜305`、`305号室`、`Apt 305`）が同じキーになること | 不一致 0 |
+| | 異なる公表住所が同じキーになった組 | 4,692 件中 5 組（いずれも同じ場所の別表記） |
+| 誤字 | 町名の 1 文字を別の漢字に置換 | 正しい住所が `suggestions` に含まれる: **93.3%**（2,453 / 2,629） |
+| | 自動訂正あり | 正しく訂正 72.4%、**誤訂正 0**、訂正せず 27.6% |
+| かな | 町名をひらがなで記述 | 同じ結果 **99.9%**（3,898 / 3,900）、別の町への誤り 0 |
+| ハイフン形式 | `format("hyphen")` を再度正規化 | 同じ結果 **4,700 / 4,700** |
+| 抽出 | 文中、ラベル付き、括弧内、郵便番号の後、建物名・部屋番号付き | 検出 100%、範囲の完全一致は各条件で **99.9%** |
+| | 学校名と日付・電話番号・金額だけで住所を含まない文章 | 4,700 件中 **誤検出 0** |
+| 入力補完 | 市区町村＋町名の最初の 2 文字 | 正しい町が上位 10 件に含まれる: 90.5% |
+| 郵便番号検索 | JADEN が付けた郵便番号を逆に検索 | 同じ市区町村 4,596 / 4,596 |
+| 逆ジオコーディング | 学校の測量座標 | 市区町村 98.5%、町 67.1%（同梱の代表点）、街区データ導入時 **99.2% / 83.0%** |
+
+数値の読み方: 自動訂正が 27.6% を訂正しないのは、1 文字違いの登録町名が複数あるか、ひとつもないためで、意図した動作です。入力補完は 3 文字入力後に 76.6% へ下がりますが、これは同じ文字で始まる町が 10 を超える市区町村（北海道の `春光一条`〜`春光台五条` など）に限られ、`limit` を増やせばすべて表示されます。逆ジオコーディングは「その座標を含む区域」ではなく最も近い登録代表点を返すため、境界付近では町が異なることがあります。
+
 ### 速度（v0.1 パーサー）
 
 `benchmarks/run_benchmark.py` を用いた再現可能なベンチマーク結果です。同一文字列のキャッシュループを排除し、**500件の固有かつ代表的な住所コーパス**を用いて測定しています。計測ループ中はプロファイラ（`tracemalloc`）を停止し、計測オーバーヘッドを排除しています。
@@ -285,7 +328,35 @@ print(res4.components.county) # '中郡'
 print(res4.components.city)   # '大磯町'
 print(res4.components.lg_code)# '143413'
 
-# 5. オプショナル地理空間座標解決（国土地理院API / JGD2011・WGS 84互換）
+# 5. 名寄せ（v0.3）: 書き方が違っても同じ場所は同じキー
+print(jaden.match_key("港区芝公園４丁目２番８号 ３０２号室"))   # '131032|芝公園|4|2|8|302'
+cmp = jaden.compare("東京都港区芝公園4-2-8", "東京都港区芝公園4-2-8 102号室")
+print(cmp.verdict, cmp.level, cmp.missing)                   # same_building house ('unit',)
+print(jaden.find_duplicates(["東京都港区芝公園4-2-8", "港区芝公園４－２－８", "東京タワー"]))  # [1, 1, None]
+
+# 6. 誤字（v0.3）: 既定では候補を提示し、指定したときだけ訂正
+print(jaden.normalize("東京都港区芝公演4-2-8").suggestions)   # ('東京都港区芝公園4丁目2番8号',)
+fixed = jaden.normalize("東京都港区芝公演4-2-8", autocorrect=True)
+print(fixed.canonical, fixed.components.town_corrected_from)  # 東京都港区芝公園4丁目2番8号 芝公演
+
+# 7. かな入力、ハイフン形式、宛名用の行、精度（v0.3）
+res7 = jaden.normalize("港区しばこうえん4丁目2番8号 101号室")
+print(res7.format("hyphen"))   # '東京都港区芝公園4-2-8 101号室'
+print(res7.format("en"))       # '#101, 4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011'
+print(res7.lines())            # ('〒105-0011', '東京都港区芝公園4丁目2番8号', '101号室')
+print(res7.precision)          # 'unit'
+
+# 8. 検索（v0.3）: 郵便番号、入力補完、座標からの逆引き
+print(jaden.lookup_postal("105-0011")[0].address)                 # '東京都港区芝公園'
+print([s.text for s in jaden.suggest("東京都港区芝公園")])          # ['東京都港区芝公園1丁目', ..., '東京都港区芝公園4丁目']
+hit = jaden.reverse_geocode(35.0116, 135.7681)[0]
+print(hit.address, hit.level, hit.distance_m)                     # 京都府京都市中京区上本能寺前町 town 17.1
+
+# 9. 文章中の住所（v0.3）
+found = jaden.extract_addresses("会場は東京都港区芝公園4-2-8の東京タワーです。")[0]
+print(found.start, found.end, found.text, found.canonical)        # 3 16 東京都港区芝公園4-2-8 東京都港区芝公園4丁目2番8号
+
+# 10. オプショナル地理空間座標解決（国土地理院API / JGD2011・WGS 84互換）
 geo = jaden.geocode("東京都港区六本木6-10-1")
 print(geo.status)                 # 'SUCCESS'
 print(geo.coordinates.latitude)  # 35.660206
@@ -295,11 +366,11 @@ print(geo.matched_address)       # '東京都港区六本木六丁目１０番'
 
 ### コマンドラインインターフェース (CLI)
 
-JADENは、4つの高速CLIサブコマンド（`normalize`, `parse`, `validate`, `geocode`）を提供します。
+JADENのCLIは、1件の住所（`normalize`, `parse`, `validate`, `geocode`）、ファイル（`batch`, `dedupe`, `extract`）、検索（`postal`, `suggest`, `reverse`, `compare`）、APIサーバー（`serve`）、データ管理（`data`）を扱います。
 
 #### 1. `normalize`: 正規化表記の生成
 ```bash
-# ターミナル向け可読サマリー出力
+# ターミナル向け可読サマリー出力（町名照合、郵便番号、読み、英語表記、オフライン座標）
 $ jaden normalize "東京都港区六本木1-2-3"
 Prefecture: 東京都
 City:       港区
@@ -309,8 +380,17 @@ Ban:        2
 Go:         3
 Regime:     gaiku_hoshiki
 LG Code:    131032
+Postal:     〒106-0032
+Verified:   town + 丁目 registered
 Confidence: 1.00
 Canonical:  東京都港区六本木1丁目2番3号
+Kana:       トウキョウトミナトクロッポンギ
+Romaji:     1-2-3 Roppongi, Minato-ku, Tokyo 106-0032
+Location:   35.665061, 139.740792 (chome level, offline)
+
+# ローマ字入力
+$ jaden normalize "4-2-8 Shibakoen, Minato-ku, Tokyo" -c
+東京都港区芝公園4丁目2番8号
 
 # 機械可読JSON形式出力
 $ jaden normalize "東京都港区六本木1-2-3" --json
@@ -339,7 +419,22 @@ Valid:       Yes
 Confidence:  1.00
 LG Code:     131032
 Regime:      gaiku_hoshiki
-Message:     Local government entity verified against official statutory registry.
+Verified to: chome
+Precision:   house
+Message:     Municipality, town and 丁目 verified against official registries.
+
+# 町名から曖昧な市区町村を特定（終了コード 0）
+$ jaden validate "港区芝公園4-2-8"
+Input:       港区芝公園4-2-8
+Status:      ACCEPTED
+Valid:       Yes
+Confidence:  0.85
+LG Code:     131032
+Regime:      gaiku_hoshiki
+Verified to: chome
+Precision:   house
+Message:     Municipality, town and 丁目 verified against official registries.
+Note:        resolved 3 candidate municipalities to 東京都港区 by town '芝公園'
 
 # 都道府県省略による衝突・曖昧性の検出（終了コード 2）
 $ jaden validate "府中市1-1"
@@ -348,6 +443,7 @@ Status:      AMBIGUOUS
 Valid:       No
 Confidence:  0.50
 Regime:      unspecified
+Precision:   house
 Message:     Omitted prefecture matches 2 statutory municipalities.
 Candidates:  2
   • 東京都府中市 (132063)
@@ -361,7 +457,22 @@ Valid:       No
 Confidence:  1.00
 LG Code:     131032
 Regime:      gaiku_hoshiki
+Precision:   house
 Message:     Nonexistent 丁目: 芝公園 has only 1–4丁目; 9丁目 does not exist
+
+# 別の市区町村の郵便番号（終了コード 1）
+$ jaden validate "〒100-0001 東京都港区芝公園4-2-8"
+Input:       〒100-0001 東京都港区芝公園4-2-8
+Status:      MALFORMED
+Valid:       No
+Confidence:  1.00
+LG Code:     131032
+Regime:      gaiku_hoshiki
+Precision:   house
+Message:     Postal code contradicts the address: postal code 100-0001 belongs to 東京都千代田区千代田, not to 港区
+
+# 町名が辞書にあることも必須にする
+$ jaden validate "東京都港区存在しない町1-1" --strict      # 終了コード 3
 
 # 外部外国住所・不正文字列の拒絶（終了コード 1）
 $ jaden validate "123 Main St, New York"
@@ -387,7 +498,127 @@ $ jaden geocode "東京都港区六本木6-10-1" --json
 
 # 複数候補が存在する曖昧住所の検出（非解決時 終了コード 1）
 $ jaden geocode "府中市"
+
+# オフライン: 国土交通省の丁目代表点（街区データ導入時は街区代表点）
+$ jaden geocode "東京都港区芝公園4-2-8" --provider offline
+Input:       東京都港区芝公園4-2-8
+Status:      SUCCESS
+Provider:    offline
+Coordinates: 35.656459, 139.747640 (Lat, Lon)
+Precision:   chome
+Matched:     東京都港区芝公園4丁目2番8号
 ```
+
+#### 5. `data`: 辞書データの管理
+```bash
+# 導入済みデータの内容・出典・必要な出典表示
+$ jaden data info
+
+# 国土交通省・日本郵便の最新データを取得して再構築（ユーザーのデータディレクトリ）
+$ jaden data update
+
+# 街区レベルの代表点を都道府県単位で導入（例: 東京都と大阪府）
+$ jaden data fetch-blocks 13 27
+```
+
+#### 6. `batch`: ファイル単位の処理
+```bash
+# CSV（UTF-8 / Shift_JIS を自動判定）。住所列は列名（住所 / address / 所在地）から判定
+$ jaden batch customers.csv -o checked.csv
+
+# 列の指定、Excel 向け BOM 付き UTF-8、4 プロセスで並列処理
+$ jaden batch customers.csv --column 3 -o checked.csv --output-encoding utf-8-sig --jobs 4
+```
+入力の各行はそのまま出力され、`jaden_status`、`jaden_canonical`、`jaden_lg_code`、住所の各要素、建物名・階・部屋番号、郵便番号、読み、ローマ字、緯度・経度などの列が追加されます。`--fix` で 1 文字違いの町名を訂正します。
+
+#### 7. `compare` / `dedupe`: 名寄せ
+```bash
+$ jaden compare "東京都港区芝公園4-2-8 グランドメゾン芝公園302" "港区芝公園４丁目２番８号　グランドメゾン芝公園　３０２号室"
+A:        東京都港区芝公園4丁目2番8号 グランドメゾン芝公園 302
+B:        東京都港区芝公園4丁目2番8号 グランドメゾン芝公園 302号室
+Verdict:  same
+Agree to: unit
+
+$ jaden compare "東京都港区芝公園4-2-8 101" "東京都港区芝公園4-2-8 102号室"
+A:        東京都港区芝公園4丁目2番8号 101
+B:        東京都港区芝公園4丁目2番8号 102号室
+Verdict:  same_building
+Agree to: house
+Conflict: unit
+Note:     different rooms in the same building
+
+# 同じ住所の行をグループ化
+$ jaden dedupe customers.csv -o grouped.csv
+```
+`compare` の終了コード: 同一 0、別の住所 1、同じ建物または同一の可能性あり 2、住所でない入力 3。`dedupe` は `jaden_match_key`、`jaden_group`、`jaden_group_size` の列を追加します（`--level house` で部屋番号を無視、`--level town` で町単位）。
+
+判定: **same**（街区・号まで一致し、部屋番号があればそれも一致）、**same_building**（部屋番号が異なる、または片方だけにある）、**possibly_same**（矛盾はないが片方の情報が少ない、曖昧な市区町村がもう一方と両立する、片方だけが字を書いている）、**different**（食い違う階層を返す）、**undetermined**（住所ではない）。
+
+#### 8. `postal` / `suggest` / `reverse`: 検索
+```bash
+$ jaden postal 105-0011
+〒105-0011  東京都港区芝公園
+            トウキョウトミナトクシバコウエン
+            Shibakoen, Minato-ku, Tokyo
+
+$ jaden suggest "東京都港区しば"
+東京都港区芝
+東京都港区芝浦
+東京都港区芝公園  〒105-0011
+東京都港区芝大門  〒105-0012
+
+$ jaden reverse 35.0116 135.7681
+京都府京都市中京区上本能寺前町  (town point, 17 m away)  〒604-0925
+```
+
+#### 9. `extract`: 文章中の住所
+```bash
+$ jaden extract mail.txt
+2:13-26	ACCEPTED	東京都港区芝公園4丁目2番8号	'東京都港区芝公園4-2-8'
+3:46-83	ACCEPTED	大阪府大阪市北区梅田3丁目1番1号 大阪ステーションシティ 5F	'〒530-0001 大阪市北区梅田3-1-1 大阪ステーションシティ 5F'
+```
+各行は、行番号、ファイル内の文字位置、判定、正規化住所、原文です。`東京タワー`、日付、金額、電話番号は住所ではないため返しません。
+
+#### 10. 誤字と出力形式
+```bash
+# 町名の打ち間違いは、訂正候補とともに報告
+$ jaden validate "東京都港区芝公演4-2-8"
+...
+Suggestion:  東京都港区芝公園4丁目2番8号
+Note:        town '芝公演' is not registered in 港区
+Note:        did you mean 芝公園? '芝公演' is one character away
+
+# 1 文字違いの登録町名が 1 つだけなら --fix で訂正
+$ jaden normalize "東京都港区芝公演4-2-8" --fix -c
+東京都港区芝公園4丁目2番8号
+
+# 多くのシステムが保存している短い形式
+$ jaden normalize "東京都港区芝公園4丁目2番8号" -c --style hyphen
+東京都港区芝公園4-2-8
+```
+
+#### 11. `serve`: JSON API とデモページ
+```bash
+$ jaden serve --port 8000
+JADEN API listening on http://127.0.0.1:8000  (demo page at /, endpoints at /v1)
+
+$ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園4-2-8 101号室"
+```
+
+| エンドポイント | 用途 |
+| :--- | :--- |
+| `GET /v1/normalize?q=`（`&fix=1`, `&strict=1`） | 1 件分の完全な結果: 判定、正規化表記、ハイフン形式、英語表記、読み、郵便番号、座標、各要素、候補、訂正候補 |
+| `GET /v1/validate?q=` | 検証結果のみ |
+| `GET /v1/geocode?q=` | オフライン座標 |
+| `GET /v1/suggest?q=&limit=` | 入力補完 |
+| `GET /v1/postal/<code>` | 郵便番号 → 住所 |
+| `GET /v1/reverse?lat=&lon=&limit=` | 座標 → 最寄りの町・丁目・街区 |
+| `GET /v1/compare?a=&b=` | 判定、一致した階層、食い違い、名寄せキー |
+| `POST /v1/extract` `{"text": "..."}` | 文字位置つきの住所 |
+| `POST /v1/batch` `{"addresses": [...]}` | 最大 `--max-batch` 件（既定 1,000） |
+| `GET /v1`, `GET /health` | エンドポイント一覧、データの版、死活確認 |
+
+すべてのエンドポイントは POST の JSON ボディも受け付けます。エラーは JSON（`{"error": {"code", "message"}}`）で、ステータスは 400・404・413 です。サーバーは Python 標準ライブラリとローカルデータのみを使い、`--host` を指定しない限り `127.0.0.1` で待ち受けます。認証機能はなく、CORS ヘッダーは `--cors` 指定時のみ送ります。`http://127.0.0.1:8000/` を開くと、上記すべてを試せるデモページが表示されます。
 
 #### シェル自動化向け終了コード仕様
 | 終了コード | 判定種別 | 状態説明 |
@@ -409,17 +640,21 @@ echo "東京都港区六本木1-2-3" | jaden normalize - -c
 
 ## 7. テストと品質保証
 
-全223件のテストスイート（222件のオフラインテスト合格、1件のオプトイン・ネットワークテスト）を完備しています。GitHub Actions CIにより、全コミットおよびプルリクエストにおいてUbuntuおよびWindows上のPython 3.10〜3.13で全件自動実行・検証されます:
+テストスイートは GitHub Actions 上で、Ubuntu と Windows の Python 3.10〜3.13 で実行されます。加えて `ruff`（静的解析）、`mypy`（型検査）、そしてホイールをビルドしてインストール済みパッケージに対してテストを実行するジョブがあります。国土地理院 API への通信テスト 1 件は任意実行です（`JADEN_ENABLE_NETWORK_TESTS=1`）。
 
-* **全47都道府県の網羅的検証:** 都道府県、郡、市区町村、町名、大字・字、地域慣習、および街区・番地号（`chome`, `ban`, `go`, `banchi`, `edaban`）の完全分解検証に加え、複数都道県にまたがる郡（神奈川、東京、北海道、埼玉、長野、沖縄、滋賀）の専用検証。
-* **対抗的検証（Adversarial Suite）および回帰検証:** 固有名詞衝突（`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`）、建物名（`第一-3ビル`）、自治体名衝突（`中央区`, `府中市`, `伊達市`, `泊村`）、方位含有京都通り（`東洞院通`, `下立売通`）、無効入力の確信度0.0拒絶。
-* **CLI・公開API網羅検証:** サブコマンド（`normalize`, `parse`, `validate`, `geocode`）、`--json`出力、`-c`正規化文字列出力、標準入力パイプ（`-`）、シェル終了コード（0, 1, 2, 3, 64, 70）の完全検証。
-* **地理空間レイヤー網羅検証:** `GSIGeocoder` 単体テスト、`BaseGeospatialResolver` プラガブル拡張性、HTTPエラー処理、通信断線、タイムアウト耐性、複数候補曖昧性・不正住所のネットワーク短絡（ゼロ通信）、コアパーサー完全オフライン独立性、建物名・部屋番号の事前除去、CLI `geocode` 出力の完全検証。
-* **パッケージング・配布アセット・メタデータ整合性検証:** スタンドアロン配布データ読み込み、実行可能エントリポイント、公開シンボルエクスポートの検証。
-* **モジュラス11アルゴリズム完全適合検証。**
+* **全47都道府県の網羅的検証:** 都道府県、郡、市区町村、町名、大字・字、街区・番地号の完全分解検証と、郡の専用検証。
+* **町名辞書（v0.2）:** 町名・丁目の照合、町名や郵便番号による曖昧性の解消、存在しない丁目、矛盾する郵便番号、丁目のない町の地番、登録表記への統一、日本郵便データによる補完、住所でない入力の拒否、読み、ローマ字の入出力、オフライン座標。
+* **対抗的検証（Adversarial Suite）:** 固有名詞衝突（`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`）、建物名（`第一-3ビル`）、自治体名衝突、京都の通り名、「の」区切り、不正な漢数字、外国住所の拒否。
+* **ツールキット（v0.3）:** 名寄せの判定とキー、ファイルの重複検出、訂正候補と自動訂正の範囲、かな入力、精度と出力形式、郵便番号検索、入力補完、逆ジオコーディング、文章からの抽出、実際のソケット経由での全 API エンドポイント（エラー、上限、同時リクエストを含む）。
+* **README の実行例:** README に載せた `$ jaden ...` の出力は、実際の出力と一致することをテストで確認しています。
+* **CLI・公開API:** 全サブコマンド、`--json`、`-c`、`--strict`、`--provider offline`、`data`、標準入力（`-`）、終了コード（0, 1, 2, 3, 64, 70）。
+* **地理空間レイヤー:** `GSIGeocoder`、`OfflineGeocoder`、独自リゾルバー、HTTPエラー、タイムアウト、曖昧な住所での通信回避。
+* **パッケージング:** 同梱データ、エントリポイント、公開シンボル。
 
 ```bash
 pytest -v
+ruff check src tests benchmarks
+mypy
 ```
 
 ---
@@ -437,7 +672,12 @@ pytest -v
 8. **京都:** 同じ区の中に同名の町が複数ある場合、通り名でしか区別できません。町名は照合しますが、座標は1点に絞りません。
 9. **民間建物名の構文的推定:** 民間商業ビルの公的全国台帳は存在しないため、建物名および部屋番号は構文規則（Tier 3）による推定です。
 10. **メモリ:** 町名辞書を使うとメモリ使用量は約90 MB、最初の1件はデータ読み込みに約0.4秒かかります（辞書を使わないモードでは数MB）。
-11. **国土地理院住所検索APIの利用条件:** オンライン座標解決は国土地理院の公開APIを利用します。利用規約を確認し、適切なリクエスト間隔を設けてください。
+11. **誤字訂正の範囲は意図的に狭い:** 対象は町名のみ、1 文字の違いのみです。自動訂正は、候補が 1 つだけで町名が 3 文字以上のときに限り適用します。2 文字以上の同音異字の誤りや、市区町村名の誤りは訂正しません。
+12. **名寄せは完全一致であり、あいまい一致ではない:** 解決した各要素が一致したときに同一と判定します。市区町村を 1 つに特定できない住所にはキーがありません。片方だけが字を書いている場合は `possibly_same` です（地番は字ごとに振り直されることが多いため）。建物名は判定に使いません。
+13. **逆ジオコーディングは最近傍:** その座標を含む区域ではなく、最も近い登録代表点を返します。ベンチマークでは市区町村 98.5%、町 67.1%（街区データ導入時 99.2% / 83.0%）です。`distance_m` で結果を判断してください。
+14. **抽出は規則ベース:** 範囲は句読点、ラベル、日付、助詞で終わります。住所の次の行に書かれた建物名は含まれず、複数行にまたがる住所は、郵便番号が直前の行に単独で書かれている場合のみ検出します。
+15. **API サーバーは部品:** 認証、レート制限、TLS はありません。localhost の外に公開する場合は、ゲートウェイの背後に置いてください。
+16. **国土地理院住所検索APIの利用条件:** オンライン座標解決は国土地理院の公開APIを利用します。利用規約を確認し、適切なリクエスト間隔を設けてください。
 
 ### v0.2 で解決した v0.1 の制限事項
 「1の2の3」表記、不正な漢数字（「五三十」）、非標準の「上ラル」、帯広方式のグリッド（町名辞書で照合）、CLI の `--provider` / `--json -c` / `jaden -`、CI でのインストール済みパッケージ検証、CI での静的解析（`ruff`、`mypy`）。

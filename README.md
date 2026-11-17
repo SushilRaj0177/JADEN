@@ -5,13 +5,33 @@
 [![Typing: PEP 561](https://img.shields.io/badge/Typing-PEP%20561-10b981?style=flat&logo=python&logoColor=white)](https://peps.python.org/pep-0561/)
 [![CI](https://github.com/SushilRaj0177/JADEN/actions/workflows/ci.yml/badge.svg)](https://github.com/SushilRaj0177/JADEN/actions/workflows/ci.yml)
 
-**JADEN** is a deterministic Python engine and CLI for Japanese address canonicalization, structured decomposition, statutory validation, and offline geocoding.
+**JADEN** is a deterministic Python toolkit for Japanese addresses: it verifies and normalizes them, corrects typos, matches and deduplicates records, completes partial input, looks up postal codes, finds addresses inside text, and geocodes in both directions. It runs as a library, a CLI, and a JSON API server.
 
 It checks every address down to the town and 丁目 against the national town list (MLIT, 191,100 towns) and Japan Post's postal-code list, both bundled and fully offline. It never guesses: when an address could be in more than one place, JADEN says so and lists the candidates.
 
-[Quickstart](#6-installation--usage) • [What's new in v0.2](#whats-new-in-v02) • [Overview](#1-overview--the-core-engineering-challenge) • [Taxonomy](#2-four-tier-taxonomy-of-truth) • [Architecture](#3-architecture--processing-pipeline) • [Benchmarks](#5-empirical-benchmarks) • [CLI](#command-line-interface-cli) • [Limitations](#8-explicit-boundaries--limitations)
+[Quickstart](#6-installation--usage) • [What's new in v0.3](#whats-new-in-v03) • [What's new in v0.2](#whats-new-in-v02) • [Overview](#1-overview--the-core-engineering-challenge) • [Taxonomy](#2-four-tier-taxonomy-of-truth) • [Architecture](#3-architecture--processing-pipeline) • [Benchmarks](#5-empirical-benchmarks) • [CLI](#command-line-interface-cli) • [Limitations](#8-explicit-boundaries--limitations)
 
 *(日本語のドキュメントは [README_JP.md](README_JP.md) をご覧ください。)*
+
+---
+
+## What's new in v0.3
+
+v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems need on top of that: the same engine now answers "are these two records the same place?", "what did the user mean?", "what is at this postal code or coordinate?" and "where are the addresses in this text?", from Python, the command line, or HTTP.
+
+| Need | v0.3 | Example |
+| :--- | :--- | :--- |
+| Deduplicate customer records (名寄せ) | `jaden.match_key`, `jaden.compare`, `jaden dedupe` | `港区芝公園４丁目２番８号 ３０２号室` and `東京都港区芝公園4-2-8-302` share the key `131032\|芝公園\|4\|2\|8\|302` |
+| Fix typos safely | `suggestions`, `--fix` / `autocorrect=True` | `東京都港区芝公演4-2-8` → suggests 芝公園; applied only when exactly one town is one character away |
+| Accept kana input | automatic | `港区しばこうえん4丁目2番8号` → 東京都港区芝公園4丁目2番8号 |
+| Auto-fill forms from a postal code | `jaden.lookup_postal`, `jaden postal` | `105-0011` → 東京都港区芝公園, reading, romaji |
+| Autocomplete | `jaden.suggest`, `jaden suggest` | `東京都港区しば` → 芝, 芝浦, 芝公園, 芝大門 |
+| Coordinates → address | `jaden.reverse_geocode`, `jaden reverse` | `35.0116, 135.7681` → 京都市中京区上本能寺前町 (17 m) |
+| Find addresses in emails / notes | `jaden.extract_addresses`, `jaden extract` | exact character spans, each one verified |
+| Store a compact form | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8; lossless round trip |
+| Use from any language | `jaden serve` | JSON API under `/v1` plus an interactive demo page, standard library only |
+
+Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.3% of the time and autocorrect made **0 wrong corrections** in 2,629 trials; extraction returns the exact span in 99.9% of 23,396 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
 
 ---
 
@@ -235,6 +255,32 @@ python benchmarks/jabench/evaluate.py --systems jaden+blocks --blocks-dir ~/.loc
 
 Runners for other open-source tools (Geolonia's normalize-japanese-addresses, jageocoder) are in `benchmarks/jabench/baselines`; their results are not reported here until they have been run.
 
+### Toolkit: matching, typos, extraction, lookups (v0.3)
+
+`benchmarks/jabench/evaluate_toolkit.py` derives each test from the same 4,700 real addresses (and their 34,032 noisy variants), so the expected answer is always known.
+
+| Test | How it is built | Result |
+| :--- | :--- | :--- |
+| Matching | every noisy spelling must get the house-level `match_key` of its clean address | **33,976 / 33,976** |
+| | rooms written four ways (`-305`, `メゾン桜305`, `305号室`, `Apt 305`) must share a key | 0 inconsistent |
+| | distinct published addresses sharing a key | 5 pairs of 4,692, each the same place written two ways |
+| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.3%** (2,453 / 2,629) |
+| | with autocorrect | applied and right 72.4%, **applied and wrong 0**, left alone 27.6% |
+| Kana | the town rewritten in hiragana | same result **99.9%** (3,898 / 3,900), wrong town 0 |
+| Hyphen form | `format("hyphen")` normalized again | same result **4,700 / 4,700** |
+| Extraction | the address inside a sentence, a labelled block, parentheses, after a postal code, with building and room | found 100%, exact span **99.9%** in each context |
+| | a school name with a date, phone number and price but no address | **0 false positives** in 4,700 |
+| Autocomplete | municipality plus the first 2 characters of the town | real town in the first 10: 90.5% |
+| Postal lookup | the postal code JADEN fills in, looked up again | same municipality 4,596 / 4,596 |
+| Reverse geocoding | the surveyed school point | municipality 98.5%, town 67.1% (bundled town points); **99.2% / 83.0%** with block data |
+
+Notes on reading these numbers: autocorrect leaves 27.6% alone because two registered towns are one character away, or none is; that is the intended behaviour. Autocomplete drops to 76.6% after 3 characters only where a municipality has more than 10 towns sharing those characters (e.g. Hokkaido's `春光一条` … `春光台五条`); raise `limit` to see them all. Reverse geocoding returns the nearest registered point, not the containing boundary, so the town is wrong near borders; block data narrows that.
+
+```bash
+python benchmarks/jabench/evaluate_toolkit.py                 # writes results/toolkit_report.md
+python benchmarks/jabench/evaluate_toolkit.py --blocks-dir ~/.local/share/jaden/blocks
+```
+
 ### Speed (v0.1 parser)
 
 ### Hardware & Runtime Environment
@@ -326,7 +372,35 @@ print(jaden.normalize("4-6-16 Ginza, Chuo-ku, Tokyo").canonical)  # '東京都�
 geo = jaden.geocode("東京都港区芝公園4-2-8", provider="offline")
 print(geo.status, geo.metadata["level"])  # SUCCESS chome
 
-# 8. Online geospatial resolution via GSI (JGD2011 / WGS 84 compatible)
+# 8. Matching (v0.3): one key per place, whatever the spelling
+print(jaden.match_key("港区芝公園４丁目２番８号 ３０２号室"))   # '131032|芝公園|4|2|8|302'
+cmp = jaden.compare("東京都港区芝公園4-2-8", "東京都港区芝公園4-2-8 102号室")
+print(cmp.verdict, cmp.level, cmp.missing)                   # same_building house ('unit',)
+print(jaden.find_duplicates(["東京都港区芝公園4-2-8", "港区芝公園４－２－８", "東京タワー"]))  # [1, 1, None]
+
+# 9. Typos (v0.3): offered by default, applied on request
+print(jaden.normalize("東京都港区芝公演4-2-8").suggestions)   # ('東京都港区芝公園4丁目2番8号',)
+fixed = jaden.normalize("東京都港区芝公演4-2-8", autocorrect=True)
+print(fixed.canonical, fixed.components.town_corrected_from)  # 東京都港区芝公園4丁目2番8号 芝公演
+
+# 10. Kana input, compact form, label lines, precision (v0.3)
+res10 = jaden.normalize("港区しばこうえん4丁目2番8号 101号室")
+print(res10.format("hyphen"))   # '東京都港区芝公園4-2-8 101号室'
+print(res10.format("en"))       # '#101, 4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011'
+print(res10.lines())            # ('〒105-0011', '東京都港区芝公園4丁目2番8号', '101号室')
+print(res10.precision)          # 'unit'
+
+# 11. Lookups (v0.3)
+print(jaden.lookup_postal("105-0011")[0].address)                 # '東京都港区芝公園'
+print([s.text for s in jaden.suggest("東京都港区芝公園")])          # ['東京都港区芝公園1丁目', ..., '東京都港区芝公園4丁目']
+hit = jaden.reverse_geocode(35.0116, 135.7681)[0]
+print(hit.address, hit.level, hit.distance_m)                     # 京都府京都市中京区上本能寺前町 town 17.1
+
+# 12. Addresses inside text (v0.3)
+found = jaden.extract_addresses("会場は東京都港区芝公園4-2-8の東京タワーです。")[0]
+print(found.start, found.end, found.text, found.canonical)        # 3 16 東京都港区芝公園4-2-8 東京都港区芝公園4丁目2番8号
+
+# 13. Online geospatial resolution via GSI (JGD2011 / WGS 84 compatible)
 geo = jaden.geocode("東京都港区六本木6-10-1")
 print(geo.status)                 # 'SUCCESS'
 print(geo.coordinates.latitude)  # 35.660206
@@ -336,11 +410,11 @@ print(geo.matched_address)       # '東京都港区六本木六丁目１０番'
 
 ### Command-Line Interface (CLI)
 
-JADEN provides five CLI commands: `normalize`, `parse`, `validate`, `geocode`, and `data`.
+JADEN's CLI covers single addresses (`normalize`, `parse`, `validate`, `geocode`), files (`batch`, `dedupe`, `extract`), lookups (`postal`, `suggest`, `reverse`, `compare`), the API server (`serve`) and data management (`data`).
 
 #### 1. `normalize`: Canonical Address Formatting
 ```bash
-# Clean human-readable summary
+# Human-readable summary: verified town, postal code, reading, English line and offline location
 $ jaden normalize "東京都港区六本木1-2-3"
 Prefecture: 東京都
 City:       港区
@@ -350,26 +424,13 @@ Ban:        2
 Go:         3
 Regime:     gaiku_hoshiki
 LG Code:    131032
-Confidence: 1.00
-Canonical:  東京都港区六本木1丁目2番3号
-
-# v0.2: town verification, postal code, reading, English line and offline location
-$ jaden normalize "東京都港区芝公園4-2-8"
-Prefecture: 東京都
-City:       港区
-Town:       芝公園
-Chome:      4
-Ban:        2
-Go:         8
-Regime:     gaiku_hoshiki
-LG Code:    131032
-Postal:     〒105-0011
+Postal:     〒106-0032
 Verified:   town + 丁目 registered
 Confidence: 1.00
-Canonical:  東京都港区芝公園4丁目2番8号
-Kana:       トウキョウトミナトクシバコウエン
-Romaji:     4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011
-Location:   35.656459, 139.747640 (chome level, offline)
+Canonical:  東京都港区六本木1丁目2番3号
+Kana:       トウキョウトミナトクロッポンギ
+Romaji:     1-2-3 Roppongi, Minato-ku, Tokyo 106-0032
+Location:   35.665061, 139.740792 (chome level, offline)
 
 # Romaji input
 $ jaden normalize "4-2-8 Shibakoen, Minato-ku, Tokyo" -c
@@ -402,7 +463,9 @@ Valid:       Yes
 Confidence:  1.00
 LG Code:     131032
 Regime:      gaiku_hoshiki
-Message:     Local government entity verified against official statutory registry.
+Verified to: chome
+Precision:   house
+Message:     Municipality, town and 丁目 verified against official registries.
 
 # The town settles an ambiguous municipality (Exit code 0)
 $ jaden validate "港区芝公園4-2-8"
@@ -413,6 +476,7 @@ Confidence:  0.85
 LG Code:     131032
 Regime:      gaiku_hoshiki
 Verified to: chome
+Precision:   house
 Message:     Municipality, town and 丁目 verified against official registries.
 Note:        resolved 3 candidate municipalities to 東京都港区 by town '芝公園'
 
@@ -423,6 +487,7 @@ Status:      AMBIGUOUS
 Valid:       No
 Confidence:  0.50
 Regime:      unspecified
+Precision:   house
 Message:     Omitted prefecture matches 2 statutory municipalities.
 Candidates:  2
   • 東京都府中市 (132063)
@@ -436,6 +501,7 @@ Valid:       No
 Confidence:  1.00
 LG Code:     131032
 Regime:      gaiku_hoshiki
+Precision:   house
 Message:     Nonexistent 丁目: 芝公園 has only 1–4丁目; 9丁目 does not exist
 
 # A postal code from another municipality (Exit code 1)
@@ -446,6 +512,7 @@ Valid:       No
 Confidence:  1.00
 LG Code:     131032
 Regime:      gaiku_hoshiki
+Precision:   house
 Message:     Postal code contradicts the address: postal code 100-0001 belongs to 東京都千代田区千代田, not to 港区
 
 # Also require the town to be in the gazetteer
@@ -512,6 +579,100 @@ $ jaden batch addresses.txt -o checked.jsonl
 ```
 Every input row is written back unchanged, followed by `jaden_status`, `jaden_canonical`, `jaden_lg_code`, the address components, `jaden_building` / `jaden_floor` / `jaden_unit`, `jaden_postal_code`, `jaden_kana`, `jaden_romaji`, `jaden_latitude` / `jaden_longitude`, `jaden_verification_level`, `jaden_former_municipality`, `jaden_candidates` and `jaden_message`. From Python, `jaden.batch.flat_record(normalize(a), validate(a))` returns the same flat record.
 
+#### 7. `compare` and `dedupe`: Matching (名寄せ)
+```bash
+$ jaden compare "東京都港区芝公園4-2-8 グランドメゾン芝公園302" "港区芝公園４丁目２番８号　グランドメゾン芝公園　３０２号室"
+A:        東京都港区芝公園4丁目2番8号 グランドメゾン芝公園 302
+B:        東京都港区芝公園4丁目2番8号 グランドメゾン芝公園 302号室
+Verdict:  same
+Agree to: unit
+
+$ jaden compare "東京都港区芝公園4-2-8 101" "東京都港区芝公園4-2-8 102号室"
+A:        東京都港区芝公園4丁目2番8号 101
+B:        東京都港区芝公園4丁目2番8号 102号室
+Verdict:  same_building
+Agree to: house
+Conflict: unit
+Note:     different rooms in the same building
+
+# Group the rows of a file that have the same address
+$ jaden dedupe customers.csv -o grouped.csv
+7 rows: 2 duplicate groups covering 4 rows; 2 rows could not be keyed at the unit level
+```
+`compare` exits 0 for the same address, 1 for different, 2 for the same building or possibly the same, 3 when one input is not an address. `dedupe` appends `jaden_match_key`, `jaden_group` and `jaden_group_size`; `--level house` ignores room numbers, `--level town` groups by town.
+
+Verdicts: **same** (agree down to the block / house number, and on the room if either has one), **same_building** (rooms differ or only one side has a room), **possibly_same** (nothing conflicts but one side is less specific, an ambiguous municipality could be the other's, or only one side names the 字), **different** (the result names the level that conflicts), **undetermined** (not an address).
+
+#### 8. `postal`, `suggest`, `reverse`: Lookups
+```bash
+$ jaden postal 105-0011
+〒105-0011  東京都港区芝公園
+            トウキョウトミナトクシバコウエン
+            Shibakoen, Minato-ku, Tokyo
+
+$ jaden suggest "東京都港区しば"
+東京都港区芝
+東京都港区芝浦
+東京都港区芝公園  〒105-0011
+東京都港区芝大門  〒105-0012
+
+$ jaden reverse 35.0116 135.7681
+京都府京都市中京区上本能寺前町  (town point, 17 m away)  〒604-0925
+```
+
+#### 9. `extract`: Addresses Inside Text
+```bash
+$ jaden extract mail.txt
+2:13-26	ACCEPTED	東京都港区芝公園4丁目2番8号	'東京都港区芝公園4-2-8'
+3:46-83	ACCEPTED	大阪府大阪市北区梅田3丁目1番1号 大阪ステーションシティ 5F	'〒530-0001 大阪市北区梅田3-1-1 大阪ステーションシティ 5F'
+```
+Each line gives the line number, the character span in the file, the status, the canonical address and the text as written. `東京タワー`, dates, prices and phone numbers are not addresses and are not returned.
+
+#### 10. Typos and Formats
+```bash
+# A misspelt town is reported with the likely correction ...
+$ jaden validate "東京都港区芝公演4-2-8"
+...
+Suggestion:  東京都港区芝公園4丁目2番8号
+Note:        town '芝公演' is not registered in 港区
+Note:        did you mean 芝公園? '芝公演' is one character away
+
+# ... and corrected with --fix when exactly one registered town is one character away
+$ jaden normalize "東京都港区芝公演4-2-8" --fix -c
+東京都港区芝公園4丁目2番8号
+
+# The compact form most systems store
+$ jaden normalize "東京都港区芝公園4丁目2番8号" -c --style hyphen
+東京都港区芝公園4-2-8
+```
+
+#### 11. `serve`: JSON API and Demo Page
+```bash
+$ jaden serve --port 8000
+JADEN API listening on http://127.0.0.1:8000  (demo page at /, endpoints at /v1)
+
+$ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園4-2-8 101号室"
+{"input": "港区芝公園4-2-8 101号室", "status": "ACCEPTED", "valid": true, ...,
+ "canonical": "東京都港区芝公園4丁目2番8号 101号室", "hyphenated": "東京都港区芝公園4-2-8 101号室",
+ "english": "#101, 4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011", "postal_code": "105-0011",
+ "precision": "unit", "location": {"latitude": 35.656459, "longitude": 139.74764, "level": "chome"}, ...}
+```
+
+| Endpoint | Purpose |
+| :--- | :--- |
+| `GET /v1/normalize?q=` (`&fix=1`, `&strict=1`) | one complete record: status, canonical, compact and English forms, reading, postal code, location, components, candidates, suggestions |
+| `GET /v1/validate?q=` | validation result only |
+| `GET /v1/geocode?q=` | offline coordinates |
+| `GET /v1/suggest?q=&limit=` | autocomplete |
+| `GET /v1/postal/<code>` | postal code → addresses |
+| `GET /v1/reverse?lat=&lon=&limit=` | coordinate → nearest town / 丁目 / block |
+| `GET /v1/compare?a=&b=` | verdict, agreed level, conflict, match keys |
+| `POST /v1/extract` `{"text": "..."}` | addresses with character spans |
+| `POST /v1/batch` `{"addresses": [...]}` | up to `--max-batch` addresses (default 1,000) |
+| `GET /v1`, `GET /health` | endpoint list, data versions, liveness |
+
+Every endpoint also accepts a JSON body by POST. Errors are JSON (`{"error": {"code", "message"}}`) with 400, 404 or 413. The server uses only the Python standard library and the local data; it binds to `127.0.0.1` unless `--host` says otherwise, has no authentication of its own, and sends CORS headers only with `--cors`. Opening `http://127.0.0.1:8000/` shows a demo page for all of the above.
+
 #### Exit Codes for Shell Automation
 | Exit Code | Meaning | Example Scenario |
 | :---: | :--- | :--- |
@@ -537,6 +698,8 @@ JADEN's test suite runs in GitHub Actions on Python 3.10–3.13 on Ubuntu and Wi
 * **All 47 Prefectures:** Deep decomposition asserting prefecture, city/county, town, oaza/koaza, and exact block numbers across all 47 prefectures, plus dedicated `郡` test cases.
 * **Gazetteer (v0.2):** Town and 丁目 verification, ambiguity resolution by town and postal code, nonexistent 丁目, contradictory postal codes and towns, lot numbers in towns without 丁目, registered-spelling variants, Japan Post fallback towns, non-address rejection, readings, romaji input and output, offline and block-level geocoding.
 * **Adversarial & Edge Case Payloads:** Proper noun collisions (`一番街`, `麻布十番`, `三番町`, `六本木1`, `十条1`, `一番町1`, `八重洲1`), building names (`第一-3ビル`), multi-jurisdiction collisions, cardinal Kyoto streets, `の` delimiters, malformed kanji numerals, and foreign/gibberish input rejection.
+* **Toolkit (v0.3):** Matching verdicts and keys, dedupe files, typo suggestions and autocorrect limits, kana towns, precision and formats, postal lookup, autocomplete, reverse geocoding, text extraction, and every API endpoint over a real socket (including errors, limits and concurrent requests).
+* **README examples:** Every `$ jaden ...` example shown in this README (and the Japanese one) is run by the test suite and its output compared with what is printed here.
 * **Parser-only mode:** Structural tests also run with `AddressNormalizer(use_gazetteer=False)` so the v0.1 behaviour stays covered.
 * **CLI & Public API:** All commands, `--json`, `-c`, `--strict`, `--provider offline`, `data`, stdin (`-`), and exit codes (0, 1, 2, 3, 64, 70).
 * **Geospatial Layer:** `GSIGeocoder`, `OfflineGeocoder`, custom resolvers, HTTP errors, timeouts, and ambiguity short-circuiting.
@@ -565,7 +728,12 @@ In accordance with our engineering principles, JADEN documents its exact operati
 8. **Kyoto:** Some Kyoto town names occur more than once in the same ward and are told apart only by the street clause; JADEN verifies the town but does not give one point for them.
 9. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
 10. **Memory:** The gazetteer makes a running engine use about 90 MB (parser-only mode stays at a few MB) and the first address takes about 0.4 s to load the data.
-11. **GSI Address Search Rate and Availability:** The online geocoder calls GSI's public `AddressSearch` endpoint; consult GSI's terms and keep request rates reasonable.
+11. **Typo correction is deliberately narrow:** Only the town is checked, only one-character differences are considered, and autocorrect applies a correction only when it is the single candidate and the name has three or more characters. Homophone mistakes two or more characters long, and misspelt municipality names, are not corrected.
+12. **Matching is exact, not fuzzy:** Two addresses match when their resolved components agree. An address that cannot be resolved to one municipality has no key. When only one side writes the 字 below a town, the verdict is `possibly_same`, because lot numbers often restart in each 字. Building names never decide a match.
+13. **Reverse geocoding is nearest-point:** It returns the nearest registered point, not the area containing the coordinate. On the benchmark the municipality is right 98.5% of the time and the town 67.1% with the bundled points (99.2% / 83.0% with block data). Use `distance_m` to judge a result.
+14. **Extraction is rule-based:** A span ends at punctuation, labels, dates and sentence particles. A building name on the line after the address is not included, and an address written across several lines is found only when the postal code is on its own line above it.
+15. **The API server is a building block:** It has no authentication, rate limiting or TLS; put it behind your own gateway before exposing it beyond localhost.
+16. **GSI Address Search Rate and Availability:** The online geocoder calls GSI's public `AddressSearch` endpoint; consult GSI's terms and keep request rates reasonable.
 
 ### Resolved in v0.2 (from the v0.1 list)
 `1の2の3` delimiters, malformed kanji numerals (`五三十`), the non-standard `上ラル`, Obihiro-style grids (verified through the gazetteer), the `--provider` / `--json -c` / `jaden -` CLI issues, testing the installed wheel in CI, and lint/type checks in CI (`ruff`, `mypy`).

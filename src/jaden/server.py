@@ -264,6 +264,9 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
 
         def do_GET(self) -> None:
             path = urlsplit(self.path).path
+            if path == "/favicon.ico":
+                self._send(204, b"", "image/x-icon")
+                return
             if path in ("/", "/index.html"):
                 page = _WEB_DIR / "index.html"
                 if page.exists():
