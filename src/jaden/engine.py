@@ -884,6 +884,15 @@ class AddressNormalizer:
             town_verified = False
             notes.append(f"'{partial_tail}' after the town {match.entry.name if match else ''} is not part of an address")
 
+        # '静岡県中央区日本橋兜町' names a ward the way 東京都中央区 is named, so the town found there shows the
+        # prefecture is wrong. With the city written ('愛知県名古屋市中区住吉町', an old name), another city's
+        # 中区 having a 住吉町 proves nothing: the town is simply not registered.
+        registered_elsewhere: Tuple[str, ...] = town_res.town_registered_elsewhere if town_res else ()
+        if registered_elsewhere and muni_rec is not None and muni_rec.ward and muni_rec.city and \
+                admin_fold(muni_rec.city) in admin_fold(working_text):
+            registered_elsewhere = ()
+            notes[:] = [n for n in notes if "a different" not in n]
+
         # Postal code: keep the written one; otherwise fill it in when the town has exactly one
         postal_out = postal_code
         postal_consistent = town_res.postal_consistent if town_res else None
@@ -935,7 +944,7 @@ class AddressNormalizer:
             postal_code_consistent=postal_consistent,
             block_verified=block_verified,
             lot_number=lot_number,
-            town_registered_elsewhere=town_res.town_registered_elsewhere if town_res else (),
+            town_registered_elsewhere=registered_elsewhere,
             former_municipality=former_name,
         )
 

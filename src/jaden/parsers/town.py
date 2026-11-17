@@ -115,9 +115,10 @@ def _respelt_town(gaz: Gazetteer, lg_code: str, town_text: str) -> Optional[Tupl
         entry = towns.get(town_key(head + "町"))
         if entry is not None:
             return entry, covered
-    if cut < 0 and len(key) >= 3:
+    if cut < 0 and len(key) >= 3 and key.endswith("町"):
         # The registered name ends with the written one, and what stands before it is an area name
-        # that starts other towns of the municipality too (日本橋, 四谷, 神田)
+        # that starts other towns of the municipality too (日本橋, 四谷, 神田). Only for 町 names: an
+        # old grid name ('字西一條十丁目' in 帯広市) must not become 大正本町西一条
         ending = [(k, e) for k, e in towns.items() if k.endswith(key) and len(k) > len(key)]
         if len(ending) == 1:
             area = ending[0][0][:-len(key)]

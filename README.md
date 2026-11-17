@@ -31,7 +31,7 @@ v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems n
 | Store a compact form | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8; lossless round trip |
 | Use from any language | `jaden serve` | JSON API under `/v1` plus an interactive demo page, standard library only |
 
-Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,640 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
+Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,641 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
 
 ---
 
@@ -264,7 +264,7 @@ Runners for other open-source tools (Geolonia's normalize-japanese-addresses, ja
 | Matching | every noisy spelling must get the house-level `match_key` of its clean address | **33,976 / 33,976** |
 | | rooms written four ways (`-305`, `メゾン桜305`, `305号室`, `Apt 305`) must share a key | 0 inconsistent |
 | | distinct published addresses sharing a key | 5 pairs of 4,692, each the same place written two ways |
-| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.9%** (2,478 / 2,640) |
+| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.9%** (2,479 / 2,641) |
 | | with autocorrect | applied and right 71.5%, **applied and wrong 0**, left alone 28.5% |
 | Kana | the town rewritten in hiragana | same result **99.9%** (3,927 / 3,929), wrong town 0 |
 | Hyphen form | `format("hyphen")` normalized again | same result **4,700 / 4,700** |

@@ -6,10 +6,10 @@
 
 ## Typos (one character of the town replaced)
 
-* Correct address offered in `suggestions`: 2,478 / 2,640 (93.9%)
-* Autocorrect applied and right: 1,888 / 2,640 (71.5%)
+* Correct address offered in `suggestions`: 2,479 / 2,641 (93.9%)
+* Autocorrect applied and right: 1,888 / 2,641 (71.5%)
 * Autocorrect applied and wrong: 0
-* Left uncorrected (more than one candidate, or none): 752
+* Left uncorrected (more than one candidate, or none): 753
 
 ## Town written in hiragana
 
@@ -35,8 +35,8 @@
 
 ## Autocomplete (real town among the first 10 suggestions)
 
-* After typing the municipality and 2 characters of the town: 2,583 / 2,841 (90.9%)
-* After 3 characters: 2,181 / 2,841 (76.8%)
+* After typing the municipality and 2 characters of the town: 2,581 / 2,839 (90.9%)
+* After 3 characters: 2,179 / 2,839 (76.8%)
 
 ## Postal lookup
 

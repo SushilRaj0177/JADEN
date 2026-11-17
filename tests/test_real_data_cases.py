@@ -519,3 +519,24 @@ def test_block_file_from_an_older_version_is_still_used(tmp_path, monkeypatch):
     point = gaz.block_point("131032", "芝公園", 4, 2)
     assert point is not None and abs(point.latitude - 35.6586) < 1e-6
     assert gaz.stale_block_prefectures() == ["13"]
+
+
+# --- found on all 5 million company addresses -------------------------------------------------
+
+def test_old_grid_name_is_not_respelt_into_another_town():
+    # '字西一條十丁目' is an old Obihiro name; it is not 大正本町西一条
+    res = jaden.normalize("北海道帯広市字西一條十丁目７番地")
+    assert jaden.validate("北海道帯広市字西一條十丁目７番地").status == "ACCEPTED"
+    assert res.components.lg_code == "012076"
+    assert res.components.town_verified is False
+
+
+def test_old_town_name_with_the_city_written_is_not_a_contradiction():
+    # 住吉町 is an old name in 名古屋市中区; a 住吉町 in 横浜市中区 does not make the address wrong
+    val = jaden.validate("愛知県名古屋市中区住吉町5番地")
+    assert val.status == "ACCEPTED"
+    assert val.lg_code == "231061"
+
+
+def test_ward_named_like_another_citys_ward_is_still_a_contradiction():
+    assert jaden.validate("静岡県中央区日本橋兜町1-1").status == "MALFORMED"
