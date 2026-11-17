@@ -589,6 +589,7 @@ class AddressNormalizer:
         # Gazetteer-guided reading of the block numbers and the registered town spelling
         match = town_res.match if town_res else None
         chome_verified = town_res.chome_verified if town_res else None
+        chome_unlisted = town_res.chome_unlisted if town_res else False
         record = town_res.record if town_res else None
         variant = town_res.variant if town_res else None
         if match is not None and variant in ("banchou", "no"):
@@ -611,12 +612,13 @@ class AddressNormalizer:
             notes.append(f"read '{town_text}' by its reading as the registered town {match.entry.name}")
         partial_tail = ""
         lot_number: Optional[str] = None
-        if (match is not None and chome_verified is False and not block_dict["chome_explicit"]
+        if (match is not None and (chome_verified is False or chome_unlisted) and not block_dict["chome_explicit"]
                 and ban_val is not None and gaz is not None and lg_code):
             # Towns registered as '本町六の一丁目': '本町6-1-79' is 本町六の 1丁目 79番
             alt_entry = gaz.towns_in(lg_code).get(town_key(f"{town_text}{chome_val}の"))
             if alt_entry is not None and ban_val in alt_entry.chomes:
-                notes[:] = [n for n in notes if "does not exist" not in n]
+                notes[:] = [n for n in notes if "does not exist" not in n and "is not in the registry" not in n]
+                chome_unlisted = False
                 notes.append(f"read {town_text}{chome_val}-{ban_val} as the registered {alt_entry.name}{ban_val}丁目")
                 town_text = alt_entry.name
                 match = TownMatch(lg_code, alt_entry, len(town_text), exact=True)
@@ -635,7 +637,9 @@ class AddressNormalizer:
                 # A town without 丁目 written 'N-N-N' is a three-part lot number (e.g. Iwate's
                 # 地割: '西見前20-113-1'), not 丁目-番-号; keep it as written instead of guessing labels.
                 lot_number = f"{chome_val}-{ban_val}-{go_val}"
-                notes[:] = [n for n in notes if "does not exist" not in n]
+                notes[:] = [n for n in notes if "does not exist" not in n and "is not in the registry" not in n
+                            and "is not listed" not in n]
+                chome_unlisted = False
                 notes.append(f"{entry.name} is not divided into 丁目; kept {lot_number} as a lot number")
                 banchi_val, edaban_val = chome_val, ban_val
                 chome_val = ban_val = go_val = None
@@ -846,6 +850,7 @@ class AddressNormalizer:
             municipality_inferred=municipality_inferred,
             town_verified=town_verified,
             chome_verified=chome_verified,
+            chome_unlisted=chome_unlisted and chome_val is not None,
             machiaza_id=record.machiaza_id if record else None,
             postal_code=postal_out,
             postal_code_consistent=postal_consistent,
@@ -1029,6 +1034,8 @@ class AddressNormalizer:
         warnings = tuple(res.notes)
         if c.lg_code and c.precision in ("municipality", "town", "chome") and res.confidence_score > 0:
             warnings += ("no block or lot number: this locates an area, not a building",)
+        if c.chome_unlisted:
+            warnings += (f"{c.chome}丁目 is not in the registry for {c.town}: accepted, but not verified",)
 
         def result(status: ValidationStatus, message: str, lg: Optional[str] = None,
                    confidence: Optional[float] = None, regime: Optional[str] = None) -> ValidationResult:
@@ -1098,6 +1105,11 @@ class AddressNormalizer:
         if strict and c.lg_code is not None and c.town_verified is not True:
             return result(ValidationStatus.UNSUPPORTED,
                           "Strict mode: the town could not be verified against the national gazetteer.",
+                          lg=c.lg_code)
+
+        if strict and c.chome_unlisted:
+            return result(ValidationStatus.UNSUPPORTED,
+                          f"Strict mode: {c.chome}丁目 is not in the registry for {c.town}.",
                           lg=c.lg_code)
 
         if c.lg_code is not None and res.confidence_score >= 0.5:

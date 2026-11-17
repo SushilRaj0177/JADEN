@@ -145,6 +145,8 @@ def _verification_text(c: AddressComponents) -> str:
     text = " + ".join(parts) + " registered"
     if c.chome_verified is False:
         text += f"; {c.chome}丁目 does not exist"
+    elif c.chome_unlisted:
+        text += f"; {c.chome}丁目 is not in the registry"
     return text
 
 

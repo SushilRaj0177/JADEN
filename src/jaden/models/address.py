@@ -85,7 +85,8 @@ class AddressComponents:
     # Gazetteer verification (MLIT 大字・町丁目 + Japan Post postal codes)
     municipality_inferred: bool = False       # Municipality deduced from the town / postal code, not written
     town_verified: Optional[bool] = None      # True: town registered in the municipality; None: not checked
-    chome_verified: Optional[bool] = None     # True/False when a 丁目 was given and the town was found
+    chome_verified: Optional[bool] = None     # True: registered; False: cannot exist; None: not checked or unlisted
+    chome_unlisted: bool = False              # 丁目 absent from the registry but plausible (new, or a 字 name)
     machiaza_id: Optional[str] = None         # 12-digit MLIT 大字・町丁目 code of the matched town / 丁目
     block_verified: Optional[bool] = None     # Block found in MLIT block-level data (None: data not installed)
     lot_number: Optional[str] = None          # Multi-part lot number kept as written ('20-113-1') when its parts can't be labelled
