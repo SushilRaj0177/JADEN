@@ -1,6 +1,6 @@
 {
-  "built": "2026-10-28",
-  "town_key_version": 2,
+  "built": "2026-11-17",
+  "town_key_version": 3,
   "towns": {
     "dataset": "大字・町丁目レベル位置参照情報 19.0b (2025年版)",
     "publisher": "国土交通省 不動産・建設経済局 (MLIT)",
@@ -8,14 +8,14 @@
     "terms": "https://nlftp.mlit.go.jp/isj/agreement.html",
     "attribution": "「大字・町丁目レベル位置参照情報 国土交通省」2025年版 (19.0b) を加工して作成",
     "records": 191100,
-    "records_with_readings": 180501
+    "records_with_readings": 181342
   },
   "postal": {
     "dataset": "郵便番号データ (読み仮名データ UTF-8 版 / ローマ字版)",
     "publisher": "日本郵便株式会社 (Japan Post)",
     "landing_page": "https://www.post.japanpost.jp/zipcode/download.html",
     "terms": "郵便番号データに限っては日本郵便株式会社は著作権を主張しません。自由に配布していただいて結構です。",
-    "records": 124526
+    "records": 124527
   },
   "sources": [
     {
@@ -255,13 +255,13 @@
     },
     {
       "url": "https://www.post.japanpost.jp/service/search/zipcode/download/utf/zip/utf_ken_all.zip",
-      "sha256": "444881769a631d2c36c644fc041e5ce62fe65d204ff498a601641ba1e66b5955",
-      "bytes": 2135514
+      "sha256": "db92fcf624bb7280e6f51900aebe03adeafbd168796e59412dbc22a80abb85b9",
+      "bytes": 2033286
     },
     {
       "url": "https://www.post.japanpost.jp/service/search/zipcode/download/roman/KEN_ALL_ROME.zip",
-      "sha256": "9764834dfd1d0148600c38b7fc4c00feae8443e81e68da3a49469447cd97707d",
-      "bytes": 1759193
+      "sha256": "21bcdd0557e07202f4a65a9aef22daf1f9b74a98be6121b28f9675b7c82fc9a7",
+      "bytes": 1706353
     }
   ]
 }

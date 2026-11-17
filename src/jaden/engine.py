@@ -594,8 +594,8 @@ class AddressNormalizer:
         variant = town_res.variant if town_res else None
         if match is not None and variant in ("banchou", "no"):
             # The first number belongs to the registered name ('つつじが丘南1番町', '本町六の')
-            nums = [v for v in (chome_val, ban_val, go_val) if v is not None] or \
-                   [v for v in (banchi_val, edaban_val) if v is not None]
+            lot_style = banchi_val is not None
+            nums = [v for v in (chome_val, ban_val, go_val, banchi_val, edaban_val) if v is not None]
             rest = nums[1:]
             chome_val = ban_val = go_val = banchi_val = edaban_val = None
             if variant == "no" and rest and rest[0] in match.entry.chomes:
@@ -604,6 +604,10 @@ class AddressNormalizer:
             ban_val = rest[0] if rest else None
             go_val = rest[1] if len(rest) > 1 else None
             regime_val = AddressRegime.UNSPECIFIED.value
+            if lot_style and chome_val is None:
+                # '鴻之台1丁目72番地' is 鴻之台1番町, lot 72
+                banchi_val, edaban_val, ban_val, go_val = ban_val, go_val, None, None
+                regime_val = AddressRegime.CHIBAN.value
             record = match.entry.record_for(chome_val)
             notes.append(f"read '{town_text}' with its first number as the registered town {match.entry.name}")
         elif match is not None and variant == "machi":
@@ -817,7 +821,15 @@ class AddressNormalizer:
         postal_out = postal_code
         postal_consistent = town_res.postal_consistent if town_res else None
         if postal_out is None and gaz is not None and lg_code and not is_ambiguous:
-            codes = gaz.postal_codes_for(lg_code, match.entry.name if match else None)
+            # Japan Post lists some 字 as towns of their own ('平良久貝'), so the town as written comes
+            # first, then the registered town it belongs to, then the municipality-wide code
+            codes: Optional[List[str]] = None
+            for name in dict.fromkeys(n for n in (town_name, match.entry.name if match else None) if n):
+                codes = gaz.postal_codes_of_town(lg_code, name, chome_val)
+                if codes:
+                    break
+            if not codes:
+                codes = gaz.postal_codes_for(lg_code, None)
             if len(codes) == 1:
                 postal_out = f"{codes[0][:3]}-{codes[0][3:]}"
 

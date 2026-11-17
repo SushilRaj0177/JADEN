@@ -73,8 +73,11 @@ def postal_outcome(res: Any, postal: str) -> str:
         if not any(lg == c.lg_code for lg, _ in areas):
             return "not filled in; registered code belongs to another municipality"
         return "not filled in"
-    if not any(lg == c.lg_code for lg, _ in areas):
+    here = [key for lg, key in areas if lg == c.lg_code]
+    if not here:
         return "filled in; registered code belongs to another municipality"
+    if all(key == "" for key in here):
+        return "filled in the town's code; the row has the municipality-wide one"
     return "filled in, different from registered"
 
 
@@ -175,7 +178,7 @@ def main() -> int:
               "JADEN adds a postal code only when the resolved town has exactly one. The registered code is the "
               "answer; it is independent of the address text.", "", outcome_table(tally, "postal"), ""]
     same, differ = tally.get("postal", "filled in, same as registered"), tally.get("postal", "filled in, different from registered")
-    lines += [f"Of the postal codes JADEN filled in within the same municipality, **{pct(same, same + differ)}** equal "
+    lines += [f"Where both name a town's code, **{pct(same, same + differ)}** of the codes JADEN filled in equal "
               f"the registered one ({same:,} of {same + differ:,}).", ""]
     lines += ["## Precision reached", "", outcome_table(tally, "precision"), ""]
 

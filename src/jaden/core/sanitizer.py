@@ -44,6 +44,9 @@ _LEADING_LABEL: Final[re.Pattern[str]] = re.compile(
     rf"(?:日本国?|JAPAN|Japan)(?=[\s,、。]|〒|郵便|{_PREFECTURES}))[\s,、。]*"
 )
 
+# '1,111' with exactly three digits after the comma and no digit around it
+_THOUSANDS: Final[re.Pattern[str]] = re.compile(r"(?<![\d,.-])(\d{1,2}),(\d{3})(?![\d,])")
+
 # Whitespace cleaner: collapses Japanese full-width space (U+3000), NBSP, tabs, newlines, CRs, multiple spaces
 _WHITESPACE_PATTERN: Final[re.Pattern[str]] = re.compile(r"[\u0020\u3000\u00A0\t\r\n]+")
 
@@ -79,6 +82,9 @@ def sanitize_address_text(raw_text: str) -> str:
 
     # Step 4: Collapse consecutive hyphens (e.g. '--' -> '-')
     text = re.sub(r"-+", "-", text)
+
+    # A lot number typed with a thousands separator ('氷川1,111' is lot 1111)
+    text = _THOUSANDS.sub(r"\1\2", text)
 
     # Step 5: Strip leading labels, country name and postal code (in any order)
     prev = None

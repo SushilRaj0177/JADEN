@@ -135,6 +135,40 @@ class PostalRecord:
     kind: str                 # 'town', 'building', 'municipality'
 
 
+def _chome_spec(spec: str) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
+    """(whole 丁目 ranges, partly covered 丁目 ranges) of a Japan Post row ('1-3,~4' -> ([(1, 3)], [(4, 4)]))."""
+    whole: List[Tuple[int, int]] = []
+    partly: List[Tuple[int, int]] = []
+    for part in spec.split(","):
+        target = partly if part.startswith("~") else whole
+        low, _, high = part.lstrip("~").partition("-")
+        if low.isdigit() and (not high or high.isdigit()):
+            target.append((int(low), int(high or low)))
+    return whole, partly
+
+
+def _rows_for_chome(rows: List[Tuple[str, str]], chome: Optional[int]) -> List[Tuple[str, str]]:
+    """The postal rows of one town that can hold an address in ``chome`` (None: no 丁目 written)."""
+    if len({code for code, _ in rows}) == 1:
+        return rows
+    plain = [r for r in rows if r[1] == ""]
+    if chome is None:
+        return plain or rows
+    whole = [r for r in rows if any(a <= chome <= b for a, b in _chome_spec(r[1])[0])]
+    partly = [r for r in rows if any(a <= chome <= b for a, b in _chome_spec(r[1])[1])]
+    rest = [r for r in rows if r[1] == "-"]
+    unknown = [r for r in rows if r[1] == "?"]
+    if whole and not partly:
+        return whole
+    if partly:
+        return partly + whole + rest
+    # The 丁目 is named by no row: it is in the remainder, unless a row this cannot read may hold it
+    for group in (rest, [r for r in rows if r[1] == "*"], plain):
+        if group:
+            return group + unknown
+    return rows
+
+
 class _Table:
     """A compiled TSV kept as one string; each municipality's rows are found by string search.
 
@@ -206,7 +240,7 @@ class Gazetteer:
         self._postal_only: Dict[str, Dict[str, TownEntry]] = {}
         self._kana_index: Dict[str, Dict[str, List[TownEntry]]] = {}
         self._grid: Optional[Tuple[Dict[Tuple[int, int], List[int]], List[float], List[float], List[int]]] = None
-        self._postal_by_town: Dict[str, Dict[str, List[str]]] = {}
+        self._postal_by_town: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
         self._postal_index: Optional[Tuple["array[int]", "array[int]"]] = None
         self._blocks_present: Dict[str, bool] = {}
         self._key_version_ok: Optional[bool] = None
@@ -397,19 +431,53 @@ class Gazetteer:
             out.append(self._parse_postal(text[start:nl if nl >= 0 else len(text)])[0])
         return out
 
-    def postal_codes_for(self, lg_code: str, town: Optional[str]) -> List[str]:
-        """Postal codes registered for a town (falls back to the municipality-wide code)."""
+    def _postal_rows(self, lg_code: str) -> Dict[str, List[Tuple[str, str]]]:
+        """Town key -> [(postal code, 丁目 the row is limited to)] for one municipality; '' is the municipality-wide row."""
         by_town = self._postal_by_town.get(lg_code)
         if by_town is None:
             by_town = {}
             for ln in self._postal().lines(lg_code):
-                rec, key, _ = self._parse_postal(ln)
-                if rec.kind != "building":
-                    by_town.setdefault(key, []).append(rec.postal_code)
+                parts = ln.split("\t")
+                if len(parts) < 7 or parts[6] == "building":
+                    continue
+                key = parts[2] if self._keys_current() else town_key(parts[3])
+                by_town.setdefault(key, []).append((parts[0], parts[8] if len(parts) > 8 else ""))
             self._postal_by_town[lg_code] = by_town
+        return by_town
+
+    def postal_codes_of_town(self, lg_code: str, town: str, chome: Optional[int] = None) -> Optional[List[str]]:
+        """Postal codes Japan Post lists for a town, or None when it does not list the town.
+
+        Japan Post names towns a little differently from MLIT, so after the town's own key the
+        longest listed town its name starts with is used ('田辺西垣内' is in 田辺, '古町通9番町' in
+        古町通). Where a town is split between codes, ``chome`` picks the rows that can hold that
+        丁目 ('北一条西' 1–19丁目 / 20–28丁目); more than one code comes back when it cannot tell.
+        """
+        by_town = self._postal_rows(lg_code)
         key = town_key(town) if town else ""
-        codes = by_town.get(key) if key else None
-        return sorted(set(codes or by_town.get("", [])))
+        if not key:
+            return None
+        rows = by_town.get(key)
+        if rows is None and town.startswith("字") and len(town) == 2:
+            rows = by_town.get(town_key(town[1:]))      # '字東' is 東
+        if rows is None:
+            # A one-character town counts only when the name marks it off with 字 ('平字南町' is in 平)
+            name = town[2:] if town.startswith("大字") else town
+            shortest = 1 if name[1:2] == "字" else 2
+            for end in range(len(key) - 1, shortest - 1, -1):
+                rows = by_town.get(key[:end])
+                if rows is not None:
+                    break
+        if rows is None:
+            return None
+        return sorted({code for code, _ in _rows_for_chome(rows, chome)})
+
+    def postal_codes_for(self, lg_code: str, town: Optional[str], chome: Optional[int] = None) -> List[str]:
+        """Postal codes registered for a town (the municipality-wide code when the town is not listed)."""
+        codes = self.postal_codes_of_town(lg_code, town, chome) if town else None
+        if codes is None:
+            codes = sorted({code for code, _ in self._postal_rows(lg_code).get("", [])})
+        return codes
 
     # ------------------------------------------------------ prefix searches
     def postal_prefix(self, digits: str, limit: int = 20) -> List[PostalRecord]:

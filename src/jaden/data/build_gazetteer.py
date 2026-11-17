@@ -33,7 +33,9 @@ import io
 import json
 import re
 import sys
+import time
 import unicodedata
+import urllib.error
 import urllib.request
 import zipfile
 from datetime import date
@@ -61,7 +63,7 @@ POSTAL_ROMAN_URL = f"{POSTAL_BASE}/roman/KEN_ALL_ROME.zip"
 USER_AGENT = "jaden-gazetteer-builder (+https://github.com/SushilRaj0177/JADEN)"
 
 TOWN_COLUMNS = ("lg_code", "key", "machiaza_id", "name", "chome", "kind", "lat", "lon", "kana", "romaji")
-POSTAL_COLUMNS = ("postal_code", "lg_code", "key", "town", "kana", "romaji", "kind", "chome")
+POSTAL_COLUMNS = ("postal_code", "lg_code", "key", "town", "kana", "romaji", "kind", "chome", "chomes")
 
 # Japan Post placeholder town names that mean "the whole municipality"
 _POSTAL_WHOLE_MUNI = re.compile(r"^(以下に掲載がない場合|.+の次に番地がくる場合|.+一円)$")
@@ -80,8 +82,17 @@ def _download(url: str, cache_dir: Path, log: Callable[[str], None]) -> Tuple[by
     else:
         log(f"fetch {url}")
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = resp.read()
+        for attempt in range(5):
+            try:
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    data = resp.read()
+                break
+            except (urllib.error.URLError, ConnectionError, TimeoutError) as exc:
+                # The 47 prefecture files come one after another; a dropped connection is retried
+                if attempt == 4:
+                    raise
+                log(f"  retry {attempt + 1} after: {exc}")
+                time.sleep(2 ** (attempt + 1))
         target.write_bytes(data)
     return data, hashlib.sha256(data).hexdigest()
 
@@ -102,8 +113,77 @@ def _clean_postal_town(raw: str) -> Tuple[str, str]:
     return base, kind
 
 
+_CHOME_ITEM = re.compile(r"^(\d+)(?:〜(\d+))?(丁目)?(.*)$")
+
+
+def _postal_chomes(raw: str) -> str:
+    """Which 丁目 a Japan Post row is limited to, from the text in brackets after the town name.
+
+        北一条西（１〜１９丁目）                  '1-19'      those 丁目, whole
+        （２、３丁目）                            '2,3'
+        西早稲田（２丁目１番１〜２３号、２番）      '~2'        part of 2丁目
+        江戸川（１〜３丁目、４丁目１〜１４番）      '1-3,~4'
+        （丁目）                                 '*'         the part divided into 丁目
+        （その他）                               '-'         whatever the other rows do not cover
+        anything else in brackets                '?'         a part of the town this cannot name
+        no brackets                              ''
+    """
+    start = raw.find("（")
+    if start < 0:
+        return ""
+    inner = unicodedata.normalize("NFKC", raw[start + 1:]).rstrip(")）").replace("~", "〜")
+    if inner == "丁目":
+        return "*"
+    if inner == "その他":
+        return "-"
+    items = [i for i in inner.split("、") if i]
+    parsed: List[Tuple[str, bool, str]] = []   # (range, carries 丁目, text after it)
+    for item in items:
+        m = _CHOME_ITEM.match(item)
+        if not m:
+            return "?"
+        low, high, mark, rest = m.groups()
+        parsed.append((f"{low}-{high}" if high else low, bool(mark), rest))
+    out: List[str] = []
+    inside_partial = False
+    for i, (span, mark, rest) in enumerate(parsed):
+        # '２、３丁目': a bare number is a 丁目 when a later item in the list carries the word
+        is_chome = mark or (not rest and any(m2 and not r2 for _, m2, r2 in parsed[i + 1:]))
+        if not is_chome:
+            if inside_partial:
+                continue  # '２丁目１番１〜２３号、２番': more blocks of the 丁目 named before
+            return "?"
+        out.append(("~" if rest else "") + span)
+        inside_partial = bool(rest)
+    return ",".join(out)
+
+
 def _clean_romaji(raw: str) -> str:
     return _PAREN.sub("", raw).strip()
+
+
+def _spells_long_vowels(rome_rows: List[List[str]]) -> bool:
+    """True when the Japan Post romaji file transliterates kana letter by letter ('TOUKYOU TO',
+    'CHUUOU KU') instead of using the Hepburn spelling of addresses ('TOKYO TO', 'CHUO KU').
+    The file switched to the former in October 2026."""
+    towns = [r[6] for r in rome_rows if len(r) > 6 and r[6]]
+    # In Hepburn 'OU' is rare (大浦 OURA); letter by letter it is in four names out of ten (町 CHOU)
+    return bool(towns) and sum("OU" in t for t in towns) > len(towns) / 5
+
+
+def _hepburn(romaji: str, kana: str = "") -> str:
+    """Hepburn spelling as written on mail from a letter-by-letter transliteration.
+
+    Long vowels are not written (OU, OO -> O; UU -> U), ん is M before B, M and P, and a doubled CH is
+    TCH. Checked against the 121,930 town names both file versions share: 99.5% come out exactly as
+    Japan Post spelt them before.
+    """
+    s = re.sub(r"OU|OO", "O", romaji).replace("UU", "U")
+    if "ー" in kana:
+        # Loanwords: 'SENTAA' (センター), 'PAAKU' (パーク), 'BIRUDHINGU'
+        s = s.replace("AA", "A").replace("II", "I").replace("EE", "E")
+    s = re.sub(r"N(?=[BMP])", "M", s)
+    return s.replace("CCH", "TCH")
 
 
 _KANA_SUFFIX_ROMAJI = (("チョウ", "CHO"), ("マチ", "MACHI"), ("ムラ", "MURA"), ("ソン", "SON"), ("シ", "SHI"), ("ク", "KU"))
@@ -164,6 +244,13 @@ def build(out_dir: Path, cache_dir: Path, log: Callable[[str], None] = print) ->
     def _muni(name: str) -> str:
         return name.replace("　", "").replace(" ", "")
 
+    long_vowels = _spells_long_vowels(rome_rows)
+    if long_vowels:
+        log("Japan Post romaji spells long vowels; converting to Hepburn")
+
+    def _romaji(text: str, kana: str = "") -> str:
+        return _hepburn(text, kana) if long_vowels else text
+
     romaji_by_postal_town: Dict[Tuple[str, str, str], str] = {}
     for r in rome_rows:
         base, _ = _clean_postal_town(r[3].replace("　", ""))
@@ -176,9 +263,10 @@ def build(out_dir: Path, cache_dir: Path, log: Callable[[str], None] = print) ->
         lg = lg_code_for(r[0])
         base, kind = _clean_postal_town(r[8])
         kana = _PAREN.sub("", unicodedata.normalize("NFKC", r[5])).strip() if base else ""
-        romaji = romaji_by_postal_town.get((r[2], _muni(r[7]), town_key(base)), "") if base else ""
+        romaji = _romaji(romaji_by_postal_town.get((r[2], _muni(r[7]), town_key(base)), ""), kana) if base else ""
         postal.append({"postal_code": r[2], "lg_code": lg, "key": town_key(base), "town": base, "kana": kana,
-                       "romaji": romaji, "kind": kind, "chome": r[11]})
+                       "romaji": romaji, "kind": kind, "chome": r[11],
+                       "chomes": _postal_chomes(r[8]) if kind == "town" else ""})
         if base and kind == "town":
             reading_by_town.setdefault((lg, town_key(base)), (kana, romaji))
         if lg not in municipality_readings:
@@ -189,8 +277,8 @@ def build(out_dir: Path, cache_dir: Path, log: Callable[[str], None] = print) ->
         rome_lg = lg_by_postal_muni.get((r[0], _muni(r[2])))
         if rome_lg and "romaji" not in municipality_readings.get(rome_lg, {}):
             entry = municipality_readings.setdefault(rome_lg, {})
-            entry["romaji"] = _repair_truncated_suffix(r[5].strip(), entry.get("kana", ""))
-            entry["prefecture_romaji"] = r[4].strip()
+            entry["romaji"] = _repair_truncated_suffix(_romaji(r[5].strip()), entry.get("kana", ""))
+            entry["prefecture_romaji"] = _romaji(r[4].strip())
     log(f"Japan Post rows: {len(postal)}")
 
     # Attach readings to MLIT towns where the town names agree

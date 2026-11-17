@@ -163,3 +163,74 @@ def test_postal_lookup_uses_the_index():
     assert [r.town for r in gaz.postal_records("105-0011")] == ["芝公園"]
     assert gaz.postal_records("9999999") == []
     assert gaz.postal_records("abc") == []
+
+
+# --- postal code filled in for the town ------------------------------------------------------
+
+@pytest.mark.parametrize("address, postal_code", [
+    ("沖縄県宮古島市平良字久貝１０４７番地２１", "906-0015"),     # Japan Post lists the 字 as a town: 平良久貝
+    ("秋田県秋田市泉字金ノ町３３番地の５", "010-0816"),           # the 字 belongs to the town 泉
+    ("青森県平川市八幡崎宮本８８番地", "036-0241"),
+    ("京都府舞鶴市字浜１２０番地３", "625-0036"),                # '字浜' is 浜
+    ("東京都新宿区西早稲田３丁目３１番８号", "169-0051"),          # 162-0051 covers only part of 2丁目
+    ("東京都江戸川区江戸川６丁目７番地５", "134-0013"),            # 132-0013 is 1–3丁目 and part of 4丁目
+    ("北海道札幌市中央区北1条西2丁目1-1", "060-0001"),            # 1–19丁目
+    ("北海道札幌市中央区北1条西22丁目1-1", "064-0821"),           # 20–28丁目
+    ("東京都港区芝公園4-2-8", "105-0011"),
+])
+def test_postal_code_filled_in(address, postal_code):
+    assert jaden.normalize(address).components.postal_code == postal_code
+
+
+def test_postal_code_left_empty_when_the_town_is_split_and_the_chome_does_not_decide():
+    # 2丁目 of 西早稲田 is divided between two postal codes by block
+    assert jaden.normalize("東京都新宿区西早稲田２丁目５番１６号").components.postal_code is None
+
+
+def test_japan_post_chome_notes_are_parsed():
+    from jaden.data.build_gazetteer import _postal_chomes
+    assert _postal_chomes("北一条西（１〜１９丁目）") == "1-19"
+    assert _postal_chomes("Ｘ（２、３丁目）") == "2,3"
+    assert _postal_chomes("西早稲田（２丁目１番１〜２３号、２番）") == "~2"
+    assert _postal_chomes("江戸川（１〜３丁目、４丁目１〜１４番）") == "1-3,~4"
+    assert _postal_chomes("Ｘ（丁目）") == "*"
+    assert _postal_chomes("Ｘ（その他）") == "-"
+    assert _postal_chomes("六本木（次のビルを除く）") == "?"
+    assert _postal_chomes("芝公園") == ""
+
+
+# --- one town, several spellings -------------------------------------------------------------
+
+def test_aza_marker_inside_a_town_name_is_optional():
+    # MLIT registers 高木瀬町大字長瀬; Japan Post and the office write 高木瀬町長瀬
+    a = jaden.match_key("佐賀県佐賀市高木瀬町長瀬1307番地")
+    b = jaden.match_key("佐賀市高木瀬町大字長瀬1307番地")
+    assert a == b and a is not None
+    assert jaden.compare("佐賀県佐賀市高木瀬町長瀬1307番地", "佐賀市高木瀬町大字長瀬1307番地").verdict == "same"
+
+
+def test_thousands_separator_in_a_lot_number():
+    assert jaden.normalize("東京都西多摩郡奥多摩町氷川1,111").canonical == jaden.normalize("東京都西多摩郡奥多摩町氷川１１１１").canonical
+
+
+def test_numbered_town_written_with_chome_keeps_its_lot_number():
+    res = jaden.normalize("名張市鴻之台１丁目７２番地")
+    assert res.canonical == "三重県名張市鴻之台一番町72番地"
+
+
+# --- data build ------------------------------------------------------------------------------
+
+def test_romaji_is_hepburn_whatever_the_source_file_spells():
+    from jaden.data.build_gazetteer import _hepburn, _spells_long_vowels
+    # Japan Post's file switched to letter-by-letter transliteration; mail uses Hepburn
+    assert _hepburn("SHIBAKOUEN", "シバコウエン") == "SHIBAKOEN"
+    assert _hepburn("CHUUOU", "チュウオウ") == "CHUO"
+    assert _hepburn("SHINMINATOCHOU", "シンミナトチョウ") == "SHIMMINATOCHO"
+    assert _hepburn("HACCHOUDAIRA", "ハッチョウダイラ") == "HATCHODAIRA"
+    assert _hepburn("RYUUTSUUSENTAA", "リュウツウセンター") == "RYUTSUSENTA"
+    assert _hepburn("KITAAIZUMACHI", "キタアイヅマチ") == "KITAAIZUMACHI"
+    old_style = [["1050011", "東京都", "港区", "芝公園", "TOKYO TO", "MINATO KU", "SHIBAKOEN"]] * 10
+    new_style = [["1050011", "東京都", "港区", "芝公園", "TOKYO TO", "MINATO KU", "SHIBAKOUEN"]] * 10
+    assert not _spells_long_vowels(old_style)
+    assert _spells_long_vowels(new_style)
+    assert jaden.normalize("東京都港区芝公園4-2-8").romaji == "4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011"

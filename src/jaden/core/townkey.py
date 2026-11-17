@@ -45,9 +45,9 @@ _ITAIJI: Final[Dict[str, str]] = {
     "狹": "狭", "敎": "教", "賴": "頼", "瀨": "瀬", "禪": "禅", "彈": "弾", "縣": "県",
     "聲": "声", "樂": "楽", "藥": "薬", "應": "応", "燈": "灯", "鷄": "鶏",
     "嶽": "岳", "檜": "桧", "礪": "砺", "蘆": "芦", "藪": "薮", "鷗": "鴎", "驒": "騨",
-    "竈": "釜", "竃": "釜", "諌": "諫", "鯵": "鰺", "舘": "館", "埜": "野", "曻": "昇",
+    "竈": "釜", "竃": "釜", "餠": "餅", "諌": "諫", "鯵": "鰺", "舘": "館", "埜": "野", "曻": "昇",
     "梼": "檮", "珎": "珍", "嵜": "崎",
-    "碕": "崎", "舩": "船", "桒": "桑", "栢": "柏", "杦": "杉", "椙": "杉", "槗": "橋",
+    "碕": "崎", "舩": "船", "桒": "桑", "栢": "柏", "杦": "杉", "槗": "橋",
 }
 
 _KANJI_NUM_CHARS: Final[str] = "".join(list(KANJI_DIGITS) + list(KANJI_POWERS))
@@ -58,7 +58,12 @@ FOLD_SAME_LENGTH: Final[Dict[int, str]] = {
     **{ord(c): "ケ" for c in _KE_VARIANTS},
     **{ord(c): "ノ" for c in _NO_VARIANTS},
     **{ord(k): v for k, v in _ITAIJI.items() if k != v},
+    # Small katakana used in a few 字 names ('向ㇶ')
+    **{ord(a): b for a, b in zip("ㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ", "クシストヌハヒフヘホムラリルレロ")},
 }
+# 大字 / 字 inside a name is as optional as in front of it: MLIT registers '高木瀬町大字長瀬' and
+# '平良字久貝', Japan Post and most people write '高木瀬町長瀬' and '平良久貝'
+_INNER_AZA: Final[re.Pattern[str]] = re.compile(r"(?<=.)(?:大字|小字|字)(?=.)")
 _TRANSLATION: Final[Dict[int, str]] = {
     **FOLD_SAME_LENGTH,
     ord(" "): None, ord("　"): None, ord("・"): None,  # type: ignore[dict-item]
@@ -108,6 +113,8 @@ def town_key(name: str, strip_aza: bool = True) -> str:
             s = s[2:]
         elif s.startswith("字") and len(s) > 2:
             s = s[1:]
+        if "字" in s:
+            s = _INNER_AZA.sub("", s)
     return _kanji_runs_to_digits(s)
 
 
