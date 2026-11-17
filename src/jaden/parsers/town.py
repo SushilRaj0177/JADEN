@@ -41,11 +41,11 @@ _FACILITY_END = re.compile(r"(学校|高校|大学|病院|医院|センター|�
 
 def unmarked_koaza(match: TownMatch, rest: str) -> bool:
     """True when ``rest`` after a registered 大字 reads as a 字 written without 字 ('吉良町中野' + '郷中',
-    '勿来町' + '窪田万谷'): the 大字 is at least three characters long, the rest is a few characters
-    of name, and a block number follows it in the address."""
+    '勿来町' + '窪田万谷'): the 大字 is at least three characters long, the rest is two to six
+    characters of name, and a block number follows it in the address."""
     records = match.entry.records
     return (match.consumed >= 3 and bool(records) and records[0].kind in ("1", "0")
-            and bool(re.fullmatch(r"[^\d\s\-()（）]{1,6}", rest)) and not _FACILITY_END.search(rest))
+            and bool(re.fullmatch(r"[^\d\s\-()（）]{2,6}", rest)) and not _FACILITY_END.search(rest))
 
 
 def lot_series_follows(rest: str) -> bool:
@@ -418,14 +418,17 @@ def near_towns(gaz: Gazetteer, lg_code: str, town_text: str) -> List[str]:
     for towns in (gaz.towns_in(lg_code), gaz.postal_towns_in(lg_code)):
         for entry in towns.values():
             other = spelling_key(entry.name)
-            if not one_edit_apart(key, other):
-                continue
-            if len(key) == len(other):
-                diff = [(a, b) for a, b in zip(key, other) if a != b]
-                if all(is_numeral(a) and is_numeral(b) for a, b in diff):
+            # A town is also written with 町 after its registered name ('石井町' for 大字石井), and a typo of
+            # that form must count too, or '石崎町' would look like it can only mean 石松町
+            for form in (other, other + "町") if not other.endswith("町") else (other,):
+                if not one_edit_apart(key, form):
                     continue
-            if entry.name not in out:
-                out.append(entry.name)
+                if len(key) == len(form):
+                    diff = [(a, b) for a, b in zip(key, form) if a != b]
+                    if all(is_numeral(a) and is_numeral(b) for a, b in diff):
+                        continue
+                if entry.name not in out:
+                    out.append(entry.name)
     return out
 
 

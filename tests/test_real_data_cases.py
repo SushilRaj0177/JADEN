@@ -435,3 +435,87 @@ def test_everyday_kanji_does_not_pick_between_old_and_new_forms():
 ])
 def test_more_damaged_heads(address, lg_code):
     assert _lg(address) == lg_code
+
+
+@pytest.mark.parametrize("address, lg_code", [
+    ("新潟県新潟市燕市東太田2863-2", "152137"),
+    ("熊本市阿蘇市黒川1484番地", "432148"),
+    ("大阪府大阪市吹田市藤白台２丁目９番１－１１５号", "272051"),
+    ("岐阜県岐阜市関市稲口776-1", "212059"),
+    ("神奈川区横浜市緑区北八朔町1597-4", "141135"),
+])
+def test_second_municipality_wins_when_only_its_town_is_registered(address, lg_code):
+    res = jaden.normalize(address)
+    assert res.components.lg_code == lg_code
+    assert res.components.town_verified is True
+
+
+@pytest.mark.parametrize("address", [
+    "六地蔵町並39番地",          # '六地蔵町' + one character is not enough to pick 岡崎市 over 宇治市
+    "宇治山本25-2",
+    "上福井西ノ口61-1",
+    "神明石塚25-21",
+])
+def test_town_only_inputs_without_enough_evidence_abstain(address):
+    assert jaden.validate(address).status != "ACCEPTED"
+
+
+# --- name typed twice, or a town of the same name ---------------------------------------------
+
+@pytest.mark.parametrize("address, lg_code", [
+    ("北海道札幌市札幌市南区石山８３７番地４６", "011061"),
+    ("神奈川県横浜市横浜市金沢区富岡西２－３－1", "141089"),
+    ("神奈川区横浜市緑区北八朔町1597-4", "141135"),
+])
+def test_city_typed_twice_then_its_ward(address, lg_code):
+    res = jaden.normalize(address)
+    assert res.components.lg_code == lg_code
+    assert res.components.town_verified is True
+
+
+@pytest.mark.parametrize("address, town", [
+    ("群馬県吾妻郡中之条町中之条町1395-1", "中之条町"),    # 大字中之条町 of 中之条町
+    ("山形県最上郡金山町金山1", "金山"),
+])
+def test_town_with_the_municipality_name_is_not_a_repetition(address, town):
+    res = jaden.normalize(address)
+    assert res.components.town == town
+    assert res.components.town_verified is True
+
+
+def test_typo_one_character_from_two_towns_is_not_autocorrected():
+    # '石崎町' is one character from 石松町 and from 石井町 (大字石井 written with 町)
+    res = jaden.normalize("大分県日田市石崎町3-1244-1", autocorrect=True)
+    assert res.components.town_corrected_from is None
+    assert len(res.suggestions) == 2
+
+
+def test_typo_in_a_town_registered_with_an_inner_oaza():
+    # registered 浪岡大字本郷; the typo '崎岡本郷' is one character from 浪岡本郷
+    assert jaden.normalize("青森県青森市崎岡本郷字岸田17-2").suggestions
+
+
+def test_trailing_machi_is_the_same_town_in_match_keys():
+    assert jaden.match_key("栃木県宇都宮市若草町2-2-46") == jaden.match_key("栃木県宇都宮市若草2-2-46")
+
+
+def test_inner_oaza_written_or_not_reads_back_the_same():
+    for address in ("広島県福山市新市町戸手1244", "宮崎県日南市南郷町大字中村乙7101-390"):
+        res = jaden.normalize(address)
+        assert jaden.normalize(res.format("hyphen")).canonical == res.canonical
+
+
+def test_block_file_from_an_older_version_is_still_used(tmp_path, monkeypatch):
+    import gzip
+    import json
+    from jaden.data.gazetteer import Gazetteer
+    blocks = tmp_path / "jaden" / "blocks"
+    blocks.mkdir(parents=True)
+    with gzip.open(blocks / "13.tsv.gz", "wt", encoding="utf-8") as f:
+        f.write("lg_code\tkey\tchome\tblock\tlat\tlon\tjukyo\n131032\t芝公園\t4\t2\t35.6586\t139.7454\t1\n")
+    (blocks / "13.json").write_text(json.dumps({"town_key_version": 2}), encoding="utf-8")
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    gaz = Gazetteer()
+    point = gaz.block_point("131032", "芝公園", 4, 2)
+    assert point is not None and abs(point.latitude - 35.6586) < 1e-6
+    assert gaz.stale_block_prefectures() == ["13"]

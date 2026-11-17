@@ -135,8 +135,9 @@ class AdministrativeParser:
 
         The text is matched in folded form, so spelling variants of a municipality name are found;
         ``remaining_text`` is cut from the text as written. When nothing is found, a repeated
-        prefecture or municipality name and a misspelt or spaced county name are repaired and the
-        text is read again.
+        prefecture name, stray characters in front and a misspelt or spaced county name are repaired
+        and the text is read again. (A repeated municipality name is handled by the engine, which can
+        tell it from a town of the same name.)
 
         Returns:
             AdministrativeParseResult (supports 4-tuple unpacking for backward compatibility).
@@ -151,40 +152,9 @@ class AdministrativeParser:
                 again = self._parse_folded(fold_same_length(repaired), repaired)
                 if again.municipality is not None or again.is_ambiguous:
                     res, text = again, repaired
-        if res.municipality is not None:
-            res = self._skip_repeated_name(res)
         # The remainder is always a suffix of the folded text, which has the length of the written one
         rest = text[len(text) - len(res.remaining_text):] if res.remaining_text else ""
         return dataclasses.replace(res, remaining_text=rest)
-
-    def _skip_repeated_name(self, res: AdministrativeParseResult) -> AdministrativeParseResult:
-        """'札幌市札幌市南区石山…', '龍ヶ崎市龍ケ崎市貝原塚町…': the name typed twice is read once."""
-        muni = res.municipality
-        rest = res.remaining_text
-        if muni is None or not rest:
-            return res
-        names = [muni.prefecture_name + muni.name, muni.name]
-        if muni.city and muni.city != muni.name:
-            names += [muni.prefecture_name + muni.city, muni.city]
-        if muni.ward and muni.ward != muni.name and len(muni.ward) >= 2:
-            names.append(muni.ward)                      # '京都市下京区下京区西七条…'
-        for name in names:
-            folded = fold_same_length(name)
-            if rest.startswith(folded) and len(rest) > len(folded):
-                rest = rest[len(folded):].lstrip()
-                if name == muni.ward:
-                    return dataclasses.replace(res, remaining_text=rest)
-                if muni.city and muni.city != muni.name and not muni.ward:
-                    break
-                # After a repeated city name the ward may follow ('横浜市横浜市金沢区…')
-                ward_trie = self._ward_trie_by_pref.get(muni.prefecture_code)
-                if muni.entity_type == "designated_city" and ward_trie is not None:
-                    hit = ward_trie.longest_prefix(rest, 0)
-                    wards = [w for w in hit[1] if w.city == muni.city] if hit else []
-                    if hit and wards:
-                        return dataclasses.replace(res, municipality=wards[0], remaining_text=rest[hit[2]:].lstrip())
-                return dataclasses.replace(res, remaining_text=rest)
-        return res
 
     _COUNTY = re.compile(r"^([^\s\d]{1,4})([郡群])\s*")
 

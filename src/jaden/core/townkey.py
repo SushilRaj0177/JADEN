@@ -23,7 +23,7 @@ from .constants import KANJI_DIGITS, KANJI_POWERS
 from .kanji_numerals import parse_kanji_number
 
 # Bump whenever town_key output changes; compiled data stores keys built with this version
-TOWN_KEY_VERSION: Final[int] = 4
+TOWN_KEY_VERSION: Final[int] = 5
 
 _KE_VARIANTS: Final[str] = "ヶケヵがガｹ"
 _NO_VARIANTS: Final[str] = "のノ"
@@ -63,7 +63,9 @@ FOLD_SAME_LENGTH: Final[Dict[int, str]] = {
 }
 # 大字 / 字 inside a name is as optional as in front of it: MLIT registers '高木瀬町大字長瀬' and
 # '平良字久貝', Japan Post and most people write '高木瀬町長瀬' and '平良久貝'
-_INNER_AZA: Final[re.Pattern[str]] = re.compile(r"(?<=.)(?:大字|小字|字)(?=.)")
+# Not the 字 of a word: 十文字, 大文字町, 十字, 万字
+INNER_AZA: Final[re.Pattern[str]] = re.compile(r"(?<=.)(?<![文十万])(?:大字|小字|字)(?=.)")
+_INNER_AZA = INNER_AZA
 _TRANSLATION: Final[Dict[int, str]] = {
     **FOLD_SAME_LENGTH,
     ord(" "): None, ord("　"): None, ord("・"): None,  # type: ignore[dict-item]
@@ -95,6 +97,8 @@ def spelling_key(name: str) -> str:
         s = s[2:]
     elif s.startswith("字") and len(s) > 2:
         s = s[1:]
+    if "字" in s:
+        s = INNER_AZA.sub("", s)       # '浪岡大字本郷' is spelt 浪岡本郷, as in town_key
     return s
 
 

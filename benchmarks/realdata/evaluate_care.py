@@ -18,6 +18,7 @@ Usage:
 
 import argparse
 import csv
+import re
 import json
 import statistics
 import unicodedata
@@ -26,7 +27,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple
 
 import common
-from common import DEFAULT_DATA, Tally, haversine_km, is_correct, municipality_outcome, outcome_table, pct, resolve, run_pool, table
+from common import (DEFAULT_DATA, Tally, fold, haversine_km, is_correct, municipality_outcome, outcome_table, pct,
+                    resolve, run_pool, table)
 
 # (row id, prefecture, municipality, address as typed, 方書, municipality code, lat, lon, office number)
 Item = Tuple[str, str, str, str, str, str, str, str, str]
@@ -54,11 +56,10 @@ def compose(pref: str, city: str, address: str) -> str:
     The typed text keeps its own head when it already names the municipality somewhere near its start
     ('東京目黒区…', '下京区西七条…', '厚岸郡厚岸町…'); otherwise the columns are put in front.
     """
-    from jaden.core.townkey import fold_same_length
     a = address.strip()
     if a.startswith(pref):
         return a
-    folded = fold_same_length(unicodedata.normalize("NFKC", a))
+    folded = fold(a)
     parts = [city]
     if "市" in city[:-1]:
         head, _, ward = city.partition("市")
@@ -68,7 +69,7 @@ def compose(pref: str, city: str, address: str) -> str:
     for part in parts:
         if not part:
             continue
-        where = folded.find(fold_same_length(part))
+        where = folded.find(fold(part))
         if where == 0:
             return pref + a
         if 0 < where <= 4:
@@ -83,11 +84,10 @@ def _row_check(outcome: str, res: Any, address: str, city: str) -> str:
     """A row whose typed address names one municipality while its columns name another cannot be scored."""
     if outcome != "wrong":
         return outcome
-    from jaden.core.townkey import fold_same_length
-    typed = fold_same_length(unicodedata.normalize("NFKC", address))
+    typed = fold(address)
     c = res.components
-    mine = fold_same_length((c.city or "") + (c.ward or "") if c.ward and c.city != c.ward else (c.city or c.ward or ""))
-    column = fold_same_length(city.split("郡")[-1])
+    mine = fold((c.city or "") + (c.ward or "") if c.ward and c.city != c.ward else (c.city or c.ward or ""))
+    column = fold(city.split("郡")[-1])
     if mine and mine in typed and column and column not in typed.replace(mine, ""):
         return "not scored: the typed address and the row's columns name different municipalities"
     return outcome
@@ -205,12 +205,16 @@ def main() -> int:
     tally, n, seconds = run_pool(score, read_rows(args.data / "care", args.every), args.jobs, on_extra=on_extra, label="care: ")
 
     # The same office typed in different ways: do the spellings share a house-level match key?
+    from jaden.core.kanji_numerals import normalize_kanji_numerals_in_blocks
     office_examples: List[Tuple[str, str, str, str]] = []
     for office, spellings in sorted(by_office.items()):
         if len(spellings) < 2:
             continue
         keys = set(spellings.values())
-        if "" in keys:
+        numbers = {tuple(re.findall(r"\d+", normalize_kanji_numerals_in_blocks(fold(a)))[:3]) for a in spellings}
+        if len(numbers) > 1:
+            outcome = "not scored: the spellings carry different numbers (a move, or a typo in the data)"
+        elif "" in keys:
             outcome = "a spelling could not be keyed"
         elif len(keys) == 1:
             outcome = "all spellings share one key"
@@ -244,9 +248,14 @@ def main() -> int:
     lines += ["## Building, floor and room against the 方書 column", "",
               "Rows whose typed address ends with the text of the 方書 column. The address is resolved with and "
               "without that text; the address part must not change.", "", outcome_table(tally, "building"), ""]
+    shared = tally.get("same office", "all spellings share one key")
+    scored = sum(n for o, n in tally.group("same office").items() if not o.startswith("not scored"))
     lines += ["## The same office listed several times with different spellings", "",
-              "Offices (by 事業所番号) whose rows carry two or more different address strings.", "",
-              outcome_table(tally, "same office"), ""]
+              "Offices (by 事業所番号) whose rows carry two or more different address strings. Where the strings "
+              "carry the same numbers, they should get the same house-level match key.", "",
+              outcome_table(tally, "same office"), "",
+              f"Of the offices whose spellings carry the same numbers, **{pct(shared, scored)}** get one key "
+              f"({shared:,} of {scored:,}).", ""]
     lines += ["## Distance from JADEN's offline point to the published coordinates", "",
               "The published coordinates come from the publishing system's own geocoding, so this is agreement "
               "between two systems, not error against a survey.", ""]

@@ -598,6 +598,19 @@ class Gazetteer:
         dirs = [self.data_dir / "blocks", user_data_dir() / "blocks"]
         return [d for i, d in enumerate(dirs) if d not in dirs[:i]]
 
+    def stale_block_prefectures(self) -> List[str]:
+        """Prefectures whose installed block data was built with an older town key (re-fetch to refresh)."""
+        stale = []
+        for d in self.block_dirs():
+            for meta_path in sorted(d.glob("*.json")) if d.exists() else ():
+                try:
+                    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    continue
+                if meta.get("town_key_version") != TOWN_KEY_VERSION and meta_path.stem not in stale:
+                    stale.append(meta_path.stem)
+        return stale
+
     def blocks_available(self, prefecture_code: str) -> bool:
         if prefecture_code not in self._blocks_present:
             self._blocks_present[prefecture_code] = any(
@@ -612,10 +625,9 @@ class Gazetteer:
             path = d / f"{prefecture_code}.tsv.gz"
             if not path.exists():
                 continue
-            meta_path = d / f"{prefecture_code}.json"
-            meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-            if meta.get("town_key_version") != TOWN_KEY_VERSION:
-                continue  # built with an older key; ask the user to re-fetch rather than mis-match
+            # A file built by an older version stores older town keys. Most keys are unchanged and points
+            # are filed per municipality, so it is still used; towns whose key changed are simply not found
+            # until the prefecture is fetched again (`jaden data info` lists such files).
             with gzip.open(path, "rb") as f:
                 table = _Table(f.read().decode("utf-8"), 0, index_all=False)
             break

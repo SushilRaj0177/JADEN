@@ -104,8 +104,8 @@ def _town_parts(res: NormalizedAddress) -> Tuple[Optional[str], Optional[str]]:
         return town_key(town), None
     base = town_key(match.entry.name)
     rest = town[match.consumed:]
-    if not rest:
-        return base, None
+    if not rest or rest == "町":
+        return base, None          # '若草町' written for the registered 若草 is the same town
     stripped = rest[2:] if rest.startswith("小字") else (rest[1:] if rest.startswith("字") else rest)
     is_koaza = rest.startswith(("字", "小字")) or bool(match.entry.records and match.entry.records[0].kind == "1")
     if is_koaza:

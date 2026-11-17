@@ -21,7 +21,7 @@ from .models.address import AddressComponents, NormalizedAddress
 from .models.validation import ValidationResult, ValidationStatus
 from .core.sanitizer import sanitize_address_text, _LEADING_LABEL
 from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
-from .parsers.administrative import AdministrativeParser
+from .parsers.administrative import AdministrativeParser, fold_same_length as admin_fold
 from .parsers.kyoto import KyotoParser
 from .parsers.hokkaido import HokkaidoParser
 from .parsers.fsm import BlockFSM
@@ -30,7 +30,7 @@ from .parsers.town import (resolve_town, expand_candidates, town_variants, koaza
                            unmarked_koaza, lot_series_follows,
                            TownResolution)
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
-from .core.townkey import fold_same_length, one_edit_apart, spelling_key, town_key
+from .core.townkey import INNER_AZA, fold_same_length, one_edit_apart, spelling_key, town_key
 from .data.loader import MunicipalityRecord
 from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
@@ -708,9 +708,12 @@ class AddressNormalizer:
                 regime_val = AddressRegime.UNSPECIFIED.value
                 chome_verified = True
                 record = entry.record_for(chome_val)
-            elif (entry.name.startswith(("大字", "字")) and not entry.has_chome and chome_val is None
+            elif ((entry.name.startswith(("大字", "字")) or INNER_AZA.search(entry.name)
+                   or INNER_AZA.search(town_text[:match.consumed]))
+                  and not entry.has_chome and chome_val is None
                   and banchi_val is None and ban_val is not None and kyoto_clause is None):
-                # A registered 大字 / 字 is a cadastral area (地番): '南長野692-2' is 692番地の2, not 692番2号
+                # A registered 大字 / 字 is a cadastral area (地番): '南長野692-2' is 692番地の2, not 692番2号,
+                # and so is '新市町戸手1244' when the registry writes 新市町大字戸手
                 banchi_val, edaban_val, ban_val, go_val = ban_val, go_val, None, None
                 regime_val = AddressRegime.CHIBAN.value
             registered = entry.name
@@ -724,6 +727,14 @@ class AddressNormalizer:
                 if user_part.startswith(prefix) and not registered.startswith(("大字", "字")) and variant is None:
                     registered = prefix + registered
                     break
+            # ... and so is one inside the name ('新市町大字戸手' written '新市町戸手', '南郷町中村乙' written
+            # '南郷町大字中村乙'), so that the canonical form reads back the same way
+            if (INNER_AZA.search(registered) or INNER_AZA.search(user_part)) and variant is None:
+                bare = INNER_AZA.sub("", registered)
+                if bare == INNER_AZA.sub("", user_part):
+                    registered = user_part
+                elif not INNER_AZA.search(user_part):
+                    registered = bare
             remainder = town_text[match.consumed:]
             if (remainder and not has_numbers and len(remainder) >= 3 and remainder.endswith("内")
                     and not koaza_remainder(remainder)):
@@ -970,6 +981,58 @@ class AddressNormalizer:
             notes=tuple(notes),
         )
 
+    def _repeated_name(self, muni: MunicipalityRecord, text: str) -> Optional[Tuple[MunicipalityRecord, str, str]]:
+        """'札幌市札幌市南区石山…', '龍ヶ崎市龍ケ崎市貝原塚町…', '京都市下京区下京区西七条…': the municipality typed
+        twice is read once, unless a registered town of that name follows ('中之条町大字中之条町', '金山町金山')."""
+        names = [muni.prefecture_name + muni.name, muni.name]
+        if muni.city and muni.city != muni.name:
+            names += [muni.prefecture_name + muni.city, muni.city]
+        if muni.ward and muni.ward != muni.name and len(muni.ward) >= 2:
+            names.append(muni.ward)
+        folded = admin_fold(text)
+        pool = self.registry.wards_of(muni) or [muni]
+        for name in names:
+            written = admin_fold(name)
+            if not folded.startswith(written) or len(folded) <= len(written):
+                continue
+            if any(self._town_reaches_number(m.lg_code, text) for m in pool):
+                return None                           # a town of the same name
+            rest = text[len(written):].lstrip()
+            note = f"'{text[:len(written)]}' is written twice; read once"
+            # After a city written again its ward may follow ('札幌市札幌市南区…', '横浜市神奈川区横浜市緑区…')
+            city = muni if muni.entity_type == "designated_city" else next(
+                (m for m in self.registry.list_municipalities(muni.prefecture_code)
+                 if m.entity_type == "designated_city" and m.city == muni.city and muni.ward), None)
+            for ward in (self.registry.wards_of(city) if city is not None else []):
+                if ward.ward and admin_fold(rest).startswith(admin_fold(ward.ward)):
+                    return ward, rest[len(ward.ward):].lstrip(), note
+            return muni, rest, note
+        return None
+
+    def _second_municipality(self, pref_rec: Any, muni_rec: MunicipalityRecord,
+                             text: str) -> Optional[Tuple[MunicipalityRecord, str, str]]:
+        """'新潟県新潟市燕市東太田…', '大阪府大阪市吹田市藤白台…': a second municipality name follows the first. The
+        second is taken when the town after it is registered there and nothing after the first is."""
+        hit = self.admin_parser._muni_trie.longest_prefix(admin_fold(text), 0)
+        if hit is None:
+            return None
+        name_len = hit[2]
+        rest = text[name_len:]
+        first = self.registry.wards_of(muni_rec) or [muni_rec]
+        if any(self._town_reaches_number(m.lg_code, text) for m in first):
+            return None
+        fits: List[MunicipalityRecord] = []
+        for cand in hit[1]:
+            if cand.lg_code == muni_rec.lg_code or (pref_rec is not None and cand.prefecture_code != pref_rec.code):
+                continue
+            pool = self.registry.wards_of(cand) or [cand]
+            fits += [m for m in pool if self._town_reaches_number(m.lg_code, rest)]
+        if len({m.lg_code for m in fits}) != 1:
+            return None
+        second = fits[0]
+        return (second, rest.lstrip(), f"two municipalities are written; read the second, {second.name}, "
+                f"where the town is registered")
+
     def _town_of_prefecture(self, pref_rec: Any, text: str) -> Optional[MunicipalityRecord]:
         """The one municipality of the prefecture where ``text`` (a name like '長島町' that is a municipality
         elsewhere, then block numbers) is a registered town with that 丁目, or None."""
@@ -1044,6 +1107,12 @@ class AddressNormalizer:
             return ward, text[used:].lstrip(), f"read '{text[:used - len(ward_name)]}' as {ward.city}: {ward_name} follows it"
 
         if muni_rec is not None:
+            repeated = self._repeated_name(muni_rec, text)
+            if repeated is not None:
+                return repeated
+            second = self._second_municipality(pref_rec, muni_rec, text)
+            if second is not None:
+                return second
             if muni_rec.entity_type != "designated_city":
                 return None
             wards = [w for w in self.registry.wards_of(muni_rec) if w.ward]
@@ -1208,8 +1277,10 @@ class AddressNormalizer:
             found = gaz.municipalities_with_town(town_text)
             lgs = [lg for lg, m in found if m.exact or koaza_remainder(town_text[m.consumed:])]
             if not lgs:
-                # '吉良町中野郷中74': the longest registered 大字 the text starts with, then its 字
-                loose = [(lg, m) for lg, m in found if unmarked_koaza(m, town_text[m.consumed:])]
+                # '吉良町中野郷中74': the longest registered 大字 the text starts with, then its 字. Across the
+                # whole country only 大字 named after a former town or village ('吉良町…', '勿来町') count
+                loose = [(lg, m) for lg, m in found if unmarked_koaza(m, town_text[m.consumed:])
+                         and re.search(r"[町村]", m.entry.name)]
                 if loose:
                     longest = max(m.consumed for _, m in loose)
                     lgs = [lg for lg, m in loose if m.consumed == longest]

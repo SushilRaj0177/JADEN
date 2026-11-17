@@ -395,6 +395,7 @@ def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
             "postal": prov.get("postal", {}),
             "built": prov.get("built"),
             "block_prefectures": blocks,
+            "block_prefectures_to_refetch": gaz.stale_block_prefectures(),
         }
         if as_json:
             print(json.dumps(info, ensure_ascii=False, indent=2))
@@ -405,6 +406,10 @@ def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
             print(f"Postal:      {info['postal'].get('records')} ({info['postal'].get('dataset')})")
             print(f"Attribution: {info['towns'].get('attribution')}")
             print(f"Blocks:      {', '.join(blocks) if blocks else 'none installed (jaden data fetch-blocks <pref>)'}")
+            stale = info["block_prefectures_to_refetch"]
+            if stale:
+                print(f"             built by an older version, re-fetch for full coverage: "
+                      f"jaden data fetch-blocks {' '.join(str(int(x)) for x in stale)}")
         return 0
 
     target = user_data_dir()

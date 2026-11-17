@@ -49,3 +49,14 @@ This product includes or references data and services from the following organiz
    - Dataset: 「都道府県コード及び市区町村コード」改正一覧表 (平成17年4月1日以降), Ministry of Internal Affairs and Communications
    - Source: https://www.soumu.go.jp/main_content/000875488.xlsx
    - Bundled File: src/jaden/data/former_municipalities.json, rebuilt by src/jaden/data/build_former.py
+
+8. Real-data evaluation (benchmarks/realdata; the data files are downloaded, not bundled)
+   - Dataset: 介護サービス情報公表システム オープンデータ (介護サービス事業所一覧), Ministry of Health, Labour and Welfare (厚生労働省)
+   - Source: https://www.mhlw.go.jp/stf/kaigo-kouhyou_opendata.html
+   - Terms: 厚生労働省ホームページの利用規約, and CC BY
+   - Attribution: 介護サービス情報公表システムから抽出したデータ（厚生労働省）を加工して作成
+   - Dataset: 法人番号公表サイト 全件データ (CSV, Unicode), National Tax Agency (国税庁)
+   - Source: https://www.houjin-bangou.nta.go.jp/download/zenken/
+   - Terms: 法人番号公表サイト 利用規約. Consult the site's own terms of use.
+   - Attribution: 出典：国税庁法人番号公表サイト（国税庁法人番号公表サイトの公表情報を加工して作成）
+   - Reports in benchmarks/realdata/results quote a few addresses from these datasets as examples.

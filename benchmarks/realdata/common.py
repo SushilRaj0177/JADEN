@@ -5,6 +5,7 @@ import heapq
 import math
 import sys
 import time
+import unicodedata
 from collections import Counter
 from multiprocessing import Pool
 from pathlib import Path
@@ -15,6 +16,15 @@ sys.path.insert(0, str(HERE.parents[1] / "src"))
 
 DEFAULT_DATA = Path.home() / ".cache" / "jaden-realdata"
 ENGINE: Any = None
+
+# The scripts fold text themselves instead of using the engine's folding, so that any version of the
+# engine is scored by exactly the same rules
+_FOLD = str.maketrans({"ヶ": "ケ", "ヵ": "ケ", "が": "ケ", "ガ": "ケ", "の": "ノ", "﨑": "崎", "嶋": "島",
+                       "澤": "沢", "濱": "浜", "邊": "辺", "邉": "辺", "齋": "斎", "國": "国", "竈": "釜", "諌": "諫"})
+
+
+def fold(text: str) -> str:
+    return unicodedata.normalize("NFKC", text or "").translate(_FOLD)
 
 
 def init_worker() -> None:
