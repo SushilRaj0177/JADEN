@@ -26,7 +26,7 @@ _STREETS_PATTERN = "|".join(sorted(_KYOTO_MAJOR_STREETS, key=len, reverse=True))
 _CLAUSE_CHOME = r"(?:\d+|[一二三四五六七八九十]+)丁目"
 # After the first direction the clause may go on: a 丁目 of the street and further turns
 # ('今出川通七本松東入上る', '大和大路東入三丁目下ル', '荒神口上がる東入る')
-_CLAUSE_TAIL = rf"(?P<chome>{_CLAUSE_CHOME})?(?P<turns>(?:(?:{_DIR_TOKENS})(?:{_CLAUSE_CHOME})?)*)"
+_CLAUSE_TAIL = rf"(?P<chome>{_CLAUSE_CHOME})?(?P<turns>(?:(?:{_DIR_TOKENS}|東側|西側)(?:{_CLAUSE_CHOME})?)*)"
 
 _KYOTO_INTERSECTION_P1: Final[re.Pattern[str]] = re.compile(
     rf"(?:^|\s)(?P<street1>[^\s\d]+?[通筋])(?P<street2>[^\s\d]+?)(?P<direction>{_DIR_TOKENS}){_CLAUSE_TAIL}"

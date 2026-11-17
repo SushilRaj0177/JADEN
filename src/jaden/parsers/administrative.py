@@ -9,10 +9,18 @@ import dataclasses
 import re
 from dataclasses import dataclass
 from typing import Optional, Tuple, List, Dict
-from ..core.townkey import fold_same_length, one_edit_apart
+from ..core.townkey import fold_same_length as _fold_variants, one_edit_apart
 from ..core.trie import PrefixTrie
 from ..data.loader import AddressDataRegistry, get_registry, MunicipalityRecord
 from ..models.codes import PrefectureRecord
+
+# Katakana typed for the kanji they look like: 'ニ宮町' for 二宮町, 'ロ' for 口, 'カ' for 力
+_LOOKALIKE = str.maketrans({"ニ": "二", "ロ": "口", "カ": "力", "エ": "工", "ハ": "八", "タ": "夕", "ト": "卜"})
+
+
+def fold_same_length(text: str) -> str:
+    """Variant folding for municipality names, plus katakana typed for look-alike kanji (length kept)."""
+    return _fold_variants(text).translate(_LOOKALIKE)
 
 
 @dataclass(frozen=True, slots=True)

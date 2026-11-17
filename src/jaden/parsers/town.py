@@ -14,6 +14,7 @@ It never guesses between equally plausible candidates: if more than one
 municipality still fits, the result stays ambiguous with a narrower list.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import Optional, List, Tuple, Sequence, Set
 
@@ -34,6 +35,24 @@ def koaza_remainder(rest: str) -> bool:
     return rest.startswith(("字", "小字")) or (len(rest) == 1 and rest in _LOT_SERIES)
 
 
+# Words that end a facility name, never a 字 ('ニセコ高等学校', '国府小学校')
+_FACILITY_END = re.compile(r"(学校|高校|大学|病院|医院|センター|駅|ビル|会館|館|園|寺|神社|教会|工場|事務所|内)$")
+
+
+def unmarked_koaza(match: TownMatch, rest: str) -> bool:
+    """True when ``rest`` after a registered 大字 reads as a 字 written without 字 ('吉良町中野' + '郷中',
+    '勿来町' + '窪田万谷'): the 大字 is at least three characters long, the rest is a few characters
+    of name, and a block number follows it in the address."""
+    records = match.entry.records
+    return (match.consumed >= 3 and bool(records) and records[0].kind in ("1", "0")
+            and bool(re.fullmatch(r"[^\d\s\-()（）]{1,6}", rest)) and not _FACILITY_END.search(rest))
+
+
+def lot_series_follows(rest: str) -> bool:
+    """True when ``rest`` is a lot-series character followed by its number ('甲407-1')."""
+    return len(rest) >= 2 and rest[0] in _LOT_SERIES and rest[1].isdigit()
+
+
 def town_variants(town_text: str, first_number: Optional[int]) -> List[Tuple[str, str]]:
     """Registered spellings that real addresses often shorten.
 
@@ -48,6 +67,14 @@ def town_variants(town_text: str, first_number: Optional[int]) -> List[Tuple[str
         out += [(f"{town_text}{first_number}番町", "banchou"), (f"{town_text}{first_number}の", "no"),
                 (f"{town_text}{first_number}丁", "banchou")]
     return out
+
+
+# Old kanji forms rarely typed by accident (not 舘, 嶋, 﨑, which are in everyday registered names)
+_OLD_FORMS = frozenset("溪澤濱邊邉齋齊萬櫻龍與國壽鹽瀧藏廣曾惠眞淺條會舊實繩驛峯臺彌塲麴栁德豐榮靜寶鐵圓學禮增莊來兒黑"
+                       "橫巖當藝龜澁攝氣穗鄕內淸靑步狹敎賴瀨禪彈縣聲樂藥應燈鷄嶽礪蘆鷗驒竈")
+
+# Katakana typed for the kanji they look like
+_KANA_FOR_KANJI = str.maketrans({"ニ": "二", "ロ": "口", "カ": "力", "エ": "工", "ハ": "八", "タ": "夕", "ト": "卜"})
 
 
 def _respelt_town(gaz: Gazetteer, lg_code: str, town_text: str) -> Optional[Tuple[TownEntry, int]]:
@@ -70,6 +97,11 @@ def _respelt_town(gaz: Gazetteer, lg_code: str, town_text: str) -> Optional[Tupl
     head = town_text[:cut] if cut > 0 else town_text
     covered = len(head)
     key = town_key(head)
+    lookalike = head.translate(_KANA_FOR_KANJI)
+    if lookalike != head:
+        entry = towns.get(town_key(lookalike))      # 'ニ宮' typed for 二宮
+        if entry is not None:
+            return entry, covered
     if "ケ" in key:
         entry = towns.get(key.replace("ケ", ""))
         if entry is not None:
@@ -184,8 +216,10 @@ def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Opti
         # One character is too little to go on, unless a 字 or a lot series follows it ('平字三町目',
         # '巻甲'). The 大 of '大字…' is the marker, not the town 大
         match = None
-    if match is not None and not match.exact and not strong_prefix_ok and not koaza_remainder(town_text[match.consumed:]):
-        # Among many candidates a partial match ('ニセコ高等学校' starting with 字ニセコ) proves nothing
+    if (match is not None and not match.exact and not strong_prefix_ok and not koaza_remainder(town_text[match.consumed:])
+            and not (first_number is not None and unmarked_koaza(match, town_text[match.consumed:]))):
+        # Among many candidates a partial match ('ニセコ高等学校' starting with 字ニセコ) proves nothing,
+        # unless it is a long 大字 with a 字 after it and a block number ('加納町向井山9番1')
         match = None
     chome_ok: Optional[bool] = None
     unlisted = False
@@ -281,6 +315,20 @@ def resolve_town(
         listed = [c for c in fitting if not c.chome_unlisted]
         if listed and len(listed) < len(fitting):
             fitting = listed
+        # A longer registered name beats a shorter one ('吉良町中野' + 郷中 over '吉良町' + 中野郷中)
+        if len(fitting) > 1 and all(c.match is not None and not c.match.exact for c in fitting):
+            longest = max(c.match.consumed for c in fitting)  # type: ignore[union-attr]
+            fitting = [c for c in fitting if c.match.consumed == longest]  # type: ignore[union-attr]
+        # An old kanji form written on purpose picks the town registered with it: '檀溪通' is 昭和区,
+        # while the everyday '檀渓通' may be 昭和区's 檀溪通 or 瑞穂区's 檀渓通
+        if len(fitting) > 1 and any(ch in _OLD_FORMS for ch in town_text):
+            def spelt(c: TownCheck) -> bool:
+                names = {c.match.entry.name} | {r.name for r in c.match.entry.records} if c.match else set()
+                return any(town_text.startswith(n) or town_text.startswith(n[2:] if n.startswith("大字") else n[1:])
+                           for n in names if n)
+            verbatim = [c for c in fitting if spelt(c)]
+            if len(verbatim) == 1:
+                fitting = verbatim
         if len(fitting) == 1:
             chosen, resolved, remaining = fitting[0], True, ()
             by = "postal code" if not fitting[0].town_found else f"town '{fitting[0].match.entry.name}'"  # type: ignore[union-attr]

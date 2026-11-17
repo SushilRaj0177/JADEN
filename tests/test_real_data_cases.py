@@ -385,3 +385,53 @@ def test_town_written_without_its_ke():
     res = jaden.normalize("熊本県熊本市武蔵丘1-2-30")
     assert res.components.lg_code == "431052"
     assert res.components.town == "武蔵ケ丘"
+
+
+# --- a 字 written straight after its 大字, county without its municipality ----------------------
+
+@pytest.mark.parametrize("address, lg_code", [
+    ("吉良町中野郷中74番地2", "232131"),            # 西尾市 吉良町中野 + 郷中
+    ("勿来町窪田万谷41－5", "072044"),              # いわき市 勿来町 + 窪田万谷
+    ("金木町中柏木鎧石342番地2", "022055"),          # 五所川原市 金木町中柏木 + 鎧石
+    ("愛知県加納町向井山9番1", "232114"),            # 豊田市 加納町 + 向井山
+    ("徳島県名西郡浦庄字上浦524-10", "363413"),       # 名西郡 + town of 石井町
+    ("山形県最上郡真室川大字木ノ下字片渕山1125-286", "063649"),   # 真室川 = 真室川町
+    ("静岡県周智郡草ケ谷391-1", "224618"),           # 周智郡 has one municipality with 草ケ谷: 森町
+])
+def test_unmarked_koaza_and_county_readings(address, lg_code):
+    assert _lg(address) == lg_code
+
+
+def test_unmarked_koaza_does_not_turn_facility_names_into_addresses():
+    assert jaden.validate("高崎市立国府小学校").status == "UNSUPPORTED"
+
+
+@pytest.mark.parametrize("address, lg_code", [
+    ("宮崎駅東三丁目９番１０", "452017"),            # '宮崎' is part of the town, not the prefecture
+    ("兵庫塚町281番地1", "092011"),
+])
+def test_prefecture_stem_inside_a_town_name(address, lg_code):
+    assert _lg(address) == lg_code
+
+
+def test_prefecture_with_town_in_several_municipalities_is_ambiguous():
+    val = jaden.validate("埼玉県狭山台1ｰ10ｰ12")
+    assert val.status == "AMBIGUOUS"
+    assert any("112259" in c for c in val.ambiguous_candidates)
+
+
+def test_everyday_kanji_does_not_pick_between_old_and_new_forms():
+    # 昭和区 registers 檀溪通 (old form), 瑞穂区 registers 檀渓通
+    assert jaden.validate("檀渓通5丁目26番地").status == "AMBIGUOUS"
+    assert _lg("檀溪通5丁目26番地") == "231070"
+
+
+@pytest.mark.parametrize("address, lg_code", [
+    ("北23条東16丁目4-27", "011037"),                # Sapporo grid without city or prefecture
+    ("御車道通清和院口上る東側梶井町457-1", "261025"), # Kyoto clause ending in 東側
+    ("千葉県葉市中央区院内2丁目15番13号", "121011"),   # 千 dropped from 千葉市
+    ("愛媛県今治阿方甲407-1", "382027"),             # 市 left out, lot series after the town
+    ("神奈川県中郡ニ宮町ニ宮109番地", "143421"),      # katakana ニ typed for 二
+])
+def test_more_damaged_heads(address, lg_code):
+    assert _lg(address) == lg_code

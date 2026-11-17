@@ -27,6 +27,7 @@ from .parsers.hokkaido import HokkaidoParser
 from .parsers.fsm import BlockFSM
 from .parsers.building import BuildingParser
 from .parsers.town import (resolve_town, expand_candidates, town_variants, koaza_remainder, near_towns,
+                           unmarked_koaza, lot_series_follows,
                            TownResolution)
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
 from .core.townkey import fold_same_length, one_edit_apart, spelling_key, town_key
@@ -411,6 +412,7 @@ class AddressNormalizer:
                     tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
                     confidence = 0.85
                 elif not pref_name and not is_ambiguous:
+                    pref_rec = self.registry.get_prefecture_by_code("01")   # search Hokkaido's towns
                     pref_name = "北海道"
                     pref_code = "01"
                     is_pref_inferred = True
@@ -529,9 +531,12 @@ class AddressNormalizer:
                 # (佐賀市兵庫北). A town matching the whole text outranks a short town after the stem.
                 whole = self._global_candidates(gaz, pref_rec.stem + town_text, postal_code, has_numbers, first_number)
                 if whole:
-                    if len(town_text) >= 2:
+                    short_res = resolve_town(gaz, candidates, town_text, chome_val, postal_code, chome_explicit,
+                                             first_number) if len(town_text) >= 2 else None
+                    if short_res is not None and short_res.municipality is not None and short_res.town_verified:
                         candidates = list(candidates) + [w for w in whole if w not in candidates]
                     else:
+                        # '宮崎駅東3丁目', '兵庫塚町281': the whole text is the town, the stem is not a prefecture
                         candidates, town_text = whole, pref_rec.stem + town_text
                         pref_rec, pref_name, pref_code, is_pref_inferred = None, None, None, True
             town_res = resolve_town(gaz, candidates, town_text, chome_val, postal_code, chome_explicit, first_number)
@@ -580,7 +585,9 @@ class AddressNormalizer:
                 else:
                     confidence = 0.85 if is_pref_inferred else 0.90
                 nothing_recognized = False
-            elif chosen is None and town_res.remaining_candidates and (is_ambiguous or nothing_recognized):
+            elif chosen is None and town_res.remaining_candidates and (
+                    is_ambiguous or nothing_recognized
+                    or (pref_rec is not None and muni_rec is None and 1 < len(town_res.remaining_candidates) < len(candidates))):
                 narrowed = town_res.remaining_candidates
                 if True:
                     if nothing_recognized:
@@ -590,6 +597,12 @@ class AddressNormalizer:
                         confidence = 0.30
                         tier_map["municipality"] = TaxonomyTier.TIER_3_HEURISTIC.value
                         nothing_recognized = False
+                    elif not is_ambiguous:
+                        # Prefecture written, municipality left out, and the town is in more than one of them
+                        is_ambiguous = True
+                        city_name = None
+                        confidence = 0.50
+                        tier_map["municipality"] = TaxonomyTier.TIER_3_HEURISTIC.value
                     before = {c.lg_code for c in candidate_records}
                     after = {c.lg_code for c in narrowed}
                     if after != before:
@@ -981,8 +994,11 @@ class AddressNormalizer:
         if hit is None or hit.consumed < 2:
             return False
         after = text[hit.consumed:]
-        return (not after or after[0].isdigit() or after[0] in " -" or koaza_remainder(after)
-                or after.startswith(("丁目", "番")))
+        if (not after or after[0].isdigit() or after[0] in " -" or koaza_remainder(after)
+                or after.startswith(("丁目", "番")) or lot_series_follows(after)):
+            return True
+        koaza = re.match(r"^([^\d\s]{1,6})\d", after)            # '長篠町' + '新田東' + 11
+        return koaza is not None and unmarked_koaza(hit, koaza.group(1))
 
     def _repair_municipality(self, pref_rec: Any, muni_rec: Optional[MunicipalityRecord],
                              text: str) -> Optional[Tuple[MunicipalityRecord, str, str]]:
@@ -1051,6 +1067,25 @@ class AddressNormalizer:
 
         municipalities = self.registry.list_municipalities(pref_rec.code)
         found: List[Tuple[MunicipalityRecord, int, str]] = []
+        county = re.match(r"^(\S{1,5}?郡)\s*", folded)
+        if county:
+            # '名西郡浦庄字上浦…' (the municipality left out) and '最上郡真室川大字…' (町 left out)
+            members = [m for m in municipalities if m.county and fold_same_length(m.county) == county.group(1)]
+            rest = text[county.end():]
+            for m in members:
+                stem = fold_same_length(m.name[:-1])
+                if len(stem) >= 2 and fold_same_length(rest).startswith(stem) and reaches(m.lg_code, rest[len(stem):]):
+                    found.append((m, county.end() + len(stem), f"read '{text[:county.end() + len(stem)]}' as "
+                                  f"{m.county}{m.name}: the town after it is registered there"))
+            if not found:
+                holders = [m for m in members if reaches(m.lg_code, rest)]
+                if len(holders) == 1:
+                    found.append((holders[0], county.end(), f"the town after {holders[0].county} is in "
+                                  f"{holders[0].name}, the only one of its municipalities that has it"))
+            if len({m.lg_code for m, _, _ in found}) == 1:
+                muni, used, why = found[0]
+                return muni, text[used:].lstrip(), why
+            return None
         for m in municipalities:
             if m.entity_type == "administrative_ward":
                 continue
@@ -1067,13 +1102,13 @@ class AddressNormalizer:
             elif reaches(m.lg_code, rest):
                 found.append((m, len(stem), f"read '{text[:len(stem)]}' as {m.name}: the town after it is registered there"))
         if not found:
-            for end in range(3, min(len(folded), 8) + 1):
+            for end in range(2, min(len(folded), 8) + 1):
                 written = folded[:end]
                 if written[-1] not in "市区町村" or any(ch.isdigit() for ch in written):
                     continue
                 for m in municipalities:
-                    if m.entity_type == "administrative_ward":
-                        continue
+                    if m.entity_type == "administrative_ward" or (end == 2 and m.entity_type != "designated_city"):
+                        continue   # two characters are too few, unless a ward of that city follows ('葉市中央区')
                     target = fold_same_length(m.name)
                     if target[-1] != written[-1] or not one_edit_apart(target, written):
                         continue
@@ -1170,8 +1205,14 @@ class AddressNormalizer:
         if not lgs and town_text and has_numbers:
             # Include registered spellings the input may have shortened, so that a town written
             # '伊勢宮' does not look unique when 伊勢宮町 exists elsewhere
-            lgs = [lg for lg, m in gaz.municipalities_with_town(town_text)
-                   if m.exact or koaza_remainder(town_text[m.consumed:])]
+            found = gaz.municipalities_with_town(town_text)
+            lgs = [lg for lg, m in found if m.exact or koaza_remainder(town_text[m.consumed:])]
+            if not lgs:
+                # '吉良町中野郷中74': the longest registered 大字 the text starts with, then its 字
+                loose = [(lg, m) for lg, m in found if unmarked_koaza(m, town_text[m.consumed:])]
+                if loose:
+                    longest = max(m.consumed for _, m in loose)
+                    lgs = [lg for lg, m in loose if m.consumed == longest]
             lgs += [lg for lg in gaz.municipalities_with_exact_town([t for t, _ in town_variants(town_text, first_number)])
                     if lg not in lgs]
         if len(lgs) > _MAX_GLOBAL_TOWN_CANDIDATES:
