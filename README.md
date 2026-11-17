@@ -33,6 +33,8 @@ v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems n
 
 Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,641 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
 
+**Tested on real data.** JADEN was run on the registered address of every active corporation in Japan (5,049,462, National Tax Agency) and on the hand-typed address of every long-term-care office (223,161, Ministry of Health, Labour and Welfare). It names the right municipality for **99.98%** of the company addresses and **99.87%** of the care offices. It committed to a wrong municipality for 6 company rows, each one a row whose own municipality column is wrong, and 4 care rows. The failure patterns it exposed are fixed and pinned by tests, apart from those listed under [Real data](#real-data-every-company-and-every-care-office-in-japan-v03).
+
 ---
 
 ## What's new in v0.2
@@ -280,6 +282,58 @@ Notes on reading these numbers: autocorrect leaves 28.5% alone because two regis
 python benchmarks/jabench/evaluate_toolkit.py                 # writes results/toolkit_report.md
 python benchmarks/jabench/evaluate_toolkit.py --blocks-dir ~/.local/share/jaden/blocks
 ```
+
+### Real data: every company and every care office in Japan (v0.3)
+
+JA-AddrBench uses clean, published addresses. To see how JADEN copes with addresses as real systems hold them, it was run on two public datasets that carry their own answer key, independent of the address text and of JADEN's data:
+
+| Dataset | Addresses | Written by | Answer key used |
+| :--- | ---: | :--- | :--- |
+| National Tax Agency, 法人番号公表サイト: every active corporation (data of 2026-10-30) | 5,049,462 | the commercial registry: clean, but kept as registered, often decades ago | municipality code, postal code |
+| Ministry of Health, Labour and Welfare, 介護サービス情報公表システム: every long-term-care office (end of June 2026) | 223,161 | office staff, by hand: prefecture or municipality often left out, building glued to the number, typos | municipality code, building column (方書), coordinates, office number |
+
+"Wrong" means JADEN committed to a municipality other than the row's; "city found, ward not" means it named the right designated city but not the ward; "ambiguous" means it returned a candidate list; "rejected" means it refused the input. Rows whose own columns contradict the typed text are not scored. For the care offices the table also shows the engine before this testing (v0.3.0 as first completed, commit `bc46e89`), run through the same scripts:
+
+| Input | Addresses | Right municipality | Wrong | City found, ward not | Ambiguous, truth in the list | Rejected |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Companies: registered address | 5,049,462 | **99.98%** | 6 | 0 | 0.00% | 648 |
+| Companies: without the prefecture | 5,049,462 | **99.74%** | 40 | 0 | 0.24% | 658 |
+| Companies: postal code in front | 5,046,277 | **99.98%** | 0 | 0 | 0.00% | 623 |
+| Care offices: as typed (prefecture or municipality often missing) | 223,161 | 97.24% → **97.88%** | 20 → 13 | 225 → 11 | 1.78% → 1.83% | 1,729 → 420 |
+| Care offices: with the row's prefecture and municipality | 223,161 | 99.34% → **99.87%** | 10 → 4 | 225 → 11 | 0.00% → 0.01% | 1,123 → 120 |
+
+On a 1-in-50 sample of the company data, the engine before this testing named the right municipality for 99.81% of full addresses (0 wrong, 183 rejected); it now does for 99.99% (0 wrong, 10 rejected).
+
+| Check | Before | Now |
+| :--- | ---: | ---: |
+| Care: town verified against the registry | 99.09% | **99.28%** |
+| Companies: town verified against the registry | 98.79% ¹ | **98.94% ¹** |
+| Care: building, floor and room cut where the 方書 column cuts them | 98.82% | **99.73%** |
+| Care: one office typed differently but with the same numbers gets one match key | 92.70% | **94.98%** |
+| Companies: postal code JADEN fills in equals the registered one (both name a town's code) | 98.62% ¹ | **99.82% ¹** |
+| Care: distance from JADEN's offline point to the published one, median (丁目 / town level) | 157 m / 535 m | 157 m / 533 m |
+
+¹ On the 1-in-50 sample of the company data (100,997 addresses), where both engines were run. On all 5,049,462 company addresses, the postal code JADEN fills in equals the registered one in 99.81% of the cases where both name a town's code.
+
+**What the real data taught JADEN** (every case is now a test in `tests/test_real_data_cases.py`):
+
+- Municipality names in variant spellings: 茅ケ崎市 for 茅ヶ崎市, 保土ヶ谷区 for 保土ケ谷区, 塩釜市 for 塩竈市, 須惠町 for 須恵町, 諌早市 for 諫早市, and the registry notation 八丈島八丈町.
+- Mistyped heads, read only when the town after them is registered there: 東大阪 (市 left out), 浜松市中央小池町 (区 left out), 烏取市 (one character off), 大坂府, ｼ静岡県 (a stray character), 札幌市札幌市南区 (typed twice), 新潟県新潟市燕市 (two municipalities), 粕屋郡 (county one character off), 名西郡浦庄 (county without its municipality).
+- Buildings glued to the house number: `谷口212堀切マンション101号室` is 谷口 212 with room 101, not a town called 谷口212堀切マンション; `具志2-4-13階` is 2-4-1 and 3階.
+- A 丁目 the registry does not list yet, or records as a 字 name, is accepted with a warning instead of being rejected.
+- Town forms: Sapporo's 平和通7丁目南, Sakai's 北条町1丁, a 字 typed without 字 (吉良町中野郷中), 市ヶ谷加賀町 for 市谷加賀町, 武蔵丘 for 武蔵ケ丘, 小舟町 for 日本橋小舟町, Kyoto clauses with several turns, and places without a lot number (番外地, 無番地).
+- Postal codes of towns split between codes (北一条西 1–19丁目 / 20–28丁目) are chosen by 丁目.
+- Japan Post's romaji file changed to letter-by-letter spelling (`SHIBAKOUEN`); the data build converts it back to the Hepburn spelling used on mail.
+
+**What is left.** On the company data, the addresses JADEN cannot verify down to the town mostly use names replaced since the company registered (the registry holds only current names), or carry a pre-war address in brackets. Each of the 6 "wrong" answers on full addresses is a row whose municipality column disagrees with the address it holds (入間市 for an address in 入間郡越生町, 羽島市 for one in 羽島郡岐南町, 福岡市中央区 for one in 南区); JADEN reads the address correctly. Without the prefecture, 40 addresses go to a wrong place, most of them old town names that now exist only in a same-named ward elsewhere (`北区中里町`, `中央区入船町`). On the care data, the remaining rejections are damaged heads (`庫県`, `鈴岡県`, `ちばけん`, a space after every character), most remaining wrong answers are rows whose typed address and own columns point to different places, and town-only inputs that fit several places are returned as AMBIGUOUS with the right municipality among the candidates, not guessed.
+
+```bash
+python benchmarks/realdata/download.py care companies   # about 360 MB, into ~/.cache/jaden-realdata
+python benchmarks/realdata/evaluate_care.py             # about a minute on 4 processes
+python benchmarks/realdata/evaluate_companies.py        # 20 minutes on 4 processes; --every 50 for a sample
+```
+
+Reports with examples of every outcome: `benchmarks/realdata/results/`.
 
 ### Speed (v0.1 parser)
 

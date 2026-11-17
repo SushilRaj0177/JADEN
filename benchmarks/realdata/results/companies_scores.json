@@ -1,0 +1,61 @@
+{
+ "rows": 5049462,
+ "every": 1,
+ "seconds": 1214.9,
+ "provenance": {
+  "source": "https://www.houjin-bangou.nta.go.jp/download/zenken/",
+  "publisher": "国税庁 法人番号公表サイト",
+  "licence": "法人番号公表サイト利用規約",
+  "as_of": "2026-10-30",
+  "file": "00_zenkoku_all_20261030.csv",
+  "rows_bytes": 1271085906,
+  "bytes": 268401975,
+  "sha256": "cf5f969ddc3619165a1b6f2438500c21b6f7e553895d092fbf36e1bcf1dcaebd",
+  "downloaded": "2026-11-17"
+ },
+ "outcomes": {
+  "full": {
+   "correct": 5048534,
+   "rejected: UNSUPPORTED": 456,
+   "row carries a municipality code that no longer exists": 207,
+   "rejected: MALFORMED": 192,
+   "correct (ward found; the row has only the city code)": 67,
+   "wrong": 6
+  },
+  "no prefecture": {
+   "correct": 5036231,
+   "ambiguous, truth listed": 12284,
+   "rejected: UNSUPPORTED": 480,
+   "row carries a municipality code that no longer exists": 182,
+   "rejected: MALFORMED": 178,
+   "correct (ward found; the row has only the city code)": 67,
+   "wrong": 40
+  },
+  "with postal code": {
+   "correct": 5045484,
+   "rejected: UNSUPPORTED": 449,
+   "rejected: MALFORMED": 174,
+   "row carries a municipality code that no longer exists": 170
+  },
+  "town": {
+   "town verified": 4994100,
+   "no town written": 32406,
+   "town not in the registry": 22095
+  },
+  "postal": {
+   "filled in, same as registered": 4961147,
+   "not filled in": 48844,
+   "filled in the town's code; the row has the municipality-wide one": 23023,
+   "filled in, different from registered": 9204,
+   "registered code is not an area code (business code or retired)": 3264
+  },
+  "precision": {
+   "house": 4348080,
+   "unit": 612330,
+   "block": 58339,
+   "municipality": 24754,
+   "chome": 3181,
+   "town": 1917
+  }
+ }
+}
