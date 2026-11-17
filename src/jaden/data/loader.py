@@ -150,8 +150,13 @@ class AddressDataRegistry:
         """Administrative wards of a designated city (empty for any other municipality)."""
         if city_record.entity_type != "designated_city":
             return []
-        return [m for m in self.list_municipalities(city_record.prefecture_code)
-                if m.entity_type == "administrative_ward" and m.city == city_record.city]
+        cache = self.__dict__.setdefault("_wards_cache", {})
+        wards = cache.get(city_record.lg_code)
+        if wards is None:
+            wards = [m for m in self.list_municipalities(city_record.prefecture_code)
+                     if m.entity_type == "administrative_ward" and m.city == city_record.city]
+            cache[city_record.lg_code] = wards
+        return list(wards)
 
     def get_provenance(self) -> Dict[str, Any]:
         """Loads and returns the authoritative data provenance metadata."""

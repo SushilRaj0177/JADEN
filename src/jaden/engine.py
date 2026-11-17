@@ -226,7 +226,8 @@ class AddressNormalizer:
             # '大阪府東大阪岩田町…' (市 left out), '静岡県浜松市中央小池町…' (区 left out),
             # '鳥取県烏取市古海…', '熊本市通央区…' (one character wrong): read as the registered name
             # when the town after it is registered there and nothing else reads the text
-            repaired_admin = self._repair_municipality(pref_rec, muni_rec, post_admin_text)
+            repaired_admin = None if self._reads_as_written(muni_rec, post_admin_text) else \
+                self._repair_municipality(pref_rec, muni_rec, post_admin_text)
             if repaired_admin is not None:
                 muni_rec, post_admin_text, why = repaired_admin
                 notes.append(why)
@@ -1043,12 +1044,24 @@ class AddressNormalizer:
         numbers = [block[k] for k in ("chome", "ban", "banchi") if block[k] is not None]
         if not town_text or not numbers:
             return None
-        candidates = expand_candidates(self.registry, None, (), pref_rec.code)
+        # Only municipalities of this prefecture that have a town of that name
+        holders = {lg for lg, m in gaz.municipalities_with_town(town_text) if lg[:2] == pref_rec.code and m.exact}
+        candidates = [r for r in (self.registry.get_municipality_by_code(lg) for lg in sorted(holders)) if r]
+        if not candidates:
+            return None
         res = resolve_town(gaz, candidates, town_text, block["chome"], None, block["chome_explicit"], numbers[0])
         if (res.municipality is None or not res.town_verified or res.match is None or not res.match.exact
                 or res.chome_verified is False or res.chome_unlisted):
             return None
         return res.municipality
+
+    def _reads_as_written(self, muni_rec: Optional[MunicipalityRecord], text: str) -> bool:
+        """True when a registered town of the municipality (or of one of its wards) runs from the start of
+        the text up to its block number: nothing about the municipality needs repairing."""
+        if muni_rec is None or not text:
+            return False
+        pool = self.registry.wards_of(muni_rec) or [muni_rec]
+        return any(self._town_reaches_number(m.lg_code, text) for m in pool)
 
     def _town_reaches_number(self, lg_code: str, text: str) -> bool:
         """True when a registered town of the municipality covers ``text`` up to its block number."""

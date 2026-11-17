@@ -247,6 +247,7 @@ class Gazetteer:
         self._block_tables: Dict[str, Optional[_Table]] = {}
         self._blocks: Dict[str, Dict[Tuple[str, int, int], BlockPoint]] = {}
         self._lock = threading.RLock()  # re-entrant: loaders call each other
+        self._match_cache: Dict[Tuple[str, str], Optional["TownMatch"]] = {}
 
     # ------------------------------------------------------------------ load
     @property
@@ -343,6 +344,10 @@ class Gazetteer:
         """
         if not text:
             return None
+        cache_key = (lg_code, text)
+        if cache_key in self._match_cache:
+            return self._match_cache[cache_key]
+        found: Optional[TownMatch] = None
         clipped = text[:_MAX_KEY_CHARS]
         for towns in (self.towns_in(lg_code), self.postal_towns_in(lg_code)):
             if not towns:
@@ -350,8 +355,14 @@ class Gazetteer:
             for end in range(len(clipped), 0, -1):
                 entry = towns.get(town_key(clipped[:end]))
                 if entry is not None:
-                    return TownMatch(lg_code, entry, end, exact=(end == len(text)))
-        return None
+                    found = TownMatch(lg_code, entry, end, exact=(end == len(text)))
+                    break
+            if found is not None:
+                break
+        if len(self._match_cache) > 20_000:
+            self._match_cache.clear()
+        self._match_cache[cache_key] = found
+        return found
 
     def postal_towns_in(self, lg_code: str) -> Dict[str, TownEntry]:
         """Towns Japan Post lists for a municipality that the MLIT list does not have."""

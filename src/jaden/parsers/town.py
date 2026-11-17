@@ -415,21 +415,41 @@ def near_towns(gaz: Gazetteer, lg_code: str, town_text: str) -> List[str]:
     if len(key) < 2:
         return []
     out: List[str] = []
-    for towns in (gaz.towns_in(lg_code), gaz.postal_towns_in(lg_code)):
-        for entry in towns.values():
-            other = spelling_key(entry.name)
-            # A town is also written with 町 after its registered name ('石井町' for 大字石井), and a typo of
-            # that form must count too, or '石崎町' would look like it can only mean 石松町
-            for form in (other, other + "町") if not other.endswith("町") else (other,):
-                if not one_edit_apart(key, form):
-                    continue
-                if len(key) == len(form):
-                    diff = [(a, b) for a, b in zip(key, form) if a != b]
-                    if all(is_numeral(a) and is_numeral(b) for a, b in diff):
-                        continue
-                if entry.name not in out:
-                    out.append(entry.name)
+    for form, name in _spelling_forms(gaz, lg_code).get(len(key), ()) + \
+            _spelling_forms(gaz, lg_code).get(len(key) - 1, ()) + _spelling_forms(gaz, lg_code).get(len(key) + 1, ()):
+        if not one_edit_apart(key, form):
+            continue
+        if len(key) == len(form):
+            diff = [(a, b) for a, b in zip(key, form) if a != b]
+            if all(is_numeral(a) and is_numeral(b) for a, b in diff):
+                continue
+        if name not in out:
+            out.append(name)
     return out
+
+
+_SPELLING_FORMS: "dict[tuple[int, str], dict[int, tuple[tuple[str, str], ...]]]" = {}
+
+
+def _spelling_forms(gaz: Gazetteer, lg_code: str) -> "dict[int, tuple[tuple[str, str], ...]]":
+    """(spelling, registered name) of every town of a municipality, grouped by length (cached).
+
+    A town is also written with 町 after its registered name ('石井町' for 大字石井), and a typo of that
+    form must count too, or '石崎町' would look like it can only mean 石松町."""
+    cache_key = (id(gaz), lg_code)
+    found = _SPELLING_FORMS.get(cache_key)
+    if found is None:
+        by_len: "dict[int, list[tuple[str, str]]]" = {}
+        for towns in (gaz.towns_in(lg_code), gaz.postal_towns_in(lg_code)):
+            for entry in towns.values():
+                other = spelling_key(entry.name)
+                for form in (other, other + "町") if not other.endswith("町") else (other,):
+                    by_len.setdefault(len(form), []).append((form, entry.name))
+        found = {n: tuple(v) for n, v in by_len.items()}
+        if len(_SPELLING_FORMS) > 4096:
+            _SPELLING_FORMS.clear()
+        _SPELLING_FORMS[cache_key] = found
+    return found
 
 
 def expand_candidates(registry, municipality: Optional[MunicipalityRecord],
