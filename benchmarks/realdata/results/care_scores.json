@@ -1,7 +1,7 @@
 {
  "rows": 223161,
  "every": 1,
- "seconds": 41.0,
+ "seconds": 40.2,
  "provenance": {
   "source": "https://www.mhlw.go.jp/stf/kaigo-kouhyou_opendata.html",
   "publisher": "厚生労働省 介護サービス情報公表システム",
@@ -188,33 +188,33 @@
  },
  "outcomes": {
   "as typed": {
-   "correct": 218425,
+   "correct": 218427,
    "ambiguous, truth listed": 4091,
-   "rejected: MALFORMED": 294,
+   "rejected: MALFORMED": 293,
    "not scored: the typed address and the row's columns name different municipalities": 128,
    "rejected: UNSUPPORTED": 127,
    "ambiguous, truth not listed": 59,
    "wrong": 13,
-   "city only: the ward was not resolved": 12,
-   "row carries a municipality code that no longer exists": 12
+   "row carries a municipality code that no longer exists": 12,
+   "city only: the ward was not resolved": 11
   },
   "with the prefecture and municipality columns": {
-   "correct": 222876,
+   "correct": 222878,
    "not scored: the typed address and the row's columns name different municipalities": 120,
    "rejected: UNSUPPORTED": 95,
-   "rejected: MALFORMED": 26,
+   "rejected: MALFORMED": 25,
    "row carries a municipality code that no longer exists": 15,
    "ambiguous, truth listed": 13,
-   "city only: the ward was not resolved": 12,
+   "city only: the ward was not resolved": 11,
    "wrong": 4
   },
   "town": {
-   "town verified": 221294,
-   "town not in the registry": 1018,
+   "town verified": 221274,
+   "town not in the registry": 1040,
    "no town written": 564
   },
   "building": {
-   "same address, building separated": 47682,
+   "same address, building separated": 47683,
    "not scored: the 方書 column holds only part of the building text": 1285,
    "not decidable: the publisher glued a number to the house number": 632,
    "address changes when the building is attached": 103,
@@ -222,13 +222,13 @@
    "same address, building text dropped": 25
   },
   "same office": {
-   "all spellings share one key": 9807,
+   "all spellings share one key": 9804,
    "not scored: the spellings carry different numbers (a move, or a typo in the data)": 1316,
-   "spellings get different keys": 355,
+   "spellings get different keys": 358,
    "a spelling could not be keyed": 160
   },
   "precision": {
-   "house": 190249,
+   "house": 190251,
    "unit": 17278,
    "block": 15128,
    "chome": 155,

@@ -1,6 +1,6 @@
 # Real data: long-term-care office addresses (Ministry of Health, Labour and Welfare)
 
-Source: 介護サービス情報公表システム オープンデータ (data as of 2026年６月末時点, CC BY). Rows used: every office row with an address: **223,161**. Processed in 41 s on 4 processes.
+Source: 介護サービス情報公表システム オープンデータ (data as of 2026年６月末時点, CC BY). Rows used: every office row with an address: **223,161**. Processed in 40 s on 4 processes.
 
 Every row is a real office, so the right municipality outcome is always `correct`.
 
@@ -8,28 +8,28 @@ Every row is a real office, so the right municipality outcome is always `correct
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| correct | 218,425 | 97.88% |
+| correct | 218,427 | 97.88% |
 | ambiguous, truth listed | 4,091 | 1.83% |
-| rejected: MALFORMED | 294 | 0.13% |
+| rejected: MALFORMED | 293 | 0.13% |
 | not scored: the typed address and the row's columns name different municipalities | 128 | 0.06% |
 | rejected: UNSUPPORTED | 127 | 0.06% |
 | ambiguous, truth not listed | 59 | 0.03% |
 | wrong | 13 | 0.01% |
-| city only: the ward was not resolved | 12 | 0.01% |
 | row carries a municipality code that no longer exists | 12 | 0.01% |
+| city only: the ward was not resolved | 11 | 0.00% |
 | **all** | 223,161 |  |
 
 ## With the row's prefecture and municipality columns put in front where the text lacks them
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| correct | 222,876 | 99.87% |
+| correct | 222,878 | 99.87% |
 | not scored: the typed address and the row's columns name different municipalities | 120 | 0.05% |
 | rejected: UNSUPPORTED | 95 | 0.04% |
-| rejected: MALFORMED | 26 | 0.01% |
+| rejected: MALFORMED | 25 | 0.01% |
 | row carries a municipality code that no longer exists | 15 | 0.01% |
 | ambiguous, truth listed | 13 | 0.01% |
-| city only: the ward was not resolved | 12 | 0.01% |
+| city only: the ward was not resolved | 11 | 0.00% |
 | wrong | 4 | 0.00% |
 | **all** | 223,161 |  |
 
@@ -37,10 +37,10 @@ Every row is a real office, so the right municipality outcome is always `correct
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| town verified | 221,294 | 99.29% |
-| town not in the registry | 1,018 | 0.46% |
+| town verified | 221,274 | 99.28% |
+| town not in the registry | 1,040 | 0.47% |
 | no town written | 564 | 0.25% |
-| **all** | 222,876 |  |
+| **all** | 222,878 |  |
 
 ## Building, floor and room against the 方書 column
 
@@ -48,13 +48,13 @@ Rows whose typed address ends with the text of the 方書 column. The address is
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| same address, building separated | 47,682 | 95.76% |
+| same address, building separated | 47,683 | 95.76% |
 | not scored: the 方書 column holds only part of the building text | 1,285 | 2.58% |
 | not decidable: the publisher glued a number to the house number | 632 | 1.27% |
 | address changes when the building is attached | 103 | 0.21% |
 | not scored: the 方書 column holds the house number too | 66 | 0.13% |
 | same address, building text dropped | 25 | 0.05% |
-| **all** | 49,793 |  |
+| **all** | 49,794 |  |
 
 ## The same office listed several times with different spellings
 
@@ -62,13 +62,13 @@ Offices (by 事業所番号) whose rows carry two or more different address stri
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| all spellings share one key | 9,807 | 84.27% |
+| all spellings share one key | 9,804 | 84.24% |
 | not scored: the spellings carry different numbers (a move, or a typo in the data) | 1,316 | 11.31% |
-| spellings get different keys | 355 | 3.05% |
+| spellings get different keys | 358 | 3.08% |
 | a spelling could not be keyed | 160 | 1.37% |
 | **all** | 11,638 |  |
 
-Of the offices whose spellings carry the same numbers, **95.01%** get one key (9,807 of 10,322).
+Of the offices whose spellings carry the same numbers, **94.98%** get one key (9,804 of 10,322).
 
 ## Distance from JADEN's offline point to the published coordinates
 
@@ -76,20 +76,20 @@ The published coordinates come from the publishing system's own geocoding, so th
 
 | JADEN point level | Addresses | Median distance | Within 1 km | Over 20 km |
 | :--- | ---: | ---: | ---: | ---: |
-| town | 124,201 | 533 m | 73.9% | 0.33% |
-| chome | 96,323 | 157 m | 98.5% | 0.51% |
+| town | 124,183 | 533 m | 73.9% | 0.33% |
+| chome | 96,321 | 157 m | 98.5% | 0.51% |
 
 ## Precision reached
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| house | 190,249 | 85.36% |
+| house | 190,251 | 85.36% |
 | unit | 17,278 | 7.75% |
 | block | 15,128 | 6.79% |
 | chome | 155 | 0.07% |
 | town | 65 | 0.03% |
 | municipality | 1 | 0.00% |
-| **all** | 222,876 |  |
+| **all** | 222,878 |  |
 
 ## Examples of what is not `correct`
 
@@ -104,7 +104,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 玉沢９０番地 | AMBIGUOUS: 玉沢90番地 | Omitted prefecture matches 2 statutory municipalities. |
 | 若宮二丁目41番22号 | AMBIGUOUS: 若宮2丁目41番22号 | Omitted prefecture matches 47 statutory municipalities. |
 
-**as typed: rejected: MALFORMED** (294)
+**as typed: rejected: MALFORMED** (293)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -159,17 +159,6 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 追分町6丁目18-23 | ACCEPTED: 愛知県大府市追分町6丁目18番23号 | resolved 9 candidate municipalities to 愛知県大府市 by town '追分町' |
 | 下立売通黒門西入橋西二丁目648 | ACCEPTED: 京都府京都市中京区下立売通黒門西入橋西町2丁目648番地 | resolved 11 candidate municipalities to 京都府京都市中京区 by town '橋西町' |
 
-**as typed: city only: the ward was not resolved** (12)
-
-| Input | JADEN | Message |
-| :--- | :--- | :--- |
-| 北海道札幌市本町１条４丁目１－１８ヤマモトビル１階 | ACCEPTED: 北海道札幌市本町1条4丁目1番18号 ヤマモトビル 1階 | town '本町1条' is not registered in any ward of 札幌市 |
-| 愛知県名古屋市西新12-9 | ACCEPTED: 愛知県名古屋市西新12番9号 | town '西新' is not registered in any ward of 名古屋市 |
-| 広島市県広島市安佐南区伴東7丁目55番9号villa大原駅前101号 | ACCEPTED: 広島県広島市県広島市安佐南区伴東7丁目55番9号 villa大原駅前 101号 | town '県広島市安佐南区伴東' is not registered in any ward of 広島市 |
-| 岡山県岡山市南福田95-2 | ACCEPTED: 岡山県岡山市南福田95番2号 | town '南福田' is not registered in any ward of 岡山市 |
-| 静岡県浜松市区中央曳馬3－39－22 | ACCEPTED: 静岡県浜松市区中央曳馬3丁目39番22号 | town '区中央曳馬' is not registered in any ward of 浜松市 |
-| 静岡県浜松市名北区中瀬6569-1 | ACCEPTED: 静岡県浜松市名北区中瀬6569番1号 | town '名北区中瀬' is not registered in any ward of 浜松市 |
-
 **as typed: row carries a municipality code that no longer exists** (12)
 
 | Input | JADEN | Message |
@@ -180,6 +169,17 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 静岡県浜松市浜名区横須賀63－5 | ACCEPTED: 静岡県浜松市浜名区横須賀63番5号 | Municipality and town verified against official registries. |
 | 静岡県浜松市中区高丘東4丁目5-4Sコープ　S-1号室 | ACCEPTED: 静岡県浜松市中央区高丘東4丁目5番4号 Sコープ S 1号室 | 浜松市中区 no longer exists; its area is now part of 静岡県浜松市中央区 |
 | 静岡県浜松市西区村櫛町4218番地の1 | ACCEPTED: 静岡県浜松市中央区村櫛町4218番地の1 | 浜松市西区 no longer exists; its area is now part of 静岡県浜松市中央区 |
+
+**as typed: city only: the ward was not resolved** (11)
+
+| Input | JADEN | Message |
+| :--- | :--- | :--- |
+| 愛知県名古屋市西新12-9 | ACCEPTED: 愛知県名古屋市西新12番9号 | town '西新' is not registered in any ward of 名古屋市 |
+| 広島市県広島市安佐南区伴東7丁目55番9号villa大原駅前101号 | ACCEPTED: 広島県広島市県広島市安佐南区伴東7丁目55番9号 villa大原駅前 101号 | town '県広島市安佐南区伴東' is not registered in any ward of 広島市 |
+| 岡山県岡山市南福田95-2 | ACCEPTED: 岡山県岡山市南福田95番2号 | town '南福田' is not registered in any ward of 岡山市 |
+| 静岡県浜松市区中央曳馬3－39－22 | ACCEPTED: 静岡県浜松市区中央曳馬3丁目39番22号 | town '区中央曳馬' is not registered in any ward of 浜松市 |
+| 静岡県浜松市名北区中瀬6569-1 | ACCEPTED: 静岡県浜松市名北区中瀬6569番1号 | town '名北区中瀬' is not registered in any ward of 浜松市 |
+| 広島県広島市東戸坂大上4丁目21番18号 | ACCEPTED: 広島県広島市東戸坂大上4丁目21番18号 | town '東戸坂大上' is not registered in any ward of 広島市 |
 
 **with the prefecture and municipality columns: not scored: the typed address and the row's columns name different municipalities** (120)
 
@@ -203,7 +203,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 宮崎県北諸県三股町大字樺山4836番26 | UNSUPPORTED: 宮崎県北諸県三股町大字樺山4836番地の26 | Administrative entity could not be resolved to a local government code. |
 | 富山県富山市水橋辻 | UNSUPPORTED: 富山県富山市水橋辻 | town '水橋辻' is not registered in 富山市 |
 
-**with the prefecture and municipality columns: rejected: MALFORMED** (26)
+**with the prefecture and municipality columns: rejected: MALFORMED** (25)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -236,16 +236,16 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 大阪府寿町4-5-20 | AMBIGUOUS: 大阪府寿町4丁目5番20号 | Ambiguous administrative jurisdiction matches 6 candidates. |
 | 宮崎県桜ヶ丘二丁目506-16 | AMBIGUOUS: 宮崎県桜ヶ丘2丁目506番16号 | Ambiguous administrative jurisdiction matches 2 candidates. |
 
-**with the prefecture and municipality columns: city only: the ward was not resolved** (12)
+**with the prefecture and municipality columns: city only: the ward was not resolved** (11)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
-| 北海道札幌市本町１条４丁目１－１８ヤマモトビル１階 | ACCEPTED: 北海道札幌市本町1条4丁目1番18号 ヤマモトビル 1階 | town '本町1条' is not registered in any ward of 札幌市 |
 | 愛知県名古屋市西新12-9 | ACCEPTED: 愛知県名古屋市西新12番9号 | town '西新' is not registered in any ward of 名古屋市 |
 | 広島市県広島市安佐南区伴東7丁目55番9号villa大原駅前101号 | ACCEPTED: 広島県広島市県広島市安佐南区伴東7丁目55番9号 villa大原駅前 101号 | town '県広島市安佐南区伴東' is not registered in any ward of 広島市 |
 | 岡山県岡山市南福田95-2 | ACCEPTED: 岡山県岡山市南福田95番2号 | town '南福田' is not registered in any ward of 岡山市 |
 | 静岡県浜松市区中央曳馬3－39－22 | ACCEPTED: 静岡県浜松市区中央曳馬3丁目39番22号 | town '区中央曳馬' is not registered in any ward of 浜松市 |
 | 静岡県浜松市名北区中瀬6569-1 | ACCEPTED: 静岡県浜松市名北区中瀬6569番1号 | town '名北区中瀬' is not registered in any ward of 浜松市 |
+| 広島県広島市東戸坂大上4丁目21番18号 | ACCEPTED: 広島県広島市東戸坂大上4丁目21番18号 | town '東戸坂大上' is not registered in any ward of 広島市 |
 
 **with the prefecture and municipality columns: wrong** (4)
 
@@ -256,7 +256,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 熊本県熊本市流通団地2-20-1センコービル2階 | ACCEPTED: 熊本県熊本市南区流通団地2丁目20番1号 センコービル 2階 | resolved 5 candidate municipalities to 熊本県熊本市南区 by town '流通団地' |
 | 兵庫県赤穂市上郡町竹万381-5シャイン上郡 | ACCEPTED: 兵庫県赤穂郡上郡町竹万381番5号 シャイン上郡 | two municipalities are written; read the second, 上郡町, where the town is registered |
 
-**town: town not in the registry** (1,018)
+**town: town not in the registry** (1,040)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
