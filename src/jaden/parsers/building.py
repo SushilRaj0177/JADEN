@@ -17,7 +17,7 @@ from typing import Optional, Tuple, Final
 # Floor patterns: e.g. '50F', '50階', 'B1F', '地下1階', '3f'
 # In Japanese, CJK characters (e.g. 'タワー') are \w, so \b before digits fails.
 _FLOOR_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"(?P<floor>(?:B\d+|\d+|地下\d+)[\s]*(?:階|[Ff]))(?:\s|$|[A-Za-z0-9])?",
+    r"(?P<floor>(?:B\d+|\d+|地下\d+)[\s]*(?:階|[Ff](?![a-z])))",
 )
 
 # A basement level written alone after the building name: 'サカエチカ B1'
@@ -25,7 +25,7 @@ _BASEMENT_TOKEN: Final[re.Pattern[str]] = re.compile(r"(?:^|\s)(?P<floor>B\d{1,2
 
 # Room / Unit patterns: e.g. '301号室', '502号', '101号室'
 _ROOM_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"(?P<room>\d+[\s]*(?:号室|号)|(?:^|\s)\d{3,4}(?:\s|$))"
+    r"(?P<room>\d+[\s]*(?:号室|号(?!棟|館|地))|(?:^|\s)\d{3,4}(?:\s|$))"
 )
 
 # English unit labels: '#302', 'Apt 302', 'Apt. 302', 'Room 302', 'Rm 302', 'Unit 302'

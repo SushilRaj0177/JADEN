@@ -15,6 +15,20 @@ from ..models.codes import AddressRegime
 
 _KANJI_NUM_CHARS: Final[str] = "".join(list(KANJI_DIGITS.keys()) + list(KANJI_POWERS.keys()))
 _NUM_TOKEN: Final[str] = rf"(?:\d+|[{_KANJI_NUM_CHARS}]+)"
+# The number after 番 / 番地. Written in kanji it needs a mark around it ('番地の三', '番三号'): the 三 of
+# '675番地三田市総合福祉保健センター' starts a name. 号 before 室 belongs to the room ('20番地12号室').
+_GO_AFTER_BAN: Final[str] = (
+    rf"(?:(?:の|-)(?P<go>{_NUM_TOKEN})(?:号(?!室))?"
+    rf"|(?P<go_plain>\d+)(?:号(?!室))?"
+    rf"|(?P<go_kanji>[{_KANJI_NUM_CHARS}]+)(?:号(?!室)|(?=\s|$)))?"
+)
+_TOWN_ANY: Final[str] = r"(?P<town>.*?)"
+_TOWN_NONE: Final[str] = r"(?P<town>)"
+# A number that is part of a place name, not a block number: '9条', '2線', '5区', '8地割', '6番町'
+_NUMBER_IN_NAME: Final[re.Pattern[str]] = re.compile(
+    r"^\d+(?:条|線|区|組|班|部|地割|街区|工区|番町|番丁|番耕地|耕地|号地|号線|丁(?!目)|の町|ノ町|の割|ノ割|軒|号(?=\D*\d+線)|-\d+線)")
+# A floor or room mark standing right after the block numbers with no number of its own
+_BARE_MARK: Final[re.Pattern[str]] = re.compile(r"^(?:階|[Ff](?![A-Za-z])|号室|号(?!館|棟|地|線))")
 
 
 def _parse_num(token: Optional[str]) -> Optional[int]:
@@ -25,6 +39,10 @@ def _parse_num(token: Optional[str]) -> Optional[int]:
     if token.isdigit():
         return int(token)
     return parse_kanji_number(token)
+
+
+def _go_of(m: "re.Match[str]") -> Optional[str]:
+    return m.group("go") or m.group("go_plain") or m.group("go_kanji")
 
 
 def extract_aza(town_raw: str) -> Tuple[Optional[str], Optional[str]]:
@@ -64,6 +82,51 @@ class BlockFSM:
             Tuple of (result_dict, town_name, remaining_tail).
         """
         text = text.strip()
+        result, town, tail = BlockFSM._parse(text, has_chome_already, _TOWN_ANY)
+        # The block number is the first number after the town. A later, better-labelled number
+        # belongs to the building: '谷口212堀切マンション101号室' is 谷口 212, not 谷口212堀切マンション 101号.
+        first = re.search(r"\d", town)
+        if first and town[:first.start()].strip() and not _NUMBER_IN_NAME.match(town[first.start():]):
+            start = text.index(town) + first.start()
+            anchored = BlockFSM._parse(text[start:], has_chome_already, _TOWN_NONE)
+            if not anchored[1] and any(anchored[0][k] is not None for k in ("chome", "ban", "banchi")):
+                found = anchored[0]
+                head = text[:start].strip()
+                found["oaza"], found["koaza"] = extract_aza(head)
+                if (found["oaza"] or found["koaza"]) and found["chome"] is None and found["ban"] is not None:
+                    found.update(banchi=found["ban"], edaban=found["go"], ban=None, go=None,
+                                 address_regime=AddressRegime.CHIBAN.value)
+                result, town, tail = found, head, anchored[2]
+        return BlockFSM._floor_or_room_glued(result, town, tail)
+
+    @staticmethod
+    def _floor_or_room_glued(result: Dict[str, Any], town: str, tail: str) -> Tuple[Dict[str, Any], str, str]:
+        """'2-4-13階' is 2-4-1 and 3階; '13-1105号' is 13-1 and 105号: a floor or room mark with no number of
+        its own takes the digits it needs from the end of the last block number."""
+        mark = _BARE_MARK.match(tail)
+        if not mark:
+            return result, town, tail
+        key = next((k for k in ("go", "edaban", "ban", "banchi") if result[k] is not None), None)
+        if key is None:
+            return result, town, tail
+        digits = str(result[key])
+        only_number = key in ("ban", "banchi") and result["chome"] is None
+        if mark.group(0) in ("階", "F", "f"):
+            take = 2 if (digits.endswith("0") and len(digits) >= 2) else 1
+        elif mark.group(0) == "号室":
+            take = 3 if len(digits) >= 4 else len(digits)
+        else:  # 号
+            take = 3 if len(digits) >= 4 else 0
+        if take == 0 or (take >= len(digits) and only_number):
+            return result, town, tail
+        kept = digits[:-take]
+        result[key] = int(kept) if kept else None
+        return result, town, digits[-take:] + tail
+
+    @staticmethod
+    def _parse(text: str, has_chome_already: bool, town_pattern: str) -> Tuple[Dict[str, Any], str, str]:
+        """One pass over ``text``. ``town_pattern`` is the regular expression for the town before the
+        numbers: anything, or nothing when the numbers must start the text."""
         result: Dict[str, Any] = {
             "chome": None,
             "ban": None,
@@ -82,7 +145,7 @@ class BlockFSM:
         # =====================================================================
         # STATE 1: Explicit '丁目' marker present in string
         # =====================================================================
-        chome_match = re.search(rf"^(?P<town>.*?)(?P<chome>{_NUM_TOKEN})丁目(?P<rest>.*)$", text)
+        chome_match = re.search(rf"^{town_pattern}(?P<chome>{_NUM_TOKEN})丁目(?P<rest>.*)$", text)
         if chome_match:
             town = chome_match.group("town").strip()
             oaza, koaza = extract_aza(town)
@@ -96,12 +159,12 @@ class BlockFSM:
             # Parse numbers in rest following 丁目:
             # 1a. Named ban/banchi: '10番1号', '10番地の1', '10番地1'
             sub_named = re.search(
-                rf"^(?P<ban>{_NUM_TOKEN})(?P<suffix>番地の|番地|番)(?:(?:の|-)?(?P<go>{_NUM_TOKEN})号?)?(?P<tail>.*)$",
+                rf"^(?P<ban>{_NUM_TOKEN})(?P<suffix>番地の|番地|番){_GO_AFTER_BAN}(?P<tail>.*)$",
                 rest
             )
             if sub_named:
                 ban_val = _parse_num(sub_named.group("ban"))
-                go_val = _parse_num(sub_named.group("go"))
+                go_val = _parse_num(_go_of(sub_named))
                 suffix = sub_named.group("suffix")
 
                 if "番地" in suffix:
@@ -136,7 +199,7 @@ class BlockFSM:
         # Evaluated before Named 番 to protect hyphenated town names with numbers
         # =====================================================================
         hyphen_match = re.search(
-            r"^(?P<town>.*?)(?P<n1>\d+)-(?P<n2>\d+)(?:-(?P<n3>\d+))?(?P<tail>.*)$",
+            rf"^{town_pattern}(?P<n1>\d+)-(?P<n2>\d+)(?:-(?P<n3>\d+))?(?P<tail>.*)$",
             text
         )
         if hyphen_match:
@@ -185,13 +248,13 @@ class BlockFSM:
         # STATE 3: Explicit '番地' or '番' marker present (no 丁目, no hyphen)
         # =====================================================================
         ban_match = re.search(
-            rf"^(?P<town>.*?)(?P<ban>{_NUM_TOKEN})(?P<suffix>番地の|番地|番(?!町|丁|街|館|割|組|場|屋|通|筋))(?:(?:の|-)?(?P<go>{_NUM_TOKEN})号?)?(?P<tail>.*)$",
+            rf"^{town_pattern}(?P<ban>{_NUM_TOKEN})(?P<suffix>番地の|番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)){_GO_AFTER_BAN}(?P<tail>.*)$",
             text
         )
         if ban_match:
             raw_ban = ban_match.group("ban")
             suffix = ban_match.group("suffix")
-            go_str = ban_match.group("go")
+            go_str = _go_of(ban_match)
             # Protect proper nouns like 麻布十番 (Kanji numeral + bare 番 with no go)
             is_pure_kanji_ban = any(c in _KANJI_NUM_CHARS for c in raw_ban) and not any(c.isdigit() for c in raw_ban)
             if suffix == "番" and is_pure_kanji_ban and not go_str:
@@ -225,7 +288,7 @@ class BlockFSM:
         # =====================================================================
         # 4a. Explicit statutory lot/unit marker (番地, 番, 号)
         single_marked = re.search(
-            rf"^(?P<town>.*?)(?P<num>{_NUM_TOKEN})(?P<suffix>番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)|号)(?P<tail>.*)$",
+            rf"^{town_pattern}(?P<num>{_NUM_TOKEN})(?P<suffix>番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)|号(?!室))(?P<tail>.*)$",
             text
         )
         if single_marked:
@@ -251,7 +314,7 @@ class BlockFSM:
 
         # 4b. Bare trailing number: strictly ASCII digits to avoid consuming Kanji numerals in town names
         # e.g. '六本木1', '十条1', '一番町1', '八重洲1', '登大路町30', '一箕町大字亀賀字郷之原1'
-        single_bare = re.search(r"^(?P<town>.*?)(?P<num>\d+)(?P<tail>.*)$", text)
+        single_bare = re.search(rf"^{town_pattern}(?P<num>\d+)(?P<tail>.*)$", text)
         if single_bare:
             town = single_bare.group("town").strip()
             oaza, koaza = extract_aza(town)

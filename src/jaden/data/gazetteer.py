@@ -15,12 +15,14 @@ Data directory resolution (first match wins):
 3. the files bundled inside the package
 """
 
+import bisect
 import gzip
 import json
 import math
 import os
 import re
 import threading
+from array import array
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
@@ -205,6 +207,7 @@ class Gazetteer:
         self._kana_index: Dict[str, Dict[str, List[TownEntry]]] = {}
         self._grid: Optional[Tuple[Dict[Tuple[int, int], List[int]], List[float], List[float], List[int]]] = None
         self._postal_by_town: Dict[str, Dict[str, List[str]]] = {}
+        self._postal_index: Optional[Tuple["array[int]", "array[int]"]] = None
         self._blocks_present: Dict[str, bool] = {}
         self._key_version_ok: Optional[bool] = None
         self._block_tables: Dict[str, Optional[_Table]] = {}
@@ -371,16 +374,27 @@ class Gazetteer:
                     out.append(lg)
         return out
 
+    def _postal_code_index(self) -> Tuple["array[int]", "array[int]"]:
+        """Postal codes in ascending order and the offset of each one's line (built on first use)."""
+        with self._lock:
+            if self._postal_index is None:
+                text = self._postal().text
+                pairs = sorted((int(m.group(1)), m.start()) for m in re.finditer(r"^(\d{7})\t", text, re.MULTILINE))
+                self._postal_index = (array("l", [c for c, _ in pairs]), array("l", [o for _, o in pairs]))
+            return self._postal_index
+
     def postal_records(self, postal_code: str) -> List[PostalRecord]:
         code = postal_code.replace("-", "")
+        if not (code.isdigit() and len(code) == 7):
+            return []
+        codes, offsets = self._postal_code_index()
         text = self._postal().text
         out: List[PostalRecord] = []
-        needle = f"\n{code}\t"
-        pos = text.find(needle)
-        while pos >= 0:
-            nl = text.find("\n", pos + 1)
-            out.append(self._parse_postal(text[pos + 1:nl if nl >= 0 else len(text)])[0])
-            pos = text.find(needle, pos + 1)
+        number = int(code)
+        for i in range(bisect.bisect_left(codes, number), bisect.bisect_right(codes, number)):
+            start = offsets[i]
+            nl = text.find("\n", start)
+            out.append(self._parse_postal(text[start:nl if nl >= 0 else len(text)])[0])
         return out
 
     def postal_codes_for(self, lg_code: str, town: Optional[str]) -> List[str]:

@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple
 
 import common
-from common import DEFAULT_DATA, Tally, haversine_km, municipality_outcome, outcome_table, pct, resolve, run_pool, table
+from common import DEFAULT_DATA, Tally, haversine_km, is_correct, municipality_outcome, outcome_table, pct, resolve, run_pool, table
 
 # (row id, prefecture, municipality, address as typed, 方書, municipality code, lat, lon, office number)
 Item = Tuple[str, str, str, str, str, str, str, str, str]
@@ -67,6 +67,20 @@ def _city_parts(city: str) -> List[str]:
     return [city.split("市", 1)[0] + "市"] if "市" in city[:-1] and not city.endswith("市") else []
 
 
+def _row_check(outcome: str, res: Any, address: str, city: str) -> str:
+    """A row whose typed address names one municipality while its columns name another cannot be scored."""
+    if outcome != "wrong":
+        return outcome
+    from jaden.core.townkey import fold_same_length
+    typed = fold_same_length(unicodedata.normalize("NFKC", address))
+    c = res.components
+    mine = fold_same_length((c.city or "") + (c.ward or "") if c.ward and c.city != c.ward else (c.city or c.ward or ""))
+    column = fold_same_length(city.split("郡")[-1])
+    if mine and mine in typed and column and column not in typed:
+        return "not scored: the typed address and the row's columns name different municipalities"
+    return outcome
+
+
 def _address_part(res: Any) -> Tuple[Any, ...]:
     c = res.components
     return (c.lg_code, c.oaza, c.koaza, c.town, c.chome, c.ban, c.go, c.banchi, c.edaban, c.lot_number)
@@ -95,16 +109,16 @@ def score(batch: List[Item]) -> Tuple[Tally, Any]:
     for ident, pref, city, address, katagaki, truth, lat, lon, office in batch:
         truth5 = truth[:5]
         res, val = resolve(address)
-        outcome = municipality_outcome(res, val, truth5)
-        note("as typed", outcome, ident, None if outcome == "correct" else _example(address, res, val, truth))
+        outcome = _row_check(municipality_outcome(res, val, truth5), res, address, city)
+        note("as typed", outcome, ident, None if is_correct(outcome) else _example(address, res, val, truth))
 
         composed = compose(pref, city, address)
         if composed != address:
             res, val = resolve(composed)
-        outcome = municipality_outcome(res, val, truth5)
+        outcome = _row_check(municipality_outcome(res, val, truth5), res, address, city)
         note("with the prefecture and municipality columns", outcome, ident,
-             None if outcome == "correct" else _example(composed, res, val, truth))
-        if outcome != "correct":
+             None if is_correct(outcome) else _example(composed, res, val, truth))
+        if not is_correct(outcome):
             keys.append((office, address, ""))
             continue
         c = res.components
@@ -129,11 +143,18 @@ def score(batch: List[Item]) -> Tuple[Tally, Any]:
         if katagaki and composed.rstrip().endswith(katagaki) and len(composed.rstrip()) > len(katagaki):
             bare = composed.rstrip()[: -len(katagaki)].rstrip()
             base, _ = resolve(bare)
-            if base.components.building or base.components.unit or base.components.floor:
-                tally.add("building", "方書 column does not hold the whole building text")
+            b = base.components
+            if b.building or b.unit or b.floor:
+                tally.add("building", "not scored: the 方書 column holds only part of the building text")
+            elif b.precision in ("municipality", "town", "chome"):
+                tally.add("building", "not scored: the 方書 column holds the house number too")
             elif _address_part(base) == _address_part(res):
                 mine = _squash(" ".join(x for x in (c.building, c.floor, c.unit) if x))
                 tally.add("building", "same address, building separated" if mine else "same address, building text dropped")
+            elif bare[-1:].isdigit() and unicodedata.normalize("NFKC", katagaki[:1]).isdigit():
+                # '…2-31-2' + '101' published as '…2-31-2101': the text no longer says where the address ends
+                note("building", "not decidable: the publisher glued a number to the house number", ident,
+                     _example(composed, res, val, f"without the building: {base.canonical}"))
             else:
                 note("building", "address changes when the building is attached", ident,
                      _example(composed, res, val, f"without the building: {base.canonical}"))
@@ -227,6 +248,8 @@ def main() -> int:
 
     lines += ["## Examples of what is not `correct`", ""]
     for group in ("as typed", "with the prefecture and municipality columns", "town", "building", "location"):
+        if group == "building":
+            lines += ["`not decidable` rows are shown for completeness; nothing in the text says where the number ends.", ""]
         for outcome in tally.group(group):
             shown = tally.sample(group, outcome, args.examples)
             if not shown:

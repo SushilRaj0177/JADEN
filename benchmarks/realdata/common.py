@@ -31,15 +31,48 @@ def resolve(address: str) -> Tuple[Any, Any]:
     return ENGINE.normalize(address), ENGINE.validate(address)
 
 
+_BY_CODE5: Optional[Dict[str, Any]] = None
+
+
+def _municipalities() -> Dict[str, Any]:
+    """Current municipalities by their five-digit code."""
+    global _BY_CODE5
+    if _BY_CODE5 is None:
+        if ENGINE is None:
+            init_worker()
+        _BY_CODE5 = {m.lg_code[:5]: m for m in ENGINE.registry._municipalities_by_code.values()}
+    return _BY_CODE5
+
+
 def municipality_outcome(res: Any, val: Any, truth_lg5: str) -> str:
-    """How the municipality answer compares with the dataset's own municipality code."""
+    """How the municipality answer compares with the dataset's own municipality code.
+
+    A designated city has one code for the city and one per ward. When the row carries the city
+    code and JADEN names a ward of that city, the answer is more specific, not different; when the
+    row carries a ward code and JADEN stops at the city, the ward is missing.
+    """
     lg = res.components.lg_code
     if val.status == "ACCEPTED":
-        return "correct" if lg and lg[:5] == truth_lg5 else "wrong"
+        if lg and lg[:5] == truth_lg5:
+            return "correct"
+        known = _municipalities()
+        truth, mine = known.get(truth_lg5), known.get(lg[:5]) if lg else None
+        if truth is None:
+            return "row carries a municipality code that no longer exists"
+        if mine is not None and mine.city == truth.city and mine.prefecture_code == truth.prefecture_code:
+            if truth.entity_type == "designated_city" and mine.ward:
+                return "correct (ward found; the row has only the city code)"
+            if mine.entity_type == "designated_city" and truth.ward:
+                return "city only: the ward was not resolved"
+        return "wrong"
     if val.status == "AMBIGUOUS":
         listed = any(f"({truth_lg5}" in cand for cand in val.ambiguous_candidates)
         return "ambiguous, truth listed" if listed else "ambiguous, truth not listed"
     return "rejected: " + val.status
+
+
+def is_correct(outcome: str) -> bool:
+    return outcome.startswith("correct")
 
 
 def sample_key(ident: str) -> str:
