@@ -14,12 +14,24 @@
 | jaden-parser-only | noisy | 100.0% | 100.0% | 100.0% | 0.0% | – | – |
 | jaden-parser-only | romaji | 0.0% | 0.0% | – | 0.0% | – | – |
 | jaden-parser-only | former_name | 8.3% | 100.0% | 8.3% | 91.7% | – | – |
-| jaden+blocks | original | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.8% |
-| jaden+blocks | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.8% |
-| jaden+blocks | town_only | 51.5% | 51.6% | 100.0% | 0.0% | 80 m | 87.2% |
-| jaden+blocks | noisy | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.8% |
-| jaden+blocks | romaji | 100.0% | 100.0% | 100.0% | 0.0% | 60 m | 93.5% |
+| jaden+blocks | original | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.9% |
+| jaden+blocks | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.9% |
+| jaden+blocks | town_only | 51.5% | 51.6% | 100.0% | 0.0% | 79 m | 87.3% |
+| jaden+blocks | noisy | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.9% |
+| jaden+blocks | romaji | 100.0% | 100.0% | 100.0% | 0.0% | 60 m | 93.6% |
 | jaden+blocks | former_name | 100.0% | 100.0% | 100.0% | 0.0% | 51 m | 93.2% |
+| geolonia | original | 100.0% | 100.0% | 100.0% | 0.0% | 128 m | 85.0% |
+| geolonia | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 128 m | 85.0% |
+| geolonia | town_only | 0.1% | 2.2% | 4.8% | 2.1% | 116 m | 100.0% |
+| geolonia | noisy | 100.0% | 100.0% | 100.0% | 0.0% | 128 m | 85.0% |
+| geolonia | romaji | 0.0% | 0.0% | – | 0.0% | – | – |
+| geolonia | former_name | 8.3% | 8.3% | 100.0% | 0.0% | 1359 m | 35.3% |
+| jageocoder | original | 100.0% | 100.0% | 100.0% | 0.0% | 65 m | 91.0% |
+| jageocoder | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 65 m | 91.0% |
+| jageocoder | town_only | 76.9% | 96.5% | 79.7% | 19.6% | 60 m | 94.5% |
+| jageocoder | noisy | 100.0% | 100.0% | 100.0% | 0.0% | 139 m | 69.6% |
+| jageocoder | romaji | 0.0% | 27.9% | 0.0% | 27.9% | – | – |
+| jageocoder | former_name | 97.1% | 100.0% | 97.1% | 2.9% | 49 m | 94.7% |
 
 ## Invalid inputs (false-accept rate: lower is better)
 
@@ -28,6 +40,8 @@
 | jaden | 0.0% | 7.2% | 0.0% |
 | jaden-parser-only | 0.0% | 100.0% | 57.9% |
 | jaden+blocks | 0.0% | 7.2% | 0.0% |
+| geolonia | 0.0% | 100.0% | 52.5% |
+| jageocoder | 0.1% | 100.0% | 67.5% |
 
 ## When a system abstains with a candidate list
 
@@ -44,6 +58,6 @@
 
 | System | Items/s |
 |---|---:|
-| jaden | 2,111 |
-| jaden-parser-only | 6,649 |
-| jaden+blocks | 381 |
+| jaden | 2,136 |
+| jaden-parser-only | 6,544 |
+| jaden+blocks | 440 |

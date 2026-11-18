@@ -1,0 +1,104 @@
+{
+ "sets": {
+  "care: as typed": {
+   "JADEN": {
+    "right": 218426,
+    "no answer": 4568,
+    "no answer: candidate list holds the truth": 4092,
+    "wrong": 141,
+    "wrong: every tool gives the same answer": 119,
+    "city only": 11
+   },
+   "geolonia": {
+    "right": 211463,
+    "no answer": 11338,
+    "wrong": 345,
+    "wrong: every tool gives the same answer": 119
+   },
+   "jageocoder": {
+    "right": 219868,
+    "wrong": 2039,
+    "city only": 133,
+    "no answer": 1106,
+    "wrong: every tool gives the same answer": 119,
+    "wrong: a municipality code that no longer exists": 78
+   }
+  },
+  "care: with columns": {
+   "JADEN": {
+    "right": 222877,
+    "wrong": 125,
+    "wrong: every tool gives the same answer": 107,
+    "no answer": 133,
+    "city only": 11,
+    "no answer: candidate list holds the truth": 13
+   },
+   "geolonia": {
+    "right": 221803,
+    "no answer": 1234,
+    "wrong": 109,
+    "wrong: every tool gives the same answer": 107
+   },
+   "jageocoder": {
+    "right": 221979,
+    "city only": 118,
+    "no answer": 861,
+    "wrong": 188,
+    "wrong: every tool gives the same answer": 107,
+    "wrong: a municipality code that no longer exists": 24
+   }
+  },
+  "companies: full": {
+   "JADEN": {
+    "right": 100982,
+    "no answer": 10
+   },
+   "geolonia": {
+    "right": 100980,
+    "no answer": 12
+   },
+   "jageocoder": {
+    "right": 100992
+   }
+  },
+  "companies: no prefecture": {
+   "JADEN": {
+    "right": 100727,
+    "no answer": 264,
+    "no answer: candidate list holds the truth": 254,
+    "wrong": 1
+   },
+   "geolonia": {
+    "right": 100954,
+    "wrong": 24,
+    "no answer": 14
+   },
+   "jageocoder": {
+    "right": 100913,
+    "wrong": 78,
+    "no answer": 1
+   }
+  },
+  "companies: postal code in front": {
+   "JADEN": {
+    "right": 100929,
+    "no answer": 9
+   },
+   "geolonia": {
+    "no answer": 100938
+   },
+   "jageocoder": {
+    "no answer": 100831,
+    "wrong": 107
+   }
+  }
+ },
+ "left_out": {
+  "care: as typed": 15,
+  "care: with columns": 15,
+  "companies: full": 5,
+  "companies: no prefecture": 5,
+  "companies: postal code in front": 5
+ },
+ "missing": {}
+}

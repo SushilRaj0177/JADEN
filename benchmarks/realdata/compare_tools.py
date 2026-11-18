@@ -115,6 +115,7 @@ def cmd_score(args: argparse.Namespace) -> int:
         if item["truth"] not in known:
             left_out[item["set"]] += 1
             continue
+        answers = {name: ((results.get(item["id"]) or {}).get("lg_code") or "")[:5] for name, results in systems.items()}
         for name, results in systems.items():
             r = results.get(item["id"])
             if r is None:
@@ -123,11 +124,15 @@ def cmd_score(args: argparse.Namespace) -> int:
             else:
                 o = outcome(r.get("lg_code"), item["truth"], known)
             counts[item["set"]][name][o] += 1
+            shared = o == "wrong" and len(set(answers.values())) == 1
+            if shared:
+                # Every tool reads the text as the same other municipality: most likely the row is wrong
+                counts[item["set"]][name]["wrong: every tool gives the same answer"] += 1
             if o == "wrong" and r["lg_code"][:5] not in known:
                 counts[item["set"]][name]["wrong: a municipality code that no longer exists"] += 1
             if name == "JADEN" and r and o == "no answer" and r.get("truth_listed"):
                 counts[item["set"]][name]["no answer: candidate list holds the truth"] += 1
-            if o in ("wrong", "city only") and len(examples[(item["set"], name)]) < 400:
+            if o in ("wrong", "city only") and not shared and len(examples[(item["set"], name)]) < 400:
                 m = known.get(r["lg_code"][:5]) if r and r.get("lg_code") else None  # type: ignore[index]
                 t = known[item["truth"]]
                 examples[(item["set"], name)].append(
@@ -150,12 +155,17 @@ def cmd_score(args: argparse.Namespace) -> int:
             total = c["right"] + c["wrong"] + c["city only"] + c["no answer"]
             answered = total - c["no answer"]
             scores["sets"][key][name] = dict(c)
+            own = c["wrong"] - c["wrong: every tool gives the same answer"]
             rows.append([label, name, f"{total:,}", f"**{pct(c['right'], total)}**", f"{c['wrong']:,} ({pct(c['wrong'], total)})",
-                         f"{c['city only']:,}", f"{c['no answer']:,} ({pct(c['no answer'], total)})",
+                         f"**{own:,}**", f"{c['city only']:,}", f"{c['no answer']:,} ({pct(c['no answer'], total)})",
                          pct(c["right"], answered)])
             label = ""
-    lines.append(table(["Input", "Tool", "Addresses", "Right", "Wrong", "City, not ward", "No answer", "Precision"], rows,
-                       "llrrrrrr"))
+    lines.append(table(["Input", "Tool", "Addresses", "Right", "Wrong", "Wrong, tools disagree", "City, not ward",
+                        "No answer", "Precision"], rows, "llrrrrrrr"))
+    lines.append("")
+    lines.append("**Wrong, tools disagree** leaves out the wrong answers that every tool shares: when all of them read "
+                 "the text as the same other municipality, the row's own code is most likely what is wrong (for "
+                 "example `北海道網走郡美幌町…` filed under 網走市). The examples below leave them out too.")
     lines.append("")
     jaden_listed = {k: counts[k]["JADEN"]["no answer: candidate list holds the truth"] for k in counts}
     lines.append("JADEN's \"no answer\" includes its ambiguous results, where it returns the possible municipalities "
@@ -172,14 +182,14 @@ def cmd_score(args: argparse.Namespace) -> int:
         lines.append(f"Left out for every tool: {sum(left_out.values()):,} inputs whose row carries a municipality code "
                      "that no longer exists.")
     lines.append("")
-    lines.append("## Examples of wrong answers")
+    lines.append("## Examples of wrong answers (and of a designated city named without its ward)")
     for key, label in SETS.items():
         for name in names:
             ex = examples.get((key, name), [])
             if ex:
                 lines.append("")
-                lines.append(f"**{label}, {name}** (first {min(len(ex), args.examples)} of "
-                             f"{counts[key][name]['wrong'] + counts[key][name]['city only']:,})")
+                lines.append(f"**{label}, {name}** ({min(len(ex), args.examples)} of {len(ex):,}"
+                             f"{'+' if len(ex) == 400 else ''}, spread over the data)")
                 lines.append("")
                 step = max(1, len(ex) // args.examples)
                 lines += [f"- {e}" for e in ex[::step][: args.examples]]
