@@ -62,3 +62,10 @@ def test_library_features_match_the_research_code(text: str, side: str) -> None:
     assert library["x"] == research.x
     assert library["g"] == research.g
     assert library["status"] == research.status
+
+
+def test_readme_example() -> None:
+    r = jaden.resolve("錦町1番2号")
+    top = [(c.name, round(c.probability, 3)) for c in r.candidates[:3]]
+    assert not r.answered
+    assert top == [("東京都立川市", 0.231), ("埼玉県蕨市", 0.067), ("福島県いわき市", 0.054)]

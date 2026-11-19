@@ -15,6 +15,39 @@ It checks every address down to the town and 丁目 against the national town li
 
 ---
 
+## What's new in v0.4 (in development): knowing when it does not know
+
+When an address does not name its municipality, the town that remains often exists in many places (錦町 is a registered town in 93 municipalities). v0.4 adds **`jaden.resolve()`**: every candidate municipality with a **calibrated probability**, an answer only when that probability clears a threshold chosen for a **1% wrong-answer rate**, and a candidate set that should hold the right municipality **95%** of the time. The model was fitted on 5 million registered company addresses and calibrated on care-office addresses; the organisation's name can be passed as extra evidence.
+
+```python
+r = jaden.resolve("錦町1番2号")
+r.answered, [(c.name, round(c.probability, 3)) for c in r.candidates[:3]]
+# (False, [('東京都立川市', 0.231), ('埼玉県蕨市', 0.067), ('福島県いわき市', 0.054)])
+jaden.resolve("芝公園4-2-8").name      # '東京都港区' (p > 0.99)
+```
+
+```bash
+jaden resolve "南3条東1-2-1" --name "網走市立南小学校"
+```
+
+**Tested once on data it had never seen, under a pre-registered protocol** ([`benchmarks/heldout/PROTOCOL.md`](benchmarks/heldout/PROTOCOL.md)): the address of every welfare facility in the MLIT 2023 file (321,859), as published, without the municipality.
+
+| Town-only input (318,578) | Right | Wrong answers | Wrong among answers |
+| :--- | ---: | ---: | ---: |
+| JADEN rules | 52.2% | 639 | 0.38% |
+| JADEN calibrated | 59.8% | 2,115 | 1.10% |
+| JADEN calibrated + facility name | **61.2%** | 2,255 | 1.14% |
+| jageocoder | 76.5% | 66,164 | 21.4% |
+| Geolonia | 0.03% | 6,256 | 98.4% |
+| JADEN calibrated + name, then a language model's proposals that JADEN verifies (projected from a 1,000-input sample) | **71.8%** | ≈3,200 | **1.4%** |
+
+- **Calibration held** on the new data: answers given with probability *p* are right about *p* of the time (expected calibration error 0.015; 0.007 with the name). With the full address, **0 wrong answers in 318,578**.
+- **Two guarantees fell slightly short**, as the protocol allowed for when data come from a different publisher: 1.10% wrong for the 1% target, and 93.7% coverage for the 95% candidate sets.
+- **Language models:** choosing from JADEN's candidates, a model was wrong on 31.6% of its answers. Alone, Claude Sonnet answered 85% of the hardest leftovers and was wrong on 47% of those answers. When JADEN kept only proposals that are among its verified candidates (and the model was at least 80% sure), **391 of its 399 wrong answers were removed**: 303 answers, 8 wrong. Alone, the models also named municipalities that no longer exist (茶屋町, merged in 2005; 浜松市中区, abolished in 2024).
+- The test's error analysis found **two rule defects** behind 486 of the rules' 639 wrong answers; they are fixed after the test, and the numbers above are from the engine before the fix.
+
+The paper: [`paper/jaden-v0.3.md`](paper/jaden-v0.3.md). All tables and figures: [`benchmarks/heldout/results/`](benchmarks/heldout/results/).
+
 ## What's new in v0.3
 
 v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems need on top of that: the same engine now answers "are these two records the same place?", "what did the user mean?", "what is at this postal code or coordinate?" and "where are the addresses in this text?", from Python, the command line, or HTTP.

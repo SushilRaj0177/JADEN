@@ -60,3 +60,18 @@ This product includes or references data and services from the following organiz
    - Terms: 法人番号公表サイト 利用規約. Consult the site's own terms of use.
    - Attribution: 出典：国税庁法人番号公表サイト（国税庁法人番号公表サイトの公表情報を加工して作成）
    - Reports in benchmarks/realdata/results quote a few addresses from these datasets as examples.
+
+9. Calibrated resolver (src/jaden/resolve.py)
+   - Bundled File: src/jaden/data/resolver_prior.tsv.gz holds, for each municipality and registered town, the
+     number of active companies whose registered address lies there (counts only; no company or address).
+     Derived from 法人番号公表サイト 全件データ (2026-10-30), National Tax Agency (国税庁), by
+     benchmarks/calibration/build_prior.py.
+     Attribution: 出典：国税庁法人番号公表サイト（国税庁法人番号公表サイトの公表情報を加工して作成）
+   - Bundled File: src/jaden/data/resolver_model.json, the model fitted on that register and calibrated on the
+     介護サービス情報公表システム data (厚生労働省) by benchmarks/calibration/train.py.
+
+10. Held-out evaluation (benchmarks/heldout; the data file is downloaded, not bundled)
+   - Dataset: 国土数値情報 福祉施設データ P14 (令和5年度), Ministry of Land, Infrastructure, Transport and Tourism
+   - Source: https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P14-2023.html
+   - License: CC BY 4.0, with conditions for some prefectures listed by MLIT (R5_Terms_of_Use_WelfareInstitution.xlsx)
+   - Attribution: 「国土数値情報（福祉施設データ）」（国土交通省）（令和5年度）を加工して作成

@@ -1,0 +1,310 @@
+{
+ "commit": "01a23ba0b8f2daad3c7c504cc5c00e2402f3986c",
+ "table": {
+  "all categories": {
+   "town only": {
+    "JADEN rules": {
+     "n": 318578,
+     "right": 166177,
+     "wrong": 639,
+     "answered": 166816
+    },
+    "JADEN calibrated": {
+     "n": 318578,
+     "right": 190441,
+     "wrong": 2115,
+     "answered": 192556,
+     "aurc": 0.04008712774139756,
+     "ece": 0.014596171134249769,
+     "conformal_coverage": 0.9372178869852908,
+     "conformal_size": 2.3875063563711243
+    },
+    "JADEN calibrated + name": {
+     "n": 318578,
+     "right": 194984,
+     "wrong": 2255,
+     "answered": 197239,
+     "aurc": 0.03515055765994976,
+     "ece": 0.007272753309429317,
+     "conformal_coverage": 0.9383322137749625,
+     "conformal_size": 2.1644840510016383
+    },
+    "geolonia": {
+     "n": 318578,
+     "right": 102,
+     "wrong": 6256,
+     "answered": 6358
+    },
+    "jageocoder": {
+     "n": 318578,
+     "right": 243596,
+     "wrong": 66164,
+     "answered": 309760
+    }
+   },
+   "with prefecture": {
+    "JADEN rules": {
+     "n": 318578,
+     "right": 259092,
+     "wrong": 374,
+     "answered": 259466
+    },
+    "JADEN calibrated": {
+     "n": 318578,
+     "right": 274352,
+     "wrong": 702,
+     "answered": 275054,
+     "aurc": 0.0022634006905281755,
+     "ece": 0.002532253287931786,
+     "conformal_coverage": 0.9406299242257783,
+     "conformal_size": 0.9635348329137605
+    },
+    "JADEN calibrated + name": {
+     "n": 318578,
+     "right": 276948,
+     "wrong": 799,
+     "answered": 277747,
+     "aurc": 0.0018171753539953336,
+     "ece": 0.004292519888127675,
+     "conformal_coverage": 0.9410505433520205,
+     "conformal_size": 0.9568143437399946
+    },
+    "geolonia": {
+     "n": 318578,
+     "right": 106,
+     "wrong": 194,
+     "answered": 300
+    },
+    "jageocoder": {
+     "n": 318578,
+     "right": 8005,
+     "wrong": 4758,
+     "answered": 12763
+    }
+   },
+   "full": {
+    "JADEN rules": {
+     "n": 318578,
+     "right": 318527,
+     "wrong": 0,
+     "answered": 318527
+    },
+    "JADEN calibrated": {
+     "n": 318578,
+     "right": 318522,
+     "wrong": 0,
+     "answered": 318522,
+     "aurc": 0.0,
+     "ece": 0.002323269122174466,
+     "conformal_coverage": 0.9966099354004356,
+     "conformal_size": 0.9966099354004356
+    },
+    "JADEN calibrated + name": {
+     "n": 318578,
+     "right": 318527,
+     "wrong": 0,
+     "answered": 318527,
+     "aurc": 0.0,
+     "ece": 0.001762778089770525,
+     "conformal_coverage": 0.997115306141667,
+     "conformal_size": 0.997115306141667
+    },
+    "geolonia": {
+     "n": 318578,
+     "right": 318577,
+     "wrong": 0,
+     "answered": 318577
+    },
+    "jageocoder": {
+     "n": 318578,
+     "right": 318578,
+     "wrong": 0,
+     "answered": 318578
+    }
+   }
+  },
+  "categories that cannot be care offices": {
+   "town only": {
+    "JADEN rules": {
+     "n": 59503,
+     "right": 30762,
+     "wrong": 92,
+     "answered": 30854
+    },
+    "JADEN calibrated": {
+     "n": 59503,
+     "right": 35768,
+     "wrong": 369,
+     "answered": 36137,
+     "aurc": 0.03825705047321096,
+     "ece": 0.009392145749804692,
+     "conformal_coverage": 0.9391963430415273,
+     "conformal_size": 2.3910895248979043
+    },
+    "JADEN calibrated + name": {
+     "n": 59503,
+     "right": 36752,
+     "wrong": 401,
+     "answered": 37153,
+     "aurc": 0.033328902920020526,
+     "ece": 0.0023364467414923205,
+     "conformal_coverage": 0.9404903954422467,
+     "conformal_size": 2.158260928020436
+    },
+    "geolonia": {
+     "n": 59503,
+     "right": 16,
+     "wrong": 1091,
+     "answered": 1107
+    },
+    "jageocoder": {
+     "n": 59503,
+     "right": 46169,
+     "wrong": 11907,
+     "answered": 58076
+    }
+   },
+   "with prefecture": {
+    "JADEN rules": {
+     "n": 59503,
+     "right": 48473,
+     "wrong": 83,
+     "answered": 48556
+    },
+    "JADEN calibrated": {
+     "n": 59503,
+     "right": 51518,
+     "wrong": 131,
+     "answered": 51649,
+     "aurc": 0.002331223749263748,
+     "ece": 0.0026676639655402244,
+     "conformal_coverage": 0.9401878896862343,
+     "conformal_size": 0.9632791623951733
+    },
+    "JADEN calibrated + name": {
+     "n": 59503,
+     "right": 52053,
+     "wrong": 157,
+     "answered": 52210,
+     "aurc": 0.0018660308204886285,
+     "ece": 0.004266575740913107,
+     "conformal_coverage": 0.9405408130682487,
+     "conformal_size": 0.9563383358822244
+    },
+    "geolonia": {
+     "n": 59503,
+     "right": 17,
+     "wrong": 31,
+     "answered": 48
+    },
+    "jageocoder": {
+     "n": 59503,
+     "right": 1538,
+     "wrong": 941,
+     "answered": 2479
+    }
+   },
+   "full": {
+    "JADEN rules": {
+     "n": 59503,
+     "right": 59494,
+     "wrong": 0,
+     "answered": 59494
+    },
+    "JADEN calibrated": {
+     "n": 59503,
+     "right": 59494,
+     "wrong": 0,
+     "answered": 59494,
+     "aurc": 0.0,
+     "ece": 0.0021259735991613943,
+     "conformal_coverage": 0.9982689948405963,
+     "conformal_size": 0.9982689948405963
+    },
+    "JADEN calibrated + name": {
+     "n": 59503,
+     "right": 59494,
+     "wrong": 0,
+     "answered": 59494,
+     "aurc": 0.0,
+     "ece": 0.0015706367985870507,
+     "conformal_coverage": 0.9987395593499487,
+     "conformal_size": 0.9987395593499487
+    },
+    "geolonia": {
+     "n": 59503,
+     "right": 59503,
+     "wrong": 0,
+     "answered": 59503
+    },
+    "jageocoder": {
+     "n": 59503,
+     "right": 59503,
+     "wrong": 0,
+     "answered": 59503
+    }
+   }
+  }
+ },
+ "llm": {
+  "system 4: haiku chooses from JADEN's candidates": {
+   "n": 1000,
+   "parsed": 960,
+   "right": 360,
+   "wrong": 166,
+   "invented": 0,
+   "in_candidates_right": 0,
+   "in_candidates_wrong": 0,
+   "kept_right": 0,
+   "kept_wrong": 0
+  },
+  "system 4b: haiku proposes, JADEN verifies": {
+   "n": 1000,
+   "parsed": 1000,
+   "right": 294,
+   "wrong": 184,
+   "invented": 4,
+   "in_candidates_right": 288,
+   "in_candidates_wrong": 70,
+   "kept_right": 162,
+   "kept_wrong": 10
+  },
+  "system 4b: sonnet proposes, JADEN verifies": {
+   "n": 1000,
+   "parsed": 999,
+   "right": 452,
+   "wrong": 399,
+   "invented": 2,
+   "in_candidates_right": 444,
+   "in_candidates_wrong": 41,
+   "kept_right": 295,
+   "kept_wrong": 8
+  },
+  "system 5: haiku alone": {
+   "n": 1000,
+   "parsed": 999,
+   "right": 458,
+   "wrong": 166,
+   "invented": 6,
+   "in_candidates_right": 439,
+   "in_candidates_wrong": 33,
+   "kept_right": 315,
+   "kept_wrong": 3
+  },
+  "system 5: sonnet alone": {
+   "n": 1000,
+   "parsed": 999,
+   "right": 617,
+   "wrong": 340,
+   "invented": 2,
+   "in_candidates_right": 599,
+   "in_candidates_wrong": 25,
+   "kept_right": 502,
+   "kept_wrong": 8
+  }
+ },
+ "thresholds": {
+  "address": 0.8823143809275235,
+  "address+name": 0.878296233942531
+ }
+}
