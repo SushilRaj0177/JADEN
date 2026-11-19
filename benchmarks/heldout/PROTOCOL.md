@@ -93,3 +93,27 @@ when it is the row's municipality or a ward of the row's designated city.
   runs are reported.
 - The scripts are `benchmarks/heldout/` and `benchmarks/calibration/`; the results go to
   `benchmarks/heldout/results/`.
+
+## Amendment 1 (19 November 2026, before any language-model call on test data)
+
+A development trial on 400 care-office addresses that JADEN's rules leave ambiguous (the other
+half of the care data, `make_dev.py`'s devcheck split) showed the pre-registered system 4 to be
+far from its target: choosing from JADEN's list, `claude-haiku-5-5` answered 282 and was wrong on
+78 (28%). Free answers were wrong as often, but most of their wrong answers named a municipality
+that is not among JADEN's candidates:
+
+| Development trial (400 inputs) | Answered | Wrong | Kept when the answer is one of JADEN's candidates: answered / wrong | … and the model's stated confidence ≥ 80: answered / wrong |
+| :--- | ---: | ---: | :--- | :--- |
+| choose, claude-haiku-5-5 | 282 | 78 | – | 185 / 26 |
+| free, claude-haiku-5-5 | 218 | 70 | 172 / 27 | 103 / 7 |
+| free, claude-sonnet-5-5 | 262 | 109 | 168 / 17 | 137 / 6 |
+
+System 4 and H6 stay as registered and are reported as they come out. Added before the test:
+
+- **System 4b, "the model proposes, JADEN verifies"**: the model answers freely (system 5's
+  prompt); its answer is kept only when it is one of JADEN's candidates for that input *and* its
+  stated confidence is at least 80 (the threshold read off the development trial above). Run with
+  `claude-haiku-5-5` and with `claude-sonnet-5-5` on the same 1,000-input sample as system 4.
+- **System 5** also runs with `claude-sonnet-5-5`, on the same 1,000 random town-only inputs.
+- **H7**: system 4b's wrong-answer rate on what it keeps has a 95% upper bound at or below 10%, and
+  JADEN's check removes most of the free model's wrong answers.
