@@ -94,3 +94,18 @@ def test_kashima_needs_the_prefecture_or_the_town(text: str, status: str, city: 
     assert v.status == status
     if city:
         assert jaden.normalize(text).components.city == city
+
+
+@pytest.mark.parametrize("text", ["栄町2-11-27 2階", "東川町7-9 オフィス1階"])
+def test_a_building_after_the_numbers_keeps_the_town_reading_open(text: str) -> None:
+    """Found by the held-out test: a floor or building after the numbers switched the check off."""
+    assert jaden.validate(text).status == "AMBIGUOUS"
+
+
+def test_municipalities_sharing_a_name_also_bring_the_towns_of_that_name() -> None:
+    """'池田町5-28' is one of four municipalities, or a town 池田町 inside another city (五島市, 西宮市...)."""
+    v = jaden.validate("池田町5-28")
+    assert v.status == "AMBIGUOUS"
+    assert any("422118" in c for c in v.ambiguous_candidates)   # 長崎県五島市
+    assert any("282049" in c for c in v.ambiguous_candidates)   # 兵庫県西宮市
+    assert len(v.ambiguous_candidates) > 4

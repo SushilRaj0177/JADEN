@@ -525,6 +525,24 @@ class AddressNormalizer:
                 tier_map.pop("lg_code", None)
                 confidence = 0.50
                 skip_town_resolution = True
+        elif (gaz is not None and allow_reread and is_ambiguous and candidate_records and not is_contradictory
+              and kyoto_clause is None and hokkaido_clause is None and not town_text and has_numbers
+              and len({c.name for c in candidate_records}) == 1 and candidate_records[0].name[-1] in "町村"):
+            # '池田町5-28': four municipalities are called 池田町, and towns of that name lie inside other
+            # cities too (三好市池田町…); those are candidates as well
+            surface = candidate_records[0].name
+            known = {c.lg_code for c in candidate_records}
+            extra = [r for r in (self.registry.get_municipality_by_code(lg)
+                                 for lg, m in gaz.municipalities_with_town(surface)
+                                 if lg not in known and m.consumed >= len(surface)) if r is not None]
+            if pref_rec is not None and not is_pref_inferred:
+                extra = [r for r in extra if r.prefecture_code == pref_rec.code]
+            if extra:
+                notes.append(f"'{surface}' is {len(candidate_records)} municipalities and also a town name in "
+                             f"{len(extra)} other place(s)")
+                candidate_records = tuple(candidate_records) + tuple(extra)
+                ambiguous_candidates = tuple(f"{c.prefecture_name}{c.name} ({c.lg_code})" for c in candidate_records)
+                skip_town_resolution = True
 
         if gaz is not None and not is_contradictory and not skip_town_resolution:
             if nothing_recognized:
@@ -1278,7 +1296,10 @@ class AddressNormalizer:
         Returns None to keep the municipality reading, ('town', [target], surface) when only the
         town reading is registered, or ('ambiguous', [municipality, *towns], surface).
         """
-        consumed = working_text[:len(working_text) - len(post_admin_text)].strip()
+        # The text the municipality name took: everything before what follows it. (Not a length difference:
+        # a building after the numbers, '栄町2-11-27 2階', is not part of post_admin_text.)
+        cut = working_text.find(post_admin_text) if post_admin_text else len(working_text)
+        consumed = (working_text[:cut] if cut >= 0 else working_text[:len(working_text) - len(post_admin_text)]).strip()
         surface = consumed
         if pref_rec is not None and not is_pref_inferred:
             for written in (pref_rec.name, pref_rec.stem):

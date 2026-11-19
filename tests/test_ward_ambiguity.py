@@ -143,14 +143,16 @@ def test_unique_ward_in_prefecture():
 
 
 def test_tomari_mura_omitted_prefecture_ambiguity():
-    """泊村1-1 is ambiguous between Furuu-gun (014036) and Kunashiri-gun (016969) in Hokkaido."""
+    """泊村1-1 is ambiguous between Furuu-gun (014036) and Kunashiri-gun (016969) in Hokkaido, and the
+    town 泊村 in 四日市市 (242021)."""
     val = validate("泊村1-1")
     assert val.status == ValidationStatus.AMBIGUOUS.value
     assert val.valid is False
     assert val.is_ambiguous is True
-    assert len(val.ambiguous_candidates) == 2
+    assert len(val.ambiguous_candidates) == 3
     assert any("014036" in c for c in val.ambiguous_candidates)
     assert any("016969" in c for c in val.ambiguous_candidates)
+    assert any("242021" in c for c in val.ambiguous_candidates)
 
 
 def test_tomari_mura_county_disambiguated():
