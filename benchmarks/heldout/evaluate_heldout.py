@@ -254,31 +254,41 @@ def report(folder: Path, externals: List[str], out: Path) -> None:
     plot(out, curves, reliability)
 
 
+# (label, answers file, which sample) -- system 4, system 4b (two models), system 5 (two models)
+LLM_RUNS = (
+    ("system 4: haiku chooses from JADEN's candidates", "llm_choose.jsonl", "choose"),
+    ("system 4b: haiku proposes, JADEN verifies", "llm_free_on_choose.jsonl", "choose"),
+    ("system 4b: sonnet proposes, JADEN verifies", "llm_free_sonnet_on_choose.jsonl", "choose"),
+    ("system 5: haiku alone", "llm_free.jsonl", "free"),
+    ("system 5: sonnet alone", "llm_free_sonnet.jsonl", "free"),
+)
+VERIFY_CONFIDENCE = 80
+
+
 def llm_results(folder: Path, items: List[Dict[str, Any]], scorer: Scorer) -> Dict[str, Any]:
     by_id = {it["id"]: it for it in items}
     res: Dict[str, Any] = {}
-    for mode, items_file in (("choose", "llm_choose_items.jsonl"), ("free", "llm_free_items.jsonl"),
-                             ("free on the choose sample", "llm_choose_items.jsonl")):
-        out_file = folder / {"choose": "llm_choose.jsonl", "free": "llm_free.jsonl",
-                             "free on the choose sample": "llm_free_on_choose.jsonl"}[mode]
+    for label, out_name, _sample in LLM_RUNS:
+        out_file = folder / out_name
         if not out_file.exists():
             continue
         answers = [json.loads(line) for line in open(out_file, encoding="utf-8")]
-        n = len(answers)
-        right = wrong = invented = verified_right = verified_wrong = 0
+        s = {"n": len(answers), "parsed": 0, "right": 0, "wrong": 0, "invented": 0,
+             "in_candidates_right": 0, "in_candidates_wrong": 0, "kept_right": 0, "kept_wrong": 0}
         for a in answers:
             it = by_id[a["id"]]
-            if a["invented"]:
-                invented += 1
-            if a["lg_code"]:
-                ok = scorer.right(a["lg_code"], it["truth"])
-                right += ok
-                wrong += not ok
-                if mode != "choose" and a["lg_code"] in it["candidates"]:
-                    verified_right += ok
-                    verified_wrong += not ok
-        res[mode] = {"n": n, "right": right, "wrong": wrong, "invented": invented,
-                     "verified_right": verified_right, "verified_wrong": verified_wrong}
+            s["parsed"] += a["raw"] is not None
+            s["invented"] += bool(a["invented"])
+            if not a["lg_code"]:
+                continue
+            ok = scorer.right(a["lg_code"], it["truth"])
+            s["right" if ok else "wrong"] += 1
+            if "system 4b" in label or "system 5" in label:
+                if a["lg_code"] in it["candidates"]:
+                    s["in_candidates_right" if ok else "in_candidates_wrong"] += 1
+                    if (a.get("confidence") or 0) >= VERIFY_CONFIDENCE:
+                        s["kept_right" if ok else "kept_wrong"] += 1
+        res[label] = s
     return res
 
 
@@ -303,14 +313,23 @@ def write_report(out: Path, commit: str, table: Dict[str, Any], llm: Dict[str, A
                 label = ""
         lines.append("")
     if llm:
-        lines += ["## Language model (claude-haiku-5-5)", "",
-                  "| Run | Inputs | Answered | Right | Wrong (95% CI among answers) | Named no existing municipality | Kept by JADEN's candidates: right / wrong |",
-                  "| :--- | ---: | ---: | ---: | :--- | ---: | :--- |"]
-        for mode, s in llm.items():
+        lines += ["## Language models on the inputs the calibrated resolver leaves unanswered", "",
+                  "Systems 4 and 4b run on 1,000 town-only inputs the calibrated resolver with the name does not "
+                  "answer; system 5 on 1,000 random town-only inputs (PROTOCOL.md and its amendment). 'Kept' is "
+                  f"system 4b's rule: the answer is one of JADEN's candidates and the model is at least "
+                  f"{VERIFY_CONFIDENCE}% sure.", "",
+                  "| System | Inputs | Answered | Right | Wrong (95% CI among answers) | Named no existing municipality | One of JADEN's candidates: right / wrong | Kept: right / wrong (95% CI) |",
+                  "| :--- | ---: | ---: | ---: | :--- | ---: | :--- | :--- |"]
+        for label, s in llm.items():
             a = s["right"] + s["wrong"]
-            kept = (f"{s['verified_right']:,} / {s['verified_wrong']:,}" if mode != "choose" else "– (only candidates can be chosen)")
-            lines.append(f"| {mode} | {s['n']:,} | {a:,} | {s['right']:,} | {s['wrong']:,} ({ci(s['wrong'], a)}) | "
-                         f"{s['invented']:,} | {kept} |")
+            kept = s["kept_right"] + s["kept_wrong"]
+            if "system 4:" in label:
+                cand, kept_txt = "all (only candidates can be chosen)", "–"
+            else:
+                cand = f"{s['in_candidates_right']:,} / {s['in_candidates_wrong']:,}"
+                kept_txt = f"{s['kept_right']:,} / {s['kept_wrong']:,} ({ci(s['kept_wrong'], kept)})"
+            lines.append(f"| {label} | {s['n']:,} | {a:,} | {s['right']:,} | {s['wrong']:,} ({ci(s['wrong'], a)}) | "
+                         f"{s['invented']:,} | {cand} | {kept_txt} |")
         lines.append("")
     (out / "heldout_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     (out / "heldout_scores.json").write_text(json.dumps({"commit": commit, "table": table, "llm": llm,

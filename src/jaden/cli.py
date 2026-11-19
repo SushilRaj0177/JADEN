@@ -661,6 +661,15 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     sv_p.add_argument("--max-batch", type=int, default=1000, help="Most addresses accepted by /v1/batch (default: 1000).")
     sv_p.add_argument("--quiet", action="store_true", help="Do not log requests.")
 
+    rs_p = subparsers.add_parser(
+        "resolve", help="Rank the candidate municipalities of an address with calibrated probabilities",
+        description="For addresses that do not name their municipality: every candidate with a probability, "
+                    "the answer when it clears the 1%%-risk threshold, and a 95%% candidate set.")
+    rs_p.add_argument("address", help="Address, e.g. '錦町1番2号'.")
+    rs_p.add_argument("--name", default="", help="Organisation or facility at the address (optional evidence).")
+    rs_p.add_argument("--limit", type=int, default=10, help="Candidates to show (default: 10).")
+    rs_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
     rv_p = subparsers.add_parser(
         "reverse", help="Find the registered town nearest to a coordinate (offline)",
         description="Latitude and longitude -> nearest town / 丁目 point (block with block data installed).")
@@ -668,6 +677,31 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     rv_p.add_argument("longitude", type=float)
     rv_p.add_argument("--limit", type=int, default=1, help="Number of nearest places to return (default: 1).")
     rv_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
+
+
+def _handle_resolve(args: argparse.Namespace) -> int:
+    import dataclasses
+    import json
+    from .resolve import resolve
+    r = resolve(args.address, args.name)
+    if args.json:
+        data = dataclasses.asdict(r)
+        data["candidates"] = data["candidates"][:args.limit]
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+    else:
+        print(f"Input:      {r.input}" + (f"  (name: {r.side})" if r.side else ""))
+        print(f"Rules:      {r.rules_status}")
+        if r.answered:
+            print(f"Answer:     {r.name} ({r.lg_code}), p = {r.probability:.3f}")
+        else:
+            print(f"Answer:     none: the best candidate's p = {r.probability:.3f} is below {r.threshold:.3f}")
+        print(f"95% set:    {len(r.candidate_set)} candidate(s)" + (" or none of them" if r.set_includes_none else ""))
+        for c in r.candidates[:args.limit]:
+            print(f"  {c.probability:6.3f}  {c.name} ({c.lg_code})")
+        if len(r.candidates) > args.limit:
+            print(f"  ... {len(r.candidates) - args.limit} more")
+        print(f"  {r.none_probability:6.3f}  none of these")
+    return 0 if r.answered else 3
 
 
 def _handle_serve(args: argparse.Namespace) -> int:
@@ -763,6 +797,7 @@ _TOOLKIT_HANDLERS = {
     "postal": _handle_postal,
     "suggest": _handle_suggest,
     "reverse": _handle_reverse,
+    "resolve": _handle_resolve,
     "extract": _handle_extract,
     "serve": _handle_serve,
 }

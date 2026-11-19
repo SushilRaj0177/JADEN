@@ -17,6 +17,7 @@ from .data.loader import get_registry
 from .matching import AddressComparison, compare, find_duplicates, match_key
 from .extract import ExtractedAddress, extract_addresses
 from .lookup import PostalAddress, ReverseResult, Suggestion, lookup_postal, reverse_geocode, suggest
+from .resolve import RankedCandidate, Resolution, resolve
 
 __all__ = [
     "__version__",
@@ -55,4 +56,7 @@ __all__ = [
     "lookup_postal",
     "reverse_geocode",
     "suggest",
+    "RankedCandidate",
+    "Resolution",
+    "resolve",
 ]
