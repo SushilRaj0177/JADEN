@@ -32,6 +32,11 @@ _HYPHEN_AFTER_MARKER: Final[re.Pattern[str]] = re.compile(r"(?<=\d)(丁目|番�
 _BARE_MARK: Final[re.Pattern[str]] = re.compile(r"^(?:階|[Ff](?![A-Za-z])|号室|号(?!館|棟|地|線))")
 
 
+def _town_from(town_pattern: str, min_len: int) -> str:
+    """The town pattern, required to cover at least ``min_len`` characters (to search past a name's number)."""
+    return rf"(?P<town>.{{{min_len},}}?)" if min_len and town_pattern is _TOWN_ANY else town_pattern
+
+
 def _parse_num(token: Optional[str]) -> Optional[int]:
     """Helper to parse either Arabic digits or Kanji numeral string."""
     if not token:
@@ -248,70 +253,83 @@ class BlockFSM:
         # =====================================================================
         # STATE 3: Explicit '番地' or '番' marker present (no 丁目, no hyphen)
         # =====================================================================
-        ban_match = re.search(
-            rf"^{town_pattern}(?P<ban>{_NUM_TOKEN})(?P<suffix>番地の|番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)){_GO_AFTER_BAN}(?P<tail>.*)$",
-            text
-        )
-        if ban_match:
+        # A kanji number with a bare 番 is part of a name (麻布十番, '前原西一番越'); the search goes on after it,
+        # so '…一番越14番地' still finds 14番地
+        min_town = 0
+        while True:
+            ban_match = re.search(
+                rf"^{_town_from(town_pattern, min_town)}(?P<ban>{_NUM_TOKEN})(?P<suffix>番地の|番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)){_GO_AFTER_BAN}(?P<tail>.*)$",
+                text
+            )
+            if not ban_match:
+                break
             raw_ban = ban_match.group("ban")
             suffix = ban_match.group("suffix")
             go_str = _go_of(ban_match)
-            # Protect proper nouns like 麻布十番 (Kanji numeral + bare 番 with no go)
             is_pure_kanji_ban = any(c in _KANJI_NUM_CHARS for c in raw_ban) and not any(c.isdigit() for c in raw_ban)
             if suffix == "番" and is_pure_kanji_ban and not go_str:
-                pass  # Proper noun (e.g. 麻布十番), fall through
+                if town_pattern is not _TOWN_ANY:
+                    break
+                min_town = ban_match.end("suffix")
+                continue
+            town = ban_match.group("town").strip()
+            oaza, koaza = extract_aza(town)
+            result["oaza"] = oaza
+            result["koaza"] = koaza
+
+            ban_val = _parse_num(raw_ban)
+            go_val = _parse_num(go_str)
+
+            if "番地" in suffix or oaza is not None or koaza is not None:
+                result["banchi"] = ban_val
+                result["edaban"] = go_val
+                result["address_regime"] = AddressRegime.CHIBAN.value
             else:
-                town = ban_match.group("town").strip()
-                oaza, koaza = extract_aza(town)
-                result["oaza"] = oaza
-                result["koaza"] = koaza
-
-                ban_val = _parse_num(raw_ban)
-                go_val = _parse_num(go_str)
-
-                if "番地" in suffix or oaza is not None or koaza is not None:
-                    result["banchi"] = ban_val
-                    result["edaban"] = go_val
-                    result["address_regime"] = AddressRegime.CHIBAN.value
+                result["ban"] = ban_val
+                result["go"] = go_val
+                if go_val is not None:
+                    result["address_regime"] = AddressRegime.GAIKU_HOSHIKI.value
                 else:
-                    result["ban"] = ban_val
-                    result["go"] = go_val
-                    if go_val is not None:
-                        result["address_regime"] = AddressRegime.GAIKU_HOSHIKI.value
-                    else:
-                        result["address_regime"] = AddressRegime.UNSPECIFIED.value
+                    result["address_regime"] = AddressRegime.UNSPECIFIED.value
 
-                tail = ban_match.group("tail").strip()
-                return result, town, tail
+            tail = ban_match.group("tail").strip()
+            return result, town, tail
 
         # =====================================================================
         # STATE 4: Single number at tail of town (e.g. '488番地', '10号', or bare '1')
         # =====================================================================
         # 4a. Explicit statutory lot/unit marker (番地, 番, 号)
-        single_marked = re.search(
-            rf"^{town_pattern}(?P<num>{_NUM_TOKEN})(?P<suffix>番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)|号(?!室))(?P<tail>.*)$",
-            text
-        )
-        if single_marked:
+        min_town = 0
+        while True:
+            single_marked = re.search(
+                rf"^{_town_from(town_pattern, min_town)}(?P<num>{_NUM_TOKEN})(?P<suffix>番地|番(?!町|丁|街|館|割|組|場|屋|通|筋)|号(?!室))(?P<tail>.*)$",
+                text
+            )
+            if not single_marked:
+                break
             raw_num = single_marked.group("num")
             suffix = single_marked.group("suffix")
             is_pure_kanji = any(c in _KANJI_NUM_CHARS for c in raw_num) and not any(c.isdigit() for c in raw_num)
-            if not (suffix == "番" and is_pure_kanji):
-                town = single_marked.group("town").strip()
-                oaza, koaza = extract_aza(town)
-                result["oaza"] = oaza
-                result["koaza"] = koaza
+            if suffix == "番" and is_pure_kanji:
+                if town_pattern is not _TOWN_ANY:
+                    break
+                min_town = single_marked.end("suffix")
+                continue
+            town = single_marked.group("town").strip()
+            oaza, koaza = extract_aza(town)
+            result["oaza"] = oaza
+            result["koaza"] = koaza
 
-                num = _parse_num(raw_num)
-                if "番地" in suffix or oaza is not None or koaza is not None:
-                    result["banchi"] = num
-                    result["address_regime"] = AddressRegime.CHIBAN.value
-                else:
-                    result["ban"] = num
-                    result["address_regime"] = AddressRegime.UNSPECIFIED.value
+            num = _parse_num(raw_num)
+            if "番地" in suffix or oaza is not None or koaza is not None:
+                result["banchi"] = num
+                result["address_regime"] = AddressRegime.CHIBAN.value
+            else:
+                result["ban"] = num
+                result["address_regime"] = AddressRegime.UNSPECIFIED.value
 
-                tail = single_marked.group("tail").strip()
-                return result, town, tail
+            tail = single_marked.group("tail").strip()
+            return result, town, tail
 
         # 4b. Bare trailing number: strictly ASCII digits to avoid consuming Kanji numerals in town names
         # e.g. '六本木1', '十条1', '一番町1', '八重洲1', '登大路町30', '一箕町大字亀賀字郷之原1'

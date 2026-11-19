@@ -229,11 +229,15 @@ class AdministrativeParser:
         """``parse`` on text that is already folded and stripped; ``written`` is the same text unfolded."""
 
         def lookup(trie: PrefixTrie[List[MunicipalityRecord]], sub: str) -> Optional[Tuple[str, List[MunicipalityRecord], int]]:
-            # Folding makes 鹿嶋市 (Ibaraki) and 鹿島市 (Saga) one key: the spelling as written decides
+            # Folding makes 鹿嶋市 (Ibaraki) and 鹿島市 (Saga) one key. A variant spelling decides ('鹿嶋市' is only
+            # Ibaraki's); the plain one does not, since Ibaraki's is often written 鹿島市: the prefecture or the
+            # town after it has to choose
             hit = trie.longest_prefix(sub, 0)
             if hit and len(hit[1]) > 1:
                 start = len(written) - len(sub)
                 spelt = written[start:start + hit[2]]
+                if fold_same_length(spelt) == spelt:
+                    return hit
                 exact = [c for c in hit[1] if spelt in (c.name, c.city, c.ward, f"{c.county or ''}{c.name}")]
                 if exact and len(exact) < len(hit[1]):
                     return hit[0], exact, hit[2]

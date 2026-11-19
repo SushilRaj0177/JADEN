@@ -36,6 +36,18 @@ from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
 from .romaji import looks_romanized, romaji_to_japanese
 
+# Longer text is not read as an address (the longest real addresses with a building are around 150 characters)
+MAX_INPUT_CHARS = 500
+# No 丁目, block or lot is numbered 0. The upper bound only stops absurd numbers: a room number glued to
+# the lot ('小川町2丁目1987102' is lot 1987, room 102) still leaves the municipality right
+MAX_BLOCK_NUMBER = 10**12 - 1
+
+# A sentence that goes on after the address: a particle starting a run that ends in a polite verb
+# ('に送って下さい', 'までお願いします'). Building names do not end that way.
+_PROSE_TAIL: Final[re.Pattern[str]] = re.compile(
+    r"(?<![ぁ-ん])(?:に|へ|まで|宛て?|あてに?|で|を|から|より)[^\d]{0,30}?"
+    r"(?:下さい|ください|お願いします|お願い致します|お願いいたします|願います|します|です|ます)[。．！!？?\s]*$"
+    r"|\s(?:宛て?|あて)\s*$")
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
 _POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})-?(\d{4})")
 _POSTAL_BARE_EDGE: Final[re.Pattern[str]] = re.compile(r"(?:^\s*(\d{3})-(\d{4})(?!\d)|(?<![\d-])(\d{3})-(\d{4})\s*$)")
@@ -120,6 +132,8 @@ class AddressNormalizer:
             raw_address: Raw user-input address string.
             autocorrect: Overrides the engine's ``autocorrect`` setting for this call.
         """
+        if raw_address and len(raw_address) > MAX_INPUT_CHARS:
+            return _too_long(raw_address)
         if self.use_gazetteer and raw_address and looks_romanized(raw_address):
             converted = romaji_to_japanese(raw_address)
             if converted is not None:
@@ -129,7 +143,7 @@ class AddressNormalizer:
         res = self._normalize(raw_address, allow_reread=True)
         if res.components.town_verified is False and res.components.lg_code and not res.components.is_ambiguous:
             res = self._with_corrections(res, self.autocorrect if autocorrect is None else autocorrect)
-        return res
+        return _uninterpreted_if_unresolved(res)
 
     def _with_corrections(self, res: NormalizedAddress, apply: bool) -> NormalizedAddress:
         """Offers (or applies) the registered town a misspelt one most likely stands for."""
@@ -812,6 +826,11 @@ class AddressNormalizer:
             tier_map["edaban"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
 
         # Stage 6: Building, Floor, and Unit Disentanglement
+        prose = _PROSE_TAIL.search(tail_text or "")
+        if prose:
+            # '…4-2-8に送って下さい': a sentence after the address is not a building name
+            notes.append(f"'{prose.group(0).strip()}' after the address reads as a sentence, not a building: left out")
+            tail_text = tail_text[:prose.start()].strip()
         building_name, floor_val, unit_val = BuildingParser.parse(tail_text)
         if notes_in_brackets:
             building_name = " ".join(x for x in [building_name] + [n.strip() for n in notes_in_brackets] if x)
@@ -1361,6 +1380,19 @@ class AddressNormalizer:
                 message="Empty or whitespace address string.",
             )
 
+        if len(raw_address) > MAX_INPUT_CHARS:
+            return ValidationResult(
+                raw_input=raw_address,
+                status=ValidationStatus.MALFORMED.value,
+                valid=False,
+                confidence_score=0.0,
+                address_regime=AddressRegime.UNSPECIFIED.value,
+                lg_code=None,
+                is_ambiguous=False,
+                ambiguous_candidates=(),
+                message=f"Input is {len(raw_address):,} characters long; an address is at most {MAX_INPUT_CHARS}.",
+            )
+
         res = self.normalize(raw_address, autocorrect=autocorrect)
         c = res.components
         level = _verification_level(c)
@@ -1422,6 +1454,11 @@ class AddressNormalizer:
                               (n for n in res.notes if n.startswith("postal code")), "it belongs elsewhere."),
                           lg=c.lg_code)
 
+        impossible = [v for v in (c.chome, c.ban, c.go, c.banchi, c.edaban) if v is not None and not 0 < v <= MAX_BLOCK_NUMBER]
+        if impossible:
+            return result(ValidationStatus.MALFORMED,
+                          f"No 丁目, block or lot is numbered {impossible[0]}.", lg=c.lg_code)
+
         if c.unparsed_tail and len(c.unparsed_tail.strip()) > 5:
             return result(ValidationStatus.UNSUPPORTED,
                           f"Input contains unparsed or unsupported tokens: '{c.unparsed_tail}'.",
@@ -1455,6 +1492,31 @@ class AddressNormalizer:
         return result(ValidationStatus.UNSUPPORTED,
                       "Administrative entity could not be resolved to a local government code.",
                       lg=c.lg_code)
+
+
+def _uninterpreted_if_unresolved(res: NormalizedAddress) -> NormalizedAddress:
+    """Without a municipality the numbers cannot be read with any confidence ('東京都23区' is not 23番 区),
+    so the canonical form is the cleaned text as written, not a structure guessed from it."""
+    c = res.components
+    if c.lg_code or c.is_ambiguous or not res.canonical or res.canonical == res.input_sanitized:
+        return res
+    return dataclasses.replace(
+        res, canonical=res.input_sanitized,
+        notes=res.notes + ("no municipality found: the text is returned as written, not interpreted",))
+
+
+def _too_long(raw_address: str) -> NormalizedAddress:
+    """Text far longer than any address is not read: it would only cost time (the numeral stage is not linear)."""
+    return NormalizedAddress(
+        input_raw=raw_address,
+        input_sanitized="",
+        canonical="",
+        components=AddressComponents(),
+        tier_map={},
+        confidence_score=0.0,
+        latency_microseconds=0.0,
+        notes=(f"input is {len(raw_address):,} characters long; an address is at most {MAX_INPUT_CHARS}: not read",),
+    )
 
 
 def _verification_level(c: AddressComponents) -> str:

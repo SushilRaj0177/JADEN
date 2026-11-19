@@ -23,7 +23,7 @@ from .constants import KANJI_DIGITS, KANJI_POWERS
 from .kanji_numerals import parse_kanji_number
 
 # Bump whenever town_key output changes; compiled data stores keys built with this version
-TOWN_KEY_VERSION: Final[int] = 5
+TOWN_KEY_VERSION: Final[int] = 6
 
 _KE_VARIANTS: Final[str] = "ヶケヵがガｹ"
 _NO_VARIANTS: Final[str] = "のノ"
@@ -45,7 +45,7 @@ _ITAIJI: Final[Dict[str, str]] = {
     "狹": "狭", "敎": "教", "賴": "頼", "瀨": "瀬", "禪": "禅", "彈": "弾", "縣": "県",
     "聲": "声", "樂": "楽", "藥": "薬", "應": "応", "燈": "灯", "鷄": "鶏",
     "嶽": "岳", "檜": "桧", "礪": "砺", "蘆": "芦", "藪": "薮", "鷗": "鴎", "驒": "騨",
-    "竈": "釜", "竃": "釜", "餠": "餅", "溪": "渓", "諌": "諫", "鯵": "鰺", "舘": "館", "埜": "野", "曻": "昇",
+    "竈": "釜", "竃": "釜", "餠": "餅", "溪": "渓", "諌": "諫", "鯵": "鰺", "舘": "館", "埜": "野", "釆": "采", "曻": "昇",
     "梼": "檮", "珎": "珍", "嵜": "崎",
     "碕": "崎", "舩": "船", "桒": "桑", "栢": "柏", "杦": "杉", "槗": "橋",
 }
