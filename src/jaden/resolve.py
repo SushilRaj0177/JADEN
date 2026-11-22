@@ -17,11 +17,13 @@ addresses). On a held-out set of 321,859 welfare-facility addresses the results 
 ``benchmarks/heldout/results/``.
 """
 
+import bisect
 import gzip
 import json
 import math
 import re
 import unicodedata
+from array import array
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -64,9 +66,24 @@ class Resolution:
     threshold: float
 
 
+class _TownCounts:
+    """Company counts per (municipality, town key), kept as one sorted text block with a binary search,
+    not as 100,000 Python objects (which would cost tens of megabytes)."""
+
+    def __init__(self, lines: List[str]) -> None:
+        lines.sort()
+        self.keys = [ln.rsplit("\t", 1)[0] for ln in lines]
+        self.counts = array("l", (int(ln.rsplit("\t", 1)[1]) for ln in lines))
+
+    def get(self, key: Tuple[str, str], default: int = 0) -> int:
+        target = f"{key[0]}\t{key[1]}"
+        i = bisect.bisect_left(self.keys, target)
+        return self.counts[i] if i < len(self.keys) and self.keys[i] == target else default
+
+
 @lru_cache(maxsize=1)
-def _prior() -> Tuple[Dict[Tuple[str, str], int], Dict[str, int]]:
-    towns: Dict[Tuple[str, str], int] = {}
+def _prior() -> Tuple[_TownCounts, Dict[str, int]]:
+    lines: List[str] = []
     munis: Dict[str, int] = {}
     with gzip.open(_DATA / "resolver_prior.tsv.gz", "rt", encoding="utf-8") as fh:
         next(fh)
@@ -75,8 +92,8 @@ def _prior() -> Tuple[Dict[Tuple[str, str], int], Dict[str, int]]:
             if key == "*":
                 munis[lg] = int(n)
             else:
-                towns[(lg, key)] = int(n)
-    return towns, munis
+                lines.append(f"{lg}\t{key}\t{n}")
+    return _TownCounts(lines), munis
 
 
 @lru_cache(maxsize=1)
@@ -112,7 +129,7 @@ def candidate_features(engine: Any, text: str, side: str = "",
     registry = engine.registry
     towns, munis = _prior()
     res = engine.normalize(text)
-    val = engine.validate(text)
+    val = engine.validate(text, normalized=res)
     c = res.components
     status = val.status
     if status == "ACCEPTED" and val.lg_code:

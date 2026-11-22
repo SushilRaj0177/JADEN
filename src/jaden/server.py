@@ -12,6 +12,7 @@ endpoint accepts GET with query parameters or POST with a JSON body.
     GET  /v1/postal/105-0011                  postal code -> addresses
     GET  /v1/reverse?lat=35.6586&lon=139.7454 coordinate -> nearest town
     GET  /v1/compare?a=...&b=...              are two addresses the same place?
+    GET  /v1/resolve?q=錦町1番2号&name=...       candidate municipalities with calibrated probabilities
     POST /v1/extract   {"text": "..."}        addresses inside a text
     POST /v1/batch     {"addresses": [...]}   many addresses at once
     GET  /v1                                  endpoint list and data versions
@@ -19,7 +20,9 @@ endpoint accepts GET with query parameters or POST with a JSON body.
     GET  /                                    interactive demo page
 
 Nothing leaves the machine: all lookups use the bundled data. The server binds
-to 127.0.0.1 unless told otherwise.
+to 127.0.0.1 unless told otherwise. Errors are JSON ({"error": {"code", "message"}});
+POST bodies must be JSON sent as application/json (so a web page cannot post to a
+local server without the browser asking first).
 """
 
 import json
@@ -31,6 +34,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlsplit
 
 MAX_BODY_BYTES = 2 * 1024 * 1024
+MAX_EXTRACT_CHARS = 100_000      # extraction time grows with the text; more than this is not one document
+SOCKET_TIMEOUT = 30              # seconds a client may take to send its request
 DEFAULT_MAX_BATCH = 1000
 _WEB_DIR = Path(__file__).parent / "web"
 
@@ -47,15 +52,28 @@ def _flag(value: Any) -> bool:
 
 def _required(params: Dict[str, Any], name: str) -> str:
     value = params.get(name)
-    if value is None or not str(value).strip():
+    if value is not None and not isinstance(value, str):
+        raise ApiError(400, "bad_parameter", f"parameter '{name}' must be a string")
+    if value is None or not value.strip():
         raise ApiError(400, "missing_parameter", f"parameter '{name}' is required")
-    return str(value)
+    return value
+
+
+def _optional_text(params: Dict[str, Any], name: str) -> str:
+    value = params.get(name)
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise ApiError(400, "bad_parameter", f"parameter '{name}' must be a string")
+    return value
 
 
 def _int(params: Dict[str, Any], name: str, default: int, low: int, high: int) -> int:
     raw = params.get(name)
     if raw is None or raw == "":
         return default
+    if isinstance(raw, bool) or not isinstance(raw, (int, str)):
+        raise ApiError(400, "bad_parameter", f"parameter '{name}' must be an integer")
     try:
         value = int(raw)
     except (TypeError, ValueError):
@@ -70,7 +88,7 @@ def address_record(address: str, strict: bool = False, fix: bool = False) -> Dic
     from .engine import get_engine
     engine = get_engine()
     res = engine.normalize(address, autocorrect=fix)
-    val = engine.validate(address, strict=strict, autocorrect=fix)
+    val = engine.validate(address, strict=strict, autocorrect=fix, normalized=res)
     data = res.to_dict()
     data.pop("latency_microseconds", None)
     usable = res.confidence_score > 0
@@ -111,6 +129,7 @@ class JadenApi:
             "/v1/postal": self.postal,
             "/v1/reverse": self.reverse,
             "/v1/compare": self.compare,
+            "/v1/resolve": self.resolve,
             "/v1/extract": self.extract,
             "/v1/batch": self.batch,
             "/v1": self.index,
@@ -121,9 +140,13 @@ class JadenApi:
         """Loads the data once so the first request is as fast as the rest."""
         from .data.gazetteer import get_gazetteer
         from .lookup import lookup_postal
+        from .lookup import suggest
+        from .resolve import resolve
         address_record("東京都港区芝公園4-2-8")
         lookup_postal("105-0011")
         get_gazetteer().nearest_towns(35.6586, 139.7454)
+        suggest("しば")          # builds the prefix indexes
+        resolve("錦町1番2号")    # loads the resolver's prior
 
     # ----------------------------------------------------------- endpoints
     def health(self, params: Dict[str, Any]) -> Any:
@@ -159,13 +182,15 @@ class JadenApi:
 
     def suggest(self, params: Dict[str, Any]) -> Any:
         from .lookup import suggest
-        q = str(params.get("q") or "")
+        q = _optional_text(params, "q")
         found = suggest(q, limit=_int(params, "limit", 10, 1, 50))
         return {"query": q, "suggestions": [s.to_dict() for s in found]}
 
     def postal(self, params: Dict[str, Any]) -> Any:
         from .lookup import lookup_postal
         code = _required(params, "code")
+        if "/" in code:
+            raise ApiError(404, "not_found", f"no such endpoint: /v1/postal/{code}")
         found = lookup_postal(code)
         if not found:
             raise ApiError(404, "not_found", f"no address for postal code '{code}'")
@@ -190,7 +215,16 @@ class JadenApi:
     def extract(self, params: Dict[str, Any]) -> Any:
         from .extract import extract_addresses
         text = _required(params, "text")
+        if len(text) > MAX_EXTRACT_CHARS:
+            raise ApiError(413, "too_large", f"'text' is limited to {MAX_EXTRACT_CHARS:,} characters per request")
         return {"addresses": [x.to_dict() for x in extract_addresses(text)]}
+
+    def resolve(self, params: Dict[str, Any]) -> Any:
+        import dataclasses
+        from .resolve import resolve
+        result = dataclasses.asdict(resolve(_required(params, "q"), _optional_text(params, "name")))
+        result["candidates"] = result["candidates"][:_int(params, "limit", 10, 1, 60)]
+        return result
 
     def batch(self, params: Dict[str, Any]) -> Any:
         addresses = params.get("addresses")
@@ -221,6 +255,23 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
     class Handler(BaseHTTPRequestHandler):
         server_version = "JADEN"
         protocol_version = "HTTP/1.1"
+        timeout = SOCKET_TIMEOUT   # a client that stops sending does not hold a thread for ever
+
+        def send_error(self, code: int, message: Optional[str] = None, explain: Optional[str] = None) -> None:
+            # Errors raised by the HTTP layer itself (bad request line, URI too long, unknown method) as JSON too
+            self.close_connection = True
+            text = message or self.responses.get(code, ("error",))[0]
+            try:
+                self._json(code, {"error": {"code": f"http_{code}", "message": text}})
+            except OSError:
+                pass
+
+        def handle_one_request(self) -> None:
+            try:
+                super().handle_one_request()
+            except (ConnectionResetError, BrokenPipeError, TimeoutError):
+                # The client went away: nothing to answer, nothing to log as an error
+                self.close_connection = True
 
         def log_message(self, fmt: str, *args: Any) -> None:
             if not quiet:
@@ -288,7 +339,16 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
                 self.close_connection = True
                 self._error(ApiError(413, "too_large", f"request body is limited to {MAX_BODY_BYTES} bytes"))
                 return
+            content_type = (self.headers.get("Content-Type") or "").lower()
+            if length and "json" not in content_type:
+                self.close_connection = True
+                self._error(ApiError(415, "unsupported_media_type", "send the body as application/json"))
+                return
             raw = self.rfile.read(length) if length else b""
+            if len(raw) < length:
+                self.close_connection = True
+                self._error(ApiError(400, "bad_request", "the body is shorter than its Content-Length"))
+                return
             try:
                 body = json.loads(raw.decode("utf-8")) if raw else {}
             except (UnicodeDecodeError, json.JSONDecodeError):
@@ -339,6 +399,7 @@ def endpoint_list() -> List[Tuple[str, str]]:
         ("/v1/postal/<code>", "postal code to addresses"),
         ("/v1/reverse?lat=&lon=", "coordinate to nearest town"),
         ("/v1/compare?a=&b=", "are two addresses the same place"),
+        ("/v1/resolve?q=&name=", "candidate municipalities with calibrated probabilities"),
         ("/v1/extract", "addresses inside a text (POST {\"text\"})"),
         ("/v1/batch", "many addresses (POST {\"addresses\": [...]})"),
     ]

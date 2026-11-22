@@ -90,19 +90,46 @@ def process_address(address: str) -> Dict[str, Any]:
         empty.update(status="EMPTY", valid=False)
         return empty
     res = _ENGINE.normalize(address)
-    val = _ENGINE.validate(address, strict=_STRICT)
+    val = _ENGINE.validate(address, strict=_STRICT, normalized=res)
     return flat_record(res, val)
 
 
+def _japanese_score(text: str) -> int:
+    """How Japanese a decoding looks: kana and kanji count, half-width kana and control characters count
+    against (EUC-JP bytes read as cp932 come out as half-width kana)."""
+    sample = text[:20000]
+    good = sum(1 for ch in sample if "\u3040" <= ch <= "\u30ff" or "\u4e00" <= ch <= "\u9fff")
+    bad = sum(1 for ch in sample if "\uff61" <= ch <= "\uff9f" or (ch < " " and ch not in "\t\r\n"))
+    return good - 3 * bad
+
+
 def read_text(path: Path, encoding: Optional[str]) -> str:
+    """The file's text. Without ``encoding``: UTF-16 by its byte-order mark (or its zero bytes), then whichever of
+    UTF-8, Shift_JIS (cp932) and EUC-JP decodes cleanly and looks most like Japanese."""
+    import codecs
     raw = sys.stdin.buffer.read() if str(path) == "-" else path.read_bytes()
     if encoding:
-        return raw.decode(encoding)
-    for enc in ("utf-8-sig", "cp932"):
         try:
-            return raw.decode(enc)
+            codecs.lookup(encoding)
+        except LookupError:
+            raise ValueError(f"unknown encoding '{encoding}'") from None
+        return raw.decode(encoding)
+    if raw.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return raw.decode("utf-16")
+    if len(raw) >= 4 and raw.count(b"\x00") > len(raw) // 4:
+        return raw.decode("utf-16-le" if raw[1:2] == b"\x00" else "utf-16-be", errors="replace")
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        pass
+    decoded = []
+    for enc in ("cp932", "euc_jp"):
+        try:
+            decoded.append(raw.decode(enc))
         except UnicodeDecodeError:
             continue
+    if decoded:
+        return max(decoded, key=_japanese_score)
     return raw.decode("utf-8", errors="replace")
 
 
@@ -113,60 +140,119 @@ def detect_format(path: Optional[Path], fmt: Optional[str]) -> str:
     return {".csv": "csv", ".tsv": "tsv", ".tab": "tsv", ".jsonl": "jsonl", ".ndjson": "jsonl"}.get(suffix, "txt")
 
 
+_ADDRESS_HEADERS = ("address", "住所", "所在地", "addr", "full_address")
+
+
 def _column_index(header: Sequence[str], column: Optional[str]) -> int:
     if column is None:
         for i, name in enumerate(header):
-            if name.strip().lower() in ("address", "住所", "所在地", "addr", "full_address"):
+            if name.strip().lower() in _ADDRESS_HEADERS:
                 return i
         return 0
     if column.isdigit():
-        return int(column) - 1
+        index = int(column) - 1
+        if not 0 <= index < max(1, len(header)):
+            raise ValueError(f"column {column} is out of range: the file has {len(header)} column(s) (counted from 1)")
+        return index
     if column in header:
         return list(header).index(column)
     raise ValueError(f"column '{column}' not found; columns are: {', '.join(header)}")
 
 
-def read_rows(text: str, fmt: str, column: Optional[str]) -> Tuple[List[str], Iterator[Tuple[Dict[str, Any], str]]]:
-    """(input field names, iterator of (row, address))."""
+def _looks_like_address(value: str) -> bool:
+    from .engine import get_engine
+    return get_engine().validate(value).status in ("ACCEPTED", "AMBIGUOUS")
+
+
+Row = Any   # a list of field values (CSV / TSV / text) or a dict (JSONL)
+
+
+def read_rows(text: str, fmt: str, column: Optional[str],
+              header_row: Optional[bool] = None) -> Tuple[List[str], Iterator[Tuple[Row, str]]]:
+    """(input field names, iterator of (row, address)). CSV rows are kept as value lists, so columns with the
+    same name or more values than names lose nothing. ``header_row`` None means: the first row is a header
+    unless its address cell is itself an address."""
+    from .core.text import as_text
     if fmt in ("csv", "tsv"):
         reader = csv.reader(io.StringIO(text), delimiter="," if fmt == "csv" else "\t")
-        header = next(reader, [])
-        index = _column_index(header, column)
+        first = next(reader, [])
+        index = _column_index(first, column)
+        if header_row is None:
+            named = column is not None and not column.isdigit()
+            known = any(n.strip().lower() in _ADDRESS_HEADERS for n in first)
+            header_row = named or known or not (index < len(first) and _looks_like_address(first[index]))
+        header = list(first) if header_row else [f"column{i + 1}" for i in range(len(first))]
 
-        def gen_csv() -> Iterator[Tuple[Dict[str, Any], str]]:
+        def gen_csv() -> Iterator[Tuple[Row, str]]:
+            if not header_row:
+                yield list(first), (first[index] if index < len(first) else "")
             for values in reader:
                 if not any(v.strip() for v in values):
                     continue
-                yield dict(zip(header, values)), (values[index] if index < len(values) else "")
-        return list(header), gen_csv()
+                yield list(values), (values[index] if index < len(values) else "")
+        return header, gen_csv()
 
     if fmt == "jsonl":
         key = column or "address"
 
-        def gen_jsonl() -> Iterator[Tuple[Dict[str, Any], str]]:
-            for line in text.splitlines():
-                if line.strip():
+        def gen_jsonl() -> Iterator[Tuple[Row, str]]:
+            for number, line in enumerate(text.splitlines(), 1):
+                if not line.strip():
+                    continue
+                try:
                     obj = json.loads(line)
-                    yield obj, str(obj.get(key, ""))
+                except ValueError as exc:
+                    raise ValueError(f"line {number}: not valid JSON ({exc})") from None
+                if not isinstance(obj, dict):
+                    raise ValueError(f"line {number}: expected a JSON object with an '{key}' field")
+                yield obj, as_text(obj.get(key))
         return [], gen_jsonl()
 
-    def gen_txt() -> Iterator[Tuple[Dict[str, Any], str]]:
+    def gen_txt() -> Iterator[Tuple[Row, str]]:
         for line in text.splitlines():
             if line.strip():
-                yield {"address": line.strip()}, line.strip()
+                yield [line.strip()], line.strip()
     return ["address"], gen_txt()
+
+
+class _Writer:
+    """Writes input rows with result columns appended, by position for CSV / TSV (nothing overwritten)."""
+
+    def __init__(self, stream: TextIO, out_fmt: str, header: List[str], result_names: List[str], log: TextIO) -> None:
+        self.stream, self.out_fmt, self.header, self.result_names = stream, out_fmt, header, result_names
+        self.writer: Any = None
+        clash = sorted(set(header) & set(result_names))
+        if clash and out_fmt != "jsonl":
+            log.write(f"warning: the input already has column(s) {', '.join(clash)}; both are kept, the input's first\n")
+
+    def write(self, row: Row, rec: Dict[str, Any]) -> None:
+        if self.out_fmt == "jsonl":
+            base = row if isinstance(row, dict) else {"address": row[0]} if len(row) == 1 else dict(zip(self.header, row))
+            self.stream.write(json.dumps({**base, "jaden": rec}, ensure_ascii=False) + "\n")
+            return
+        if self.writer is None:
+            self.writer = csv.writer(self.stream, delimiter="," if self.out_fmt == "csv" else "\t")
+            names = self.header if self.header else (list(row.keys()) if isinstance(row, dict) else [])
+            self.header = names
+            self.writer.writerow(names + self.result_names)
+        if isinstance(row, dict):
+            values = [("" if row.get(n) is None else row.get(n)) for n in self.header]
+        else:
+            values = list(row) + [""] * (len(self.header) - len(row))
+        self.writer.writerow(values + [("" if v is None else v) for v in rec.values()])
 
 
 def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
               encoding: Optional[str] = None, out_encoding: str = "utf-8", strict: bool = False, jobs: int = 1,
-              prefix: str = "jaden_", log: TextIO = sys.stderr, autocorrect: bool = False) -> Counter:
+              prefix: str = "jaden_", log: TextIO = sys.stderr, autocorrect: bool = False,
+              header_row: Optional[bool] = None) -> Counter:
     """Processes a file and writes the rows with result columns appended; returns counts by status."""
     in_fmt = detect_format(input_path, fmt)
     to_stdout = output is None or str(output) == "-"
     out_fmt = in_fmt if to_stdout else detect_format(output, None)
     if out_fmt == "txt":
         out_fmt = "csv"
-    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column)
+    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
     materialized = list(rows)
 
     out_stream: TextIO = sys.stdout
@@ -175,6 +261,7 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     counts: Counter = Counter()
     started = time.perf_counter()
     pool = None
+    writer = _Writer(out_stream, out_fmt, header, [prefix + k for k in RESULT_FIELDS], log)
     try:
         addresses = [a for _, a in materialized]
         results: Iterable[Dict[str, Any]]
@@ -184,18 +271,9 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
         else:
             _init_worker(strict, autocorrect)
             results = map(process_address, addresses)
-        writer = None
         for (row, _), rec in zip(materialized, results):
             counts[rec["status"]] += 1
-            if out_fmt == "jsonl":
-                out_stream.write(json.dumps({**row, "jaden": rec}, ensure_ascii=False) + "\n")
-                continue
-            if writer is None:
-                fields = list(header or row.keys()) + [prefix + k for k in RESULT_FIELDS]
-                writer = csv.DictWriter(out_stream, fieldnames=fields, delimiter="," if out_fmt == "csv" else "\t",
-                                        extrasaction="ignore")
-                writer.writeheader()
-            writer.writerow({**row, **{prefix + k: ("" if v is None else v) for k, v in rec.items()}})
+            writer.write(row, rec)
     finally:
         if pool is not None:
             pool.close()
@@ -207,12 +285,14 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     summary = ", ".join(f"{k} {v}" for k, v in counts.most_common())
     rate = f"{total / elapsed:,.0f}/s" if elapsed > 0 else "-"
     log.write(f"{total} rows in {elapsed:.1f}s ({rate}): {summary}\n")
+    if total >= 10 and counts["MALFORMED"] + counts["EMPTY"] >= 0.8 * total:
+        log.write("warning: most rows were rejected or empty; check --column and --encoding\n")
     return counts
 
 
 def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
                encoding: Optional[str] = None, out_encoding: str = "utf-8", level: str = "unit",
-               prefix: str = "jaden_", log: TextIO = sys.stderr) -> Dict[str, int]:
+               prefix: str = "jaden_", log: TextIO = sys.stderr, header_row: Optional[bool] = None) -> Dict[str, int]:
     """Groups the rows of a file by address (名寄せ) and writes them back with group columns.
 
     Appended columns: status, canonical, match_key, group (same number = same address at
@@ -226,7 +306,7 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     out_fmt = in_fmt if to_stdout else detect_format(output, None)
     if out_fmt == "txt":
         out_fmt = "csv"
-    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column)
+    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
     materialized = list(rows)
     engine = get_engine()
 
@@ -236,7 +316,7 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     for _, address in materialized:
         address = (address or "").strip()
         res = engine.normalize(address) if address else None
-        val = engine.validate(address) if address else None
+        val = engine.validate(address, normalized=res) if address else None
         key = match_key(res, level) if res is not None else None
         group = groups.setdefault(key, len(groups) + 1) if key else None
         if group:
@@ -251,17 +331,10 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     if not to_stdout and output is not None:
         out_stream = open(output, "w", encoding=out_encoding, newline="")
     try:
-        writer = None
+        names = [prefix + k for k in ("status", "canonical", "match_key", "group", "group_size")]
+        writer = _Writer(out_stream, out_fmt, header, names, log)
         for (row, _), rec in zip(materialized, records):
-            if out_fmt == "jsonl":
-                out_stream.write(json.dumps({**row, "jaden": rec}, ensure_ascii=False) + "\n")
-                continue
-            if writer is None:
-                fields = list(header or row.keys()) + [prefix + k for k in rec]
-                writer = csv.DictWriter(out_stream, fieldnames=fields, delimiter="," if out_fmt == "csv" else "\t",
-                                        extrasaction="ignore")
-                writer.writeheader()
-            writer.writerow({**row, **{prefix + k: ("" if v is None else v) for k, v in rec.items()}})
+            writer.write(row, rec)
     finally:
         if out_stream is not sys.stdout:
             out_stream.close()

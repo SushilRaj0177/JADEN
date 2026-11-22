@@ -7,7 +7,7 @@ reproducing input (`tests/test_audit_fixes.py`). `[x]` done, `[ ]` open, `[~]` p
 
 ### Hangs and crashes
 - [x] B1 `reverse_geocode(90, 0)` never returns (also `/v1/reverse`): unbounded ring loop near the poles
-- [~] B27 Crashes instead of errors: `normalize(123)`, NaN, `validate(123)`, `lookup_postal(1050011)`, a JSONL line that is not an object, `--encoding nosuchenc` *(library inputs fixed; the batch cases are under B26)*
+- [x] B27 Crashes instead of errors: `normalize(123)`, NaN, `validate(123)`, `lookup_postal(1050011)`, a JSONL line that is not an object, `--encoding nosuchenc`
 
 ### Wrong answers
 - [x] B2 A contradicting postal code written with another dash (`100―0001`, `‐`, `–`, `—`) is ignored
@@ -30,15 +30,15 @@ reproducing input (`tests/test_audit_fixes.py`). `[x]` done, `[ ]` open, `[~]` p
 - [x] B19 Romaji input whose town does not match is ACCEPTED with the romaji glued on
 
 ### Bad output
-- [ ] B20 CLI stdin joins several lines into one address
+- [x] B20 CLI stdin joins several lines into one address
 - [x] B21 `format('hyphen')` corrupts unresolved input (`宮城野2-4-1` → `野2-4-1`)
 - [x] B22 The hyphen form is not lossless (`732番地の6` → `732-6` → `732番6号`)
 - [x] B23 Canonical form unstable for a numeric room (`…16号 1`) and Sapporo kanji (`南十一条西`)
 - [x] B24 Invisible and control characters (U+200B, U+00AD, U+2028, NUL) are not removed; `⁃` is not a dash
 - [x] B25 A trailing `TEL 03-…` becomes the building
-- [ ] B26 Batch: duplicate headers lose data, `jaden_*` input columns overwritten, EUC-JP/UTF-16 misread, `--column 0`/out of range, header-less CSV loses a row, JSONL `null` → `"None"`
-- [ ] B28 Server: HTML errors (501/414/400), no socket timeout, traceback on client disconnect, `/v1/postal/X/extra` → 200, non-string `q` accepted
-- [ ] B29 CLI: `--limit` not validated, `jaden resolve -`, resolve exit codes undocumented, extract docstring span, README resolve example ranks Sapporo first
+- [x] B26 Batch: duplicate headers lose data, `jaden_*` input columns overwritten, EUC-JP/UTF-16 misread, `--column 0`/out of range, header-less CSV loses a row, JSONL `null` → `"None"`
+- [x] B28 Server: HTML errors (501/414/400), no socket timeout, traceback on client disconnect, `/v1/postal/X/extra` → 200, non-string `q` accepted
+- [x] B29 CLI: `--limit` not validated, `jaden resolve -`, resolve exit codes undocumented, extract docstring span, README resolve example ranks Sapporo first
 
 Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): data that repeats a room number
 (`123-2号…2号`, `TiedurC棟105号 105号`), a Sapporo address whose building name holds `11-302`, and rural Hokkaido
@@ -49,25 +49,25 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] S2 Lazy singletons without locks could load data twice under concurrent first calls
 
 ### Slow paths and memory
-- [ ] P1 `extract_addresses` is ~0.37 ms per character on place-name-dense text; `/v1/extract` accepts 2 MB
-- [ ] P2 `suggest` averages 32 ms; kana without a municipality 220–465 ms
-- [ ] P3 Memory reaches ~380 MB with every feature used; README says ~90 MB
-- [ ] P4 `validate` and `resolve` normalize the same input two or three times
+- [x] P1 `extract_addresses` is ~0.37 ms per character on place-name-dense text; `/v1/extract` accepts 2 MB
+- [x] P2 `suggest` averages 32 ms; kana without a municipality 220–465 ms
+- [x] P3 Memory reaches ~380 MB with every feature used; README says ~90 MB *(the resolver prior went from ~86 MB to 18 MB; the README now gives the real figures: ~90 MB for normalize, ~350 MB with every feature)*
+- [x] P4 `validate` and `resolve` normalize the same input two or three times
 
 ## Improvements
 - [x] I1 One sanitizer for every path (B2–B5, B24)
 - [x] I2 Canonical and hyphen forms are fixed points, checked by a property test on the benchmark and real data
 - [~] I3 One comparison core for `match_key` and `compare` *(keys now agree for every spelling in the property test; the two functions still have separate code)*
 - [x] I4 Resolver guards (B9–B11)
-- [ ] I5 Server hardening: Japan bounding box, handler timeout, `/v1/extract` length cap, JSON errors, string-only parameters
+- [x] I5 Server hardening: Japan bounding box, handler timeout, `/v1/extract` length cap, JSON errors, string-only parameters
 - [x] I6 Offline geocode carries the validation status (B15)
-- [ ] I7 Batch robustness: UTF-16/EUC-JP, mostly-MALFORMED warning, `--no-header`, `--column` validation, JSONL line numbers
-- [ ] I8 Performance: kana prefix index for suggest, reuse of one NormalizedAddress in validate/resolve, extract without re-normalizing overlaps
+- [x] I7 Batch robustness: UTF-16/EUC-JP, mostly-MALFORMED warning, `--no-header`, `--column` validation, JSONL line numbers
+- [x] I8 Performance: kana prefix index for suggest, reuse of one NormalizedAddress in validate/resolve, extract without re-normalizing overlaps
 - [x] I9 None / NaN / int inputs give an empty result (pandas)
-- [ ] I10 CLI: multi-line stdin, `--limit`, resolve from stdin
+- [x] I10 CLI: multi-line stdin, `--limit`, resolve from stdin
 
 ## Features
-- [ ] F1 `resolve` in the HTTP API (`/v1/resolve`) and as columns in `jaden batch`
+- [~] F1 `resolve` in the HTTP API (`/v1/resolve`) and as columns in `jaden batch` *(HTTP done)*
 - [ ] F2 Structured input (prefecture, municipality, line 1, line 2, postal code) with cross-checks
 - [ ] F3 Machine-readable reason codes, Japanese messages, OpenAPI description
 - [ ] F4 MCP server: normalize, validate and resolve as tools for AI assistants

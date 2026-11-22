@@ -1401,7 +1401,7 @@ class AddressNormalizer:
         return self.normalize(raw_address).components
 
     def validate(self, raw_address: str, strict: bool = False,
-                 autocorrect: Optional[bool] = None) -> ValidationResult:
+                 autocorrect: Optional[bool] = None, normalized: Optional[NormalizedAddress] = None) -> ValidationResult:
         """Validates an address string against statutory administrative registries.
 
         Evaluates:
@@ -1448,7 +1448,8 @@ class AddressNormalizer:
                 message=f"Input is {len(raw_address):,} characters long; an address is at most {MAX_INPUT_CHARS}.",
             )
 
-        res = self.normalize(raw_address, autocorrect=autocorrect)
+        # ``normalized``: the result of normalize() for the same input and settings, to avoid reading it twice
+        res = normalized if normalized is not None else self.normalize(raw_address, autocorrect=autocorrect)
         c = res.components
         level = _verification_level(c)
         warnings = tuple(res.notes)

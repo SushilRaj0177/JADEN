@@ -1,7 +1,7 @@
 """JADEN: Finding addresses inside free text.
 
     extract_addresses('会場は東京都港区芝公園4-2-8の東京タワーです。TEL 03-3433-5111')
-    -> one address, characters 3..17, '東京都港区芝公園4-2-8'
+    -> one address, characters 3..16, '東京都港区芝公園4-2-8'
 
 Emails, web pages, OCR output and CRM notes carry addresses in the middle of
 other text. A span starts at a postal code, a prefecture name or a municipality
@@ -153,6 +153,7 @@ def extract_addresses(text: str, include_ambiguous: bool = True) -> List[Extract
     engine = get_engine()
     out: List[ExtractedAddress] = []
     cursor = 0
+    seen: Dict[str, Tuple[NormalizedAddress, Any]] = {}
     for start, body_start, kind in _anchors(text, engine):
         if start < cursor:
             continue
@@ -160,11 +161,15 @@ def extract_addresses(text: str, include_ambiguous: bool = True) -> List[Extract
         if end <= body_start:
             continue
         span = text[start:end]
-        res = engine.normalize(span)
+        if kind == "municipality" and not _DIGIT.search(span):
+            continue   # after a bare municipality name only a block number makes it an address
+        if span not in seen:
+            res = engine.normalize(span)
+            seen[span] = (res, engine.validate(span, normalized=res) if res.confidence_score > 0 else None)
+        res, val = seen[span]
         c = res.components
-        if res.confidence_score <= 0:
+        if res.confidence_score <= 0 or val is None:
             continue
-        val = engine.validate(span)
         has_numbers = c.precision in ("block", "house", "unit")
         if val.status == "ACCEPTED":
             # A municipality name alone starts many ordinary words; it needs a block number after it.

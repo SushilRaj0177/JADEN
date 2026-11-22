@@ -234,3 +234,163 @@ def test_unmatched_romaji_town_stays_in_place() -> None:
     res = jaden.normalize("158-2 Arata Kamikomata, Hirakawa-shi, Aomori")
     assert res.canonical == "青森県平川市Arata Kamikomata158番2号"
     assert jaden.validate("158-2 Arata Kamikomata, Hirakawa-shi, Aomori").verification_level == "municipality"
+
+
+# ---------------------------------------------------------------- B26: batch files
+def _batch(tmp_path, name: str, data: bytes, *args: str):
+    import io
+    from jaden.batch import run_batch
+    src = tmp_path / name
+    src.write_bytes(data)
+    out = tmp_path / ("out" + src.suffix)
+    log = io.StringIO()
+    counts = run_batch(src, out, log=log, *args)  # type: ignore[misc]
+    return out.read_text(encoding="utf-8"), counts, log.getvalue()
+
+
+def test_batch_keeps_columns_with_the_same_name(tmp_path) -> None:
+    out, counts, _ = _batch(tmp_path, "a.csv", "id,住所,dup,dup\n1,東京都港区芝公園4-2-8,a,b\n".encode())
+    header, row = out.splitlines()[:2]
+    assert header.startswith("id,住所,dup,dup,jaden_status")
+    assert row.startswith("1,東京都港区芝公園4-2-8,a,b,ACCEPTED")
+
+
+def test_batch_detects_a_file_without_header(tmp_path) -> None:
+    out, counts, _ = _batch(tmp_path, "a.csv", "東京都港区芝公園4-2-8,x\n大阪府大阪市北区梅田3-1-1,y\n".encode())
+    assert counts["ACCEPTED"] == 2
+    assert out.splitlines()[0].startswith("column1,column2,jaden_status")
+
+
+@pytest.mark.parametrize("encoding", ["euc_jp", "utf-16", "cp932", "utf-8-sig"])
+def test_batch_detects_the_encoding(tmp_path, encoding: str) -> None:
+    data = "住所\n東京都港区芝公園4-2-8\n大阪府大阪市北区梅田3-1-1\n".encode(encoding)
+    _, counts, _ = _batch(tmp_path, "a.csv", data)
+    assert counts["ACCEPTED"] == 2
+
+
+def test_batch_keeps_an_input_column_named_like_a_result(tmp_path) -> None:
+    out, _, log = _batch(tmp_path, "a.csv", "address,jaden_status\n東京都港区芝公園4-2-8,mine\n".encode())
+    assert "mine" in out.splitlines()[1] and "warning" in log
+
+
+def test_batch_jsonl_null_is_empty(tmp_path) -> None:
+    _, counts, _ = _batch(tmp_path, "a.jsonl", '{"address": null}\n{"address": "東京都港区芝公園4-2-8"}\n'.encode())
+    assert counts["EMPTY"] == 1 and counts["ACCEPTED"] == 1
+
+
+@pytest.mark.parametrize("name, data, kwargs, message", [
+    ("a.jsonl", b'{"address": "x"}\n[1,2]\n', {}, "line 2"),
+    ("a.csv", b"a,b\n1,2\n", {"column": "0"}, "out of range"),
+    ("a.csv", b"a,b\n1,2\n", {"column": "9"}, "out of range"),
+    ("a.csv", b"a,b\n1,2\n", {"encoding": "nosuchenc"}, "unknown encoding"),
+])
+def test_batch_input_errors_are_clear(tmp_path, name: str, data: bytes, kwargs: dict, message: str) -> None:
+    import io
+    from jaden.batch import run_batch
+    src = tmp_path / name
+    src.write_bytes(data)
+    with pytest.raises(ValueError, match=message):
+        run_batch(src, tmp_path / "out.csv", log=io.StringIO(), **kwargs)
+
+
+def test_batch_warns_when_most_rows_are_rejected(tmp_path) -> None:
+    rows = "住所\n" + "あいうえお\n" * 12
+    _, _, log = _batch(tmp_path, "a.csv", rows.encode())
+    assert "check --column and --encoding" in log
+
+
+# ---------------------------------------------------------------- B28, F1: server
+@pytest.fixture(scope="module")
+def server_url():
+    import threading
+    from jaden.server import create_server
+    server = create_server(port=0, quiet=True, warm_up=False)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server.shutdown()
+
+
+def _http(url: str, method: str = "GET", body: bytes = b"", headers: dict = None):
+    import json as _json
+    import urllib.error
+    import urllib.request
+    req = urllib.request.Request(url, data=body or None, method=method, headers=headers or {})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, _json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, _json.loads(e.read())
+
+
+def test_server_errors_are_json(server_url: str) -> None:
+    status, body = _http(server_url + "/v1/normalize", method="PUT")
+    assert status == 501 and body["error"]["code"] == "http_501"
+
+
+def test_server_rejects_extra_path_and_bad_types(server_url: str) -> None:
+    assert _http(server_url + "/v1/postal/105-0011/extra")[0] == 404
+    json_header = {"Content-Type": "application/json"}
+    status, body = _http(server_url + "/v1/normalize", "POST", b'{"q": 123}', json_header)
+    assert status == 400 and "string" in body["error"]["message"]
+    status, _ = _http(server_url + "/v1/suggest", "POST", '{"q": "東京都", "limit": true}'.encode(), json_header)
+    assert status == 400
+
+
+def test_server_requires_json_content_type(server_url: str) -> None:
+    assert _http(server_url + "/v1/normalize", "POST", b'{"q": "x"}', {"Content-Type": "text/plain"})[0] == 415
+
+
+def test_server_caps_extraction_text(server_url: str) -> None:
+    import json as _json
+    big = _json.dumps({"text": "東京都" * 40000}).encode()
+    assert _http(server_url + "/v1/extract", "POST", big, {"Content-Type": "application/json"})[0] == 413
+
+
+def test_server_reverse_at_the_pole_and_resolve(server_url: str) -> None:
+    status, body = _http(server_url + "/v1/reverse?lat=90&lon=0")
+    assert status == 200 and body["results"] == []
+    import urllib.parse
+    status, body = _http(server_url + "/v1/resolve?q=" + urllib.parse.quote("芝公園4-2-8"))
+    assert status == 200 and body["answered"] and body["lg_code"] == "131032"
+
+
+# ---------------------------------------------------------------- B20, B29: command line
+def _cli(args, monkeypatch, stdin: str = ""):
+    import io
+    from jaden.cli import main
+    out, err = io.StringIO(), io.StringIO()
+    monkeypatch.setattr("sys.stdout", out)
+    monkeypatch.setattr("sys.stderr", err)
+    monkeypatch.setattr("sys.stdin", io.StringIO(stdin))
+    code = main(args)
+    return code, out.getvalue(), err.getvalue()
+
+
+def test_cli_reads_one_address_per_stdin_line(monkeypatch) -> None:
+    code, out, _ = _cli(["normalize", "-", "-c"], monkeypatch, "東京都港区芝公園4-2-8\n大阪府大阪市北区梅田3-1-1\n")
+    assert code == 0 and out.splitlines() == ["東京都港区芝公園4丁目2番8号", "大阪府大阪市北区梅田3丁目1番1号"]
+
+
+def test_cli_rejects_a_limit_below_one(monkeypatch) -> None:
+    code, _, err = _cli(["suggest", "東京都港区", "--limit", "0"], monkeypatch)
+    assert code != 0 and "at least 1" in err
+
+
+def test_cli_resolve_reads_stdin(monkeypatch) -> None:
+    code, out, _ = _cli(["resolve", "-", "--limit", "1"], monkeypatch, "芝公園4-2-8\n")
+    assert code == 0 and "東京都港区" in out
+
+
+# ---------------------------------------------------------------- P1, P2: slow paths
+def test_extraction_of_place_name_dense_text_is_fast() -> None:
+    start = time.perf_counter()
+    assert jaden.extract_addresses("東京都" * 20000) == []
+    assert time.perf_counter() - start < 5.0
+
+
+def test_kana_suggestion_is_fast_once_indexed() -> None:
+    jaden.suggest("しば")
+    start = time.perf_counter()
+    for reading in ("きっかわ", "さかえ", "しばこうえん"):
+        jaden.suggest(reading)
+    assert time.perf_counter() - start < 1.0

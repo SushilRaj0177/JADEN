@@ -802,9 +802,10 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `GET /v1/compare?a=&b=` | verdict, agreed level, conflict, match keys |
 | `POST /v1/extract` `{"text": "..."}` | addresses with character spans |
 | `POST /v1/batch` `{"addresses": [...]}` | up to `--max-batch` addresses (default 1,000) |
+| `GET /v1/resolve?q=&name=` | candidate municipalities with calibrated probabilities, the answer at the 1% threshold, the 95% set |
 | `GET /v1`, `GET /health` | endpoint list, data versions, liveness |
 
-Every endpoint also accepts a JSON body by POST. Errors are JSON (`{"error": {"code", "message"}}`) with 400, 404 or 413. The server uses only the Python standard library and the local data; it binds to `127.0.0.1` unless `--host` says otherwise, has no authentication of its own, and sends CORS headers only with `--cors`. Opening `http://127.0.0.1:8000/` shows a demo page for all of the above.
+Every endpoint also accepts a JSON body by POST, sent as `application/json` (other content types get 415, so a web page cannot post to a local server without the browser asking first). Errors are JSON (`{"error": {"code", "message"}}`) with 400, 404, 413, 414, 415 or 501. `/v1/extract` takes up to 100,000 characters, and a client that stops sending for 30 seconds is disconnected. The server uses only the Python standard library and the local data; it binds to `127.0.0.1` unless `--host` says otherwise, has no authentication of its own, and sends CORS headers only with `--cors`. Opening `http://127.0.0.1:8000/` shows a demo page for all of the above.
 
 #### Exit Codes for Shell Automation
 | Exit Code | Meaning | Example Scenario |
@@ -861,7 +862,7 @@ In accordance with our engineering principles, JADEN documents its exact operati
 7. **Romaji input:** Needs a municipality (with `-shi`, `-ku`, `City`, … or a recognizable town). Building names in romaji are kept as written.
 8. **Kyoto:** Some Kyoto town names occur more than once in the same ward and are told apart only by the street clause; JADEN verifies the town but does not give one point for them.
 9. **Private Building Records:** Building names and room numbers are parsed using syntactic heuristics (Tier 3), as no statutory national registry of private commercial building names exists.
-10. **Memory:** The gazetteer makes a running engine use about 90 MB (parser-only mode stays at a few MB) and the first address takes about 0.4 s to load the data.
+10. **Memory:** The gazetteer makes a running engine use about 90 MB (parser-only mode stays at a few MB) and the first address takes about 0.4 s to load the data. Each further feature loads its own data on first use; with `resolve`, `suggest`, reverse geocoding, postal lookup and romaji all in use, a process grows to about 350 MB.
 11. **Repairs need proof from the registry:** A municipality written without 市 / 区, one character off, typed twice, after a stray character, or followed by a second municipality name is read as a registered one only when the town after it is registered there and the text does not read as written; the result carries a note saying what was read, and a slightly lower confidence. Town-only input (no prefecture or municipality) is resolved only when the town is registered in one place; a 字 written straight after its 大字 counts only after an 大字 named for a former town or village.
 12. **Typo correction is deliberately narrow:** Only the town is checked, only one-character differences are considered, and autocorrect applies a correction only when it is the single candidate and the name has three or more characters. Homophone mistakes two or more characters long, and misspelt municipality names, are not corrected.
 13. **Matching is exact, not fuzzy:** Two addresses match when their resolved components agree. An address that cannot be resolved to one municipality has no key. When only one side writes the 字 below a town, the verdict is `possibly_same`, because lot numbers often restart in each 字. Building names never decide a match.

@@ -562,14 +562,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Resolves the address column of every row and writes the rows back with jaden_* result "
                     "columns appended. Input encoding (UTF-8 or Shift_JIS) is detected.",
     )
-    batch_p.add_argument("input", help="Input file (.csv, .tsv, .jsonl, or text with one address per line); '-' for stdin.")
-    batch_p.add_argument("-o", "--output", help="Output file (format from its extension); default: stdout.")
-    batch_p.add_argument("--column", help="Address column name or 1-based number (default: a column named "
-                                          "address/住所/所在地, else the first). For JSONL, the key (default: address).")
-    batch_p.add_argument("--format", choices=["csv", "tsv", "jsonl", "txt"], help="Input format (default: from extension).")
-    batch_p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / Shift_JIS).")
-    batch_p.add_argument("--output-encoding", default="utf-8",
-                         help="Output encoding; utf-8-sig opens cleanly in Excel, cp932 is Shift_JIS (default: utf-8).")
+    _file_arguments(batch_p)
     batch_p.add_argument("--strict", action="store_true", help="Require town-level verification for ACCEPTED.")
     batch_p.add_argument("--fix", action="store_true",
                          help="Correct misspelt towns (unique one-character corrections only; the original is reported).")
@@ -602,9 +595,11 @@ def _file_arguments(p: argparse.ArgumentParser) -> None:
     p.add_argument("--column", help="Address column name or 1-based number (default: a column named "
                                     "address/住所/所在地, else the first). For JSONL, the key (default: address).")
     p.add_argument("--format", choices=["csv", "tsv", "jsonl", "txt"], help="Input format (default: from extension).")
-    p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / Shift_JIS).")
+    p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / UTF-16 / Shift_JIS / EUC-JP).")
     p.add_argument("--output-encoding", default="utf-8",
                    help="Output encoding; utf-8-sig opens cleanly in Excel, cp932 is Shift_JIS (default: utf-8).")
+    p.add_argument("--no-header", action="store_true",
+                   help="The CSV / TSV has no header row (default: detected; a first row that is an address is data).")
 
 
 def _add_toolkit_parsers(subparsers: Any) -> None:
@@ -629,6 +624,13 @@ def _add_toolkit_parsers(subparsers: Any) -> None:
                       help="How precisely addresses must agree (default: unit = same house and same room).")
 
 
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return number
+
+
 def _add_lookup_parsers(subparsers: Any) -> None:
     po_p = subparsers.add_parser(
         "postal", help="Look up the addresses a postal code covers",
@@ -640,7 +642,7 @@ def _add_lookup_parsers(subparsers: Any) -> None:
         "suggest", help="Complete a partly typed address or postal code",
         description="Autocomplete: municipalities, towns (by spelling or reading), 丁目, or postal codes.")
     su_p.add_argument("text", help="Partial address ('東京都港区芝', '港区しば') or postal code ('105-00').")
-    su_p.add_argument("--limit", type=int, default=10, help="Maximum number of suggestions (default: 10).")
+    su_p.add_argument("--limit", type=_positive_int, default=10, help="Maximum number of suggestions (default: 10).")
     su_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
 
     ex_p = subparsers.add_parser(
@@ -664,10 +666,11 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     rs_p = subparsers.add_parser(
         "resolve", help="Rank the candidate municipalities of an address with calibrated probabilities",
         description="For addresses that do not name their municipality: every candidate with a probability, "
-                    "the answer when it clears the 1%%-risk threshold, and a 95%% candidate set.")
-    rs_p.add_argument("address", help="Address, e.g. '錦町1番2号'.")
+                    "the answer when it clears the 1%%-risk threshold, and a 95%% candidate set. "
+                    "Exit code 0 when an answer is given, 3 when not.")
+    rs_p.add_argument("address", help="Address, e.g. '錦町1番2号'; '-' reads one address per line from stdin.")
     rs_p.add_argument("--name", default="", help="Organisation or facility at the address (optional evidence).")
-    rs_p.add_argument("--limit", type=int, default=10, help="Candidates to show (default: 10).")
+    rs_p.add_argument("--limit", type=_positive_int, default=10, help="Candidates to show (default: 10).")
     rs_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
 
     rv_p = subparsers.add_parser(
@@ -675,11 +678,22 @@ def _add_lookup_parsers(subparsers: Any) -> None:
         description="Latitude and longitude -> nearest town / 丁目 point (block with block data installed).")
     rv_p.add_argument("latitude", type=float)
     rv_p.add_argument("longitude", type=float)
-    rv_p.add_argument("--limit", type=int, default=1, help="Number of nearest places to return (default: 1).")
+    rv_p.add_argument("--limit", type=_positive_int, default=1, help="Number of nearest places to return (default: 1).")
     rv_p.add_argument("--json", action="store_true", help="Output machine-readable JSON format.")
 
 
 def _handle_resolve(args: argparse.Namespace) -> int:
+    if args.address == "-":
+        lines = [ln.strip() for ln in sys.stdin.read().splitlines() if ln.strip()]
+        if not lines:
+            sys.stderr.write("Error: Address input from stdin is empty.\n")
+            return EX_USAGE
+        codes = [_resolve_one(argparse.Namespace(**{**vars(args), "address": ln})) for ln in lines]
+        return max(codes)
+    return _resolve_one(args)
+
+
+def _resolve_one(args: argparse.Namespace) -> int:
     import dataclasses
     import json
     from .resolve import resolve
@@ -787,7 +801,8 @@ def _handle_dedupe(args: argparse.Namespace) -> int:
     from pathlib import Path
     from .batch import run_dedupe
     run_dedupe(Path(args.input), Path(args.output) if args.output else None, fmt=args.format, column=args.column,
-               encoding=args.encoding, out_encoding=args.output_encoding, level=args.level)
+               encoding=args.encoding, out_encoding=args.output_encoding, level=args.level,
+               header_row=False if args.no_header else None)
     return 0
 
 
@@ -839,7 +854,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         try:
             run_batch(Path(args.input), Path(args.output) if args.output else None, fmt=args.format,
                       column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,
-                      strict=args.strict, jobs=max(1, args.jobs), autocorrect=args.fix)
+                      strict=args.strict, jobs=max(1, args.jobs), autocorrect=args.fix,
+                      header_row=False if args.no_header else None)
             return 0
         except (ValueError, OSError, UnicodeDecodeError) as exc:
             sys.stderr.write(f"Error: {exc}\n")
@@ -859,16 +875,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             sys.stderr.write(f"Error: {exc}\n")
             return EX_SOFTWARE
 
-    # Resolve address input (from argument or stdin when '-')
-    target_address = args.address
-    if target_address == "-":
-        stdin_content = sys.stdin.read().strip()
-        if stdin_content:
-            target_address = stdin_content
-        else:
+    # Resolve address input (from argument or stdin when '-'): one address per line
+    if args.address == "-":
+        lines = [ln.strip() for ln in sys.stdin.read().splitlines() if ln.strip()]
+        if not lines:
             sys.stderr.write("Error: Address input from stdin is empty.\n")
             return EX_USAGE
+    else:
+        lines = [args.address]
+    return max(_run_address_command(parser, args, line) for line in lines)
 
+
+def _run_address_command(parser: argparse.ArgumentParser, args: argparse.Namespace, target_address: str) -> int:
     try:
         if args.command == "normalize":
             return handle_normalize(target_address, as_json=args.json, canonical_only=args.canonical_only,

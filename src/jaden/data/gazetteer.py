@@ -35,6 +35,8 @@ _CELL_DEG = 0.02
 # Bounding box of every registered point (Okinotorishima to Etorofu, Yonaguni to Minamitorishima), with room
 _JAPAN_LAT = (20.0, 46.0)
 _NOT_CACHED = object()
+# Small kana read as their full-size form, so 'キッ' and 'キツ' both find 'キッカワ'
+_SMALL_KANA = str.maketrans("ァィゥェォッャュョヮヵヶ", "アイウエオツヤユヨワカケ")
 _JAPAN_LON = (122.0, 154.5)
 # Longest town key in the national list is under 30 characters; inputs are clipped to this
 _MAX_KEY_CHARS = 40
@@ -251,6 +253,7 @@ class Gazetteer:
         self._block_tables: Dict[str, Optional[_Table]] = {}
         self._blocks: Dict[str, Dict[Tuple[str, int, int], BlockPoint]] = {}
         self._lock = threading.RLock()  # re-entrant: loaders call each other
+        self._prefix_indexes: Dict[str, Tuple[List[str], List[Tuple[str, str]]]] = {}
         self._match_cache: Dict[Tuple[str, str], Optional["TownMatch"]] = {}
 
     # ------------------------------------------------------------------ load
@@ -505,18 +508,45 @@ class Gazetteer:
         found = sorted(m.group(0) for m in pattern.finditer(self._postal().text))
         return [self._parse_postal(ln)[0] for ln in found[:limit]]
 
-    def town_prefix(self, key_prefix: str, prefecture_code: Optional[str] = None,
-                    limit: int = 50) -> List[Tuple[str, str]]:
-        """(municipality code, registered town name) for towns whose key starts with ``key_prefix``, nationwide
-        or in one prefecture. One entry per town (丁目 collapsed)."""
-        if not key_prefix:
-            return []
-        lg = rf"{prefecture_code}\d{{4}}" if prefecture_code else r"\d{6}"
-        pattern = re.compile(rf"^({lg})\t{re.escape(key_prefix)}[^\t]*\t[^\t]*\t([^\t]*)\t", re.MULTILINE)
+    def _prefix_index(self, kind: str) -> Tuple[List[str], List[Tuple[str, str]]]:
+        """Sorted (sort key, (municipality code, town name)) of every registered town, one entry per town and
+        municipality, keyed by town key (kind 'key') or by reading with small kana folded (kind 'kana').
+        Built once, on first use: prefix lookups are then a binary search instead of a scan of the table."""
+        with self._lock:
+            cached = self._prefix_indexes.get(kind)
+            if cached is not None:
+                return cached
+            seen = set()
+            pairs: List[Tuple[str, Tuple[str, str]]] = []
+            text = self._towns_table().text
+            pos = text.find("\n") + 1
+            while pos < len(text):
+                nl = text.find("\n", pos)
+                nl = len(text) if nl < 0 else nl
+                parts = text[pos:nl].split("\t")
+                pos = nl + 1
+                if len(parts) < 9:
+                    continue
+                item = (parts[0], parts[3])
+                sort_key = parts[1] if kind == "key" else parts[8].translate(_SMALL_KANA)
+                if sort_key and (sort_key, item) not in seen:
+                    seen.add((sort_key, item))
+                    pairs.append((sort_key, item))
+            pairs.sort()
+            index = ([k for k, _ in pairs], [v for _, v in pairs])
+            self._prefix_indexes[kind] = index
+            return index
+
+    def _prefix_lookup(self, kind: str, prefix: str, prefecture_code: Optional[str], limit: int) -> List[Tuple[str, str]]:
+        keys, items = self._prefix_index(kind)
         out: List[Tuple[str, str]] = []
         seen = set()
-        for m in pattern.finditer(self._towns_table().text):
-            item = (m.group(1), m.group(2))
+        for i in range(bisect.bisect_left(keys, prefix), len(keys)):
+            if not keys[i].startswith(prefix):
+                break
+            item = items[i]
+            if prefecture_code and not item[0].startswith(prefecture_code):
+                continue
             if item not in seen:
                 seen.add(item)
                 out.append(item)
@@ -524,24 +554,19 @@ class Gazetteer:
                     break
         return out
 
+    def town_prefix(self, key_prefix: str, prefecture_code: Optional[str] = None,
+                    limit: int = 50) -> List[Tuple[str, str]]:
+        """(municipality code, registered town name) for towns whose key starts with ``key_prefix``, nationwide
+        or in one prefecture. One entry per town (丁目 collapsed)."""
+        if not key_prefix:
+            return []
+        return self._prefix_lookup("key", key_prefix, prefecture_code, limit)
+
     def town_kana_prefix(self, reading: str, limit: int = 50) -> List[Tuple[str, str]]:
         """(municipality code, town name) for towns whose reading starts with ``reading`` (a ``kana_key``)."""
         if not reading:
             return []
-        small = {"ア": "ァ", "イ": "ィ", "ウ": "ゥ", "エ": "ェ", "オ": "ォ", "ツ": "ッ", "ヤ": "ャ", "ユ": "ュ",
-                 "ヨ": "ョ", "ワ": "ヮ", "カ": "ヵ", "ケ": "ヶ"}
-        kana = "".join(f"[{c}{small[c]}]" if c in small else re.escape(c) for c in reading)
-        pattern = re.compile(rf"^(\d{{6}})\t[^\t]*\t[^\t]*\t([^\t]*)\t(?:[^\t]*\t){{4}}{kana}", re.MULTILINE)
-        out: List[Tuple[str, str]] = []
-        seen = set()
-        for m in pattern.finditer(self._towns_table().text):
-            item = (m.group(1), m.group(2))
-            if item not in seen:
-                seen.add(item)
-                out.append(item)
-                if len(out) >= limit:
-                    break
-        return out
+        return self._prefix_lookup("kana", reading.translate(_SMALL_KANA), None, limit)
 
     # -------------------------------------------------------- nearest town
     def _spatial(self) -> Tuple[Dict[Tuple[int, int], List[int]], List[float], List[float], List[int]]:
