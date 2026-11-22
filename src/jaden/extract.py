@@ -131,7 +131,9 @@ def extract_addresses(text: str, include_ambiguous: bool = True) -> List[Extract
     Returns:
         Addresses in text order, each with its exact span and its resolved result.
     """
+    from .core.text import as_text
     from .engine import get_engine
+    text = as_text(text)
 
     if not text:
         return []

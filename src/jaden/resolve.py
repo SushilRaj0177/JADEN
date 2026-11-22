@@ -180,8 +180,10 @@ def resolve(address: str, name: str = "") -> Resolution:
     (``'練馬区立旭丘保育園'`` points to 練馬区). The answer is given when its probability clears the
     threshold chosen for a 1% wrong-answer rate on the calibration data.
     """
+    from .core.text import as_text
     from .engine import get_engine
     engine = get_engine()
+    address, name = as_text(address), as_text(name)
     feats = candidate_features(engine, address, name)
     use_name = bool(name)
     spec = _model()["models"]["address+name" if use_name else "address"]

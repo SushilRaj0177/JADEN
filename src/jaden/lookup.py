@@ -128,7 +128,8 @@ def lookup_postal(postal_code: str) -> List[PostalAddress]:
     Most codes cover one town; some cover several towns or municipalities, and codes of large
     buildings name the building. Returns [] for an unknown or malformed code.
     """
-    digits = re.sub(r"[^\d]", "", unicodedata.normalize("NFKC", postal_code or ""))
+    from .core.text import as_text
+    digits = re.sub(r"[^\d]", "", unicodedata.normalize("NFKC", as_text(postal_code)))
     if len(digits) != 7:
         return []
     gaz = get_gazetteer()
@@ -192,6 +193,10 @@ def suggest(text: str, limit: int = 10) -> List[Suggestion]:
     """
     from .engine import get_engine
 
+    if limit < 1:
+        raise ValueError("limit must be at least 1")
+    if not isinstance(text, str):
+        text = "" if text is None else str(text)
     raw = unicodedata.normalize("NFKC", text or "").strip()
     if not raw:
         return []
@@ -296,6 +301,8 @@ def reverse_geocode(latitude: float, longitude: float, limit: int = 1, max_km: f
     """
     if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         raise ValueError("latitude must be within -90..90 and longitude within -180..180")
+    if limit < 1:
+        raise ValueError("limit must be at least 1")
     gaz = get_gazetteer()
     registry = get_registry()
     results: List[ReverseResult] = []

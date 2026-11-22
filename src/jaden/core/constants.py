@@ -63,6 +63,7 @@ DASH_VARIANTS: Final[Dict[str, Tuple[str, str, bool]]] = {
     "━": ("U+2501", "BOX DRAWINGS HEAVY HORIZONTAL", True),
     "﹣": ("U+FE63", "SMALL HYPHEN-MINUS", True),
     "﹘": ("U+FE58", "SMALL EM DASH", True),
+    "⁃": ("U+2043", "HYPHEN BULLET", True),
     # U+30FC is the Katakana Chōonpu (prolonged sound mark).
     # It must ONLY be treated as a hyphen in contextual numeric splits (e.g. 1ー2ー3),
     # NEVER inside katakana proper nouns (e.g. タワー, センター).

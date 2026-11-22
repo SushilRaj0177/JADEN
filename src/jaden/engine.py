@@ -13,13 +13,12 @@ Orchestrates multi-stage deterministic normalization:
 import dataclasses
 import re
 import time
-import unicodedata
 from typing import Any, Optional, Dict, List, Tuple, Final
 
 from .models.codes import TaxonomyTier, AddressRegime
 from .models.address import AddressComponents, NormalizedAddress
 from .models.validation import ValidationResult, ValidationStatus
-from .core.sanitizer import sanitize_address_text, _LEADING_LABEL
+from .core.sanitizer import clean_characters, sanitize_address_text, _LEADING_LABEL
 from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
 from .parsers.administrative import AdministrativeParser, fold_same_length as admin_fold
 from .parsers.kyoto import KyotoParser
@@ -35,6 +34,7 @@ from .data.loader import MunicipalityRecord
 from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
 from .romaji import looks_romanized, romaji_to_japanese
+from .core.text import as_text
 
 # Longer text is not read as an address (the longest real addresses with a building are around 150 characters)
 MAX_INPUT_CHARS = 500
@@ -49,8 +49,11 @@ _PROSE_TAIL: Final[re.Pattern[str]] = re.compile(
     r"(?:下さい|ください|お願いします|お願い致します|お願いいたします|願います|します|です|ます)[。．！!？?\s]*$"
     r"|\s(?:宛て?|あて)\s*$")
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
-_POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})-?(\d{4})")
-_POSTAL_BARE_EDGE: Final[re.Pattern[str]] = re.compile(r"(?:^\s*(\d{3})-(\d{4})(?!\d)|(?<![\d-])(\d{3})-(\d{4})\s*$)")
+_POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})\s*-?\s*(\d{4})(?!\d)")
+# Unmarked: 'NNN-NNNN' at either end, or seven digits standing alone at either end ('1050011 東京都…')
+_POSTAL_BARE_EDGE: Final[re.Pattern[str]] = re.compile(
+    r"(?:^\s*(\d{3})\s?-\s?(\d{4})(?!\d)|(?<![\d-])(\d{3})-(\d{4})\s*$"
+    r"|^\s*(\d{3})(\d{4})(?=\s)|(?<=\s)(\d{3})(\d{4})\s*$)")
 # Whitespace right after a block number, unless a block marker follows ('4 丁目', '2 番')
 _AFTER_BLOCK_NUMBER: Final[re.Pattern[str]] = re.compile(
     r"(?:(?<=\d)|(?<=-[イロハニホヘト甲乙丙丁]))\s+(?!\d*\s*(?:丁目|番|号(?!室))|[の\-])")
@@ -85,15 +88,15 @@ def _before_koaza(town: str) -> str:
 
 def extract_postal_code(raw: str) -> Optional[str]:
     """Returns the postal code written in an address as 'NNN-NNNN', if any."""
-    text = unicodedata.normalize("NFKC", raw or "").replace("ー", "-").replace("−", "-")
+    text = clean_characters(raw or "").replace("ー", "-")
     text = _LEADING_LABEL.sub("", text.strip())
     m = _POSTAL_MARKED.search(text)
     if m:
         return f"{m.group(1)}-{m.group(2)}"
     m = _POSTAL_BARE_EDGE.search(text)
     if m:
-        a, b = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
-        return f"{a}-{b}"
+        groups = [g for g in m.groups() if g is not None]
+        return f"{groups[0]}-{groups[1]}"
     return None
 
 
@@ -132,6 +135,7 @@ class AddressNormalizer:
             raw_address: Raw user-input address string.
             autocorrect: Overrides the engine's ``autocorrect`` setting for this call.
         """
+        raw_address = as_text(raw_address)
         if raw_address and len(raw_address) > MAX_INPUT_CHARS:
             return _too_long(raw_address)
         if self.use_gazetteer and raw_address and looks_romanized(raw_address):
@@ -213,7 +217,8 @@ class AddressNormalizer:
         if postal_code:
             # Postal codes written after the address or mid-string are not address text
             sanitized = _POSTAL_MARKED.sub(" ", sanitized)
-            sanitized = re.sub(rf"(?<![\d-]){postal_code}\s*$", "", sanitized)
+            digits3, digits4 = postal_code.split("-")
+            sanitized = re.sub(rf"(?<![\d-]){digits3}\s?-?\s?{digits4}\s*$", "", sanitized)
             sanitized = re.sub(r"\s+", " ", sanitized).strip()
 
         # Stage 2: Context-bounded Kanji numeral conversion
@@ -1388,6 +1393,7 @@ class AddressNormalizer:
         Returns:
             ValidationResult with status, validity flag, confidence, and diagnostic message.
         """
+        raw_address = as_text(raw_address)
         if not raw_address or not raw_address.strip():
             return ValidationResult(
                 raw_input=raw_address or "",

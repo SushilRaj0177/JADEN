@@ -1,0 +1,75 @@
+# JADEN checklist (from the full audit of 22 November 2026)
+
+Every item comes from the audit of commit `96f81ae`. Each fixed bug is pinned by a test built from its
+reproducing input (`tests/test_audit_fixes.py`). `[x]` done, `[ ]` open, `[~]` partly done (see note).
+
+## Bugs
+
+### Hangs and crashes
+- [x] B1 `reverse_geocode(90, 0)` never returns (also `/v1/reverse`): unbounded ring loop near the poles
+- [~] B27 Crashes instead of errors: `normalize(123)`, NaN, `validate(123)`, `lookup_postal(1050011)`, a JSONL line that is not an object, `--encoding nosuchenc` *(library inputs fixed; the batch cases are under B26)*
+
+### Wrong answers
+- [x] B2 A contradicting postal code written with another dash (`100―0001`, `‐`, `–`, `—`) is ignored
+- [x] B3 Postal codes without a hyphen or with spaces in front (`1050011 東京都…`, `〒 105 - 0011`) break the address; at the end they become the building
+- [x] B4 Numbers after 丁目 joined by `-`, `ー`, `の` (`4丁目-2-8`) are lost
+- [x] B5 `NのM番地` (`10の1番地`, `887の2番地`) leaves 番地 as the building and changes the regime
+- [ ] B6 Town names with 壱 (上尾市壱丁目北) are destroyed by the numeral stage
+- [ ] B7 Sapporo grid followed by 番 and a lot (`北29条西4丁目2番1-158`) is garbled
+- [ ] B8 `古町通6番町976` without the prefecture is misread
+- [ ] B9 resolve() reads a written (ambiguous) municipality name as a town (`大泉町立北小学校` → 練馬区 at 0.93)
+- [ ] B10 resolve() takes `東京都` as mentioning 京都府
+- [ ] B11 resolve() can answer while its 95% set is empty
+- [ ] B12 A raw address and its canonical get different match keys; `find_duplicates` and `compare` disagree
+- [ ] B13 Lettered and wing rooms (`A-302`, `302-A`, `1号棟302`, `A棟101`) are not rooms, so different flats merge; `三階` is not a floor
+- [ ] B14 The canonical form of an AMBIGUOUS or MALFORMED input commits to one reading and then validates elsewhere
+- [ ] B15 Offline geocoding returns SUCCESS for addresses validate rejects
+- [ ] B16 Extraction takes a phone number's tail as a postal code
+- [ ] B17 Extraction (and normalize) merges two addresses into one
+- [ ] B18 Race in the romaji town table can leave a town unconverted
+- [ ] B19 Romaji input whose town does not match is ACCEPTED with the romaji glued on
+
+### Bad output
+- [ ] B20 CLI stdin joins several lines into one address
+- [ ] B21 `format('hyphen')` corrupts unresolved input (`宮城野2-4-1` → `野2-4-1`)
+- [ ] B22 The hyphen form is not lossless (`732番地の6` → `732-6` → `732番6号`)
+- [ ] B23 Canonical form unstable for a numeric room (`…16号 1`) and Sapporo kanji (`南十一条西`)
+- [x] B24 Invisible and control characters (U+200B, U+00AD, U+2028, NUL) are not removed; `⁃` is not a dash
+- [x] B25 A trailing `TEL 03-…` becomes the building
+- [ ] B26 Batch: duplicate headers lose data, `jaden_*` input columns overwritten, EUC-JP/UTF-16 misread, `--column 0`/out of range, header-less CSV loses a row, JSONL `null` → `"None"`
+- [ ] B28 Server: HTML errors (501/414/400), no socket timeout, traceback on client disconnect, `/v1/postal/X/extra` → 200, non-string `q` accepted
+- [ ] B29 CLI: `--limit` not validated, `jaden resolve -`, resolve exit codes undocumented, extract docstring span, README resolve example ranks Sapporo first
+
+### Suspected
+- [ ] S1 `Gazetteer.match_town` check-then-index could race with a cache clear
+- [ ] S2 Lazy singletons without locks could load data twice under concurrent first calls
+
+### Slow paths and memory
+- [ ] P1 `extract_addresses` is ~0.37 ms per character on place-name-dense text; `/v1/extract` accepts 2 MB
+- [ ] P2 `suggest` averages 32 ms; kana without a municipality 220–465 ms
+- [ ] P3 Memory reaches ~380 MB with every feature used; README says ~90 MB
+- [ ] P4 `validate` and `resolve` normalize the same input two or three times
+
+## Improvements
+- [x] I1 One sanitizer for every path (B2–B5, B24)
+- [ ] I2 Canonical and hyphen forms are fixed points, checked by a property test on the benchmark and real data
+- [ ] I3 One comparison core for `match_key` and `compare`
+- [ ] I4 Resolver guards (B9–B11)
+- [ ] I5 Server hardening: Japan bounding box, handler timeout, `/v1/extract` length cap, JSON errors, string-only parameters
+- [ ] I6 Offline geocode carries the validation status (B15)
+- [ ] I7 Batch robustness: UTF-16/EUC-JP, mostly-MALFORMED warning, `--no-header`, `--column` validation, JSONL line numbers
+- [ ] I8 Performance: kana prefix index for suggest, reuse of one NormalizedAddress in validate/resolve, extract without re-normalizing overlaps
+- [x] I9 None / NaN / int inputs give an empty result (pandas)
+- [ ] I10 CLI: multi-line stdin, `--limit`, resolve from stdin
+
+## Features
+- [ ] F1 `resolve` in the HTTP API (`/v1/resolve`) and as columns in `jaden batch`
+- [ ] F2 Structured input (prefecture, municipality, line 1, line 2, postal code) with cross-checks
+- [ ] F3 Machine-readable reason codes, Japanese messages, OpenAPI description
+- [ ] F4 MCP server: normalize, validate and resolve as tools for AI assistants
+- [ ] F5 Shipping-label output: fields split to carrier length limits
+- [ ] F6 Explainable fuzzy dedupe: building-name similarity with a reason per pair
+- [ ] F7 Data I/O: pandas helper, `.xlsx`, NDJSON streaming
+- [ ] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`)
+- [ ] F9 `jaden data update` also refreshes the MIC municipality list
+- [ ] F10 Docker image with a gateway example

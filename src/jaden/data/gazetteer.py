@@ -32,6 +32,9 @@ from ..core.townkey import TOWN_KEY_VERSION, kana_key, town_key
 _BUNDLED_DIR = Path(__file__).parent
 # Grid cell of the nearest-town index, in degrees (about 2 km)
 _CELL_DEG = 0.02
+# Bounding box of every registered point (Okinotorishima to Etorofu, Yonaguni to Minamitorishima), with room
+_JAPAN_LAT = (20.0, 46.0)
+_JAPAN_LON = (122.0, 154.5)
 # Longest town key in the national list is under 30 characters; inputs are clipped to this
 _MAX_KEY_CHARS = 40
 
@@ -567,14 +570,21 @@ class Gazetteer:
     def nearest_towns(self, latitude: float, longitude: float, limit: int = 1,
                       max_km: float = 30.0) -> List[Tuple[float, TownRecord]]:
         """The town / 丁目 points nearest to a coordinate as (distance in metres, record), nearest first."""
+        # Every registered point lies within Japan's extent; far outside it there is nothing to search
+        # (and near the poles the cells' east-west size goes to zero, so the ring search would not end)
+        margin = max_km / 111.0
+        if not (_JAPAN_LAT[0] - margin <= latitude <= _JAPAN_LAT[1] + margin
+                and _JAPAN_LON[0] - margin <= longitude <= _JAPAN_LON[1] + margin):
+            return []
         grid, lats, lons, offsets = self._spatial()
         text = self._towns_table().text
         cy, cx = int(latitude / _CELL_DEG), int(longitude / _CELL_DEG)
         cos_lat = math.cos(math.radians(latitude))
         best: List[Tuple[float, int]] = []
-        cell_m = _CELL_DEG * 111_000 * min(1.0, cos_lat)
+        cell_m = _CELL_DEG * 111_000 * min(1.0, max(cos_lat, 0.5))
         ring = 0
-        while ring * cell_m <= max_km * 1000 + cell_m:
+        max_ring = int(max_km * 1000 / cell_m) + 2
+        while ring <= max_ring:
             for dy in range(-ring, ring + 1):
                 for dx in range(-ring, ring + 1):
                     if max(abs(dy), abs(dx)) != ring:
