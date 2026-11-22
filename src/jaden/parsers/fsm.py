@@ -88,6 +88,9 @@ class BlockFSM:
             Tuple of (result_dict, town_name, remaining_tail).
         """
         text = _HYPHEN_AFTER_MARKER.sub(r"\1", text.strip())   # '2丁目-11番-1号' is '2丁目11番1号'
+        if has_chome_already:
+            # After a 丁目 already read (Sapporo's 北29条西4丁目), '2番1-158' is the sequence 2-1-158
+            text = re.sub(r"^(\d+)番(?=\d+-\d)", r"\1-", text)
         result, town, tail = BlockFSM._parse(text, has_chome_already, _TOWN_ANY)
         # The block number is the first number after the town. A later, better-labelled number
         # belongs to the building: '谷口212堀切マンション101号室' is 谷口 212, not 谷口212堀切マンション 101号.
@@ -127,6 +130,10 @@ class BlockFSM:
             return result, town, tail
         kept = digits[:-take]
         result[key] = int(kept) if kept else None
+        if key == "go" and result["go"] is None and result["chome"] is None \
+                and result["address_regime"] == AddressRegime.GAIKU_HOSHIKI.value:
+            # The 号 was the floor ('272番3階'): what is left is a lone 番, which says nothing of the regime
+            result["address_regime"] = AddressRegime.UNSPECIFIED.value
         return result, town, digits[-take:] + tail
 
     @staticmethod
@@ -151,7 +158,8 @@ class BlockFSM:
         # =====================================================================
         # STATE 1: Explicit '丁目' marker present in string
         # =====================================================================
-        chome_match = re.search(rf"^{town_pattern}(?P<chome>{_NUM_TOKEN})丁目(?P<rest>.*)$", text)
+        # A kanji 丁目 right after an Arabic digit belongs to a name: '24-17壱丁目ビル303'
+        chome_match = re.search(rf"^{town_pattern}(?P<chome>\d+|(?<!\d)[{_KANJI_NUM_CHARS}]+)丁目(?P<rest>.*)$", text)
         if chome_match:
             town = chome_match.group("town").strip()
             oaza, koaza = extract_aza(town)
@@ -180,6 +188,9 @@ class BlockFSM:
                 else:
                     result["ban"] = ban_val
                     result["go"] = go_val
+                    if go_val is None:
+                        # '6丁目232番' without a 号 is a block or a lot: written like '6-232', it says no more
+                        result["address_regime"] = AddressRegime.UNSPECIFIED.value
                 tail = sub_named.group("tail").strip()
                 return result, town, tail
 
@@ -195,6 +206,7 @@ class BlockFSM:
             sub_single = re.search(rf"^(?P<num>{_NUM_TOKEN})(?:号)?(?P<tail>.*)$", rest)
             if sub_single:
                 result["ban"] = _parse_num(sub_single.group("num"))
+                result["address_regime"] = AddressRegime.UNSPECIFIED.value
                 tail = sub_single.group("tail").strip()
                 return result, town, tail
 
@@ -267,7 +279,8 @@ class BlockFSM:
             suffix = ban_match.group("suffix")
             go_str = _go_of(ban_match)
             is_pure_kanji_ban = any(c in _KANJI_NUM_CHARS for c in raw_ban) and not any(c.isdigit() for c in raw_ban)
-            if suffix == "番" and is_pure_kanji_ban and not go_str:
+            after_aza = ban_match.group("town").endswith("字")   # '字三番113': 三番 is the 字's name
+            if suffix == "番" and is_pure_kanji_ban and (not go_str or after_aza):
                 if town_pattern is not _TOWN_ANY:
                     break
                 min_town = ban_match.end("suffix")
@@ -310,7 +323,7 @@ class BlockFSM:
             raw_num = single_marked.group("num")
             suffix = single_marked.group("suffix")
             is_pure_kanji = any(c in _KANJI_NUM_CHARS for c in raw_num) and not any(c.isdigit() for c in raw_num)
-            if suffix == "番" and is_pure_kanji:
+            if suffix == "番" and is_pure_kanji:   # a name ('麻布十番'), also after 字 ('字三番')
                 if town_pattern is not _TOWN_ANY:
                     break
                 min_town = single_marked.end("suffix")

@@ -17,9 +17,13 @@ from typing import Optional, Tuple, Final
 # Floor patterns: e.g. '50F', '50階', 'B1F', '地下1階', '3f'
 # In Japanese, CJK characters (e.g. 'タワー') are \w, so \b before digits fails.
 _FLOOR_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"(?P<floor>(?:B\d+|\d+|地下\d+)[\s]*(?:階|[Ff](?![a-z])))",
+    r"(?P<floor>(?:B\d+|\d+|地下\d+|地下[一二三四五六七八九十]+|[一二三四五六七八九十]+(?=階))[\s]*(?:階|[Ff](?![a-z])))",
 )
+_KANJI_DIGIT = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
 
+# A room on its own: a bare number ('… 1', '… 302'), a lettered room ('A-302', '302A', 'B101'), or a
+# wing and room ('2-302')
+_ROOM_ALONE: Final[re.Pattern[str]] = re.compile(r"^(?:\d{1,5}|[A-Za-z]-?\d{2,4}|\d{2,4}-?[A-Za-z]|\d{1,2}-\d{2,4})$")
 # A basement level written alone after the building name: 'サカエチカ B1'
 _BASEMENT_TOKEN: Final[re.Pattern[str]] = re.compile(r"(?:^|\s)(?P<floor>B\d{1,2})(?=\s|$)")
 
@@ -60,14 +64,21 @@ class BuildingParser:
         floor: Optional[str] = None
         unit: Optional[str] = None
 
-        # 0. A bare number joined to the block numbers by a hyphen is a room ('4-2-8-101')
-        if tail.strip().startswith("-") and working.isdigit():
+        # 0. A room on its own: '4-2-8-101', '… 1', 'A-302', '2-302'
+        if _ROOM_ALONE.match(working):
             return None, None, working
 
-        # 1. Extract Floor if present
-        floor_match = _FLOOR_PATTERN.search(working) or _BASEMENT_TOKEN.search(working)
+        # 1. Extract Floor if present. Two floors ('2階・3階') stay in the building text: neither is the address's
+        floors = list(_FLOOR_PATTERN.finditer(working))
+        floor_match = (floors[0] if len(floors) == 1 else None) or (None if floors else _BASEMENT_TOKEN.search(working))
         if floor_match:
             floor = floor_match.group("floor").strip()
+            kanji = re.match(r"(地下)?([一二三四五六七八九十]+)", floor)
+            if kanji:
+                digits = kanji.group(2)
+                n = (_KANJI_DIGIT.get(digits[0], 1) * 10 + _KANJI_DIGIT.get(digits[2:3], 0) if "十" in digits[1:2]
+                     else 10 + _KANJI_DIGIT.get(digits[1:2], 0) if digits.startswith("十") else _KANJI_DIGIT.get(digits, 0))
+                floor = f"{kanji.group(1) or ''}{n}{floor[kanji.end():]}"
             working = (working[:floor_match.start()] + " " + working[floor_match.end():]).strip()
 
         # 2. Extract Room/Unit if present

@@ -7,6 +7,7 @@ Local Government Code municipal registries.
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 import json
+import threading
 from pathlib import Path
 
 from ..models.codes import PrefectureRecord
@@ -171,10 +172,19 @@ class AddressDataRegistry:
 _REGISTRY_INSTANCE: Optional[AddressDataRegistry] = None
 
 
+_REGISTRY_LOCK = threading.Lock()
+
+
 def get_registry() -> AddressDataRegistry:
-    """Returns the singleton AddressDataRegistry instance."""
+    """Returns the singleton AddressDataRegistry instance.
+
+    It is published only once loaded: a thread arriving meanwhile waits instead of seeing an empty registry.
+    """
     global _REGISTRY_INSTANCE
     if _REGISTRY_INSTANCE is None:
-        _REGISTRY_INSTANCE = AddressDataRegistry()
-        _REGISTRY_INSTANCE.load_all()
+        with _REGISTRY_LOCK:
+            if _REGISTRY_INSTANCE is None:
+                registry = AddressDataRegistry()
+                registry.load_all()
+                _REGISTRY_INSTANCE = registry
     return _REGISTRY_INSTANCE

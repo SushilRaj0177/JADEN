@@ -76,10 +76,24 @@ def _fold_building(name: Optional[str]) -> Optional[str]:
     return s or None
 
 
-def _unit_part(unit: Optional[str], floor: Optional[str]) -> Optional[str]:
+_WING = re.compile(r"(?:^|[^A-Za-z])([A-Za-z]|\d{1,2}|[東西南北])号?棟$")
+
+
+def _unit_part(unit: Optional[str], floor: Optional[str], building: Optional[str] = None) -> Optional[str]:
     if unit:
+        # A wing at the end of the building ('B棟', '1号棟') is part of which flat it is
+        wing = _WING.search(unicodedata.normalize("NFKC", building or "").upper().strip())
+        prefix = f"{wing.group(1)}棟" if wing else ""
+        # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302' -> A302;
+        # 'A棟101' -> A棟101 (letters and wings tell flats apart); '2-302' stays 2-302
+        u = unicodedata.normalize("NFKC", unit).upper().strip()
+        u = re.sub(r"\s+|号室|室|号(?=棟)|号$", "", u)
+        u = re.sub(r"^(?:#|ROOM|RM|APT|APARTMENT|UNIT)\.?", "", u).lstrip("-")
+        u = re.sub(r"(?<=[A-Z])-|-(?=[A-Z])", "", u)
+        if u:
+            return prefix + u
         m = _UNIT_DIGITS.search(unicodedata.normalize("NFKC", unit))
-        return m.group(1).upper() if m else unit
+        return prefix + (m.group(1).upper() if m else unit)
     if floor:
         m = _FLOOR.match(unicodedata.normalize("NFKC", floor))
         if m:
@@ -139,7 +153,7 @@ def match_parts(res: NormalizedAddress) -> MatchParts:
         chome=str(chome) if chome is not None else None,
         block=block,
         house=house,
-        unit=_unit_part(c.unit, c.floor),
+        unit=_unit_part(c.unit, c.floor, c.building),
         building=_fold_building(c.building),
         candidates=candidates,
     )

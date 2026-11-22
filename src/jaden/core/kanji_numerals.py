@@ -82,14 +82,16 @@ def parse_kanji_number(token: str) -> Optional[int]:
 
 
 # Context-bounded patterns protecting proper nouns (一番街, 一番館, 三番町, 麻布十番)
+# A kanji number right after an Arabic digit starts a name, not a 丁目: '…24-17壱丁目ビル303'
 _CHOME_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
-    rf"([{_KANJI_NUM_CHARS}]+)丁目"
+    rf"(?<!\d)([{_KANJI_NUM_CHARS}]+)丁目"
 )
 _BANCHI_KANJI_PATTERN: Final[re.Pattern[str]] = re.compile(
     rf"([{_KANJI_NUM_CHARS}]+)番地"
 )
+# Not after 字: '字三番' is a name ('井内字三番113')
 _BAN_CHI_GO_PATTERN: Final[re.Pattern[str]] = re.compile(
-    rf"([{_KANJI_NUM_CHARS}]+)番(地の|号)"
+    rf"(?<!字)([{_KANJI_NUM_CHARS}]+)番(地の|号)"
 )
 _BAN_AFTER_CHOME_PATTERN: Final[re.Pattern[str]] = re.compile(
     rf"(\d+丁目)([{_KANJI_NUM_CHARS}]+)番(?!町|丁|街|館|割|組|場|屋|通|筋)"

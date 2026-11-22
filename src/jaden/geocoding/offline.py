@@ -40,6 +40,19 @@ class OfflineGeocoder(BaseGeospatialResolver):
                 candidates=c.ambiguous_candidates,
                 error_message="Address matches several municipalities; add the prefecture or city.",
             )
+        # A point for an address the registries reject (a 丁目 that does not exist, block 0, a postal code
+        # of another town) would look like a found address: report it as not found, with the reason
+        from ..engine import get_engine
+        verdict = get_engine().validate(norm.input_raw)
+        if verdict.status == "MALFORMED":
+            return GeospatialResult(
+                query=norm.input_raw,
+                status=GeocodingStatus.NO_MATCH.value,
+                provider=self.provider_name,
+                matched_address=norm.canonical or None,
+                error_message=f"Address rejected: {verdict.message}",
+                metadata={"validation": verdict.status},
+            )
         if norm.latitude is None or norm.longitude is None:
             return GeospatialResult(
                 query=norm.input_raw,
@@ -58,6 +71,7 @@ class OfflineGeocoder(BaseGeospatialResolver):
                 "level": norm.location_level,
                 "machiaza_id": c.machiaza_id,
                 "lg_code": c.lg_code,
+                "validation": verdict.status,
                 "source": "MLIT 位置参照情報 (block level)" if norm.location_level == "block"
                           else "MLIT 大字・町丁目レベル位置参照情報",
             },

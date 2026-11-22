@@ -43,8 +43,10 @@ _NO_AFTER_CHOME: Final[re.Pattern[str]] = re.compile(r"(\d丁目\d+)の(\d+)")
 # '10の1番地', '887-2番地': lot 10, branch 1 (written as 10番地の1); after 丁目, '4丁目2-8番地' is 2番8号
 _NO_BEFORE_BANCHI: Final[re.Pattern[str]] = re.compile(r"(?<![\d-])(\d+)[の-](\d+)番地(?!の|\d|-)")
 _BANCHI_AFTER_CHOME_PAIR: Final[re.Pattern[str]] = re.compile(r"(\d丁目\d+-\d+)番地(?!の|\d|-)")
-# '4 - 2 - 8': spaces around a hyphen between numbers
-_SPACED_HYPHEN: Final[re.Pattern[str]] = re.compile(r"(?<=\d)\s*-\s*(?=\d)")
+# '4 - 2 - 8': spaces around a hyphen between numbers; '9・4' and '209の-1' are 9-4 and 209-1
+_SPACED_HYPHEN: Final[re.Pattern[str]] = re.compile(r"(?<=\d)\s*(?:-|・|の-)\s*(?=\d)")
+# Labels swapped after 丁目: '3号5番地', '35号1番', '18号36号' are block 3 house 5, 35-1, 18-36
+_SWAPPED_AFTER_CHOME: Final[re.Pattern[str]] = re.compile(r"(\d丁目)(\d+)号(\d+)(?:番地|番|号)(?![\dの-])")
 # A phone or fax number after the address: 'TEL 03-1234-5678', '電話：03(1234)5678'
 _TRAILING_PHONE: Final[re.Pattern[str]] = re.compile(
     r"\s*[(（]?\s*(?:TEL|Tel|tel|FAX|Fax|fax|電話番号|電話|℡|ＴＥＬ)\s*[.:：]?\s*[\d\s()（）+-]{6,}[)）]?\s*$")
@@ -113,6 +115,7 @@ def sanitize_address_text(raw_text: str) -> str:
     # Number forms around 丁目 and 番地 that the block parser reads in their usual spelling
     text = _SPACED_HYPHEN.sub("-", text)
     text = _AFTER_CHOME.sub(r"\1", text)
+    text = _SWAPPED_AFTER_CHOME.sub(r"\1\2番\3号", text)
     prev = None
     while prev != text:
         prev = text

@@ -101,11 +101,12 @@ class _RomajiIndex:
         if cached is not None:
             return cached
         out: Dict[str, str] = {}
-        self._towns[lg] = out
         for entry in get_gazetteer().towns_in(lg).values():
             if entry.romaji:
                 out.setdefault(romaji_key(entry.romaji), entry.name)
                 out.setdefault(romaji_key(entry.romaji.replace("-", " ")), entry.name)
+        # Published only once complete: another thread must never see a half-filled table
+        self._towns[lg] = out
         return out
 
 
@@ -199,9 +200,11 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     muni_lgs: Optional[Set[str]] = None
     explicit_muni = False
     leftovers: List[str] = []
+    numbered_segments: Set[str] = set()
     for i, seg in enumerate(segments):
         if i in town_segments and seg:
             leftovers.append(seg)
+            numbered_segments.add(seg)
             continue
         if not seg:
             continue
@@ -227,6 +230,7 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     town_name = grid_text
     town_lgs = set(muni_lgs)
     building: List[str] = []
+    unmatched_town: Optional[str] = None
     for seg in leftovers:
         hits = {}
         for lg in muni_lgs:
@@ -240,6 +244,11 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
             town_name = names_found.pop() if len(names_found) == 1 else None
             if town_name is None:
                 notes.append(f"romaji town '{seg}' matches several spellings")
+        elif town_name is None and unmatched_town is None and seg in numbered_segments:
+            # The words written with the numbers name the town, even one the registry does not hold:
+            # it stays in the town's place, not after the numbers as if it were a building
+            unmatched_town = seg
+            notes.append(f"romaji town '{seg}' is not in the registry")
         else:
             building.append(seg)
     if len(town_lgs) < len(muni_lgs):
@@ -268,7 +277,8 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     if numbers:
         rest = "-".join(str(n) for n in numbers[1:])
         num = f"{numbers[0]}丁目{rest}" if explicit_chome else "-".join(str(n) for n in numbers)
-    japanese = f"{'〒' + postal + ' ' if postal else ''}{head}{town_name or ''}{num}"
+    town_text = town_name or (f"{unmatched_town} " if unmatched_town else "")
+    japanese = f"{'〒' + postal + ' ' if postal else ''}{head}{town_text}{num}"
     if building:
         japanese += " " + " ".join(building)
     notes.insert(0, f"romaji input read as '{japanese}'")

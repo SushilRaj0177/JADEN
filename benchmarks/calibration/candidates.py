@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parents[1] / "src"))
+from jaden.resolve import mentions_prefecture  # noqa: E402  (fixed 22 Nov: '京都' inside '東京都')
 
 FEATURES = (
     "log_town_companies", "log_town_share", "log_muni_companies", "town_exact", "town_found",
@@ -150,7 +151,7 @@ class CandidateBuilder:
                 "rules_accepted": float(status == "ACCEPTED"), "muni_written": float(muni_written),
                 "muni_homonym": homonym,
                 "name_mentions_muni": float(bool(m and side_n and len(_stem(m.name)) >= 2 and _stem(m.name) in side_n)),
-                "name_mentions_pref": float(bool(m and side_n and m.prefecture_name[:-1] in side_n)),
+                "name_mentions_pref": float(bool(m and side_n and mentions_prefecture(m.prefecture_name, side_n))),
             })
         # Very long lists: keep the most common towns (the rest rarely matter, and cost time)
         rows.sort(key=lambda r: (-r["muni_homonym"], -r["count"]))

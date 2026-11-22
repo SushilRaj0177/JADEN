@@ -21,7 +21,9 @@ from .models.address import NormalizedAddress
 
 _MAX_SPAN = 90
 
-_POSTAL = re.compile(r"(?:〒\s*)?[0-9０-９]{3}[-－‐ー−―][0-9０-９]{4}(?![0-9０-９-])|〒\s*[0-9０-９]{7}")
+# Not the end of a phone number ('03-1234-5678'): no digit, hyphen or bracket right before an unmarked code
+_POSTAL = re.compile(r"〒\s*[0-9０-９]{3}[-－‐ー−―]?[0-9０-９]{4}(?![0-9０-９-])"
+                     r"|(?<![0-9０-９\-－‐ー−―(（)）])[0-9０-９]{3}[-－‐ー−―][0-9０-９]{4}(?![0-9０-９-])")
 _PREFECTURE = re.compile(
     "北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|"
     "新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|"
@@ -47,6 +49,8 @@ _SENTENCE_TOKEN = re.compile(
     r"^(?:[にでへをはがのもと][ぁ-ん]|まで|より|から|にて|こちら|お越し|下さい|ください|です|ます|となり)"
     r"|(?:ください|下さい|します|しました|ました|でした|です|ます|ません|お越し|について|になります)")
 _DIGIT = re.compile(r"[\d０-９一二三四五六七八九十]")
+# What joins two addresses: a label ('支社：', '→新住所:'), 'と', '・', '及び', or just a space
+_LINK_BEFORE_ADDRESS = re.compile(r"(?:[\s　]*(?:→|⇒)?[\s　]*[^\s　\d０-９]{0,6}[：:][\s　]*|[\s　]*(?:と|及び|および|・|→|⇒)[\s　]*|[\s　]+)$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +79,15 @@ def _span_end(text: str, start: int, body_start: int) -> int:
     counted = _NON_ADDRESS_NUMBER.search(text, body_start, end)
     if counted:
         end = counted.start()
+    # A second prefecture after the numbers starts a second address ('…4-2-8 支社：大阪府…', '…と大阪府…')
+    second = _PREFECTURE.search(text, body_start + 1, end)
+    if second and not re.match(r"[^\s　]{1,8}?[市区町村郡]", text[second.end():end]):
+        second = None   # '東京都庁' is a building, not a second address
+    if second and _DIGIT.search(text, body_start, second.start()):
+        end = second.start()
+        head = _LINK_BEFORE_ADDRESS.search(text, body_start, end)
+        if head:
+            end = head.start()
     # A sentence particle straight after the numbers ends the address
     first_digit = _DIGIT.search(text, body_start, end)
     if first_digit:

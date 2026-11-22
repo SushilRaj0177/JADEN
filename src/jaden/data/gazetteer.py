@@ -34,6 +34,7 @@ _BUNDLED_DIR = Path(__file__).parent
 _CELL_DEG = 0.02
 # Bounding box of every registered point (Okinotorishima to Etorofu, Yonaguni to Minamitorishima), with room
 _JAPAN_LAT = (20.0, 46.0)
+_NOT_CACHED = object()
 _JAPAN_LON = (122.0, 154.5)
 # Longest town key in the national list is under 30 characters; inputs are clipped to this
 _MAX_KEY_CHARS = 40
@@ -348,8 +349,10 @@ class Gazetteer:
         if not text:
             return None
         cache_key = (lg_code, text)
-        if cache_key in self._match_cache:
-            return self._match_cache[cache_key]
+        # One read, not 'in' then '[]': another thread may clear the cache in between
+        cached = self._match_cache.get(cache_key, _NOT_CACHED)
+        if cached is not _NOT_CACHED:
+            return cached  # type: ignore[return-value]
         found: Optional[TownMatch] = None
         clipped = text[:_MAX_KEY_CHARS]
         for towns in (self.towns_in(lg_code), self.postal_towns_in(lg_code)):
@@ -671,10 +674,15 @@ class Gazetteer:
 _GAZETTEER: Optional[Gazetteer] = None
 
 
+_GAZETTEER_LOCK = threading.Lock()
+
+
 def get_gazetteer() -> Gazetteer:
     global _GAZETTEER
     if _GAZETTEER is None:
-        _GAZETTEER = Gazetteer()
+        with _GAZETTEER_LOCK:
+            if _GAZETTEER is None:
+                _GAZETTEER = Gazetteer()
     return _GAZETTEER
 
 

@@ -84,6 +84,22 @@ def _model() -> Dict[str, Any]:
     return json.loads((_DATA / "resolver_model.json").read_text(encoding="utf-8"))
 
 
+_PREFECTURES = ("北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県",
+                "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県",
+                "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県",
+                "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県",
+                "宮崎県", "鹿児島県", "沖縄県")
+
+
+def mentions_prefecture(prefecture: str, text: str) -> bool:
+    """Whether ``text`` names the prefecture: '京都' inside '東京都' is Tokyo, not Kyoto."""
+    stem = prefecture[:-1] if prefecture != "北海道" else prefecture
+    for other in _PREFECTURES:
+        if other != prefecture and stem in other:
+            text = text.replace(other, "")
+    return stem in text
+
+
 def _stem(name: str) -> str:
     last = re.split(r"(?<=[市])", name)[-1] or name
     return re.sub(r"(市|区|町|村)$", "", last)
@@ -139,7 +155,7 @@ def candidate_features(engine: Any, text: str, side: str = "",
             "rules_accepted": float(status == "ACCEPTED"), "muni_written": float(muni_written),
             "muni_homonym": float(bool(m and town_part.startswith(m.name) and match is None)),
             "name_mentions_muni": float(bool(m and side_n and len(_stem(m.name)) >= 2 and _stem(m.name) in side_n)),
-            "name_mentions_pref": float(bool(m and side_n and m.prefecture_name[:-1] in side_n)),
+            "name_mentions_pref": float(bool(m and side_n and mentions_prefecture(m.prefecture_name, side_n))),
         })
     rows.sort(key=lambda r: (-r["muni_homonym"], -r["count"]))
     rows = rows[:MAX_CANDIDATES]
@@ -156,7 +172,8 @@ def candidate_features(engine: Any, text: str, side: str = "",
         input_type = "with prefecture"
     else:
         input_type = "town only"
-    return {"status": status, "candidates": [r["lg"] for r in rows], "x": x, "g": g, "input_type": input_type}
+    return {"status": status, "candidates": [r["lg"] for r in rows], "x": x, "g": g, "input_type": input_type,
+            "has_numbers": has_numbers}
 
 
 def probabilities(spec: Dict[str, Any], x: List[List[float]], g: List[float],
@@ -198,11 +215,19 @@ def resolve(address: str, name: str = "") -> Resolution:
                     key=lambda r: -r.probability)
     q = spec["conformal_qhat"][feats["input_type"]]
     best = ranked[0] if ranked else None
-    answered = bool(best and best.probability >= spec["threshold"])
+    # The model was fitted on addresses, which have block or lot numbers. Text without any ('大泉町立北小学校',
+    # a bare '南部町') is ranked but not answered.
+    answered = bool(best and best.probability >= spec["threshold"] and feats["has_numbers"])
+    members = [r.lg_code for r in ranked if 1 - r.probability <= q]
+    none_in = 1 - p_none <= q
+    if best is not None and best.lg_code not in members and (answered or (not members and not none_in)):
+        # Never an empty set, and never one without the answer given
+        members.insert(0, best.lg_code)
+    if not members and not none_in:
+        none_in = True
     return Resolution(
         input=address, side=name, input_type=feats["input_type"], rules_status=feats["status"],
         answered=answered, lg_code=best.lg_code if answered and best else None,
         name=best.name if answered and best else None, probability=best.probability if best else 0.0,
         candidates=tuple(ranked), none_probability=p_none,
-        candidate_set=tuple(r.lg_code for r in ranked if 1 - r.probability <= q),
-        set_includes_none=1 - p_none <= q, threshold=spec["threshold"])
+        candidate_set=tuple(members), set_includes_none=none_in, threshold=spec["threshold"])

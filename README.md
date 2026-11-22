@@ -27,7 +27,7 @@ jaden.resolve("芝公園4-2-8").name      # '東京都港区' (p > 0.99)
 ```
 
 ```bash
-jaden resolve "南3条東1-2-1" --name "網走市立南小学校"
+jaden resolve "南3条東1-2-1"            # 6 candidates ranked, none above the 1% threshold
 ```
 
 **Tested once on data it had never seen, under a pre-registered protocol** ([`benchmarks/heldout/PROTOCOL.md`](benchmarks/heldout/PROTOCOL.md)): the address of every welfare facility in the MLIT 2023 file (321,859), as published, without the municipality.
@@ -620,6 +620,7 @@ Confidence:  0.50
 Regime:      unspecified
 Precision:   house
 Message:     Omitted prefecture matches 2 statutory municipalities.
+Note:        the municipality is ambiguous: the text is returned as written, not interpreted
 Candidates:  2
   • 東京都府中市 (132063)
   • 広島県府中市 (342084)

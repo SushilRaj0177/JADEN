@@ -572,6 +572,7 @@ Confidence:  0.50
 Regime:      unspecified
 Precision:   house
 Message:     Omitted prefecture matches 2 statutory municipalities.
+Note:        the municipality is ambiguous: the text is returned as written, not interpreted
 Candidates:  2
   • 東京都府中市 (132063)
   • 広島県府中市 (342084)

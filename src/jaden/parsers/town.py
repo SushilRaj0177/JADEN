@@ -32,7 +32,9 @@ _LOT_SERIES = set("甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌ�
 
 def koaza_remainder(rest: str) -> bool:
     """True when text left after a town name is a 字 / 小字 or a lot-series prefix, not a different town."""
-    return rest.startswith(("字", "小字")) or (len(rest) == 1 and rest in _LOT_SERIES)
+    # Tsuruga's '谷25号1番1', Katsuyama's '片瀬第15号': a numbered 号 district below the town is like a 字
+    return (rest.startswith(("字", "小字")) or (len(rest) == 1 and rest in _LOT_SERIES)
+            or bool(re.fullmatch(r"第?\d+号", rest)))
 
 
 # Words that end a facility name, never a 字 ('ニセコ高等学校', '国府小学校')
@@ -272,7 +274,18 @@ def _check(gaz: Gazetteer, muni: MunicipalityRecord, town_text: str, chome: Opti
                     chome_explicit or all(r.chome is not None for r in entry.records)):
                 other_chome, other_unlisted = chome_state(entry.chomes, chome)
             return TownCheck(muni, other, other_chome, _postal_ok(postal, muni.lg_code, other), "machi", other_unlisted)
+    district = _NUMBERED_DISTRICT.search(town_text) if match is None else None
+    if district and district.start() > 0:
+        # '三島110号2番地': the town before a numbered 号 district is checked with every rule (here 三島 is
+        # registered as 三島町); the district stays as written below it
+        base = _check(gaz, muni, town_text[:district.start()], None, postal, False, None, strong_prefix_ok, respell_ok)
+        if base.match is not None:
+            below = TownMatch(muni.lg_code, base.match.entry, base.match.consumed, exact=False)
+            return TownCheck(muni, below, None, _postal_ok(postal, muni.lg_code, below), base.variant)
     return TownCheck(muni, match, chome_ok, _postal_ok(postal, muni.lg_code, match), None, unlisted)
+
+
+_NUMBERED_DISTRICT = re.compile(r"第?\d+号$")
 
 
 def resolve_town(

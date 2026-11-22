@@ -12,6 +12,7 @@ Orchestrates multi-stage deterministic normalization:
 
 import dataclasses
 import re
+import threading
 import time
 from typing import Any, Optional, Dict, List, Tuple, Final
 
@@ -48,6 +49,12 @@ _PROSE_TAIL: Final[re.Pattern[str]] = re.compile(
     r"(?<![ぁ-ん])(?:に|へ|まで|宛て?|あてに?|で|を|から|より)[^\d]{0,30}?"
     r"(?:下さい|ください|お願いします|お願い致します|お願いいたします|願います|します|です|ます)[。．！!？?\s]*$"
     r"|\s(?:宛て?|あて)\s*$")
+# A second address in the tail: a prefecture name, with the label or link before it
+_SECOND_ADDRESS: Final[re.Pattern[str]] = re.compile(
+    r"(?:(?:→|⇒)?[^\s\d]{0,6}[：:]\s*|(?:と|及び|および|・|→|⇒)\s*)?(?:北海道|東京都|京都府|大阪府|"
+    r"(?:青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|"
+    r"滋賀|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄)県)"
+    r"(?=[^\s　]{1,8}?[市区町村郡])")   # followed by a municipality: '東京都庁 第一本庁舎' is a building
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
 _POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})\s*-?\s*(\d{4})(?!\d)")
 # Unmarked: 'NNN-NNNN' at either end, or seven digits standing alone at either end ('1050011 東京都…')
@@ -63,10 +70,11 @@ _INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(r"(?:(?<=丁目)|(?<=番
 # Town text containing a number that is part of the name, not a block number:
 # '忠和1条', '芽室南2線', '五十嵐3の町', '古町通6番町', '五福1区'
 _NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(
-    r"^\D+\d+(?:(?!\d|丁目|番(?!町|耕地)|号|-|の\d|\s|$)|丁目(?=[^\d\s\-番号の]))")
+    r"^\D*\d+(?:(?!\d|丁目|番(?!町|耕地)|号|-|の\d|\s|$)|丁目(?=[^\d\s\-番号の]))")
 # Locators that belong to the place even when unregistered: Iwate '8地割', land readjustment
-# '8街区', Ishikawa '10部': the number after them is the lot
-_STRUCTURAL_TOWN: Final[re.Pattern[str]] = re.compile(r"^(?P<town>\D+?\d+(?:地割|街区|部|区|番耕地|耕地))(?=\d)")
+# '8街区', Ishikawa '10部', Fukui, Kumamoto and Miyazaki '第15号22番地' / '7号1番': the number after them is the lot
+_STRUCTURAL_TOWN: Final[re.Pattern[str]] = re.compile(
+    r"^(?P<town>\D+?(?:第\d+号|\d+(?:地割|街区|部|区|番耕地|耕地|号(?=\d+番))))(?=\d)")
 # A lot-series lot after the 丁目 ('相生町1-乙394'): kept as written
 _SERIES_LOT: Final[re.Pattern[str]] = re.compile(
     r"^-?(?P<lot>[甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラム]\d+(?:-\d+)?)(?P<rest>.*)$")
@@ -617,8 +625,23 @@ class AddressNormalizer:
                 tier_map["lg_code"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
                 tier_map.pop("ward", None)
                 if nothing_recognized:
-                    notes.append(f"municipality deduced from the {'postal code' if not town_res.match else 'town name'}: "
-                                 f"{chosen.prefecture_name}{chosen.name} is the only match in Japan")
+                    deduced_note = (f"municipality deduced from the {'postal code' if not town_res.match else 'town name'}: "
+                                    f"{chosen.prefecture_name}{chosen.name} is the only match in Japan")
+                    if allow_reread:
+                        # Read the address again with the municipality in front: the numbers after a town
+                        # whose name holds a number ('古町通6番町976') are then read against that town
+                        prefix = f"〒{postal_code} " if postal_code else ""
+                        reread = self._normalize(
+                            f"{prefix}{chosen.prefecture_name}{chosen.county or ''}{chosen.name}{sanitized}",
+                            allow_reread=False)
+                        if reread.components.lg_code == chosen.lg_code and not reread.components.is_ambiguous:
+                            return dataclasses.replace(
+                                reread, input_raw=raw_address, input_sanitized=sanitized,
+                                components=dataclasses.replace(reread.components, municipality_inferred=True,
+                                                               prefecture_inferred=True),
+                                confidence_score=min(reread.confidence_score, 0.75),
+                                notes=(deduced_note,) + reread.notes)
+                    notes.append(deduced_note)
                     confidence = 0.75
                 else:
                     confidence = 0.85 if is_pref_inferred else 0.90
@@ -849,6 +872,11 @@ class AddressNormalizer:
             tier_map["edaban"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
 
         # Stage 6: Building, Floor, and Unit Disentanglement
+        second = _SECOND_ADDRESS.search(tail_text or "")
+        if second:
+            # '…4-2-8 支社：大阪府大阪市…': a second address is not the building of the first
+            notes.append(f"a second address follows ('{tail_text[second.start():].strip()[:30]}'): only the first is read")
+            tail_text = tail_text[:second.start()].strip()
         prose = _PROSE_TAIL.search(tail_text or "")
         if prose:
             # '…4-2-8に送って下さい': a sentence after the address is not a building name
@@ -1274,7 +1302,7 @@ class AddressNormalizer:
                                 candidates: Tuple[MunicipalityRecord, ...], pref_rec) -> Optional[str]:
         """The start of ``text`` when it is a registered town whose name contains a number."""
         gaz = self.gazetteer
-        if gaz is None or not _NUMBERED_TOWN.match(text):
+        if gaz is None or not (_NUMBERED_TOWN.match(text) or _STRUCTURAL_TOWN.match(text)):
             return None
         if muni_rec is not None:
             pool = self.registry.wards_of(muni_rec) or [muni_rec]
@@ -1522,14 +1550,19 @@ class AddressNormalizer:
 
 
 def _uninterpreted_if_unresolved(res: NormalizedAddress) -> NormalizedAddress:
-    """Without a municipality the numbers cannot be read with any confidence ('東京都23区' is not 23番 区),
-    so the canonical form is the cleaned text as written, not a structure guessed from it."""
+    """Without one municipality the numbers cannot be read with any confidence ('東京都23区' is not 23番 区;
+    '小中野3-9-26' is 3丁目 in one candidate and a lot in another), so the canonical form is the cleaned text as
+    written, not a structure guessed from it: re-reading it gives the same result as the input."""
     c = res.components
-    if c.lg_code or c.is_ambiguous or not res.canonical or res.canonical == res.input_sanitized:
+    contradicted = bool(c.town_registered_elsewhere or c.is_contradictory)
+    if ((c.lg_code and not c.is_ambiguous and not contradicted) or not res.canonical
+            or res.canonical == res.input_sanitized):
         return res
+    why = ("the municipality is ambiguous" if c.is_ambiguous else
+           "the address contradicts itself" if contradicted else "no municipality found")
     return dataclasses.replace(
         res, canonical=res.input_sanitized,
-        notes=res.notes + ("no municipality found: the text is returned as written, not interpreted",))
+        notes=res.notes + (f"{why}: the text is returned as written, not interpreted",))
 
 
 def _too_long(raw_address: str) -> NormalizedAddress:
@@ -1557,11 +1590,16 @@ def _verification_level(c: AddressComponents) -> str:
 _DEFAULT_ENGINE: Optional[AddressNormalizer] = None
 
 
+_ENGINE_LOCK = threading.Lock()
+
+
 def get_engine() -> AddressNormalizer:
-    """The shared default engine (created on first use)."""
+    """The shared default engine (created on first use, once even when threads ask at the same time)."""
     global _DEFAULT_ENGINE
     if _DEFAULT_ENGINE is None:
-        _DEFAULT_ENGINE = AddressNormalizer()
+        with _ENGINE_LOCK:
+            if _DEFAULT_ENGINE is None:
+                _DEFAULT_ENGINE = AddressNormalizer()
     return _DEFAULT_ENGINE
 
 

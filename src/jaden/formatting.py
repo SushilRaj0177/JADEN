@@ -36,17 +36,25 @@ def hyphenated(res: NormalizedAddress) -> str:
     grid = c.hokkaido_grid
     if grid is not None:
         out += f"{grid.cardinal_ns}{grid.jo}条{grid.cardinal_ew}{grid.chome}丁目"
-        numbers = [n for n in (c.ban, c.go) if n is not None] or [n for n in (c.banchi, c.edaban) if n is not None]
-        out += "-".join(str(n) for n in numbers)
+        if c.ban is not None:
+            out += "-".join(str(n) for n in (c.ban, c.go) if n is not None)
+        elif c.banchi is not None:
+            out += f"{c.banchi}番地" + (str(c.edaban) if c.edaban is not None else "")
     elif c.lot_number is not None:
         out += (f"{c.chome}丁目" if c.chome is not None else "") + c.lot_number
     elif c.chome is not None and c.ban is None and c.banchi is None:
         out += f"{c.chome}丁目"
     else:
-        numbers = [n for n in (c.chome, c.ban, c.go) if n is not None]
         if c.banchi is not None:
-            numbers = ([c.chome] if c.chome is not None else []) + [n for n in (c.banchi, c.edaban) if n is not None]
-        out += "-".join(str(n) for n in numbers)
+            # A lot keeps its 番地, or '3008-1' would read back as 3008番1号: '3008番地1', '1丁目20番地48'
+            out += (f"{c.chome}丁目" if c.chome is not None else "") + f"{c.banchi}番地" + \
+                (str(c.edaban) if c.edaban is not None else "")
+        elif c.chome is not None and c.ban is not None and (c.go is None or c.chome_verified is not True):
+            # '3丁目1718番': '3-1718' would read back as 3番1718号; a 丁目 the registry does not list
+            # ('宇地泊1丁目20番7号') would read back as a lot number
+            out += f"{c.chome}丁目" + "-".join(str(n) for n in (c.ban, c.go) if n is not None)
+        else:
+            out += "-".join(str(n) for n in (c.chome, c.ban, c.go) if n is not None)
     tail = _secondary(res)
     return f"{out} {tail}" if tail else out
 
@@ -55,7 +63,9 @@ def format_address(res: NormalizedAddress, style: str = "canonical") -> str:
     if style == "canonical":
         return res.canonical
     if style == "hyphen":
-        return hyphenated(res) if res.confidence_score > 0 else res.canonical
+        # Without one municipality the text is not interpreted, so there is nothing to shorten
+        resolved = res.confidence_score > 0 and res.components.lg_code and not res.components.is_ambiguous
+        return hyphenated(res) if resolved else res.canonical
     if style == "en":
         return res.romaji or ""
     raise ValueError(f"unknown style '{style}'; use one of {', '.join(STYLES)}")
