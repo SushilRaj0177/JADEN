@@ -663,6 +663,12 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     sv_p.add_argument("--max-batch", type=int, default=1000, help="Most addresses accepted by /v1/batch (default: 1000).")
     sv_p.add_argument("--quiet", action="store_true", help="Do not log requests.")
 
+    subparsers.add_parser(
+        "mcp", help="Run as an MCP server for AI assistants (stdin/stdout)",
+        description="Model Context Protocol server over stdin/stdout: normalize, validate, resolve, extract, "
+                    "postal lookup, compare and autocomplete as tools. Register it in the assistant's MCP "
+                    "settings as the command 'jaden mcp'.")
+
     rs_p = subparsers.add_parser(
         "resolve", help="Rank the candidate municipalities of an address with calibrated probabilities",
         description="For addresses that do not name their municipality: every candidate with a probability, "
@@ -716,6 +722,11 @@ def _resolve_one(args: argparse.Namespace) -> int:
             print(f"  ... {len(r.candidates) - args.limit} more")
         print(f"  {r.none_probability:6.3f}  none of these")
     return 0 if r.answered else 3
+
+
+def _handle_mcp(args: argparse.Namespace) -> int:
+    from .mcp import serve_stdio
+    return serve_stdio()
 
 
 def _handle_serve(args: argparse.Namespace) -> int:
@@ -815,6 +826,7 @@ _TOOLKIT_HANDLERS = {
     "resolve": _handle_resolve,
     "extract": _handle_extract,
     "serve": _handle_serve,
+    "mcp": _handle_mcp,
 }
 
 

@@ -439,3 +439,47 @@ def test_openapi_description_lists_every_route() -> None:
     paths = {p.replace("/{code}", "") for p in spec["paths"]}
     assert set(api.routes) <= paths
     json.dumps(spec)
+
+
+# ---------------------------------------------------------------- F4: MCP server
+def _mcp(*messages: object) -> list:
+    import io
+    from jaden.mcp import serve_stdio
+    out = io.StringIO()
+    serve_stdio(io.StringIO("\n".join(m if isinstance(m, str) else json.dumps(m) for m in messages) + "\n"), out)
+    return [json.loads(line) for line in out.getvalue().splitlines()]
+
+
+def test_mcp_handshake_lists_and_calls_tools() -> None:
+    replies = _mcp(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+         "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}},
+        {"jsonrpc": "2.0", "method": "notifications/initialized"},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+        {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+         "params": {"name": "normalize_address", "arguments": {"address": "港区芝公園4-2-8"}}},
+        {"jsonrpc": "2.0", "id": 4, "method": "tools/call",
+         "params": {"name": "resolve_address", "arguments": {"address": "南3条東1-2-1"}}})
+    assert [r["id"] for r in replies] == [1, 2, 3, 4]       # no reply to the notification
+    assert replies[0]["result"]["protocolVersion"] == "2025-06-18"
+    names = {t["name"] for t in replies[1]["result"]["tools"]}
+    assert {"normalize_address", "validate_address", "resolve_address", "extract_addresses"} <= names
+    rec = replies[2]["result"]
+    assert not rec["isError"] and rec["structuredContent"]["canonical"] == "東京都港区芝公園4丁目2番8号"
+    assert json.loads(rec["content"][0]["text"])["reason"] == "VERIFIED_CHOME"
+    assert not replies[3]["result"]["structuredContent"]["answered"]  # ambiguous: no invented municipality
+
+
+def test_mcp_reports_bad_input_without_dying() -> None:
+    replies = _mcp("not json",
+                   {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "nope"}},
+                   {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                    "params": {"name": "validate_address", "arguments": {"address": 5}}},
+                   {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+                    "params": {"name": "suggest_addresses", "arguments": {"text": "しば", "limit": True}}},
+                   {"jsonrpc": "2.0", "id": 4, "method": "frobnicate"},
+                   {"jsonrpc": "2.0", "id": 5, "method": "ping"})
+    assert replies[0]["error"]["code"] == -32700
+    assert replies[1]["error"]["code"] == -32602
+    assert replies[2]["result"]["isError"] and replies[3]["result"]["isError"]
+    assert replies[4]["error"]["code"] == -32601 and replies[5]["result"] == {}

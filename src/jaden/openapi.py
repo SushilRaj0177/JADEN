@@ -41,7 +41,7 @@ _SCHEMAS: Dict[str, Any] = {
         "input": {"type": "string"}, "status": _STATUS, "valid": {"type": "boolean"}, "reason": _REASON,
         "message": {"type": "string"}, "message_ja": {"type": "string"},
         "warnings": {"type": "array", "items": {"type": "string"}},
-        "canonical": {"type": ["string", "null"], "example": "東京都港区芝公園四丁目2番8号"},
+        "canonical": {"type": ["string", "null"], "example": "東京都港区芝公園4丁目2番8号"},
         "hyphenated": {"type": ["string", "null"]}, "english": {"type": ["string", "null"]},
         "kana": {"type": ["string", "null"]}, "lines": {"type": "array", "items": {"type": "string"}},
         "lg_code": {"type": ["string", "null"]}, "postal_code": {"type": ["string", "null"]},

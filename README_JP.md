@@ -61,6 +61,7 @@ v0.2 は 1 件の住所を照合できるようになりました。v0.3 は、�
 | メール・メモから住所を抽出 | `jaden.extract_addresses`, `jaden extract` | 文字位置つき、1 件ずつ照合済み |
 | 短い形式で保存 | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8（再正規化しても同じ結果） |
 | 他の言語から利用 | `jaden serve` | `/v1` 以下の JSON API とデモページ（標準ライブラリのみ） |
+| AI アシスタントから利用 | `jaden mcp` | MCP ツール: 正規化・検証・候補推定・抽出・郵便番号・比較・補完 |
 
 実在住所 4,700 件での測定結果（`benchmarks/jabench/evaluate_toolkit.py`、詳細は [実測ベンチマーク](#5-実測ベンチマーク結果)）: 表記ゆれ 33,976 件すべてが元の住所と同じ名寄せキーになり、町名の 1 文字誤りは 93.9% で正しい候補を提示、自動訂正の**誤訂正は 2,641 件中 0 件**。文章に埋め込んだ住所 23,409 件の 99.9% で範囲が完全に一致し、地名に触れるだけで住所を含まない文章 4,700 件での**誤検出は 0 件**でした。
 
@@ -749,6 +750,16 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `GET /v1`, `GET /health` | エンドポイント一覧、データの版、死活確認 |
 
 すべてのエンドポイントは POST の JSON ボディも受け付けます（`application/json` で送信。それ以外は 415 となり、Web ページがブラウザの確認なしにローカルのサーバーへ送信することを防ぎます）。住所の結果にはすべて、変わらない理由コード `reason`（`VERIFIED_CHOME`、`NONEXISTENT_CHOME`、`AMBIGUOUS_MUNICIPALITY`、`POSTAL_CODE_MISMATCH` など。一覧は `jaden.models.validation.REASONS`）と日本語のメッセージ `message_ja` が付くので、入力フォームで理由をそのまま利用者に示せます。エラーは JSON（`{"error": {"code", "message"}}`）で、ステータスは 400・404・413・414・415・501 です。`/v1/extract` は最大 100,000 文字で、30 秒間送信が止まったクライアントは切断されます。サーバーは Python 標準ライブラリとローカルデータのみを使い、`--host` を指定しない限り `127.0.0.1` で待ち受けます。認証機能はなく、CORS ヘッダーは `--cors` 指定時のみ送ります。`http://127.0.0.1:8000/` を開くと、上記すべてを試せるデモページが表示されます。
+
+#### 12. `mcp`: AI アシスタント向けツール
+
+`jaden mcp` は JADEN を [Model Context Protocol](https://modelcontextprotocol.io) サーバーとして標準入出力で動かします。AI アシスタントは住所を推測する代わりに確認できます。ツールは `normalize_address`・`validate_address`・`resolve_address`・`extract_addresses`・`lookup_postal_code`・`compare_addresses`・`suggest_addresses` の 7 つです。アシスタントの MCP 設定に次を追加します。
+
+```json
+{"mcpServers": {"jaden": {"command": "jaden", "args": ["mcp"]}}}
+```
+
+ほかの機能と同じく、同梱データだけでオフラインに動きます。`resolve_address` は市区町村を確実に特定できないとき `answered` を false にするので、アシスタントは推測せずに利用者へ確認できます。
 
 #### シェル自動化向け終了コード仕様
 | 終了コード | 判定種別 | 状態説明 |
