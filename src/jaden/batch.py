@@ -27,6 +27,7 @@ RESULT_FIELDS: Tuple[str, ...] = (
     "chome", "ban", "go", "banchi", "edaban", "lot_number", "building", "floor", "unit",
     "postal_code", "kana", "romaji", "latitude", "longitude", "location_level",
     "verification_level", "former_municipality", "corrected_from", "suggestions", "candidates", "message",
+    "reason", "message_ja",
 )
 
 
@@ -66,6 +67,8 @@ def flat_record(res: NormalizedAddress, val: ValidationResult) -> Dict[str, Any]
         "suggestions": " | ".join(res.suggestions),
         "candidates": " | ".join(val.ambiguous_candidates),
         "message": "; ".join([val.message] + [w for w in val.warnings if w not in val.message]),
+        "reason": val.reason,
+        "message_ja": val.message_ja,
     }
 
 
@@ -87,7 +90,7 @@ def process_address(address: str) -> Dict[str, Any]:
     address = (address or "").strip()
     if not address:
         empty: Dict[str, Any] = {k: None for k in RESULT_FIELDS}
-        empty.update(status="EMPTY", valid=False)
+        empty.update(status="EMPTY", valid=False, reason="EMPTY", message_ja="住所が入力されていません。")
         return empty
     res = _ENGINE.normalize(address)
     val = _ENGINE.validate(address, strict=_STRICT, normalized=res)

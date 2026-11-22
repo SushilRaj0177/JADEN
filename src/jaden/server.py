@@ -16,6 +16,7 @@ endpoint accepts GET with query parameters or POST with a JSON body.
     POST /v1/extract   {"text": "..."}        addresses inside a text
     POST /v1/batch     {"addresses": [...]}   many addresses at once
     GET  /v1                                  endpoint list and data versions
+    GET  /v1/openapi.json                     OpenAPI 3.1 description
     GET  /health
     GET  /                                    interactive demo page
 
@@ -96,7 +97,9 @@ def address_record(address: str, strict: bool = False, fix: bool = False) -> Dic
         "input": address,
         "status": val.status,
         "valid": val.valid,
+        "reason": val.reason,
         "message": val.message,
+        "message_ja": val.message_ja,
         "warnings": [w for w in val.warnings if w not in val.message],
         "canonical": res.canonical if usable else None,
         "hyphenated": data.get("hyphenated"),
@@ -132,6 +135,7 @@ class JadenApi:
             "/v1/resolve": self.resolve,
             "/v1/extract": self.extract,
             "/v1/batch": self.batch,
+            "/v1/openapi.json": self.openapi,
             "/v1": self.index,
             "/health": self.health,
         }
@@ -166,6 +170,11 @@ class JadenApi:
                      "attribution": prov.get("towns", {}).get("attribution")},
             "limits": {"max_batch": self.max_batch, "max_body_bytes": MAX_BODY_BYTES},
         }
+
+    def openapi(self, params: Dict[str, Any]) -> Any:
+        from . import __version__
+        from .openapi import openapi_spec
+        return openapi_spec(__version__, self.max_batch)
 
     def normalize(self, params: Dict[str, Any]) -> Any:
         return address_record(_required(params, "q"), strict=_flag(params.get("strict")), fix=_flag(params.get("fix")))
@@ -402,4 +411,5 @@ def endpoint_list() -> List[Tuple[str, str]]:
         ("/v1/resolve?q=&name=", "candidate municipalities with calibrated probabilities"),
         ("/v1/extract", "addresses inside a text (POST {\"text\"})"),
         ("/v1/batch", "many addresses (POST {\"addresses\": [...]})"),
+        ("/v1/openapi.json", "OpenAPI 3.1 description"),
     ]

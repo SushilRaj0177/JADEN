@@ -1433,6 +1433,7 @@ class AddressNormalizer:
                 is_ambiguous=False,
                 ambiguous_candidates=(),
                 message="Empty or whitespace address string.",
+                reason="EMPTY", message_ja="住所が入力されていません。",
             )
 
         if len(raw_address) > MAX_INPUT_CHARS:
@@ -1446,6 +1447,7 @@ class AddressNormalizer:
                 is_ambiguous=False,
                 ambiguous_candidates=(),
                 message=f"Input is {len(raw_address):,} characters long; an address is at most {MAX_INPUT_CHARS}.",
+                reason="TOO_LONG", message_ja=f"入力が長すぎます（{len(raw_address):,} 文字。住所は {MAX_INPUT_CHARS} 文字まで）。",
             )
 
         # ``normalized``: the result of normalize() for the same input and settings, to avoid reading it twice
@@ -1459,7 +1461,8 @@ class AddressNormalizer:
             warnings += (f"{c.chome}丁目 is not in the registry for {c.town}: accepted, but not verified",)
 
         def result(status: ValidationStatus, message: str, lg: Optional[str] = None,
-                   confidence: Optional[float] = None, regime: Optional[str] = None) -> ValidationResult:
+                   confidence: Optional[float] = None, regime: Optional[str] = None,
+                   reason: str = "", ja: str = "") -> ValidationResult:
             return ValidationResult(
                 raw_input=raw_address,
                 status=status.value,
@@ -1474,51 +1477,59 @@ class AddressNormalizer:
                 warnings=warnings,
                 precision=c.precision if res.confidence_score > 0 else "none",
                 suggestions=res.suggestions,
+                reason=reason,
+                message_ja=ja,
             )
 
         if c.is_contradictory:
             return result(ValidationStatus.MALFORMED,
                           "Contradiction detected: municipality does not belong to specified prefecture.",
-                          confidence=0.0)
+                          confidence=0.0, reason="PREFECTURE_MISMATCH", ja="市区町村が記載の都道府県にありません。")
 
         if res.confidence_score == 0.0:
             return result(ValidationStatus.MALFORMED,
                           "Input rejected: no recognized Japanese administrative jurisdiction or structure.",
-                          confidence=0.0, regime=AddressRegime.UNSPECIFIED.value)
+                          confidence=0.0, regime=AddressRegime.UNSPECIFIED.value, reason="NOT_AN_ADDRESS",
+                          ja="都道府県・市区町村・町名のいずれも見つからず、住所として読めません。")
 
         if c.is_ambiguous:
             return result(ValidationStatus.AMBIGUOUS,
                           f"Ambiguous administrative jurisdiction matches {len(c.ambiguous_candidates)} candidates."
                           if c.prefecture
-                          else f"Omitted prefecture matches {len(c.ambiguous_candidates)} statutory municipalities.")
+                          else f"Omitted prefecture matches {len(c.ambiguous_candidates)} statutory municipalities.",
+                          reason="AMBIGUOUS_MUNICIPALITY",
+                          ja=f"該当する市区町村が {len(c.ambiguous_candidates)} か所あります。都道府県や市区町村を加えてください。")
 
         if c.chome_verified is False:
             return result(ValidationStatus.MALFORMED,
                           "Nonexistent 丁目: " + next(
                               (n for n in res.notes if "does not exist" in n), f"{c.town} has no {c.chome}丁目."),
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="NONEXISTENT_CHOME", ja=f"{c.town}に{c.chome}丁目はありません。")
 
         if c.town_registered_elsewhere:
             return result(ValidationStatus.MALFORMED,
                           "Town belongs to a different municipality of the same name: " + next(
                               (n for n in res.notes if "a different" in n), ""),
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="TOWN_IN_OTHER_MUNICIPALITY",
+                          ja=f"{c.town}は同じ名前の別の市区町村にある町名です。")
 
         if c.postal_code_consistent is False:
             return result(ValidationStatus.MALFORMED,
                           "Postal code contradicts the address: " + next(
                               (n for n in res.notes if n.startswith("postal code")), "it belongs elsewhere."),
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="POSTAL_CODE_MISMATCH",
+                          ja=f"郵便番号 {c.postal_code} はこの住所のものではありません。")
 
         impossible = [v for v in (c.chome, c.ban, c.go, c.banchi, c.edaban) if v is not None and not 0 < v <= MAX_BLOCK_NUMBER]
         if impossible:
             return result(ValidationStatus.MALFORMED,
-                          f"No 丁目, block or lot is numbered {impossible[0]}.", lg=c.lg_code)
+                          f"No 丁目, block or lot is numbered {impossible[0]}.", lg=c.lg_code,
+                          reason="IMPOSSIBLE_NUMBER", ja=f"{impossible[0]} という丁目・番・番地はありません。")
 
         if c.unparsed_tail and len(c.unparsed_tail.strip()) > 5:
             return result(ValidationStatus.UNSUPPORTED,
                           f"Input contains unparsed or unsupported tokens: '{c.unparsed_tail}'.",
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="UNPARSED_TEXT", ja=f"読み取れない部分があります: 「{c.unparsed_tail}」")
 
         no_numbers = all(v is None for v in (c.chome, c.ban, c.go, c.banchi, c.edaban, c.lot_number))
         if c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None:
@@ -1526,28 +1537,33 @@ class AddressNormalizer:
             # nor a block number is a name that mentions a place, not an address
             return result(ValidationStatus.UNSUPPORTED,
                           f"Text after the municipality ('{c.town}') is not a registered town and has no block number.",
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="NAME_NOT_ADDRESS",
+                          ja=f"市区町村の後の「{c.town}」は登録された町名でなく、番地もありません（施設名などと思われます）。")
 
         if strict and c.lg_code is not None and c.town_verified is not True:
             return result(ValidationStatus.UNSUPPORTED,
                           "Strict mode: the town could not be verified against the national gazetteer.",
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="STRICT_TOWN_UNVERIFIED", ja="厳格モード: 町名を登録データで確認できませんでした。")
 
         if strict and c.chome_unlisted:
             return result(ValidationStatus.UNSUPPORTED,
                           f"Strict mode: {c.chome}丁目 is not in the registry for {c.town}.",
-                          lg=c.lg_code)
+                          lg=c.lg_code, reason="STRICT_CHOME_UNLISTED", ja=f"厳格モード: {c.town}の{c.chome}丁目は登録データにありません。")
 
         if c.lg_code is not None and res.confidence_score >= 0.5:
             message = {
                 "chome": "Municipality, town and 丁目 verified against official registries.",
                 "town": "Municipality and town verified against official registries.",
             }.get(level, "Local government entity verified against official statutory registry.")
-            return result(ValidationStatus.ACCEPTED, message, lg=c.lg_code)
+            reason, ja = {
+                "chome": ("VERIFIED_CHOME", "市区町村・町名・丁目を公的データで確認しました。"),
+                "town": ("VERIFIED_TOWN", "市区町村と町名を公的データで確認しました。"),
+            }.get(level, ("VERIFIED_MUNICIPALITY", "市区町村を公的データで確認しました（町名は未確認）。"))
+            return result(ValidationStatus.ACCEPTED, message, lg=c.lg_code, reason=reason, ja=ja)
 
         return result(ValidationStatus.UNSUPPORTED,
                       "Administrative entity could not be resolved to a local government code.",
-                      lg=c.lg_code)
+                      lg=c.lg_code, reason="UNRESOLVED", ja="市区町村を特定できませんでした。")
 
 
 def _uninterpreted_if_unresolved(res: NormalizedAddress) -> NormalizedAddress:

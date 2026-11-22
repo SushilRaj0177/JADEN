@@ -1,5 +1,6 @@
 """Bugs found by the full audit of 22 November 2026 (docs/CHECKLIST.md), each pinned by its reproducing input."""
 
+import json
 import time
 
 import pytest
@@ -394,3 +395,47 @@ def test_kana_suggestion_is_fast_once_indexed() -> None:
     for reading in ("きっかわ", "さかえ", "しばこうえん"):
         jaden.suggest(reading)
     assert time.perf_counter() - start < 1.0
+
+
+# ---------------------------------------------------------------- F3: reason codes, Japanese messages, OpenAPI
+@pytest.mark.parametrize("text, reason", [
+    ("東京都港区芝公園4-2-8", "VERIFIED_CHOME"),
+    ("東京都港区芝公園9-2-8", "NONEXISTENT_CHOME"),
+    ("府中市1-1", "AMBIGUOUS_MUNICIPALITY"),
+    ("〒100-0001 東京都港区芝公園4-2-8", "POSTAL_CODE_MISMATCH"),
+    ("あいうえお", "NOT_AN_ADDRESS"),
+    ("", "EMPTY"),
+    ("x" * 600, "TOO_LONG"),
+])
+def test_validate_gives_a_reason_code_and_japanese_message(text: str, reason: str) -> None:
+    from jaden.models.validation import REASONS
+    v = jaden.validate(text)
+    assert v.reason == reason and REASONS[reason] == v.status and v.message_ja
+
+
+def test_every_status_comes_with_a_known_reason() -> None:
+    from jaden.models.validation import REASONS
+    for text in ("東京都千代田区霞が関1-2-1", "大阪府大阪市北区梅田3-1-1", "高崎市立国府小学校", "東京都港区ほげ1-1",
+                 "北海道札幌市中央区南3条西1-2", "東京都0-1-1"):
+        v = jaden.validate(text)
+        assert v.reason in REASONS and REASONS[v.reason] == v.status, (text, v.status, v.reason)
+
+
+def test_reason_reaches_the_api_and_batch_records() -> None:
+    from jaden.batch import RESULT_FIELDS, process_address
+    from jaden.server import JadenApi
+    api = JadenApi()
+    rec = api.handle("/v1/normalize", {"q": "東京都港区芝公園4-2-8"})
+    assert rec["reason"] == "VERIFIED_CHOME" and rec["message_ja"]
+    assert api.handle("/v1/validate", {"q": "府中市1-1"})["reason"] == "AMBIGUOUS_MUNICIPALITY"
+    assert "reason" in RESULT_FIELDS and process_address("")["reason"] == "EMPTY"
+
+
+def test_openapi_description_lists_every_route() -> None:
+    from jaden.server import JadenApi
+    api = JadenApi()
+    spec = api.handle("/v1/openapi.json", {})
+    assert spec["openapi"].startswith("3.")
+    paths = {p.replace("/{code}", "") for p in spec["paths"]}
+    assert set(api.routes) <= paths
+    json.dumps(spec)

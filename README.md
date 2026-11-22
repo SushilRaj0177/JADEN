@@ -803,9 +803,10 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/extract` `{"text": "..."}` | addresses with character spans |
 | `POST /v1/batch` `{"addresses": [...]}` | up to `--max-batch` addresses (default 1,000) |
 | `GET /v1/resolve?q=&name=` | candidate municipalities with calibrated probabilities, the answer at the 1% threshold, the 95% set |
+| `GET /v1/openapi.json` | OpenAPI 3.1 description, for Swagger UI, Postman or a client generator |
 | `GET /v1`, `GET /health` | endpoint list, data versions, liveness |
 
-Every endpoint also accepts a JSON body by POST, sent as `application/json` (other content types get 415, so a web page cannot post to a local server without the browser asking first). Errors are JSON (`{"error": {"code", "message"}}`) with 400, 404, 413, 414, 415 or 501. `/v1/extract` takes up to 100,000 characters, and a client that stops sending for 30 seconds is disconnected. The server uses only the Python standard library and the local data; it binds to `127.0.0.1` unless `--host` says otherwise, has no authentication of its own, and sends CORS headers only with `--cors`. Opening `http://127.0.0.1:8000/` shows a demo page for all of the above.
+Every endpoint also accepts a JSON body by POST, sent as `application/json` (other content types get 415, so a web page cannot post to a local server without the browser asking first). Every address result carries a stable `reason` code (`VERIFIED_CHOME`, `NONEXISTENT_CHOME`, `AMBIGUOUS_MUNICIPALITY`, `POSTAL_CODE_MISMATCH` and so on; the list is in `jaden.models.validation.REASONS`) and the message in Japanese (`message_ja`), so a form can show the reason to the person typing. Errors are JSON (`{"error": {"code", "message"}}`) with 400, 404, 413, 414, 415 or 501. `/v1/extract` takes up to 100,000 characters, and a client that stops sending for 30 seconds is disconnected. The server uses only the Python standard library and the local data; it binds to `127.0.0.1` unless `--host` says otherwise, has no authentication of its own, and sends CORS headers only with `--cors`. Opening `http://127.0.0.1:8000/` shows a demo page for all of the above.
 
 #### Exit Codes for Shell Automation
 | Exit Code | Meaning | Example Scenario |
