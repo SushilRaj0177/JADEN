@@ -64,3 +64,24 @@ def test_hyphen_form_reads_back() -> None:
 def test_unresolved_input_keeps_its_text_in_every_format(text: str) -> None:
     res = jaden.normalize(text)
     assert res.format("hyphen") == res.canonical == res.input_sanitized
+
+
+def test_match_key_and_compare_agree() -> None:
+    """Equal unit keys mean compare() says 'same', and 'same' means equal keys, for every pair of
+    spellings of one address in the sample. (The one deliberate exception, numbered buildings on one
+    lot such as 第一ビル / 第二ビル, is covered in test_audit_fixes.)"""
+    import itertools
+    from collections import defaultdict
+    groups = defaultdict(list)
+    with open(BENCH, encoding="utf-8") as fh:
+        for line in fh:
+            row = json.loads(line)
+            groups[(row["lat"], row["lon"], row["gold_lg"])].append(row["input"])
+    bad = []
+    for inputs in list(groups.values())[::25]:
+        for a, b in itertools.combinations(inputs[:7], 2):
+            ka, kb = jaden.match_key(a), jaden.match_key(b)
+            verdict = jaden.compare(a, b).verdict
+            if (ka is not None and ka == kb) != (verdict == "same"):
+                bad.append((a, b, ka, kb, verdict))
+    assert bad == []

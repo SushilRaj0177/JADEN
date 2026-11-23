@@ -57,7 +57,7 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 ## Improvements
 - [x] I1 One sanitizer for every path (B2–B5, B24)
 - [x] I2 Canonical and hyphen forms are fixed points, checked by a property test on the benchmark and real data
-- [~] I3 One comparison core for `match_key` and `compare` *(keys now agree for every spelling in the property test; the two functions still have separate code)*
+- [x] I3 One comparison core for `match_key` and `compare` *(both are built on `match_parts`; a property test checks that equal keys and a 'same' verdict always go together, on 16,573 spelling pairs; the one deliberate exception is numbered buildings on one lot, which keys ignore)*
 - [x] I4 Resolver guards (B9–B11)
 - [x] I5 Server hardening: Japan bounding box, handler timeout, `/v1/extract` length cap, JSON errors, string-only parameters
 - [x] I6 Offline geocode carries the validation status (B15)
