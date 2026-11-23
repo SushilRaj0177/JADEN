@@ -77,3 +77,30 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`) *(romaji was already read; kana prefecture and municipality now read from their readings)*
 - [x] F9 `jaden data update` also refreshes the MIC municipality list *(finds the current list on MIC's code page, checks it, installs it only when it differs; `jaden data info` shows which list is in use)*
 - [x] F10 Docker image with a gateway example *(`Dockerfile`, `deploy/docker-compose.yml` + nginx: API key, rate limit, size limit; image and gateway tested)*
+
+## Final scan (separate audit, 23 Nov 2026) — open
+High
+- [ ] H1 Kana input picks the longest municipality reading even when the rest is not a town there (`ならしのだい1-2` → 奈良市); 131 of 132 random kana town readings went to the wrong municipality
+- [ ] H2 `.xlsx` reader glues Excel's furigana (`rPh`) onto cell text
+- [ ] H3 `.xlsx` denial of service: huge row/column indices, zip bombs, no size cap before parsing
+- [ ] H4 `コーポ1-201` / `コーポ1-202` keep the room inside the building name, so dedupe merges different flats
+Medium
+- [ ] M1 `duplicate_pairs` silently skips rows past 200 on one block
+- [ ] M2 Kana addresses with 条 / 丁目 / 番町 towns accepted with garbage town text
+- [ ] M3 `building_similarity`: 一号館/二号館, Ⅰ/Ⅱ, A/B, 東/西 called typos; 第1 vs 第一 not equal
+- [ ] M4 JSONL→CSV drops keys missing from the first row; CSV→JSONL loses duplicate headers and extra values
+- [ ] M5 Lone surrogates survive cleaning and crash CSV/xlsx output, `jaden stream` and the server (500)
+- [ ] M6 `4-2、8` reads 8 as a room: canonical is not a fixed point, keys differ
+- [ ] M7 `横浜市立第3中学校` accepted as an address
+- [ ] M8 A town from another ward (新宿区芝公園) accepted at municipality level; `xxx-0000` postal codes filled in; 広島市 designated-city code instead of the ward
+- [ ] M9 `check_fields` rejects kana prefecture/city fields; status and `valid` disagree after a postal mismatch
+- [ ] M10 Label: postal line not measured, `style='en'` repeats Japanese parts, full-width numbers split
+- [ ] M11 `茶山台99-5-1` accepted (registry spells 一丁, so the 丁目 range check is skipped); README chome_99 claim overstated
+Low
+- [ ] Server: `text/plain; a=json` accepted; JSON numbers refused in POST; chunked bodies mis-parsed; unbounded threads
+- [ ] Gateway: 401s not rate-limited; `/health` location reachable with crafted paths; empty key fails open
+- [ ] MCP: booleans and tool names not type-checked; empty batch gets no reply
+- [ ] xlsx: missing parts give a traceback instead of an error message
+- [ ] Glued 7-digit postal code before the prefecture; 之 / ノ lot separators; a few invisible characters; `TEL/FAX` and `携帯` numbers; UTF-16 without BOM; integer postal codes losing the leading zero
+- [ ] `jaden.frame.records()` builds a new engine per call; `normalize_frame` duplicates existing `jaden_*` columns; CLI accepts `--jobs 0`, `--min-score 5`
+- [ ] `extract_addresses` span runs into the next 〒 code
