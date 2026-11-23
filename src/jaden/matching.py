@@ -112,14 +112,22 @@ def _canonical_building(name: Optional[str]) -> str:
     return s
 
 
-def _wing_of(canonical: str) -> str:
+def _wing_of(canonical: str, explicit: bool = False) -> str:
     """The number, letter or direction that tells buildings of one name apart: 'サンハイツA棟' -> 'A',
-    '第2コーポ' -> '2', 'コーポ1' -> '1', 'グリーンハイツ東' -> '東'; '' when there is none."""
-    for pattern in (rf"([A-Z]|\d{{1,3}}|[東西南北])(?:{_WING_WORD})$", r"第(\d{1,3})",
-                    r"(?<=[^\x00-\x7f\d])(\d{1,3}|[A-Z]|[東西南北])$", r"(?<!\d)(\d{1,4})(?!\d)"):
+    '第2コーポ' -> '2', 'コーポ1' -> '1', 'グリーンハイツ東' -> '東'; '' when there is none.
+    ``explicit``: only a wing marked as one ('A棟', '2号館') or glued to the end of the name ('コーポ1'),
+    which people write as part of which flat it is; a number inside the name ('第二') goes with the name,
+    which is often left out."""
+    # A digit or letter glued to the end of the name ('コーポ1', 'サンハイツA') is written the same way:
+    # 'コーポ1-201' and 'コーポ1 201号室' are one flat
+    patterns = [rf"([A-Z]|\d{{1,3}}|[東西南北])(?:{_WING_WORD})$", r"(?<=[^\x00-\x7f\d第])(\d{1,2}|[A-Z])$"]
+    if not explicit:
+        patterns += [r"第(\d{1,3})", r"(?<=[^\x00-\x7f\d])(\d{1,3}|[東西南北])$", r"(?<!\d)(\d{1,4})(?!\d)"]
+    from .parsers.building import _looks_like_building
+    for i, pattern in enumerate(patterns):
         m = re.search(pattern, canonical)
-        if m:
-            return m.group(1)
+        if m and not (i == 1 and not _looks_like_building(canonical[:m.start()])):
+            return m.group(1)      # (a digit glued to text that is not a building name is no wing: '南1-1')
     return ""
 
 
@@ -162,9 +170,10 @@ def building_similarity(a: Optional[str], b: Optional[str]) -> Tuple[Optional[fl
 
 def _unit_part(unit: Optional[str], floor: Optional[str], building: Optional[str] = None) -> Optional[str]:
     if unit:
-        # Which building of several the room is in is part of which flat it is: the building's own
-        # number or wing ('第2コーポ', 'サンハイツB棟', 'コーポ1'), or the wing written with the room ('1-201')
-        wing = _wing_of(_canonical_building(building))
+        # Which wing the room is in is part of which flat it is: a wing marked in the building name
+        # ('サンハイツB棟', '2号館') or written with the room ('1-201', 'A棟302'). A number that is just
+        # part of the name ('第2コーポ') is not: the name is often left out, and the key must not change
+        wing = _wing_of(_canonical_building(building), explicit=True)
         # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302' -> A302
         u = unicodedata.normalize("NFKC", unit).upper().strip()
         u = re.sub(r"\s+|号室|室|号(?=棟)|号$", "", u)
@@ -179,7 +188,7 @@ def _unit_part(unit: Optional[str], floor: Optional[str], building: Optional[str
             m = _UNIT_DIGITS.search(unicodedata.normalize("NFKC", unit))
             u = m.group(1).upper() if m else unit
         return f"{wing}棟{u}" if wing else u
-    wing = _wing_of(_canonical_building(building))
+    wing = _wing_of(_canonical_building(building), explicit=True)
     prefix = f"{wing}棟" if wing else ""
     if floor:
         m = _FLOOR.match(unicodedata.normalize("NFKC", floor))
@@ -344,7 +353,7 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
             break
         if va != vb:
             if name == "unit":
-                wa, wb = (_wing_of(_canonical_building(r.components.building)) for r in (ra, rb))
+                wa, wb = (_wing_of(_canonical_building(r.components.building), explicit=True) for r in (ra, rb))
                 if wa and wb and wa != wb:
                     # 第1ビル and 第2ビル on one lot, or rooms in wings A and B: separate buildings
                     return result("different", level, "building", missing,
@@ -361,6 +370,11 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
 
     if pa.building and pb.building and pa.building != pb.building:
         notes.append("building names differ")
+        if similarity == 0.0:
+            # 第一ビル / 第二ビル: the names number different buildings. The key leaves names out (they are
+            # often omitted), so the verdict stands; the note and duplicate_pairs' score carry the doubt
+            notes.append(f"the building names number different buildings ({ra.components.building} / "
+                         f"{rb.components.building})")
     if missing == ["unit"]:
         present = pa.unit or pb.unit or ""
         notes.append("only one address names the wing" if present.endswith("棟") else "only one address has a room number")
@@ -398,8 +412,9 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
     Rows are compared only where a duplicate can be: the same room of the same house, or a row that
     leaves out its room (or house number) against the rows that give one. So a building with
     thousands of flats costs little. The score starts from compare()'s verdict (same 1.0, same
-    building with a room on one side only 0.6, possibly the same 0.5; different rooms 0.1) and is
-    lowered when the building names disagree. ``report`` (a dict) receives 'comparisons' and
+    building with a room on one side only 0.6, possibly the same 0.5; different rooms 0.1), times the
+    building-name similarity when both name a building (a one-character typo keeps 0.9 of it, names
+    numbering different buildings such as 第一ビル / 第二ビル keep none). ``report`` (a dict) receives 'comparisons' and
     'truncated' (True when ``max_comparisons`` stopped the search early).
     """
     resolved = [_resolve(a) for a in addresses]
@@ -458,7 +473,7 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
         if cmp.missing:
             reasons.append("only one gives the " + ", ".join(cmp.missing))
         if cmp.building_similarity is not None:
-            score *= 0.5 + 0.5 * cmp.building_similarity
+            score *= cmp.building_similarity       # two different building names are two buildings
         if cmp.building_reason:
             reasons.append(cmp.building_reason)
         score = round(score, 3)

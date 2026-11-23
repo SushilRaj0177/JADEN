@@ -595,8 +595,13 @@ def test_building_similarity_explains_itself(a: str, b: str, score, word: str) -
 
 def test_numbered_buildings_on_one_lot_are_not_the_same_address() -> None:
     cmp = jaden.compare("東京都港区芝公園4-2-8 第一ビル", "東京都港区芝公園4-2-8 第二ビル")
-    assert (cmp.verdict, cmp.conflict) == ("different", "building") and cmp.building_similarity == 0.0
-    assert jaden.match_key("東京都港区芝公園4-2-8 第一ビル") != jaden.match_key("東京都港区芝公園4-2-8 第二ビル")
+    # The key leaves building names out (they are often omitted), so compare agrees with it; the note and
+    # the duplicate score say the names number different buildings
+    assert cmp.verdict == "same" and cmp.building_similarity == 0.0
+    assert any("number different buildings" in n for n in cmp.notes)
+    assert jaden.duplicate_pairs(["東京都港区芝公園4-2-8 第一ビル", "東京都港区芝公園4-2-8 第二ビル"]) == []
+    wings = jaden.compare("東京都港区芝公園4-2-8 ABC一号館", "東京都港区芝公園4-2-8 ABC二号館")
+    assert (wings.verdict, wings.conflict) == ("different", "building")
     assert jaden.compare("東京都港区芝公園4-2-8 グランドメゾン芝公園302",
                          "東京都港区芝公園4-2-8 グランドメゾン芝公演302").verdict == "same"
 
@@ -609,7 +614,7 @@ def test_duplicate_pairs_score_and_explain(tmp_path) -> None:
             "東京都港区芝公園4-2-9"]
     pairs = jaden.duplicate_pairs(rows)
     assert [(p.i, p.j) for p in pairs] == [(0, 1), (0, 4), (1, 4)]
-    assert pairs[0].score == 0.95 and any("typo" in r for r in pairs[0].reasons)
+    assert pairs[0].score == 0.9 and any("typo" in r for r in pairs[0].reasons)
     src, out = tmp_path / "in.csv", tmp_path / "pairs.csv"
     src.write_text("address\n" + "\n".join(rows) + "\n", encoding="utf-8")
     run_dedupe(src, tmp_path / "out.csv", pairs=out, log=open(tmp_path / "log", "w"))
@@ -924,7 +929,7 @@ def test_wing_and_room_written_after_the_name_keep_flats_apart() -> None:
     p = "東京都港区芝公園4-2-8 "
     rows = [p + "コーポ1-201", p + "コーポ1-202", p + "コーポ 1-203", p + "ハイツ山田2-101", p + "コーポ1 201号室",
             p + "第2コーポ201"]
-    assert jaden.find_duplicates(rows) == [1, 2, 3, 4, 1, 5]
+    assert jaden.find_duplicates(rows) == [1, 2, 3, 4, 1, 5]   # 第2コーポ201 is room 201 without a wing
     assert jaden.compare(rows[0], rows[4]).verdict == "same"
     c = jaden.normalize(rows[0]).components
     assert (c.building, c.unit) == ("コーポ", "1-201")

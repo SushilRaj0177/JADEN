@@ -57,7 +57,7 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 ## Improvements
 - [x] I1 One sanitizer for every path (B2–B5, B24)
 - [x] I2 Canonical and hyphen forms are fixed points, checked by a property test on the benchmark and real data
-- [x] I3 One comparison core for `match_key` and `compare` *(both are built on `match_parts`; a property test checks that equal keys and a 'same' verdict always go together, on 16,573 spelling pairs; with no exception: the building's number or wing is part of the key)*
+- [x] I3 One comparison core for `match_key` and `compare` *(both are built on `match_parts`; a property test checks that equal keys and a 'same' verdict always go together, on 16,573 spelling pairs; with no exception: a wing marked as such, or glued to the name, is part of the key)*
 - [x] I4 Resolver guards (B9–B11)
 - [x] I5 Server hardening: Japan bounding box, handler timeout, `/v1/extract` length cap, JSON errors, string-only parameters
 - [x] I6 Offline geocode carries the validation status (B15)
@@ -72,7 +72,7 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] F3 Machine-readable reason codes, Japanese messages, OpenAPI description *(`reason`, `message_ja`, `/v1/openapi.json`)*
 - [x] F4 MCP server: normalize, validate and resolve as tools for AI assistants *(`jaden mcp`, 8 tools)*
 - [x] F5 Shipping-label output: fields split to carrier length limits *(`res.label()`, `--label WxL`, `/v1/label`; generic widths, no carrier presets)*
-- [x] F6 Explainable fuzzy dedupe: building-name similarity with a reason per pair *(`building_similarity`, `duplicate_pairs`, `jaden dedupe --pairs`; match keys hold the building's number or wing, so 第一ビル and 第二ビル on one lot are different addresses)*
+- [x] F6 Explainable fuzzy dedupe: building-name similarity with a reason per pair *(`building_similarity`, `duplicate_pairs`, `jaden dedupe --pairs`; wings marked as such are part of the key; 第一ビル / 第二ビル on one lot keep one key (names are often left out) but are never proposed as a pair)*
 - [x] F7 Data I/O: pandas helper, `.xlsx`, NDJSON streaming *(`jaden.frame`, stdlib `.xlsx` for batch and dedupe, `jaden stream`)*
 - [x] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`) *(romaji was already read; kana prefecture and municipality now read from their readings)*
 - [x] F9 `jaden data update` also refreshes the MIC municipality list *(finds the current list on MIC's code page, checks it, installs it only when it differs; `jaden data info` shows which list is in use)*
@@ -83,7 +83,7 @@ High
 - [x] H1 Kana input picks the longest municipality reading even when the rest is not a town there (`ならしのだい1-2` → 奈良市); 131 of 132 random kana town readings went to the wrong municipality *(a kana municipality is taken only when a registered town follows by reading; kana towns are readings, so several spellings stay ambiguous; random check: 0 wrong in 5,000)*
 - [x] H2 `.xlsx` reader glues Excel's furigana (`rPh`) onto cell text *(only a string's own text and rich-text runs are read; `rPh` furigana skipped)*
 - [x] H3 `.xlsx` denial of service: huge row/column indices, zip bombs, no size cap before parsing *(streaming parse; parts capped by size and compression ratio; DTDs refused; Excel's row and column limits; at most 5,000,000 cells; empty rows not materialized)*
-- [x] H4 `コーポ1-201` / `コーポ1-202` keep the room inside the building name, so dedupe merges different flats *(`<name><wing>-<room>` read as building plus wing-and-room; the building's number or wing is part of the room key)*
+- [x] H4 `コーポ1-201` / `コーポ1-202` keep the room inside the building name, so dedupe merges different flats *(`<name><wing>-<room>` read as building plus wing-and-room; a wing marked as such (A棟, 2号館, コーポ1-201) is part of the room key; a number that is only part of a name (第二) is not, since names are often left out)*
 Medium
 - [x] M1 `duplicate_pairs` silently skips rows past 200 on one block *(bucketed by house and room instead of a 200-row cut; a comparison cap, if ever reached, is reported)*
 - [x] M2 Kana addresses with 条 / 丁目 / 番町 towns accepted with garbage town text *(town readings include their numbers: 春光台四条, 大門七番町, 北一条西; じょう/ちょうめ/ばんち read as 条/丁目/番地)*
