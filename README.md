@@ -86,6 +86,7 @@ v0.1 knew Japan's 1,918 municipalities. v0.2 also knows every registered **town 
 | `東京都港区六本木6-10` | 6番10号 | **6丁目10番** (六本木 is divided into 丁目) |
 | `岩手県盛岡市西見前20-113-1` | 20丁目113番1号 | **lot number 20-113-1** (西見前 has no 丁目) |
 | `4-2-8 Shibakoen, Minato-ku, Tokyo` | rejected | **東京都港区芝公園4丁目2番8号** (romaji input) |
+| `とうきょうとちよだくかすみがせき1-2-1` | rejected | **東京都千代田区霞が関1丁目2番1号** (all in kana) |
 | `高崎市立国府小学校` (a school name) | accepted | **UNSUPPORTED** — not an address |
 | `埼玉県浦和市高砂3-15-1` (浦和市 merged in 2001) | rejected | **さいたま市浦和区高砂3丁目15番1号** — former names resolved by town |
 | `浜松市北区細江町気賀305` (ward abolished 2024) | accepted as 浜松市 | **浜松市浜名区** — 北区 was split; the town decides |
@@ -118,7 +119,7 @@ JADEN parses raw address text into a granular Abstract Syntax Tree (`AddressComp
 - **Statutory Registry Verification:** Validates against **1,918 official MIC municipal records** (verified with Modulus 11 check digits) and maps **374 statutory counties** (367 distinct names, 7 shared across prefectures; JIS X 0401/0402).
 - **Town & 丁目 Verification (v0.2):** Checks the town and 丁目 against MLIT's list of all **191,100 registered towns and 丁目**, with Japan Post's town list as a fallback; reports nonexistent 丁目, contradictory postal codes, and text that is not an address.
 - **Ambiguity Resolution (v0.2):** Uses the town, the postal code and the registered structure to settle which municipality is meant (`港区芝公園`, `中央区銀座`, `大阪府北区梅田`), and stays AMBIGUOUS with a narrowed candidate list when the data cannot decide.
-- **Readings & Romaji (v0.2):** Outputs the katakana reading and an English-order address line using Japan Post's official romanization, and accepts romanized input (`4-2-8 Shibakoen, Minato-ku, Tokyo`).
+- **Readings & Romaji (v0.2):** Outputs the katakana reading and an English-order address line using Japan Post's official romanization, and accepts romanized input (`4-2-8 Shibakoen, Minato-ku, Tokyo`) and addresses typed entirely in kana (`とうきょうとちよだくかすみがせき1-2-1`).
 - **Offline Geocoding (v0.2):** Representative points for every town and 丁目 (bundled) and every city block (`jaden data fetch-blocks <pref>`), with no network access.
 - **Former Municipality Names (v0.2):** 1,829 names that disappeared in mergers and reorganizations since 2000 (`浦和市`, `清水市`, `浜松市中区`) map to the municipalities their area now belongs to; the town picks among them.
 - **Real-World Input (v0.2):** Rooms, floors and building names in all the usual forms, form labels, country prefixes, Sapporo shorthand, Iwate 地割, lot-series lots (`乙394`), and numbered town names (`忠和1条`, `古町通6番町`).

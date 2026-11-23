@@ -35,6 +35,7 @@ from .data.loader import MunicipalityRecord
 from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
 from .romaji import looks_romanized, romaji_to_japanese
+from .kana_input import kana_to_japanese, looks_kana
 from .core.text import as_text
 
 # Longer text is not read as an address (the longest real addresses with a building are around 150 characters)
@@ -152,6 +153,12 @@ class AddressNormalizer:
                 japanese, romaji_notes = converted
                 res = self._normalize(japanese, allow_reread=True)
                 return dataclasses.replace(res, input_raw=raw_address, notes=tuple(romaji_notes) + res.notes)
+        if self.use_gazetteer and raw_address and looks_kana(raw_address):
+            from_kana = kana_to_japanese(raw_address, lambda t: self._normalize(t, allow_reread=True))
+            if from_kana is not None:
+                japanese, kana_notes = from_kana
+                res = self.normalize(japanese, autocorrect)
+                return dataclasses.replace(res, input_raw=raw_address, notes=tuple(kana_notes) + res.notes)
         res = self._normalize(raw_address, allow_reread=True)
         if res.components.town_verified is False and res.components.lg_code and not res.components.is_ambiguous:
             res = self._with_corrections(res, self.autocorrect if autocorrect is None else autocorrect)

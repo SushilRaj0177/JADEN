@@ -74,6 +74,6 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [ ] F5 Shipping-label output: fields split to carrier length limits
 - [ ] F6 Explainable fuzzy dedupe: building-name similarity with a reason per pair
 - [ ] F7 Data I/O: pandas helper, `.xlsx`, NDJSON streaming
-- [ ] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`)
+- [x] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`) *(romaji was already read; kana prefecture and municipality now read from their readings)*
 - [ ] F9 `jaden data update` also refreshes the MIC municipality list
 - [ ] F10 Docker image with a gateway example

@@ -548,3 +548,25 @@ def test_fields_in_the_api_and_mcp() -> None:
     reply = _mcp({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
         "name": "check_address_fields", "arguments": {"city": "港区", "line1": "芝公園4-2-8"}}})[0]
     assert reply["result"]["structuredContent"]["fields"]["prefecture"] == "東京都"
+
+
+# ---------------------------------------------------------------- F8: addresses typed in kana
+@pytest.mark.parametrize("text, canonical", [
+    ("とうきょうとちよだくかすみがせき1-2-1", "東京都千代田区霞が関1丁目2番1号"),
+    ("トウキョウトチヨダクカスミガセキ1-2-1", "東京都千代田区霞が関1丁目2番1号"),
+    ("ちよだくかすみがせき1-2-1", "東京都千代田区霞が関1丁目2番1号"),
+    ("おおさかふおおさかしきたくうめだ3-1-1", "大阪府大阪市北区梅田3丁目1番1号"),
+    ("ﾄｳｷｮｳﾄﾐﾅﾄｸｼﾊﾞｺｳｴﾝ4-2-8", "東京都港区芝公園4丁目2番8号"),
+    ("とうきょうとふちゅうしふちゅうちょう1-1", "東京都府中市府中町1丁目1番"),
+    ("〒105-0011 とうきょうと みなとく しばこうえん 4-2-8", "東京都港区芝公園4丁目2番8号"),
+])
+def test_kana_addresses_are_read(text: str, canonical: str) -> None:
+    res = jaden.normalize(text)
+    assert res.canonical == canonical and jaden.validate(text).status == "ACCEPTED"
+    assert any(n.startswith("read from kana") for n in res.notes)
+
+
+def test_kana_that_is_not_an_address_stays_rejected() -> None:
+    assert jaden.validate("ふちゅうしふちゅうちょう1-1").status == "AMBIGUOUS"   # two 府中市
+    for text in ("あいうえお1-1", "やまだたろう", "かすみがせき1-2-1"):
+        assert jaden.validate(text).status == "MALFORMED"
