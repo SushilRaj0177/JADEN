@@ -62,13 +62,13 @@ def municipality_outcome(res: Any, val: Any, truth_lg5: str) -> str:
     row carries a ward code and JADEN stops at the city, the ward is missing.
     """
     lg = res.components.lg_code
+    known = _municipalities()
+    if known.get(truth_lg5) is None and not (val.status == "ACCEPTED" and lg and lg[:5] == truth_lg5):
+        return "row carries a municipality code that no longer exists"
     if val.status == "ACCEPTED":
         if lg and lg[:5] == truth_lg5:
             return "correct"
-        known = _municipalities()
         truth, mine = known.get(truth_lg5), known.get(lg[:5]) if lg else None
-        if truth is None:
-            return "row carries a municipality code that no longer exists"
         if mine is not None and mine.city == truth.city and mine.prefecture_code == truth.prefecture_code:
             if truth.entity_type == "designated_city" and mine.ward:
                 return "correct (ward found; the row has only the city code)"
