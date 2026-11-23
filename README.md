@@ -63,7 +63,8 @@ v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems n
 | Find addresses in emails / notes | `jaden.extract_addresses`, `jaden extract` | exact character spans, each one verified |
 | Store a compact form | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8; lossless round trip |
 | Use from any language | `jaden serve` | JSON API under `/v1` plus an interactive demo page, standard library only |
-| Use from an AI assistant | `jaden mcp` | MCP tools: normalize, validate, resolve, extract, postal, compare, suggest |
+| Check a form with separate fields | `jaden.check_fields(postal_code=, prefecture=, city=, line1=, line2=)` | each field checked against the others; wrong postal code or city reported with the right value; corrected fields back |
+| Use from an AI assistant | `jaden mcp` | MCP tools: normalize, validate, resolve, form fields, extract, postal, compare, suggest |
 
 Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,641 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
 
@@ -807,6 +808,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/extract` `{"text": "..."}` | addresses with character spans |
 | `POST /v1/batch` `{"addresses": [...]}` | up to `--max-batch` addresses (default 1,000) |
 | `GET /v1/resolve?q=&name=` | candidate municipalities with calibrated probabilities, the answer at the 1% threshold, the 95% set |
+| `GET /v1/fields?postal_code=&prefecture=&city=&line1=&line2=` | an address in separate form fields, each checked; corrected fields |
 | `GET /v1/openapi.json` | OpenAPI 3.1 description, for Swagger UI, Postman or a client generator |
 | `GET /v1`, `GET /health` | endpoint list, data versions, liveness |
 
@@ -814,7 +816,7 @@ Every endpoint also accepts a JSON body by POST, sent as `application/json` (oth
 
 #### 12. `mcp`: Tools for AI Assistants
 
-`jaden mcp` runs JADEN as a [Model Context Protocol](https://modelcontextprotocol.io) server over stdin/stdout, so an AI assistant can check an address instead of guessing it. It offers seven tools: `normalize_address`, `validate_address`, `resolve_address`, `extract_addresses`, `lookup_postal_code`, `compare_addresses` and `suggest_addresses`. Add it to the assistant's MCP settings:
+`jaden mcp` runs JADEN as a [Model Context Protocol](https://modelcontextprotocol.io) server over stdin/stdout, so an AI assistant can check an address instead of guessing it. It offers eight tools: `normalize_address`, `validate_address`, `resolve_address`, `check_address_fields`, `extract_addresses`, `lookup_postal_code`, `compare_addresses` and `suggest_addresses`. Add it to the assistant's MCP settings:
 
 ```json
 {"mcpServers": {"jaden": {"command": "jaden", "args": ["mcp"]}}}

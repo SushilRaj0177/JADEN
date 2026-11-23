@@ -13,6 +13,7 @@ endpoint accepts GET with query parameters or POST with a JSON body.
     GET  /v1/reverse?lat=35.6586&lon=139.7454 coordinate -> nearest town
     GET  /v1/compare?a=...&b=...              are two addresses the same place?
     GET  /v1/resolve?q=錦町1番2号&name=...       candidate municipalities with calibrated probabilities
+    GET  /v1/fields?postal_code=&prefecture=&city=&line1=&line2=   form fields checked one by one
     POST /v1/extract   {"text": "..."}        addresses inside a text
     POST /v1/batch     {"addresses": [...]}   many addresses at once
     GET  /v1                                  endpoint list and data versions
@@ -133,6 +134,7 @@ class JadenApi:
             "/v1/reverse": self.reverse,
             "/v1/compare": self.compare,
             "/v1/resolve": self.resolve,
+            "/v1/fields": self.fields,
             "/v1/extract": self.extract,
             "/v1/batch": self.batch,
             "/v1/openapi.json": self.openapi,
@@ -234,6 +236,13 @@ class JadenApi:
         result = dataclasses.asdict(resolve(_required(params, "q"), _optional_text(params, "name")))
         result["candidates"] = result["candidates"][:_int(params, "limit", 10, 1, 60)]
         return result
+
+    def fields(self, params: Dict[str, Any]) -> Any:
+        from .fields import FIELD_NAMES, check_fields
+        values = {k: _optional_text(params, k) for k in FIELD_NAMES}
+        if not any(values.values()):
+            raise ApiError(400, "missing_parameter", f"give at least one of: {', '.join(FIELD_NAMES)}")
+        return check_fields(**values, strict=_flag(params.get("strict"))).to_dict()
 
     def batch(self, params: Dict[str, Any]) -> Any:
         addresses = params.get("addresses")
@@ -409,6 +418,7 @@ def endpoint_list() -> List[Tuple[str, str]]:
         ("/v1/reverse?lat=&lon=", "coordinate to nearest town"),
         ("/v1/compare?a=&b=", "are two addresses the same place"),
         ("/v1/resolve?q=&name=", "candidate municipalities with calibrated probabilities"),
+        ("/v1/fields?postal_code=&prefecture=&city=&line1=&line2=", "form fields checked one by one"),
         ("/v1/extract", "addresses inside a text (POST {\"text\"})"),
         ("/v1/batch", "many addresses (POST {\"addresses\": [...]})"),
         ("/v1/openapi.json", "OpenAPI 3.1 description"),

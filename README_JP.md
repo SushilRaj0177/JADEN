@@ -61,7 +61,8 @@ v0.2 は 1 件の住所を照合できるようになりました。v0.3 は、�
 | メール・メモから住所を抽出 | `jaden.extract_addresses`, `jaden extract` | 文字位置つき、1 件ずつ照合済み |
 | 短い形式で保存 | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8（再正規化しても同じ結果） |
 | 他の言語から利用 | `jaden serve` | `/v1` 以下の JSON API とデモページ（標準ライブラリのみ） |
-| AI アシスタントから利用 | `jaden mcp` | MCP ツール: 正規化・検証・候補推定・抽出・郵便番号・比較・補完 |
+| 項目別の入力フォームを確認 | `jaden.check_fields(postal_code=, prefecture=, city=, line1=, line2=)` | 各項目を相互に照合。郵便番号や市区町村の誤りを正しい値とともに報告し、訂正済みの項目を返す |
+| AI アシスタントから利用 | `jaden mcp` | MCP ツール: 正規化・検証・候補推定・項目別確認・抽出・郵便番号・比較・補完 |
 
 実在住所 4,700 件での測定結果（`benchmarks/jabench/evaluate_toolkit.py`、詳細は [実測ベンチマーク](#5-実測ベンチマーク結果)）: 表記ゆれ 33,976 件すべてが元の住所と同じ名寄せキーになり、町名の 1 文字誤りは 93.9% で正しい候補を提示、自動訂正の**誤訂正は 2,641 件中 0 件**。文章に埋め込んだ住所 23,409 件の 99.9% で範囲が完全に一致し、地名に触れるだけで住所を含まない文章 4,700 件での**誤検出は 0 件**でした。
 
@@ -749,6 +750,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/extract` `{"text": "..."}` | 文字位置つきの住所 |
 | `POST /v1/batch` `{"addresses": [...]}` | 最大 `--max-batch` 件（既定 1,000） |
 | `GET /v1/resolve?q=&name=` | 候補の市区町村と較正された確率、誤答率 1% の閾値での回答、95% 候補集合 |
+| `GET /v1/fields?postal_code=&prefecture=&city=&line1=&line2=` | 項目別に入力された住所を項目ごとに確認し、訂正済みの項目を返す |
 | `GET /v1/openapi.json` | OpenAPI 3.1 の定義（Swagger UI・Postman・クライアント生成用） |
 | `GET /v1`, `GET /health` | エンドポイント一覧、データの版、死活確認 |
 
@@ -756,7 +758,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 
 #### 12. `mcp`: AI アシスタント向けツール
 
-`jaden mcp` は JADEN を [Model Context Protocol](https://modelcontextprotocol.io) サーバーとして標準入出力で動かします。AI アシスタントは住所を推測する代わりに確認できます。ツールは `normalize_address`・`validate_address`・`resolve_address`・`extract_addresses`・`lookup_postal_code`・`compare_addresses`・`suggest_addresses` の 7 つです。アシスタントの MCP 設定に次を追加します。
+`jaden mcp` は JADEN を [Model Context Protocol](https://modelcontextprotocol.io) サーバーとして標準入出力で動かします。AI アシスタントは住所を推測する代わりに確認できます。ツールは `normalize_address`・`validate_address`・`resolve_address`・`check_address_fields`・`extract_addresses`・`lookup_postal_code`・`compare_addresses`・`suggest_addresses` の 8 つです。アシスタントの MCP 設定に次を追加します。
 
 ```json
 {"mcpServers": {"jaden": {"command": "jaden", "args": ["mcp"]}}}

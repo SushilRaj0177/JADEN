@@ -75,6 +75,16 @@ def _suggest(args: Dict[str, Any]) -> Any:
     return {"suggestions": [s.to_dict() for s in suggest(args["text"], limit=limit)]}
 
 
+def _fields(args: Dict[str, Any]) -> Any:
+    from .fields import FIELD_NAMES, check_fields
+    for key in FIELD_NAMES:
+        if not isinstance(args.get(key, ""), str):
+            raise ValueError(f"'{key}' must be a string")
+    if not any(args.get(k) for k in FIELD_NAMES):
+        raise ValueError(f"give at least one of: {', '.join(FIELD_NAMES)}")
+    return check_fields(**{k: args.get(k, "") for k in FIELD_NAMES}, strict=bool(args.get("strict"))).to_dict()
+
+
 _FLAG_STRICT = {"type": "boolean", "description": "Refuse towns and 丁目 that cannot be checked against the registries"}
 
 TOOLS: Dict[str, Tuple[str, Dict[str, Any], Callable[[Dict[str, Any]], Any]]] = {
@@ -95,6 +105,13 @@ TOOLS: Dict[str, Tuple[str, Dict[str, Any], Callable[[Dict[str, Any]], Any]]] = 
         "otherwise ask the user which candidate is meant.",
         _schema(["address"], address=_ADDRESS,
                 name=_str("Optional company or facility name at the address (extra evidence)")), _resolve),
+    "check_address_fields": (
+        "Check an address entered in separate form fields (postal code, prefecture, city, line1 = town and "
+        "numbers, line2 = building and room). Reports each field that disagrees (with the right value) "
+        "and returns the corrected fields.",
+        _schema([], postal_code=_str("Postal code"), prefecture=_str("Prefecture"), city=_str("Municipality"),
+                line1=_str("Town and block numbers"), line2=_str("Building, floor, room"), strict=_FLAG_STRICT),
+        _fields),
     "extract_addresses": (
         "Find every Japanese address inside a text (an email, a web page, a document).",
         _schema(["text"], text=_str("The text to search")), _extract),

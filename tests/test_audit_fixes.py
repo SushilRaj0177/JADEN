@@ -509,3 +509,42 @@ def test_batch_resolve_works_with_workers_and_rejects_a_bad_name_column(tmp_path
     assert {r["jaden_resolved_lg_code"] for r in csv.DictReader(open(out, encoding="utf-8"))} == {"131032"}
     with pytest.raises(ValueError, match="not found"):
         run_batch(src, out, resolve=True, name_column="nope", log=open(tmp_path / "log", "w"))
+
+
+# ---------------------------------------------------------------- F2: structured input
+def test_fields_are_read_and_split_back() -> None:
+    r = jaden.check_fields(postal_code="１０５ー００１１", prefecture="東京都", city="港区", line1="芝公園4-2-8",
+                           line2="グランドメゾン芝公園302")
+    assert r.valid and r.issues == []
+    assert r.fields == {"postal_code": "105-0011", "prefecture": "東京都", "city": "港区",
+                        "line1": "芝公園4丁目2番8号", "line2": "グランドメゾン芝公園 302"}
+
+
+def test_fields_report_the_postal_code_and_city_that_disagree() -> None:
+    r = jaden.check_fields(postal_code="100-0001", prefecture="東京都", city="港区", line1="芝公園4-2-8")
+    assert not r.valid and [(i.field, i.code, i.suggestion) for i in r.issues] == \
+        [("postal_code", "POSTAL_CODE_MISMATCH", "105-0011")]
+    r = jaden.check_fields(prefecture="東京都", city="千代田区", line1="港区芝公園4-2-8")
+    assert any(i.code == "CITY_MISMATCH" and i.suggestion == "港区" for i in r.issues)
+    r = jaden.check_fields(postal_code="12-34", line1="東京都港区芝公園4-2-8")
+    assert {i.code for i in r.errors} == {"POSTAL_CODE_FORMAT"}
+
+
+def test_fields_postal_code_settles_an_ambiguous_city_and_blank_fields_are_filled() -> None:
+    r = jaden.check_fields(city="府中市", line1="府中町1-1", postal_code="183-0055")
+    assert r.valid and r.fields["prefecture"] == "東京都"
+    assert [(i.field, i.code) for i in r.issues] == [("prefecture", "FILLED_IN")]
+    r = jaden.check_fields(city="府中市", line1="府中町1-1")
+    assert r.status == "AMBIGUOUS" and not r.valid and r.fields["city"] == ""
+
+
+def test_fields_in_the_api_and_mcp() -> None:
+    from jaden.server import ApiError, JadenApi
+    api = JadenApi()
+    out = api.handle("/v1/fields", {"prefecture": "東京都", "city": "港区", "line1": "芝公園4-2-8"})
+    assert out["valid"] and out["fields"]["postal_code"] == "105-0011"
+    with pytest.raises(ApiError):
+        api.handle("/v1/fields", {})
+    reply = _mcp({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+        "name": "check_address_fields", "arguments": {"city": "港区", "line1": "芝公園4-2-8"}}})[0]
+    assert reply["result"]["structuredContent"]["fields"]["prefecture"] == "東京都"

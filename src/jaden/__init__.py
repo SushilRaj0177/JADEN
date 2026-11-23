@@ -18,6 +18,7 @@ from .matching import AddressComparison, compare, find_duplicates, match_key
 from .extract import ExtractedAddress, extract_addresses
 from .lookup import PostalAddress, ReverseResult, Suggestion, lookup_postal, reverse_geocode, suggest
 from .resolve import RankedCandidate, Resolution, resolve
+from .fields import FieldIssue, FieldResult, check_fields
 
 __all__ = [
     "__version__",
@@ -27,6 +28,9 @@ __all__ = [
     "parse",
     "validate",
     "geocode",
+    "check_fields",
+    "FieldResult",
+    "FieldIssue",
     "AddressComponents",
     "NormalizedAddress",
     "ValidationStatus",

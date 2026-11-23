@@ -99,6 +99,10 @@ def openapi_spec(version: str, max_batch: int) -> Dict[str, Any]:
                 _q("q", "the address", True, example="錦町1番2号"),
                 _q("name", "side information such as a facility or company name"),
                 _q("limit", "1-60, default 10", kind="integer")], obj),
+            "/v1/fields": _get("An address in separate form fields, each checked against the others", [
+                _q("postal_code", "postal code", example="105-0011"), _q("prefecture", "prefecture", example="東京都"),
+                _q("city", "municipality", example="港区"), _q("line1", "town and numbers", example="芝公園4-2-8"),
+                _q("line2", "building, floor, room"), _STRICT], obj),
             "/v1/extract": _post("Addresses inside a text",
                                  {"type": "object", "required": ["text"], "properties": {"text": {"type": "string"}}},
                                  obj),
