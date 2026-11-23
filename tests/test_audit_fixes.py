@@ -1346,3 +1346,100 @@ def test_a_grid_inside_a_longer_town_name_is_not_split() -> None:
     res = jaden.normalize("北海道標津郡中標津町計根別南二条東１丁目２番地１")
     assert res.components.town_verified and res.canonical.startswith("北海道標津郡中標津町計根別南二条東1丁目")
     assert res.components.postal_code == "088-2682"
+
+
+# ---------------------------------------------------------------- audit round 3
+@pytest.mark.parametrize("japanese", ["茨城県筑西市大林100", "千葉県佐倉市井野100", "秋田県秋田市上北手小山田100",
+                                      "石川県小松市小野町152-2"])
+def test_english_lines_of_towns_spelled_alike_read_back_by_postal_code(japanese: str) -> None:
+    res = jaden.normalize(japanese)
+    assert jaden.match_key(jaden.normalize(res.romaji)) == jaden.match_key(res)
+
+
+def test_english_towns_spelled_alike_without_a_postal_code_are_not_guessed() -> None:
+    res = jaden.normalize("100 Obayashi, Chikusei-shi, Ibaraki")
+    assert res.components.town is None
+    assert any("several spellings" in n for n in res.notes)
+
+
+@pytest.mark.parametrize("japanese", [
+    "東京都港区芝公園4-2-8 1-201号室", "長野県下伊那郡喬木村1396-2 サンハイツけやき1505",
+    "北海道旭川市6条通22-4-46 エステートサンライズ703", "佐賀県佐賀市本庄町1 フラット青葉405",
+    "岩手県盛岡市下飯岡8地割99", "石川県七尾市佐味町10部4", "佐賀県佐賀市本庄町1", "京都府福知山市石原上野45"])
+def test_more_english_lines_read_back(japanese: str) -> None:
+    res = jaden.normalize(japanese)
+    assert jaden.match_key(jaden.normalize(res.romaji)) == jaden.match_key(res), res.romaji
+
+
+@pytest.mark.parametrize("text, building, unit", [
+    ("秋田県大仙市神宮寺字荒屋20番地 305室", None, "305室"),
+    ("北海道網走市潮見188番地 2号棟305号室", "2号棟", "305号室"),
+    ("北海道網走市潮見188番地 1号館305号室", "1号館", "305号室"),
+    ("東京都港区芝公園4丁目2番 305室", None, "305室"),
+])
+def test_rooms_and_wings_after_an_open_number(text: str, building, unit: str) -> None:
+    c = jaden.normalize(text).components
+    assert (c.building, c.unit) == (building, unit)
+
+
+def test_wing_and_room_after_an_open_number_read_back() -> None:
+    res = jaden.normalize("北海道網走市潮見188 1-201号室")
+    assert jaden.normalize(res.canonical).canonical == res.canonical
+    assert jaden.match_key(res.canonical) == jaden.match_key("北海道網走市潮見188 1-201号室")
+
+
+def test_kana_number_words_after_a_kana_town() -> None:
+    assert jaden.normalize("東京都港区しばこうえん4ちょうめ2ばん8ごう").canonical == "東京都港区芝公園4丁目2番8号"
+    r = jaden.check_fields(prefecture="東京都", city="港区", line1="しばこうえん4ちょうめ2ばん8ごう")
+    assert r.fields["line1"] == "芝公園4丁目2番8号" and r.fields["line2"] == ""
+
+
+def test_round_three_small_items(tmp_path) -> None:
+    import csv as csv_module
+    import io
+    from jaden.batch import run_batch
+    assert jaden.match_key("東京都港区芝公園4-2-8 305ごうしつ") == jaden.match_key("東京都港区芝公園4-2-8 305号室")
+    assert jaden.match_key("東京都港区芝公園4丁目 1-201号室") == jaden.match_key("東京都港区芝公園4丁目1番 201号室")
+    assert jaden.normalize("広島県広島市1-1").precision == "municipality"
+    src = tmp_path / "huge.csv"
+    src.write_text("住所,note\n東京都港区芝公園4-2-8," + "x" * 300_000 + "\n", encoding="utf-8")
+    limit = csv_module.field_size_limit()
+    assert run_batch(src, tmp_path / "out.xlsx", log=io.StringIO()) == {"ACCEPTED": 1}
+    assert csv_module.field_size_limit() == limit
+
+
+def test_xlsx_dtd_in_a_utf16_part_is_refused(tmp_path) -> None:
+    import zipfile
+    from jaden.xlsx import _NS, read_xlsx
+    path = tmp_path / "u16.xlsx"
+    ns = _NS["m"]
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr("xl/workbook.xml", f'<workbook xmlns="{ns}" xmlns:r="{_NS["r"]}"><sheets><sheet name="S" sheetId="1" '
+                   'r:id="rId1"/></sheets></workbook>')
+        z.writestr("xl/_rels/workbook.xml.rels", f'<Relationships xmlns="{_NS["rel"]}"><Relationship Id="rId1" Type="x" '
+                   'Target="worksheets/sheet1.xml"/></Relationships>')
+        z.writestr("xl/worksheets/sheet1.xml", ('<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE x [<!ENTITY a "x">]>'
+                                                f'<worksheet xmlns="{ns}"/>').encode("utf-16"))
+    with pytest.raises(ValueError, match="DTD"):
+        read_xlsx(path)
+
+
+@pytest.mark.parametrize("raw, canonical", [
+    ("北海道札幌市中央区南五条西５丁目１３番地１－２階", "北海道札幌市中央区南5条西5丁目13番地の1 2階"),
+    ("北海道札幌市中央区南二条東１丁目１番地１９ロベージＳ２Ｅ１－１階", "北海道札幌市中央区南2条東1丁目1番地の19 ロベージS2E1 1階"),
+    ("大阪府堺市堺区向陵東町３丁８番１－１３１１号", "大阪府堺市堺区向陵東町三丁8番1号 1311号"),
+    ("千葉県館山市湊４９３番地の２館山レアージュ６０６", "千葉県館山市湊493番地の2 館山レアージュ 606号室"),
+])
+def test_a_marked_number_never_ends_up_inside_the_town(raw, canonical) -> None:
+    assert jaden.normalize(raw).canonical == canonical
+
+
+@pytest.mark.parametrize("raw, english", [
+    ("北海道札幌市中央区南五条西５丁目１３番地１", "5-13-1 Minami5-Jonishi"),
+    ("群馬県桐生市相生町1-乙394", "1-chome Aioicho 乙394"),
+    ("青森県弘前市松原東2-17", "2-chome-17 Matsubara Higashi"),
+])
+def test_english_line_keeps_every_number_and_reads_back(raw, english) -> None:
+    line = jaden.normalize(raw).romaji
+    assert line.startswith(english)
+    assert jaden.match_key(line) == jaden.match_key(raw)

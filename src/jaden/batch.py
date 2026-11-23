@@ -9,6 +9,7 @@ detected (UTF-8 with or without BOM, then cp932) unless given.
     jaden batch addresses.txt -o out.jsonl --jobs 4
 """
 
+import contextlib
 import csv
 import io
 import json
@@ -174,18 +175,33 @@ def detect_format(path: Optional[Path], fmt: Optional[str]) -> str:
             ".xlsx": "xlsx"}.get(suffix, "txt")
 
 
+@contextlib.contextmanager
+def _wide_csv_fields() -> Iterator[None]:
+    """Lets a CSV cell be longer than Python's default 131,072 characters while JADEN reads a file (the
+    setting is global, so it is put back afterwards); any other CSV error becomes a plain message."""
+    old = csv.field_size_limit()
+    csv.field_size_limit(max(old, 1 << 27))
+    try:
+        yield
+    except csv.Error as exc:
+        raise ValueError(f"the file cannot be read as CSV: {exc}") from None
+    finally:
+        csv.field_size_limit(old)
+
+
 def _load(input_path: Path, in_fmt: str, encoding: Optional[str], column: Optional[str],
           header_row: Optional[bool]) -> Tuple[List[str], Iterator[Tuple[Any, str]], str]:
     """(header, rows, the format the rows are in). An .xlsx sheet is read as CSV rows."""
-    if in_fmt == "xlsx":
-        from .xlsx import read_xlsx
-        source: Any = io.BytesIO(sys.stdin.buffer.read()) if str(input_path) == "-" else input_path
-        buf = io.StringIO()
-        csv.writer(buf).writerows(read_xlsx(source))
-        header, rows = read_rows(buf.getvalue(), "csv", column, header_row)
-        return header, rows, "csv"
-    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
-    return header, rows, in_fmt
+    with _wide_csv_fields():
+        if in_fmt == "xlsx":
+            from .xlsx import read_xlsx
+            source: Any = io.BytesIO(sys.stdin.buffer.read()) if str(input_path) == "-" else input_path
+            buf = io.StringIO()
+            csv.writer(buf).writerows(read_xlsx(source))
+            header, rows = read_rows(buf.getvalue(), "csv", column, header_row)
+            return header, iter(list(rows)), "csv"
+        header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
+        return header, iter(list(rows)), in_fmt
 
 
 def _formats(input_path: Path, output: Optional[Path], fmt: Optional[str]) -> Tuple[str, str, bool]:
@@ -216,7 +232,8 @@ def _open_output(output: Optional[Path], out_fmt: str, to_stdout: bool, out_enco
         buf = io.StringIO()
 
         def finish() -> None:
-            write_xlsx(output, list(csv.reader(io.StringIO(buf.getvalue()))))
+            with _wide_csv_fields():
+                write_xlsx(output, list(csv.reader(io.StringIO(buf.getvalue()))))
         return buf, "csv", finish
     # A character the chosen encoding cannot hold (an emoji in cp932) becomes '?' instead of an error
     stream = open(output, "w", encoding=out_encoding, errors="replace", newline="")

@@ -178,7 +178,7 @@ def _unit_part(unit: Optional[str], floor: Optional[str], building: Optional[str
         # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302', 'A302' and 'A棟302'
         # are room 302 of wing A (A棟302)
         u = unicodedata.normalize("NFKC", unit).upper().strip()
-        u = re.sub(r"\s+|号室|室|号(?=棟)|号$", "", u)
+        u = re.sub(r"\s+|号室|ごうしつ|室|号(?=棟)|号$", "", u)
         u = re.sub(r"^(?:#|ROOM|RM|APT|APARTMENT|UNIT)\.?", "", u).lstrip("-")
         written = re.fullmatch(r"([A-Z])-?(\d{2,4})|(\d{1,2})-(\d{2,4})|([A-Z]|\d{1,3}|[東西南北])棟(.+)", u)
         if written:

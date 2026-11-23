@@ -62,7 +62,7 @@ def _english_unit(unit: Optional[str]) -> Optional[str]:
     """'101号室' / '101号' / '101' -> '#101' for an English address line."""
     if not unit:
         return None
-    digits = re.match(r"^(\d+[A-Za-z]?)", unit)
+    digits = re.match(r"^((?:\d{1,2}-)?\d+[A-Za-z]?)", unit)     # a wing stays with its room: '#1-201'
     return f"#{digits.group(1)}" if digits else unit
 
 
@@ -96,12 +96,18 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
     if not muni_romaji:
         return None
     c = components
-    numbers = [n for n in (c.chome, c.ban, c.go) if n is not None]
-    if not numbers:
-        numbers = [n for n in (c.banchi, c.edaban) if n is not None]
+    house = (c.ban, c.go) if c.ban is not None or c.go is not None else (c.banchi, c.edaban)
+    numbers = [n for n in (c.chome, *house) if n is not None]   # '5丁目13番地の1' keeps its 13-1
     number_str = "-".join(str(n) for n in numbers)
+    if c.chome is not None and len(numbers) == 2:
+        number_str = f"{c.chome}-chome-{numbers[1]}"   # '2-17' alone would read back as a lot and its branch
+    after_town = ""
     if c.lot_number:
-        number_str = c.lot_number          # a three-part lot ('17-24-13') or one written without a number
+        lead = f"{c.chome}-chome" if c.chome is not None else ""
+        if re.match(r"\d", c.lot_number):
+            number_str = f"{lead}-{c.lot_number}" if lead else c.lot_number   # a three-part lot ('17-24-13')
+        else:
+            number_str, after_town = lead, c.lot_number   # '乙394' is written in Japanese after the town
 
     first = []
     written = re.sub(r"^大字", "", c.town or "")
@@ -109,17 +115,18 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
         if not town.romaji:
             return None
         town_words = " ".join(_words(town.romaji))
-        base, plain = town.name.replace("大字", ""), written.replace("大字", "")
+        base = re.sub(r"^字", "", town.name.replace("大字", ""))
+        plain = re.sub(r"^字", "", written.replace("大字", ""))
         if plain.startswith(base) and plain[len(base):]:
             town_words += " " + plain[len(base):]       # a 字 below the town has no reading: kept as written
         if c.hokkaido_grid is not None and c.hokkaido_grid.chome is not None and c.ban is None and c.banchi is None:
             first.append(f"{town_words} {c.hokkaido_grid.chome}-chome")
         else:
-            first.append(f"{number_str} {town_words}".strip())
+            first.append(f"{number_str} {town_words} {after_town}".strip())
     elif written and c.hokkaido_grid is None:
-        first.append(f"{number_str} {written}".strip())   # a town the registry does not hold, as written
-    elif number_str:
-        first.append(number_str)
+        first.append(f"{number_str} {written}{after_town}".strip())   # a town the registry does not hold, as written
+    elif number_str or after_town:
+        first.append(f"{number_str} {after_town}".strip())
 
     # Wards and counties come before their city / town in English order
     admin = list(reversed(_words(muni_romaji)))

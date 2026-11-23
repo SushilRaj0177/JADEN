@@ -17,9 +17,10 @@ _KANJI_NUM_CHARS: Final[str] = "".join(list(KANJI_DIGITS.keys()) + list(KANJI_PO
 _NUM_TOKEN: Final[str] = rf"(?:\d+|[{_KANJI_NUM_CHARS}]+)"
 # The number after 番 / 番地. Written in kanji it needs a mark around it ('番地の三', '番三号'): the 三 of
 # '675番地三田市総合福祉保健センター' starts a name. 号 before 室 belongs to the room ('20番地12号室').
+_NOT_A_GO: Final[str] = r"(?!\d|\s*(?:室|ごうしつ|号?棟|号館|番館))"   # '305室', '2号棟', '1号館' are rooms / wings
 _GO_AFTER_BAN: Final[str] = (
-    rf"(?:(?:の|-)(?P<go>{_NUM_TOKEN})(?:号(?!室))?"
-    rf"|(?P<go_plain>\d+)(?:号(?!室))?"
+    rf"(?:(?:の|-)(?P<go>{_NUM_TOKEN}){_NOT_A_GO}(?:号(?!室))?"
+    rf"|(?P<go_plain>\d+){_NOT_A_GO}(?:号(?!室))?"
     rf"|(?P<go_kanji>[{_KANJI_NUM_CHARS}]+)(?:号(?!室)|(?=\s|$)))?"
 )
 _TOWN_ANY: Final[str] = r"(?P<town>.*?)"
@@ -225,6 +226,10 @@ class BlockFSM:
             rf"^{town_pattern}(?P<n1>\d+)-(?P<n2>\d+)(?:-(?P<n3>\d+))?(?P<tail>.*)$",
             text
         )
+        if hyphen_match and re.search(r"\d(?:番地|番(?!町|丁|街|館|割|組|場|屋|通|筋))", hyphen_match.group("town")):
+            # '13番地1-2階' is lot 13-1 and a floor, '1番地19ロベージS2E1-1階' lot 1-19 and a building:
+            # a number marked 番 / 番地 is never inside the town's name
+            hyphen_match = None
         if hyphen_match:
             town = hyphen_match.group("town").strip()
             oaza, koaza = extract_aza(town)

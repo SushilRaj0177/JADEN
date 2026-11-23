@@ -24,6 +24,8 @@ MAX_CELLS = 5_000_000
 MAX_MATERIALIZED = 20_000_000                      # cells after padding each row to its last cell
 MAX_ROWS, MAX_COLUMNS = 1_048_576, 16_384          # Excel's own limits
 MAX_PART_BYTES = 512 * 1024 * 1024                  # one uncompressed part (a sheet, the shared strings)
+# '<!DOCTYPE' and '<!ENTITY' in UTF-8 / ASCII and in UTF-16 (a part may declare either encoding)
+_DTD_MARKS = tuple(word.encode(enc) for word in ("<!DOCTYPE", "<!ENTITY") for enc in ("ascii", "utf-16-le", "utf-16-be"))
 MAX_RATIO = 200                                     # uncompressed / compressed: more is a zip bomb
 
 
@@ -90,9 +92,9 @@ def _open_part(book: zipfile.ZipFile, name: str, path: object) -> IO[bytes]:
             if not chunk:
                 break
             window = previous + chunk
-            if b"<!DOCTYPE" in window or b"<!ENTITY" in window:
+            if any(needle in window for needle in _DTD_MARKS):
                 raise ValueError(f"{path}: {name} declares a DTD, which a spreadsheet never needs")
-            previous = chunk[-16:]
+            previous = chunk[-40:]
     return book.open(info)
 
 

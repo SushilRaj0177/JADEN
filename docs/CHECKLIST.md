@@ -131,3 +131,19 @@ Low
 - [x] OpenAPI: `/v1/label` lacks `style`; `/v1/postal?code=` undocumented
 - [x] `.xlsx` in Strict OOXML or with lower-case cell references reads wrongly without an error
 - [x] nginx `map` may match the API key case-insensitively
+
+## Audit round 3 (separate high-precision audit, 23 Nov 2026)
+- [x] R3-H1 English input picks one of two towns spelled the same in one municipality, even against the postal code
+- [x] R3-M1 JADEN's English line misses: a digit wing and room (`#1`), a leading building with no Latin town, 字 / 地割 / unregistered town text
+- [x] R3-M2 A room or wing mark after an open 番地/番 (`305室`, `2号棟305号室`, `1号館`) is read as the next number
+- [x] R3-M3 A digit wing and room after an open number: canonical not a fixed point
+- [x] R3-M4 A kana town after a kanji municipality with kana number marks (`しばこうえん4ちょうめ2ばん8ごう`) leaves the numbers as the building
+- [x] R3-L1 `ごうしつ` kept in the room key
+- [x] R3-L2 `4丁目 1-201号室` gets no key while its canonical does
+- [x] R3-L3 CSV/TSV fields over 131,072 characters crash
+- [x] R3-L4 `.xlsx` DTD check misses a UTF-16 part
+- [x] R3-L5 README says 124,526 postal records; the data has 124,527
+- [x] R3-L6 An ambiguous designated city with numbers reports precision `house`
+- [x] R3-X1 (found while checking) `13番地1-2階` and `1番地19ビル1-1階` put `13番地` inside the town; Sakai's `3丁8番1-1311号` lost its 番
+- [x] R3-X2 (found while checking) The English line dropped the 番地 numbers after a 丁目, and the 丁目 before a 甲/乙 lot
+- [x] R3-X3 (found while checking) The English line `2-17 Town` read back as a lot; now `2-chome-17 Town`

@@ -1068,9 +1068,15 @@ class AddressNormalizer:
         if unit_val:
             # A bare room number right after a number without 号 ('潮見188番 703') would read back as the
             # 号: it is written as a room
-            bare_after_open = (re.fullmatch(r"\d+[A-Za-z]?", unit_val) is not None
-                               and bool(canonical_parts) and not canonical_parts[-1].endswith("号"))
-            secondary_parts.append(f"{unit_val}号室" if bare_after_open else unit_val)
+            after_open = bool(canonical_parts) and not canonical_parts[-1].endswith("号")
+            wing_room = re.fullmatch(r"(\d{1,2})-(\d{2,4})", unit_val)
+            if after_open and re.fullmatch(r"\d+[A-Za-z]?", unit_val):
+                secondary_parts.append(f"{unit_val}号室")
+            elif after_open and wing_room:
+                # '188番 1-201' would read back as 188番1号, room 201: the wing is written as one
+                secondary_parts.append(f"{wing_room.group(1)}棟 {wing_room.group(2)}号室")
+            else:
+                secondary_parts.append(unit_val)
 
         base_addr = sanitized if stem_only_name else "".join(canonical_parts)
         if secondary_parts:
@@ -1085,6 +1091,7 @@ class AddressNormalizer:
             if self.registry.wards_of(muni_rec):
                 # '広島県広島市1-1': numbers in a designated city, with neither ward nor town
                 notes.append(f"no ward or town is written: the numbers cannot be placed in {muni_rec.name}")
+                numbers_unplaced = True
                 is_ambiguous = True
                 ambiguous_candidates = tuple(f"{w.prefecture_name}{w.name} ({w.lg_code})"
                                              for w in self.registry.wards_of(muni_rec))
@@ -1137,6 +1144,9 @@ class AddressNormalizer:
             if len(codes) == 1:
                 postal_out = f"{codes[0][:3]}-{codes[0][3:]}"
 
+        if ban_val is not None and go_val is None and regime_val == AddressRegime.GAIKU_HOSHIKI.value:
+            # A 番 without its 号 is a block or a lot: it says nothing of the regime (as '6丁目232番' does not)
+            regime_val = AddressRegime.UNSPECIFIED.value
         if gaz is not None and lg_code and chome_val is not None and chome_verified is None and town_name \
                 and not is_ambiguous:
             # 堺市 registers '茶山台一丁' … '茶山台三丁' as towns of their own: the numbers there are the 丁目

@@ -242,8 +242,8 @@ def admin_fields_to_kanji(prefecture: str, city: str) -> Tuple[str, str]:
 
 def kana_town_in(municipalities: List[Any], text: str) -> Optional[Tuple[str, str]]:
     """The text after a municipality with a town typed in kana written in kanji, when its reading (numbers
-    included) names exactly one registered town of those municipalities; with a note. Only a reading that
-    covers a number ('しゅんこうだい4じょう') changes anything the engine would not already find."""
+    included) names exactly one registered town of those municipalities; with a note. The number words
+    after it ('4ちょうめ2ばん8ごう') are written as 丁目, 番 and 号."""
     norm = unicodedata.normalize("NFKC", text)
     hits = []
     for m in municipalities:
@@ -254,9 +254,9 @@ def kana_town_in(municipalities: List[Any], text: str) -> Optional[Tuple[str, st
     if len(names) != 1:
         return None
     town, used, _ = hits[0]
-    if not any(ch.isdigit() for ch in norm[:used]):
-        return None
     tail = norm[used:]
     for pattern, word in _KANA_MARKERS:
         tail = pattern.sub(word, tail)
+    if not any(ch.isdigit() for ch in norm[:used]) and tail == norm[used:]:
+        return None      # nothing the engine's own reading of the town would miss ('しばこうえん4-2-8')
     return f"{town}{tail}", f"read the kana town {norm[:used]} as {town}"
