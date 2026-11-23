@@ -150,6 +150,13 @@ class NormalizedAddress:
         from ..formatting import address_lines
         return address_lines(self)
 
+    def label(self, width: int = 20, max_lines: int = 3, count: str = "chars", style: str = "hyphen",
+              fullwidth: bool = False, postal_line: bool = False) -> Any:
+        """The address split into lines of at most ``width`` characters (or Shift_JIS bytes with
+        count='bytes') for a shipping label or a form with fixed field lengths; see formatting.label_lines."""
+        from ..formatting import label_lines
+        return label_lines(self, width, max_lines, count, style, fullwidth, postal_line)
+
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the normalized address to a clean dictionary."""
         data = asdict(self)

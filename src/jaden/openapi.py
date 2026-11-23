@@ -103,6 +103,12 @@ def openapi_spec(version: str, max_batch: int) -> Dict[str, Any]:
                 _q("postal_code", "postal code", example="105-0011"), _q("prefecture", "prefecture", example="東京都"),
                 _q("city", "municipality", example="港区"), _q("line1", "town and numbers", example="芝公園4-2-8"),
                 _q("line2", "building, floor, room"), _STRICT], obj),
+            "/v1/label": _get("The address split into lines for a label or fixed-length fields", [
+                _ADDRESS, _q("width", "characters (or bytes) per line, 4-200, default 20", kind="integer"),
+                _q("lines", "at most this many lines, 1-20, default 3", kind="integer"),
+                _q("count", "'chars' (default) or 'bytes' (Shift_JIS: full-width 2, half-width 1)"),
+                _q("fullwidth", "1 = digits, letters and hyphens in full width", kind="boolean"),
+                _q("postal", "1 = the postal code on a line of its own first", kind="boolean"), _FIX], obj),
             "/v1/extract": _post("Addresses inside a text",
                                  {"type": "object", "required": ["text"], "properties": {"text": {"type": "string"}}},
                                  obj),

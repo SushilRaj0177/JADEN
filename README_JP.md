@@ -60,6 +60,7 @@ v0.2 は 1 件の住所を照合できるようになりました。v0.3 は、�
 | 座標 → 住所 | `jaden.reverse_geocode`, `jaden reverse` | `35.0116, 135.7681` → 京都市中京区上本能寺前町（17 m） |
 | メール・メモから住所を抽出 | `jaden.extract_addresses`, `jaden extract` | 文字位置つき、1 件ずつ照合済み |
 | 短い形式で保存 | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8（再正規化しても同じ結果） |
+| 送り状の印字・桁数制限のある入力欄 | `res.label(width=20, max_lines=3)`、`jaden normalize ... --label 20x3`、`/v1/label` | 都道府県・市区町村・町名・建物・部屋の区切りで改行し、数字の途中では切らない。文字数または Shift_JIS のバイト数で数え、全角数字にも対応。収まらない部分を返す |
 | 他の言語から利用 | `jaden serve` | `/v1` 以下の JSON API とデモページ（標準ライブラリのみ） |
 | 項目別の入力フォームを確認 | `jaden.check_fields(postal_code=, prefecture=, city=, line1=, line2=)` | 各項目を相互に照合。郵便番号や市区町村の誤りを正しい値とともに報告し、訂正済みの項目を返す |
 | AI アシスタントから利用 | `jaden mcp` | MCP ツール: 正規化・検証・候補推定・項目別確認・抽出・郵便番号・比較・補完 |
@@ -758,6 +759,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/batch` `{"addresses": [...]}` | 最大 `--max-batch` 件（既定 1,000） |
 | `GET /v1/resolve?q=&name=` | 候補の市区町村と較正された確率、誤答率 1% の閾値での回答、95% 候補集合 |
 | `GET /v1/fields?postal_code=&prefecture=&city=&line1=&line2=` | 項目別に入力された住所を項目ごとに確認し、訂正済みの項目を返す |
+| `GET /v1/label?q=&width=&lines=&count=&fullwidth=` | 住所を送り状の行に分割 |
 | `GET /v1/openapi.json` | OpenAPI 3.1 の定義（Swagger UI・Postman・クライアント生成用） |
 | `GET /v1`, `GET /health` | エンドポイント一覧、データの版、死活確認 |
 

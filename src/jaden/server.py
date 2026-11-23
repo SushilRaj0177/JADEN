@@ -14,6 +14,7 @@ endpoint accepts GET with query parameters or POST with a JSON body.
     GET  /v1/compare?a=...&b=...              are two addresses the same place?
     GET  /v1/resolve?q=錦町1番2号&name=...       candidate municipalities with calibrated probabilities
     GET  /v1/fields?postal_code=&prefecture=&city=&line1=&line2=   form fields checked one by one
+    GET  /v1/label?q=...&width=20&lines=3     the address split into label lines
     POST /v1/extract   {"text": "..."}        addresses inside a text
     POST /v1/batch     {"addresses": [...]}   many addresses at once
     GET  /v1                                  endpoint list and data versions
@@ -135,6 +136,7 @@ class JadenApi:
             "/v1/compare": self.compare,
             "/v1/resolve": self.resolve,
             "/v1/fields": self.fields,
+            "/v1/label": self.label,
             "/v1/extract": self.extract,
             "/v1/batch": self.batch,
             "/v1/openapi.json": self.openapi,
@@ -236,6 +238,17 @@ class JadenApi:
         result = dataclasses.asdict(resolve(_required(params, "q"), _optional_text(params, "name")))
         result["candidates"] = result["candidates"][:_int(params, "limit", 10, 1, 60)]
         return result
+
+    def label(self, params: Dict[str, Any]) -> Any:
+        from .engine import get_engine
+        count = _optional_text(params, "count") or "chars"
+        if count not in ("chars", "bytes"):
+            raise ApiError(400, "bad_parameter", "'count' must be 'chars' or 'bytes'")
+        res = get_engine().normalize(_required(params, "q"), autocorrect=_flag(params.get("fix")))
+        out = res.label(_int(params, "width", 20, 4, 200), _int(params, "lines", 3, 1, 20), count=count,
+                        fullwidth=_flag(params.get("fullwidth")), postal_line=_flag(params.get("postal"))).to_dict()
+        out["canonical"] = res.canonical if res.confidence_score > 0 else None
+        return out
 
     def fields(self, params: Dict[str, Any]) -> Any:
         from .fields import FIELD_NAMES, check_fields
@@ -419,6 +432,7 @@ def endpoint_list() -> List[Tuple[str, str]]:
         ("/v1/compare?a=&b=", "are two addresses the same place"),
         ("/v1/resolve?q=&name=", "candidate municipalities with calibrated probabilities"),
         ("/v1/fields?postal_code=&prefecture=&city=&line1=&line2=", "form fields checked one by one"),
+        ("/v1/label?q=&width=&lines=&count=&fullwidth=", "the address split into label lines"),
         ("/v1/extract", "addresses inside a text (POST {\"text\"})"),
         ("/v1/batch", "many addresses (POST {\"addresses\": [...]})"),
         ("/v1/openapi.json", "OpenAPI 3.1 description"),

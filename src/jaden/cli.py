@@ -16,10 +16,11 @@ Provides clean, professional commands for Japanese address data engineering:
   jaden serve [--port 8000]      JSON API for all of the above, with a demo page
 """
 
+import re
 import sys
 import argparse
 import json
-from typing import Optional, Sequence, List, Final, NoReturn, Any
+from typing import Optional, Sequence, List, Final, NoReturn, Any, Tuple
 
 # Standard sysexits codes for CLI errors
 EX_USAGE: Final[int] = 64      # Command-line usage error, unknown flag, missing arg, empty stdin
@@ -326,6 +327,21 @@ def handle_normalize(address: str, as_json: bool, canonical_only: bool, fix: boo
     return 0 if res.confidence_score > 0.0 else 1
 
 
+def handle_label(address: str, size: Tuple[int, int], as_json: bool = False, fix: bool = False, count: str = "chars",
+                 fullwidth: bool = False, style: str = "canonical") -> int:
+    """Prints the address split into label lines; exit 1 when it does not fit."""
+    res = normalize(address, autocorrect=fix)
+    label = res.label(size[0], size[1], count=count, style="hyphen" if style == "canonical" else style,
+                      fullwidth=fullwidth)
+    if as_json:
+        print(json.dumps(label.to_dict(), ensure_ascii=False, indent=2))
+    else:
+        print("\n".join(label.lines))
+        if not label.fits:
+            sys.stderr.write(f"Does not fit: '{label.overflow}' left over\n")
+    return 0 if label.fits and res.confidence_score > 0 else 1
+
+
 def handle_parse(address: str, as_json: bool) -> int:
     """Executes the parse command."""
     res = normalize(address)
@@ -484,6 +500,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Correct a misspelt town when exactly one registered town is one character away.",
     )
+    norm_p.add_argument(
+        "--label", metavar="WIDTHxLINES", type=_label_size,
+        help="Print the address split into label lines, e.g. 20x3 (at most 3 lines of 20 characters). "
+             "Exit code 1 when it does not fit.",
+    )
+    norm_p.add_argument("--label-bytes", action="store_true",
+                        help="With --label: count Shift_JIS bytes (full-width 2, half-width 1) instead of characters.")
+    norm_p.add_argument("--fullwidth", action="store_true",
+                        help="With --label: write digits, letters and hyphens in full width.")
 
     # 2. parse
     parse_p = subparsers.add_parser(
@@ -633,6 +658,13 @@ def _add_toolkit_parsers(subparsers: Any) -> None:
                       help="Also write likely duplicate pairs (same block) to this CSV, with a score and the reasons; "
                            "catches near-matches such as a misspelt building name or a missing room.")
     dd_p.add_argument("--min-score", type=float, default=0.5, help="Lowest pair score written with --pairs (default: 0.5).")
+
+
+def _label_size(value: str) -> Tuple[int, int]:
+    m = re.fullmatch(r"\s*(\d+)\s*[xX×*]\s*(\d+)\s*", value)
+    if not m or int(m.group(1)) < 4 or int(m.group(2)) < 1:
+        raise argparse.ArgumentTypeError("use WIDTHxLINES, e.g. 20x3 (width at least 4)")
+    return int(m.group(1)), int(m.group(2))
 
 
 def _positive_int(value: str) -> int:
@@ -935,6 +967,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 def _run_address_command(parser: argparse.ArgumentParser, args: argparse.Namespace, target_address: str) -> int:
     try:
         if args.command == "normalize":
+            if args.label:
+                return handle_label(target_address, args.label, as_json=args.json, fix=args.fix,
+                                    count="bytes" if args.label_bytes else "chars", fullwidth=args.fullwidth,
+                                    style=args.style)
             return handle_normalize(target_address, as_json=args.json, canonical_only=args.canonical_only,
                                     fix=args.fix, style=args.style)
         elif args.command == "parse":

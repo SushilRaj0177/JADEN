@@ -667,3 +667,33 @@ def test_stream_writes_one_record_per_line() -> None:
     assert lines[0]["jaden"]["status"] == "ACCEPTED"
     assert lines[1]["input"]["id"] == 7 and lines[1]["jaden"]["status"] == "AMBIGUOUS"
     assert "error" in lines[2] and lines[3]["jaden"]["status"] == "MALFORMED"
+
+
+# ---------------------------------------------------------------- F5: label lines
+def test_label_lines_break_between_parts_and_report_overflow() -> None:
+    res = jaden.normalize("東京都港区芝公園4-2-8 グランドメゾン芝公園302号室")
+    assert res.label().lines == ("東京都港区芝公園4-2-8", "グランドメゾン芝公園 302号室")
+    narrow = res.label(width=10)
+    assert narrow.lines == ("東京都港区", "芝公園4-2-8", "グランドメゾン芝公園") and not narrow.fits
+    assert narrow.overflow == "302号室"
+    assert res.label(width=12, fullwidth=True).lines[1] == "芝公園４－２－８"
+    assert all(len(x.encode("cp932")) <= 16 for x in res.label(width=16, count="bytes", max_lines=9).lines)
+    assert res.label(postal_line=True).lines[0] == "〒105-0011"
+    assert jaden.normalize("北海道虻田郡倶知安町南1条西1丁目").label(width=8).lines == ("北海道虻田郡", "倶知安町", "南1条西1丁目")
+
+
+def test_label_never_cuts_inside_a_number_when_it_can_help_it() -> None:
+    lines = jaden.normalize("東京都港区芝公園4-2-8 グランドメゾン芝公園12345号室").label(width=13, max_lines=9).lines
+    assert "グランドメゾン芝公園" in lines and any(x.startswith("12345") for x in lines)
+    with pytest.raises(ValueError):
+        jaden.normalize("東京都港区芝公園4-2-8").label(width=2)
+
+
+def test_label_in_the_api_and_cli(capsys) -> None:
+    from jaden.cli import main
+    from jaden.server import JadenApi
+    out = JadenApi().handle("/v1/label", {"q": "東京都港区芝公園4-2-8 グランドメゾン芝公園302", "width": "10"})
+    assert out["lines"][0] == "東京都港区" and out["fits"] is False
+    assert main(["normalize", "東京都港区芝公園4-2-8", "--label", "20x2"]) == 0
+    assert capsys.readouterr().out.strip() == "東京都港区芝公園4-2-8"
+    assert main(["normalize", "東京都港区芝公園4-2-8 グランドメゾン芝公園302", "--label", "6x1"]) == 1

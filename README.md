@@ -62,6 +62,7 @@ v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems n
 | Coordinates → address | `jaden.reverse_geocode`, `jaden reverse` | `35.0116, 135.7681` → 京都市中京区上本能寺前町 (17 m) |
 | Find addresses in emails / notes | `jaden.extract_addresses`, `jaden extract` | exact character spans, each one verified |
 | Store a compact form | `res.format("hyphen")`, `res.lines()`, `res.precision` | 東京都港区芝公園4-2-8; lossless round trip |
+| Print a shipping label or fill fixed-length fields | `res.label(width=20, max_lines=3)`, `jaden normalize ... --label 20x3`, `/v1/label` | lines broken between prefecture, municipality, town, building and room, never inside a number; counts characters or Shift_JIS bytes; optional full-width digits; says what does not fit |
 | Use from any language | `jaden serve` | JSON API under `/v1` plus an interactive demo page, standard library only |
 | Check a form with separate fields | `jaden.check_fields(postal_code=, prefecture=, city=, line1=, line2=)` | each field checked against the others; wrong postal code or city reported with the right value; corrected fields back |
 | Use from an AI assistant | `jaden mcp` | MCP tools: normalize, validate, resolve, form fields, extract, postal, compare, suggest |
@@ -816,6 +817,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/batch` `{"addresses": [...]}` | up to `--max-batch` addresses (default 1,000) |
 | `GET /v1/resolve?q=&name=` | candidate municipalities with calibrated probabilities, the answer at the 1% threshold, the 95% set |
 | `GET /v1/fields?postal_code=&prefecture=&city=&line1=&line2=` | an address in separate form fields, each checked; corrected fields |
+| `GET /v1/label?q=&width=&lines=&count=&fullwidth=` | the address split into label lines |
 | `GET /v1/openapi.json` | OpenAPI 3.1 description, for Swagger UI, Postman or a client generator |
 | `GET /v1`, `GET /health` | endpoint list, data versions, liveness |
 
