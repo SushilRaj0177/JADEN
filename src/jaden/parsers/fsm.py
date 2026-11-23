@@ -203,9 +203,12 @@ class BlockFSM:
                 return result, town, tail
 
             # 1c. Single number with 号 or bare number: e.g. '10号' or '10'
-            # (not a room or floor: '4丁目 201号室', '7丁目 3F' name no block)
-            sub_single = re.search(rf"^(?P<num>{_NUM_TOKEN})(?!\d|\s*(?:号室|室|階|[FfＦ](?![a-z])|ごうしつ))(?:号)?(?P<tail>.*)$",
-                                   rest)
+            # (not a room: '4丁目 201号室'; nor a floor set apart by a space: '7丁目 3F'. A floor glued to the
+            # number, '2丁目2703F', is lot 270 and 3F, which the glued-mark step reads)
+            spaced = chome_match.group("rest")[:1].isspace()
+            floor_mark = r"|階|[FfＦ](?![A-Za-z])" if spaced else ""
+            sub_single = re.search(
+                rf"^(?P<num>{_NUM_TOKEN})(?!\d|\s*(?:号室|室|ごうしつ{floor_mark}))(?:号)?(?P<tail>.*)$", rest)
             if sub_single:
                 result["ban"] = _parse_num(sub_single.group("num"))
                 result["address_regime"] = AddressRegime.UNSPECIFIED.value

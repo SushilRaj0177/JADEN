@@ -53,7 +53,7 @@ def _kanji_numeral(n: int) -> str:
 
 
 # A room or floor written first ('703号室', '3F', '201室')
-_ROOM_OR_FLOOR_FIRST: Final[re.Pattern[str]] = re.compile(r"\d+\s*(?:号室|室|階|[FfＦ](?![a-z])|ごうしつ)")
+_ROOM_OR_FLOOR_FIRST: Final[re.Pattern[str]] = re.compile(r"\d+\s*(?:号室|室|階|[FfＦ](?![A-Za-z])|ごうしつ)")
 # Words of a facility name: '横浜市立第3中学校', '札幌市立白石中学校'
 _FACILITY: Final[re.Pattern[str]] = re.compile(
     r"第\d+(?!\d*(?:番|号|丁目|-))|学校|中学|小学|高校|大学|学園|保育|幼稚園|病院|医院|診療所|図書館|公民館|体育館|"
