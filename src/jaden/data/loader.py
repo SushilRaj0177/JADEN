@@ -72,8 +72,18 @@ class AddressDataRegistry:
             self._prefectures_by_name[rec.name] = rec
             self._prefectures_by_stem[rec.stem] = rec
 
+    def municipality_list_path(self) -> Path:
+        """The municipality list in use: one refreshed by `jaden data update` (in the user data folder or
+        JADEN_DATA_DIR), else the bundled copy."""
+        import os
+        from .gazetteer import user_data_dir
+        for folder in (os.environ.get("JADEN_DATA_DIR"), str(user_data_dir())):
+            if folder and (Path(folder) / "municipalities.json").exists():
+                return Path(folder) / "municipalities.json"
+        return self._DATA_DIR / "municipalities.json"
+
     def _load_municipalities(self) -> None:
-        path = self._DATA_DIR / "municipalities.json"
+        path = self.municipality_list_path()
         if not path.exists():
             return  # Will be populated by dataset generator
 
@@ -188,3 +198,10 @@ def get_registry() -> AddressDataRegistry:
                 registry.load_all()
                 _REGISTRY_INSTANCE = registry
     return _REGISTRY_INSTANCE
+
+
+def reset_registry() -> None:
+    """Forgets the loaded registry, so the next use reads the municipality list again (after an update)."""
+    global _REGISTRY_INSTANCE
+    with _REGISTRY_LOCK:
+        _REGISTRY_INSTANCE = None

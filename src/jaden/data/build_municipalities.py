@@ -27,12 +27,13 @@ Total Municipal Records Bundled: 1,918
 """
 
 import json
+import re
 from pathlib import Path
 import zipfile
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Any, Optional
+from typing import Callable, Dict, List, Any, Optional, Tuple
 
-SOURCE_METADATA = {
+SOURCE_METADATA: Dict[str, Any] = {
     "source_organization": "Ministry of Internal Affairs and Communications (総務省自治行政局)",
     "dataset_name": "都道府県コード及び市区町村コード (令和6年1月1日更新)",
     "source_url": "https://www.soumu.go.jp/main_content/000925835.xlsx",
@@ -236,6 +237,97 @@ def build_municipalities_dataset(
         json.dump(SOURCE_METADATA, f, ensure_ascii=False, indent=2)
 
     return records
+
+
+MIC_INDEX_URL = "https://www.soumu.go.jp/denshijiti/code.html"
+_CODE_LIST_LINK = re.compile(
+    r"都道府県コード及び市区町村コード.{0,200}?（(?P<label>[^）]{2,40}更新)）.{0,400}?href=\"(?P<href>[^\"]+\.xlsx)\"",
+    re.DOTALL)
+
+
+def decode_page(raw: bytes) -> str:
+    """MIC's pages are Shift_JIS; the charset is taken from the page when it says so."""
+    m = re.search(rb"charset=[\"']?([A-Za-z0-9_-]+)", raw[:2000])
+    for enc in ([m.group(1).decode("ascii")] if m else []) + ["utf-8", "cp932", "euc_jp"]:
+        try:
+            return raw.decode("cp932" if enc.lower() in ("shift_jis", "sjis", "x-sjis") else enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
+def find_latest_list(html: str) -> Optional[Tuple[str, str]]:
+    """(xlsx URL, '令和6年1月1日更新') of the current code list on MIC's code page."""
+    text = re.sub(r"<(?!a\s)[^>]+>", " ", html)          # keep the links, drop other tags
+    m = _CODE_LIST_LINK.search(text)
+    if m is None:
+        return None
+    href = m.group("href")
+    url = href if href.startswith("http") else "https://www.soumu.go.jp" + ("" if href.startswith("/") else "/") + href
+    return url, m.group("label")
+
+
+def refresh(out_dir: Path, cache_dir: Path, log: Callable[[str], None] = print,
+            index_html: Optional[str] = None) -> Dict[str, Any]:
+    """Downloads MIC's current municipality code list and, when it differs from the bundled one, writes
+    municipalities.json to ``out_dir`` (which the registry then reads instead of the bundled copy).
+    Returns what was done: {'changed': bool, 'url', 'label', 'sha256', 'records', 'added', 'removed'}."""
+    import hashlib
+    import os
+    import urllib.request
+    from datetime import date
+    from .build_gazetteer import USER_AGENT, _download
+
+    if index_html is None:
+        req = urllib.request.Request(MIC_INDEX_URL, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            index_html = decode_page(resp.read())
+    found = find_latest_list(index_html)
+    if found is None:
+        raise RuntimeError(f"no municipality code list (.xlsx) found on {MIC_INDEX_URL}")
+    url, label = found
+    data, digest = _download(url, cache_dir, log)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    target, meta_target = out_dir / "municipalities.json", out_dir / "municipalities_provenance.json"
+    result: Dict[str, Any] = {"url": url, "label": label, "sha256": digest}
+    if digest == SOURCE_METADATA["source_file_sha256"]:
+        for stale in (target, meta_target):     # an older refresh is superseded by the bundled list
+            if stale.exists():
+                stale.unlink()
+        log(f"municipality list unchanged ({label}); using the bundled copy")
+        return {**result, "changed": False, "records": SOURCE_METADATA["counts"]["total_bundled_records"],
+                "added": [], "removed": []}
+
+    xlsx = cache_dir / url.rsplit("/", 1)[-1]
+    tmp_json, tmp_meta = target.with_suffix(".json.tmp"), meta_target.with_suffix(".json.tmp")
+    try:
+        records = build_municipalities_dataset(xlsx, tmp_json, tmp_meta)
+    except (KeyError, ValueError, zipfile.BadZipFile, ET.ParseError) as exc:
+        tmp_json.unlink(missing_ok=True)
+        tmp_meta.unlink(missing_ok=True)
+        raise RuntimeError(f"could not read {url} ({exc}); the bundled list stays in use") from None
+    prefectures = {r["prefecture_code"] for r in records}
+    if len(records) < 1700 or len(prefectures) != 47:
+        tmp_json.unlink(missing_ok=True)
+        tmp_meta.unlink(missing_ok=True)
+        raise RuntimeError(f"the downloaded list looks wrong ({len(records)} records, {len(prefectures)} prefectures); "
+                           "the bundled list stays in use")
+    bundled = json.loads((Path(__file__).parent / "municipalities.json").read_text(encoding="utf-8"))
+    old = {r["lg_code"]: r["name"] for r in bundled}
+    new = {r["lg_code"]: r["name"] for r in records}
+    added = sorted(f"{c} {n}" for c, n in new.items() if c not in old)
+    removed = sorted(f"{c} {n}" for c, n in old.items() if c not in new)
+    no_county = sum(1 for r in records if r["entity_type"] in ("town", "village") and not r.get("county")
+                    and r["lg_code"] not in old)
+    provenance = {"source_url": url, "dataset_name": f"都道府県コード及び市区町村コード ({label})",
+                  "source_file_sha256": hashlib.sha256(data).hexdigest(), "retrieval_date": date.today().isoformat(),
+                  "records": len(records), "added": added, "removed": removed}
+    tmp_meta.write_text(json.dumps(provenance, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp_json, target)
+    os.replace(tmp_meta, meta_target)
+    log(f"municipality list updated to {label}: {len(records)} records, {len(added)} added, {len(removed)} removed"
+        + (f"; {no_county} new towns or villages have no county yet" if no_county else ""))
+    return {**result, "changed": True, "records": len(records), "added": added, "removed": removed}
 
 
 if __name__ == "__main__":

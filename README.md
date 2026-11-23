@@ -695,7 +695,8 @@ Matched:     東京都港区芝公園4丁目2番8号
 # (after an upgrade it also lists block data built by an older version, to fetch again)
 $ jaden data info
 
-# Download the latest MLIT and Japan Post datasets and rebuild (user data directory)
+# Download the latest MIC municipality list, MLIT towns and Japan Post postal codes and rebuild
+# (user data directory; a municipality list identical to the bundled one is not copied)
 $ jaden data update
 
 # Install block-level points for prefectures (here Tokyo and Osaka) for block-precision geocoding

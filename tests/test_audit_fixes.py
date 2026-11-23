@@ -697,3 +697,72 @@ def test_label_in_the_api_and_cli(capsys) -> None:
     assert main(["normalize", "東京都港区芝公園4-2-8", "--label", "20x2"]) == 0
     assert capsys.readouterr().out.strip() == "東京都港区芝公園4-2-8"
     assert main(["normalize", "東京都港区芝公園4-2-8 グランドメゾン芝公園302", "--label", "6x1"]) == 1
+
+
+# ---------------------------------------------------------------- F9: refresh the MIC municipality list
+_MIC_PAGE = ('<li>「都道府県コード及び市区町村コード」<br />（令和9年1月1日更新）<ul>'
+             '<li><a href="/main_content/000000001.pdf">PDF</a></li><li><a href="/main_content/{name}">Excel</a></li>')
+
+
+def _mic_copy(tmp_path, name: str, edit=None):
+    import zipfile
+    from pathlib import Path
+    src = Path(jaden.__file__).parent / "data" / "soumu_000925835.xlsx"
+    if not src.exists():
+        pytest.skip("the source list is not in this checkout")
+    cache = tmp_path / "cache"
+    cache.mkdir(exist_ok=True)
+    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(cache / name, "w", zipfile.ZIP_STORED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if edit and item.filename == "xl/sharedStrings.xml":
+                data = edit(data)
+            zout.writestr(item.filename, data)
+    return cache
+
+
+def test_mic_page_link_is_found() -> None:
+    from jaden.data.build_municipalities import decode_page, find_latest_list
+    html = decode_page(_MIC_PAGE.format(name="000925835.xlsx").encode("cp932"))
+    assert find_latest_list(html) == ("https://www.soumu.go.jp/main_content/000925835.xlsx", "令和9年1月1日更新")
+    assert find_latest_list("<p>nothing here</p>") is None
+
+
+def test_mic_refresh_writes_a_changed_list_and_the_registry_reads_it(tmp_path, monkeypatch) -> None:
+    from jaden.data.build_municipalities import refresh
+    from jaden.data.loader import AddressDataRegistry
+    name = "000999999.xlsx"
+    cache = _mic_copy(tmp_path, name, lambda d: d.replace("千代田区".encode(), "新千代田区".encode(), 1))
+    out = tmp_path / "data"
+    result = refresh(out, cache, log=lambda m: None, index_html=_MIC_PAGE.format(name=name))
+    assert result["changed"] and result["records"] == 1918 and result["added"] == result["removed"] == []
+    monkeypatch.setenv("JADEN_DATA_DIR", str(out))
+    registry = AddressDataRegistry()
+    registry.load_all()
+    assert registry.get_municipality_by_code("131016").name == "新千代田区"
+
+
+def test_mic_refresh_keeps_the_bundled_list_when_nothing_changed(tmp_path) -> None:
+    import shutil
+    from pathlib import Path
+    from jaden.data.build_municipalities import refresh
+    src = Path(jaden.__file__).parent / "data" / "soumu_000925835.xlsx"
+    if not src.exists():
+        pytest.skip("the source list is not in this checkout")
+    (tmp_path / "cache").mkdir()
+    shutil.copy(src, tmp_path / "cache" / "000925835.xlsx")
+    out = tmp_path / "data"
+    out.mkdir()
+    (out / "municipalities.json").write_text("[]")      # left by an earlier refresh
+    result = refresh(out, tmp_path / "cache", log=lambda m: None, index_html=_MIC_PAGE.format(name="000925835.xlsx"))
+    assert not result["changed"] and not (out / "municipalities.json").exists()
+
+
+def test_mic_refresh_rejects_a_broken_download(tmp_path) -> None:
+    from jaden.data.build_municipalities import refresh
+    (tmp_path / "cache").mkdir()
+    (tmp_path / "cache" / "000000002.xlsx").write_bytes(b"not a zip")
+    with pytest.raises(RuntimeError, match="bundled list stays"):
+        refresh(tmp_path / "data", tmp_path / "cache", log=lambda m: None,
+                index_html=_MIC_PAGE.format(name="000000002.xlsx"))
+    assert not (tmp_path / "data" / "municipalities.json").exists()

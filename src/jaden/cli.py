@@ -396,9 +396,23 @@ def handle_geocode(address: str, as_json: bool, provider: str = "gsi", timeout: 
     return 0 if res.status == GeocodingStatus.SUCCESS.value else 1
 
 
+def _municipality_list_info() -> dict:
+    from pathlib import Path
+    from .data.build_municipalities import SOURCE_METADATA
+    from .data.loader import get_registry
+    registry = get_registry()
+    path = registry.municipality_list_path()
+    meta_path = path.parent / "municipalities_provenance.json"
+    if path.parent != Path(__file__).parent / "data" and meta_path.exists():
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        return {"records": meta.get("records"), "dataset": meta.get("dataset_name"), "source": str(path)}
+    return {"records": len(registry.list_municipalities()), "dataset": SOURCE_METADATA["dataset_name"], "source": "bundled"}
+
+
 def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
     """Shows, refreshes, or extends the gazetteer data from the official open-data sources."""
     from .data.gazetteer import get_gazetteer, reset_gazetteer, user_data_dir
+    from .data.loader import reset_registry
     from .data import build_gazetteer
 
     if action == "info":
@@ -412,6 +426,7 @@ def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
             "built": prov.get("built"),
             "block_prefectures": blocks,
             "block_prefectures_to_refetch": gaz.stale_block_prefectures(),
+            "municipality_list": _municipality_list_info(),
         }
         if as_json:
             print(json.dumps(info, ensure_ascii=False, indent=2))
@@ -421,6 +436,8 @@ def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
             print(f"Towns:       {info['towns'].get('records')} ({info['towns'].get('dataset')})")
             print(f"Postal:      {info['postal'].get('records')} ({info['postal'].get('dataset')})")
             print(f"Attribution: {info['towns'].get('attribution')}")
+            ml = info["municipality_list"]
+            print(f"Municipalities: {ml['records']} ({ml['dataset']}; {ml['source']})")
             print(f"Blocks:      {', '.join(blocks) if blocks else 'none installed (jaden data fetch-blocks <pref>)'}")
             stale = info["block_prefectures_to_refetch"]
             if stale:
@@ -432,6 +449,15 @@ def handle_data(action: str, prefectures: Sequence[int], as_json: bool) -> int:
     cache = target / "downloads"
     log = lambda m: print(m, file=sys.stderr)  # noqa: E731
     if action == "update":
+        from .data import build_municipalities
+        try:
+            muni = build_municipalities.refresh(target, cache, log=log)
+            print(f"Municipality list: {muni['label']}, {muni['records']} records"
+                  + (f" ({len(muni['added'])} added, {len(muni['removed'])} removed)" if muni["changed"] else
+                     " (same as the bundled list)"))
+            reset_registry()
+        except Exception as exc:   # the towns and postal codes are still worth updating
+            sys.stderr.write(f"Warning: municipality list not refreshed: {exc}\n")
         prov = build_gazetteer.build(target, cache, log=log)
         print(f"Updated {prov['towns']['records']} towns and {prov['postal']['records']} postal codes in {target}")
     elif action == "fetch-blocks":
