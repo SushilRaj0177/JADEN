@@ -420,7 +420,10 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
 
     if pairs is not None:
         from .matching import duplicate_pairs
-        found = duplicate_pairs([r for _, r in resolved], min_score=min_score)
+        report: Dict[str, Any] = {}
+        found = duplicate_pairs([r for _, r in resolved], min_score=min_score, report=report)
+        if report.get("truncated"):
+            log.write(f"warning: stopped after {report['comparisons']:,} comparisons; some pairs may be missing\n")
         with open(pairs, "w", encoding=out_encoding, newline="") as fh:
             w = csv.writer(fh)
             w.writerow(["row_a", "row_b", "score", "verdict", "address_a", "address_b", "reasons"])

@@ -68,8 +68,7 @@ def test_unresolved_input_keeps_its_text_in_every_format(text: str) -> None:
 
 def test_match_key_and_compare_agree() -> None:
     """Equal unit keys mean compare() says 'same', and 'same' means equal keys, for every pair of
-    spellings of one address in the sample. (The one deliberate exception, numbered buildings on one
-    lot such as 第一ビル / 第二ビル, is covered in test_audit_fixes.)"""
+    spellings of one address in the sample."""
     import itertools
     from collections import defaultdict
     groups = defaultdict(list)
@@ -80,6 +79,27 @@ def test_match_key_and_compare_agree() -> None:
     bad = []
     for inputs in list(groups.values())[::25]:
         for a, b in itertools.combinations(inputs[:7], 2):
+            ka, kb = jaden.match_key(a), jaden.match_key(b)
+            verdict = jaden.compare(a, b).verdict
+            if (ka is not None and ka == kb) != (verdict == "same"):
+                bad.append((a, b, ka, kb, verdict))
+    assert bad == []
+
+
+TAILS = ["グランドメゾン302", "グランドメゾン 302号室", "グランドメゾン#302", "グランドメゾン303", "第一グランドメゾン302",
+         "第1グランドメゾン 302", "第二グランドメゾン302", "グランドメゾンA棟302", "グランドメゾンB棟302",
+         "グランドメゾン1-302", "グランドメゾン2-302", "グランドメゾン", "グランドメゾン二号館", "グランドメゾン2号館 302",
+         "302", "3F", "グランドメゾン 3階"]
+
+
+def test_match_key_and_compare_agree_with_buildings_and_rooms() -> None:
+    import itertools
+    bases = [t for t in SAMPLE[::40] if jaden.validate(t).status == "ACCEPTED"
+             and jaden.match_key(t, "house") is not None and not jaden.normalize(t).components.building][:40]
+    bad = []
+    for base in bases:
+        for x, y in itertools.combinations(TAILS, 2):
+            a, b = f"{base} {x}", f"{base} {y}"
             ka, kb = jaden.match_key(a), jaden.match_key(b)
             verdict = jaden.compare(a, b).verdict
             if (ka is not None and ka == kb) != (verdict == "same"):

@@ -86,73 +86,107 @@ class DuplicatePair:
         return {"i": self.i, "j": self.j, "score": self.score, "verdict": self.verdict, "reasons": list(self.reasons)}
 
 
-def _fold_building(name: Optional[str]) -> Optional[str]:
-    if not name:
-        return None
-    s = unicodedata.normalize("NFKC", name).lower()
+_KANJI_NUMERAL = "〇一二三四五六七八九十"
+_ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10}
+_WING_WORD = r"(?:号棟|棟|号館|番館|館)"
+
+
+def _kanji_number(text: str) -> str:
+    """'二' -> '2', '十二' -> '12', '二十' -> '20' (building numbers stay small)."""
+    digits = {c: i for i, c in enumerate("〇一二三四五六七八九")}
+    if "十" not in text:
+        return "".join(str(digits[c]) for c in text)
+    tens, _, ones = text.partition("十")
+    return str((digits.get(tens, 1) if tens else 1) * 10 + (digits.get(ones, 0) if ones else 0))
+
+
+def _canonical_building(name: Optional[str]) -> str:
+    """A building name written one way: NFKC, upper case, no spaces or punctuation, and the numbers that
+    tell buildings apart in digits ('第一' -> '第1', '二号館' -> '2号館', 'コーポⅡ' -> 'コーポ2')."""
+    s = unicodedata.normalize("NFKC", name or "").upper()
     s = re.sub(r"[\s・\-‐－()（）]", "", s).replace("ビルディング", "ビル").replace("ヶ", "ケ")
-    return s or None
+    s = re.sub(rf"第([{_KANJI_NUMERAL}]+)", lambda m: "第" + _kanji_number(m.group(1)), s)
+    s = re.sub(rf"([{_KANJI_NUMERAL}]+)(?={_WING_WORD})", lambda m: _kanji_number(m.group(1)), s)
+    s = re.sub(rf"(?<=[^\x00-\x7f])(VIII|VII|IX|IV|VI|III|II|I|V|X)(?=$|{_WING_WORD})",
+               lambda m: str(_ROMAN[m.group(1)]), s)
+    return s
 
 
-_NUMBER_WORD = re.compile(r"[0-9]+|[A-Za-z](?=棟|号館|館)|[東西南北](?=棟|館)")
-_KANJI_DIGITS = str.maketrans("〇一二三四五六七八九", "0123456789")
+def _wing_of(canonical: str) -> str:
+    """The number, letter or direction that tells buildings of one name apart: 'サンハイツA棟' -> 'A',
+    '第2コーポ' -> '2', 'コーポ1' -> '1', 'グリーンハイツ東' -> '東'; '' when there is none."""
+    for pattern in (rf"([A-Z]|\d{{1,3}}|[東西南北])(?:{_WING_WORD})$", r"第(\d{1,3})",
+                    r"(?<=[^\x00-\x7f\d])(\d{1,3}|[A-Z]|[東西南北])$", r"(?<!\d)(\d{1,4})(?!\d)"):
+        m = re.search(pattern, canonical)
+        if m:
+            return m.group(1)
+    return ""
 
 
-def _numbers_in(folded: str) -> Tuple[str, ...]:
-    """The numbers and wing letters that tell buildings apart: '第2ビルA棟' -> ('2', 'a')."""
-    s = re.sub(r"(?<=第)[〇一二三四五六七八九十]+", lambda m: m.group(0).translate(_KANJI_DIGITS), folded)
-    return tuple(_NUMBER_WORD.findall(s))
+def _fold_building(name: Optional[str]) -> Optional[str]:
+    return _canonical_building(name).lower() or None
 
 
 def building_similarity(a: Optional[str], b: Optional[str]) -> Tuple[Optional[float], str]:
     """How alike two building names are (0-1), and the reason. None when they cannot be compared
     (one is missing, or one is in Latin letters and the other in Japanese)."""
-    fa, fb = _fold_building(a), _fold_building(b)
-    if not fa or not fb:
+    ca, cb = _canonical_building(a), _canonical_building(b)
+    if not ca or not cb:
         return None, ""
-    if fa == fb:
+    if ca == cb:
         return 1.0, "same building name"
-    na, nb = _numbers_in(fa), _numbers_in(fb)
-    if na and nb and na != nb:
+    wa, wb = _wing_of(ca), _wing_of(cb)
+    if wa and wb and wa != wb:
         return 0.0, f"different numbers or wings in the building name ({a} / {b}): separate buildings"
-    latin_a, latin_b = bool(re.fullmatch(r"[a-z0-9.&']+", fa)), bool(re.fullmatch(r"[a-z0-9.&']+", fb))
+    da, db = re.findall(r"\d+", ca), re.findall(r"\d+", cb)
+    if da and db and da != db:
+        return 0.0, f"different numbers in the building name ({a} / {b}): separate buildings"
+    latin_a, latin_b = bool(re.fullmatch(r"[A-Z0-9.&']+", ca)), bool(re.fullmatch(r"[A-Z0-9.&']+", cb))
     if latin_a != latin_b:
         return None, "building names in different scripts; not compared"
-    short, long_ = sorted((fa, fb), key=len)
-    if len(short) >= 3 and short in long_:
-        if na != nb:
+    if wa != wb:
+        base_a = ca[:-len(wa)] if wa and ca.endswith(wa) else ca
+        base_b = cb[:-len(wb)] if wb and cb.endswith(wb) else cb
+        if base_a == base_b or base_a in cb or base_b in ca:
             return 0.8, f"one building name adds a number or wing ({a} / {b})"
+    short, long_ = sorted((ca, cb), key=len)
+    if len(short) >= 3 and short in long_:
         return 0.9, "one building name is a shortened form of the other"
-    ratio = difflib.SequenceMatcher(None, fa, fb).ratio()
-    if len(fa) == len(fb) and sum(x != y for x, y in zip(fa, fb)) == 1:
-        return round(max(ratio, 0.85), 2), "building names one character apart (likely a typo)"
+    ratio = difflib.SequenceMatcher(None, ca, cb).ratio()
+    if len(ca) == len(cb):
+        diffs = [(x, y) for x, y in zip(ca, cb) if x != y]
+        if len(diffs) == 1 and not any(ch.isdigit() or ch.isascii() for ch in diffs[0]):
+            return round(max(ratio, 0.85), 2), "building names one character apart (likely a typo)"
     return round(ratio, 2), f"building names {round(ratio * 100)}% alike"
-
-
-_WING = re.compile(r"(?:^|[^A-Za-z])([A-Za-z]|\d{1,2}|[東西南北])号?棟$")
 
 
 def _unit_part(unit: Optional[str], floor: Optional[str], building: Optional[str] = None) -> Optional[str]:
     if unit:
-        # A wing at the end of the building ('B棟', '1号棟') is part of which flat it is
-        wing = _WING.search(unicodedata.normalize("NFKC", building or "").upper().strip())
-        prefix = f"{wing.group(1)}棟" if wing else ""
-        # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302' -> A302;
-        # 'A棟101' -> A棟101 (letters and wings tell flats apart); '2-302' stays 2-302
+        # Which building of several the room is in is part of which flat it is: the building's own
+        # number or wing ('第2コーポ', 'サンハイツB棟', 'コーポ1'), or the wing written with the room ('1-201')
+        wing = _wing_of(_canonical_building(building))
+        # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302' -> A302
         u = unicodedata.normalize("NFKC", unit).upper().strip()
         u = re.sub(r"\s+|号室|室|号(?=棟)|号$", "", u)
         u = re.sub(r"^(?:#|ROOM|RM|APT|APARTMENT|UNIT)\.?", "", u).lstrip("-")
+        written = re.fullmatch(r"(\d{1,2})-(\d{2,4})|([A-Z]|\d{1,3}|[東西南北])棟(.+)", u)
+        if written:
+            unit_wing = written.group(1) or written.group(3)
+            u = written.group(2) or written.group(4)
+            wing = unit_wing if not wing or wing == unit_wing else f"{wing}-{unit_wing}"
         u = re.sub(r"(?<=[A-Z])-|-(?=[A-Z])", "", u)
-        if u:
-            return prefix + u
-        m = _UNIT_DIGITS.search(unicodedata.normalize("NFKC", unit))
-        return prefix + (m.group(1).upper() if m else unit)
+        if not u:
+            m = _UNIT_DIGITS.search(unicodedata.normalize("NFKC", unit))
+            u = m.group(1).upper() if m else unit
+        return f"{wing}棟{u}" if wing else u
+    wing = _wing_of(_canonical_building(building))
+    prefix = f"{wing}棟" if wing else ""
     if floor:
         m = _FLOOR.match(unicodedata.normalize("NFKC", floor))
         if m:
-            return f"{'B' if m.group(1) else ''}{int(m.group(2))}F"
-        return floor
-    return None
+            return f"{prefix}{'B' if m.group(1) else ''}{int(m.group(2))}F"
+        return prefix + floor
+    return prefix or None
 
 
 def _town_parts(res: NormalizedAddress) -> Tuple[Optional[str], Optional[str]]:
@@ -309,6 +343,12 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
             missing.append(name)
             break
         if va != vb:
+            if name == "unit":
+                wa, wb = (_wing_of(_canonical_building(r.components.building)) for r in (ra, rb))
+                if wa and wb and wa != wb:
+                    # 第1ビル and 第2ビル on one lot, or rooms in wings A and B: separate buildings
+                    return result("different", level, "building", missing,
+                                  ("different buildings on the same lot",))
             return result("different" if name != "unit" else "same_building", level, name, missing,
                           ("different rooms in the same building",) if name == "unit" else ())
         level = name
@@ -321,12 +361,9 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
 
     if pa.building and pb.building and pa.building != pb.building:
         notes.append("building names differ")
-        if similarity == 0.0 and level in ("house", "unit"):
-            # 第1ビル and 第2ビル on one lot are two buildings: the same lot, not the same address
-            notes.append("the building names number different buildings")
-            return result("possibly_same", level, None, missing, notes)
     if missing == ["unit"]:
-        notes.append("only one address has a room number")
+        present = pa.unit or pb.unit or ""
+        notes.append("only one address names the wing" if present.endswith("棟") else "only one address has a room number")
         return result("same_building", level, None, missing, notes)
     if missing:
         return result("possibly_same", level, None, missing, notes)
@@ -355,12 +392,15 @@ _VERDICT_SCORE = {"same": 1.0, "same_building": 0.6, "possibly_same": 0.5}
 
 
 def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_score: float = 0.5,
-                    max_group: int = 200) -> List[DuplicatePair]:
+                    max_comparisons: int = 5_000_000, report: Optional[Dict[str, object]] = None) -> List[DuplicatePair]:
     """Pairs of addresses that are probably the same place, best first, each with a score and reasons.
 
-    Only addresses on the same block (same match key at the 'block' level) are compared, so this
-    scales to large files. The score starts from compare()'s verdict (same 1.0, same building 0.6,
-    possibly the same 0.5) and is lowered when the building names disagree.
+    Rows are compared only where a duplicate can be: the same room of the same house, or a row that
+    leaves out its room (or house number) against the rows that give one. So a building with
+    thousands of flats costs little. The score starts from compare()'s verdict (same 1.0, same
+    building with a room on one side only 0.6, possibly the same 0.5; different rooms 0.1) and is
+    lowered when the building names disagree. ``report`` (a dict) receives 'comparisons' and
+    'truncated' (True when ``max_comparisons`` stopped the search early).
     """
     resolved = [_resolve(a) for a in addresses]
     by_block: Dict[str, List[int]] = {}
@@ -368,25 +408,64 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
         key = match_key(res, "block")
         if key is not None:
             by_block.setdefault(key, []).append(i)
-    pairs: List[DuplicatePair] = []
+
+    to_compare: List[Tuple[int, int]] = []
+    seen = set()
+
+    def add(a: int, b: int) -> None:
+        pair = (a, b) if a < b else (b, a)
+        if a != b and pair not in seen:
+            seen.add(pair)
+            to_compare.append(pair)
+
+    truncated = False
     for members in by_block.values():
-        members = members[:max_group]
-        for x, i in enumerate(members):
-            for j in members[x + 1:]:
-                cmp = compare(resolved[i], resolved[j])
-                score = _VERDICT_SCORE.get(cmp.verdict, 0.0)
-                reasons = [f"agree down to the {cmp.level}" if cmp.verdict != "same" or cmp.missing
-                           else f"same address (agree down to the {cmp.level})"]
-                if cmp.conflict:
-                    reasons.append(f"differ at the {cmp.conflict}")
-                if cmp.missing:
-                    reasons.append("only one gives the " + ", ".join(cmp.missing))
-                if cmp.building_similarity is not None:
-                    score *= 0.5 + 0.5 * cmp.building_similarity
-                if cmp.building_reason:
-                    reasons.append(cmp.building_reason)
-                score = round(score, 3)
-                if score >= min_score:
-                    pairs.append(DuplicatePair(i, j, score, cmp.verdict, tuple(reasons)))
+        by_house: Dict[str, List[int]] = {}
+        no_house: List[int] = []
+        for i in members:
+            house = match_key(resolved[i], "house")
+            (by_house.setdefault(house, []) if house else no_house).append(i)
+        for house_members in by_house.values():
+            by_unit: Dict[str, List[int]] = {}
+            no_unit: List[int] = []
+            for i in house_members:
+                unit = match_parts(resolved[i]).unit
+                (by_unit.setdefault(unit, []) if unit else no_unit).append(i)
+            for group in list(by_unit.values()) + [no_unit]:
+                for x, a in enumerate(group):
+                    for b in group[x + 1:]:
+                        add(a, b)
+            for a in no_unit:
+                for b in house_members:
+                    add(a, b)
+        for a in no_house:
+            for b in members:
+                add(a, b)
+        if len(to_compare) > max_comparisons:
+            truncated = True
+            break
+
+    pairs: List[DuplicatePair] = []
+    for a, b in to_compare[:max_comparisons]:
+        cmp = compare(resolved[a], resolved[b])
+        score = _VERDICT_SCORE.get(cmp.verdict, 0.0)
+        if cmp.verdict == "same_building" and cmp.conflict == "unit":
+            score = 0.1                      # different rooms of one building are different addresses
+        reasons = [f"agree down to the {cmp.level}" if cmp.verdict != "same" or cmp.missing
+                   else f"same address (agree down to the {cmp.level})"]
+        if cmp.conflict:
+            reasons.append(f"differ at the {cmp.conflict}")
+        if cmp.missing:
+            reasons.append("only one gives the " + ", ".join(cmp.missing))
+        if cmp.building_similarity is not None:
+            score *= 0.5 + 0.5 * cmp.building_similarity
+        if cmp.building_reason:
+            reasons.append(cmp.building_reason)
+        score = round(score, 3)
+        if score >= min_score:
+            pairs.append(DuplicatePair(a, b, score, cmp.verdict, tuple(reasons)))
+    if report is not None:
+        report["comparisons"] = min(len(to_compare), max_comparisons)
+        report["truncated"] = truncated
     pairs.sort(key=lambda p: (-p.score, p.i, p.j))
     return pairs

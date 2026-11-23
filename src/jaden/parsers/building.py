@@ -43,6 +43,20 @@ _TRAILING_ROOM: Final[re.Pattern[str]] = re.compile(
 )
 
 
+# A wing number and room glued to the name: 'コーポ1-201', 'ハイツ山田 2-101' (wing 1, room 201)
+_TRAILING_WING_ROOM: Final[re.Pattern[str]] = re.compile(
+    r"^(?P<name>.*[^\d\s\-#])\s*(?P<room>\d{1,2}\s*-\s*\d{2,4})$"
+)
+
+
+# What a building name looks like, so '番割31-11' or '町目3-10' (a 字 or a misspelt 丁目 before a lot
+# number) is not read as wing and room: two letters of katakana or Latin (ケ and ノ also appear in place
+# names), or a word for a building
+def _looks_like_building(name: str) -> bool:
+    letters = [c for c in name if ("ァ" <= c <= "ヺ" or c == "ー" or c.isascii() and c.isalpha()) and c not in "ケヶノ"]
+    return len(letters) >= 2 or re.search(r"団地|ビル|荘|館|寮|住宅|棟|宿舎|社宅|会館", name) is not None
+
+
 class BuildingParser:
     """Parses building name, floor, and unit numbers from tail strings."""
 
@@ -85,12 +99,16 @@ class BuildingParser:
         labelled = _LABELLED_ROOM.search(working)
         room_match = _ROOM_PATTERN.search(working)
         trailing = _TRAILING_ROOM.match(working)
+        wing_room = _TRAILING_WING_ROOM.match(working)
         if labelled:
             unit = labelled.group("room")
             working = (working[:labelled.start()] + " " + working[labelled.end():]).strip()
         elif room_match:
             unit = room_match.group("room").strip()
             working = (working[:room_match.start()] + " " + working[room_match.end():]).strip()
+        elif wing_room and len(wing_room.group("name").strip()) >= 2 and _looks_like_building(wing_room.group("name")):
+            unit = re.sub(r"\s+", "", wing_room.group("room"))
+            working = wing_room.group("name").strip()
         elif trailing and len(trailing.group("name").strip()) >= 2:
             unit = trailing.group("room")
             working = trailing.group("name").strip()

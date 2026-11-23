@@ -580,6 +580,11 @@ def test_kana_that_is_not_an_address_stays_rejected() -> None:
     ("グランドメゾン芝公園", "グランドメゾン芝公演", 0.9, "typo"),
     ("グランドメゾン", "グランドメゾン芝公園", 0.9, "shortened"),
     ("第一ビル", "第二ビル", 0.0, "separate"),
+    ("第1ビル", "第一ビル", 1.0, "same"),
+    ("ABC一号館", "ABC二号館", 0.0, "separate"),
+    ("コーポ山田Ⅰ", "コーポ山田Ⅱ", 0.0, "separate"),
+    ("サンハイツA", "サンハイツB", 0.0, "separate"),
+    ("グリーンハイツ東", "グリーンハイツ西", 0.0, "separate"),
     ("サンハイツA棟", "サンハイツB棟", 0.0, "separate"),
     ("グランドメゾン芝公園", "Grand Maison", None, "scripts"),
 ])
@@ -590,7 +595,8 @@ def test_building_similarity_explains_itself(a: str, b: str, score, word: str) -
 
 def test_numbered_buildings_on_one_lot_are_not_the_same_address() -> None:
     cmp = jaden.compare("東京都港区芝公園4-2-8 第一ビル", "東京都港区芝公園4-2-8 第二ビル")
-    assert cmp.verdict == "possibly_same" and cmp.building_similarity == 0.0
+    assert (cmp.verdict, cmp.conflict) == ("different", "building") and cmp.building_similarity == 0.0
+    assert jaden.match_key("東京都港区芝公園4-2-8 第一ビル") != jaden.match_key("東京都港区芝公園4-2-8 第二ビル")
     assert jaden.compare("東京都港区芝公園4-2-8 グランドメゾン芝公園302",
                          "東京都港区芝公園4-2-8 グランドメゾン芝公演302").verdict == "same"
 
@@ -911,3 +917,34 @@ def test_xlsx_errors_reach_the_cli_as_a_message(tmp_path, capsys) -> None:
     path.write_bytes(b"PK\x03\x04 broken")
     assert main(["batch", str(path)]) == 64
     assert "Error:" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------- final scan, round 1: rooms and buildings (H4, M1, M3)
+def test_wing_and_room_written_after_the_name_keep_flats_apart() -> None:
+    p = "東京都港区芝公園4-2-8 "
+    rows = [p + "コーポ1-201", p + "コーポ1-202", p + "コーポ 1-203", p + "ハイツ山田2-101", p + "コーポ1 201号室",
+            p + "第2コーポ201"]
+    assert jaden.find_duplicates(rows) == [1, 2, 3, 4, 1, 5]
+    assert jaden.compare(rows[0], rows[4]).verdict == "same"
+    c = jaden.normalize(rows[0]).components
+    assert (c.building, c.unit) == ("コーポ", "1-201")
+
+
+def test_duplicate_pairs_cover_a_large_building_without_a_silent_cap() -> None:
+    p = "東京都港区芝公園4-2-8 グランドメゾン芝公園"
+    rows = [f"{p}{100 + i}" for i in range(400)] + [f"{p}{499}号室"]
+    report: dict = {}
+    pairs = jaden.duplicate_pairs(rows, report=report)
+    assert [(x.i, x.j, x.score) for x in pairs] == [(399, 400, 1.0)] and report["truncated"] is False
+    assert report["comparisons"] < 1000          # rooms are bucketed, not compared all against all
+
+
+def test_different_rooms_are_not_reported_as_duplicates() -> None:
+    p = "東京都港区芝公園4-2-8 グランドメゾン芝公園"
+    assert jaden.duplicate_pairs([p + "301", p + "302"]) == []
+
+
+@pytest.mark.parametrize("text, building", [("京都府宇治市五ヶ庄3番割31-11", "番割31-11"), ("奈良県奈良市朱雀5町目3-10", "町目3-10")])
+def test_place_names_before_a_lot_are_not_wing_and_room(text: str, building: str) -> None:
+    c = jaden.normalize(text).components
+    assert (c.building, c.unit) == (building, None)
