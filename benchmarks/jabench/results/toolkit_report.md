@@ -35,8 +35,8 @@
 
 ## Autocomplete (real town among the first 10 suggestions)
 
-* After typing the municipality and 2 characters of the town: 2,581 / 2,839 (90.9%)
-* After 3 characters: 2,179 / 2,839 (76.8%)
+* After typing the municipality and 2 characters of the town: 2,582 / 2,840 (90.9%)
+* After 3 characters: 2,180 / 2,840 (76.8%)
 
 ## Postal lookup
 
@@ -47,4 +47,3 @@
 | Data | Municipality | Town | 丁目 (when town right) | Median distance to matched point |
 |---|---:|---:|---:|---:|
 | bundled town points | 98.5% | 67.6% | 91.0% | 287 m |
-| + block data | 99.2% | 87.3% | 96.2% | 53 m |

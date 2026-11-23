@@ -262,23 +262,23 @@ Each address is turned into label-preserving variants and into inputs that must 
 | `chome_99` — must be rejected | 青森県弘前市末広99-2-1 | 1,026 |
 | `non_address` (school name) — must be rejected | 弘前市立東中学校 | 4,700 |
 
-A system **answers** when it commits to one municipality and **abstains** otherwise (ambiguous, rejected, unresolved). `jaden-parser-only` is the same engine with the gazetteer off, i.e. v0.1 behaviour.
+A system **answers** when it commits to one municipality and **abstains** otherwise (ambiguous, rejected, unresolved). `jaden-parser-only` is the same engine with the gazetteer off (close to v0.1, plus the rules added since that need no gazetteer, such as recognising school names).
 
-| Valid inputs | JADEN v0.2 accuracy | wrong answers | JADEN parser-only (v0.1) accuracy | wrong answers |
+| Valid inputs | JADEN accuracy | wrong answers | parser only (no gazetteer) accuracy | wrong answers |
 | :--- | ---: | ---: | ---: | ---: |
 | original | **100.0%** | 0 | 100.0% | 0 |
 | no_pref | **99.98%** | 0 | 99.7% | 0 |
 | noisy | **100.0%** | 0 | 100.0% | 0 |
 | romaji | **100.0%** | 0 | 0.0% | 0 |
-| town_only | **51.5%** | **1** | 0.1% | 100 |
+| town_only | **51.6%** | **1** | 0.1% | 100 |
 
-| Invalid inputs (false accepts) | JADEN v0.2 | JADEN parser-only (v0.1) |
+| Invalid inputs (false accepts) | JADEN | parser only (no gazetteer) |
 | :--- | ---: | ---: |
 | wrong_pref | **0 / 4,700** | 0 / 4,700 |
 | chome_99 | **70 / 1,026** | 1,026 / 1,026 |
-| non_address | **2 / 4,700** | 2,723 / 4,700 |
+| non_address | **0 / 4,700** | 158 / 4,700 |
 
-* When JADEN abstains on `town_only`, it returns a candidate list for 2,156 of 2,277 inputs; the correct municipality is in it **98.6%** of the time (median 8 candidates).
+* When JADEN abstains on `town_only`, it returns a candidate list for 2,156 of 2,276 inputs; the correct municipality is in it **98.9%** of the time (median 8 candidates).
 * None of the 70 `chome_99` acceptances is read as 99丁目 (none exists; the highest registered 丁目 is 84): all are read as lot numbers, 69 in towns MLIT records as only partly divided into 丁目 and 1 in a town the registry does not list (see [Limitations](#8-explicit-boundaries--limitations)).
 * **Former names:** the `former_name` variant contains all 411 schools whose published address still uses one of Hamamatsu's wards abolished on 2024-01-01; JADEN resolves all 411 to the ward their area became (parser-only mode: 8.3%).
 * **Real-world noise** (`build_reallife.py`, `evaluate_reallife.py`): each clean address with a room as a fourth number, a building with the room glued on, a building and floor, `号室`, `Apt`, spaces between components, form labels and country prefixes, and full-width text — 34,032 inputs. The address must stay the same and the building, floor and room must be extracted exactly: **34,032 / 34,032 pass**.
@@ -391,18 +391,18 @@ On JA-AddrBench (4,700 school addresses and their variants):
 | Variant | JADEN right / wrong | Geolonia | jageocoder |
 | :--- | :--- | :--- | :--- |
 | original, no prefecture, noisy | 100% / 0 | 100% / 0 | 100% / 0 |
-| town only (no prefecture or municipality) | 51.5% / **0.0%** | 0.1% / 2.1% | **76.9%** / 19.6% |
+| town only (no prefecture or municipality) | 51.6% / **0.0%** | 0.1% / 2.1% | **76.9%** / 19.6% |
 | romaji | **100%** / 0 | 0% / 0 | 0% / 27.9% |
 | former names (Hamamatsu's abolished wards) | **100%** / 0 | 8.3% / 0 | 97.1% / 2.9% |
 | median distance to the school point | 360 m; 71 m with block data | 128 m | **65 m** |
-| flags an address whose 丁目 does not exist (`末広99-2-1`) | 92.8% | 0% | 0% |
-| flags a school name that is not an address (`弘前市立東中学校`) | 99.96% | 47.5% | 32.5% |
+| flags an address whose 丁目 does not exist (`末広99-2-1`) | 93.2% | 0% | 0% |
+| flags a school name that is not an address (`弘前市立東中学校`) | 100% | 47.5% | 32.5% |
 
 What this shows:
 
 - **Complete addresses:** all three name the right municipality for practically every address. The differences are in addresses that are incomplete, old, or not addresses at all.
 - **Missing information:** jageocoder always picks a place. When the text fits several, that choice is often wrong: 1,920 wrong municipalities on the hand-typed care addresses and 19.6% of town-only inputs, against 22 and 0 for JADEN. JADEN instead returns the candidates; the right one is among them for 4,092 of its 4,568 care no-answers. Geolonia answers less often than JADEN and is wrong more often.
-- **Where the others are ahead:** jageocoder answers more town-only inputs correctly (76.9% vs 51.5%) and has the most precise points (65 m; JADEN 71 m with block data). With the columns added, Geolonia makes the fewest disputed errors (2); JADEN's 18 are rows that name two municipalities (`茨城県阿見町` + `水戸市河和田町58`), where JADEN follows the typed address and Geolonia the first name.
+- **Where the others are ahead:** jageocoder answers more town-only inputs correctly (76.9% vs 51.6%) and has the most precise points (65 m; JADEN 71 m with block data). With the columns added, Geolonia makes the fewest disputed errors (2); JADEN's 18 are rows that name two municipalities (`茨城県阿見町` + `水戸市河和田町58`), where JADEN follows the typed address and Geolonia the first name.
 - **Invalid input:** for a 丁目 that does not exist or a school name, Geolonia and jageocoder return the municipality they found without saying that the text is not a complete, real address. That is a design choice, not a wrong municipality; JADEN reports it.
 - **Speed:** JADEN read all 749,259 real-data inputs in 63 s on 4 processes. jageocoder runs about 600 per second on 3 processes; Geolonia about 390 per second at town level and 56 per second at its default house level, fetching its data from Geolonia's servers while it runs. With block data loaded, JADEN runs about 440 per second per process.
 
@@ -888,7 +888,7 @@ Accuracy is measured separately on JA-AddrBench (`benchmarks/jabench`, see [Benc
 
 In accordance with our engineering principles, JADEN documents its exact operational boundaries:
 1. **Offline by default:** The core engine, the town gazetteer and the offline geocoder are local. JADEN does not bundle boundary polygons; locations are MLIT representative points (block, 丁目 or town), not rooftop coordinates. Block-level points are a separate download per prefecture (`jaden data fetch-blocks`, 0.7–11 MB per prefecture; about 75 MB installed for all 47).
-2. **Ambiguity is reported, not guessed:** When the town, 丁目 and postal code still fit more than one municipality (`府中市1-1`, `栄町7-7`, `本町1-8-19`), JADEN returns AMBIGUOUS with the full candidate list. On JA-AddrBench, addresses written without their municipality are resolved about half the time; for the rest the correct municipality is in the candidate list 98.6% of the time.
+2. **Ambiguity is reported, not guessed:** When the town, 丁目 and postal code still fit more than one municipality (`府中市1-1`, `栄町7-7`, `本町1-8-19`), JADEN returns AMBIGUOUS with the full candidate list. On JA-AddrBench, addresses written without their municipality are resolved about half the time; for the rest the correct municipality is in the candidate list 98.9% of the time.
 3. **The town lists are not complete:** About 1.6% of the real addresses in JA-AddrBench use a town the MLIT list does not have; Japan Post's list covers half of those (verified at town level, without coordinates), leaving 0.8% unverified. An unregistered town is a warning, not an error, unless `--strict` is used. Town names written without a prefix the registry uses (`小俣町` for 奄美市`名瀬小俣町`) can still be matched to the wrong place when no municipality is written.
 4. **丁目 checks follow the registry, with room for what it lacks:** Real addresses use 丁目 the MLIT list does not have yet, and towns whose 丁目 are recorded as 字 names. A 丁目 up to two past the last registered one, or up to 20 in a town the list does not divide, is accepted with a warning and `chome_unlisted` set (verification level `town`; `--strict` refuses it). A 丁目 further out (`芝公園9丁目`) is MALFORMED. In towns MLIT records as only partly divided into 丁目, an out-of-range first number is read as a lot number instead (e.g. `御望971-1-2`), so a typo there is not caught.
 5. **Former names:** Names that disappeared since 2000-10-01 are covered; names from earlier mergers are not. Without a written prefecture, a former town or village name is used only with its county (`磐田郡浅羽町`), because such names usually live on as town names elsewhere.
