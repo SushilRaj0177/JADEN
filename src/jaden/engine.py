@@ -517,8 +517,13 @@ class AddressNormalizer:
             or any(c.prefecture_code == "01" for c in candidate_records)
         )
         if is_hokkaido_candidate or hokkaido_known:
+            before_grid = text_after_conventions
             hokkaido_clause, text_after_conventions = HokkaidoParser.parse(
                 text_after_conventions, allow_shorthand=hokkaido_known)
+            if hokkaido_clause is not None and not before_grid.strip().startswith(hokkaido_clause.raw_clause):
+                # Text before the grid ('計根別南二条東1丁目'): the grid is part of a longer town name, which
+                # the town reading below finds whole
+                hokkaido_clause, text_after_conventions = None, before_grid
             if hokkaido_clause:
                 tier_map["hokkaido_grid"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
                 if is_ambiguous and matched_raw_name == "中央区" and self.gazetteer is None:

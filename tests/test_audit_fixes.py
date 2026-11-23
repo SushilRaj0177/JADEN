@@ -1340,3 +1340,9 @@ def test_english_labels_print_the_postal_code_once_and_keep_words_whole() -> Non
     assert "".join(lines).count("516-0014") == 1
     lines = jaden.normalize("東京都港区芝公園4-2-8").label(width=12, style="en", max_lines=9).lines
     assert "Shibakoen," in lines and all(len(x) <= 12 for x in lines)
+
+
+def test_a_grid_inside_a_longer_town_name_is_not_split() -> None:
+    res = jaden.normalize("北海道標津郡中標津町計根別南二条東１丁目２番地１")
+    assert res.components.town_verified and res.canonical.startswith("北海道標津郡中標津町計根別南二条東1丁目")
+    assert res.components.postal_code == "088-2682"
