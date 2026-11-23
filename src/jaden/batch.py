@@ -15,7 +15,7 @@ import json
 import sys
 import time
 from collections import Counter
-from multiprocessing import Pool
+import multiprocessing
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, TextIO, Tuple
 
@@ -391,7 +391,9 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
         items = [(a, side_of(row)) for row, a in materialized]
         results: Iterable[Dict[str, Any]]
         if jobs > 1 and len(items) > 1:
-            pool = Pool(jobs, initializer=_init_worker, initargs=(strict, autocorrect, resolve))
+            # 'spawn': forking a process that already runs threads (the data loaders') can deadlock the child
+            pool = multiprocessing.get_context("spawn").Pool(jobs, initializer=_init_worker,
+                                                             initargs=(strict, autocorrect, resolve))
             results = pool.imap(_process_item, items, chunksize=256)
         else:
             _init_worker(strict, autocorrect, resolve)
