@@ -1,0 +1,26 @@
+# Rendered by the nginx image with the environment (JADEN_API_KEY) at start-up.
+limit_req_zone $binary_remote_addr zone=jaden_per_ip:10m rate=20r/s;
+
+server {
+    listen 8080;
+    client_max_body_size 2m;
+    client_body_timeout 30s;
+    default_type application/json;   # for the gateway's own error replies
+
+    # The health check needs no key
+    location = /health {
+        proxy_pass http://jaden:8000;
+    }
+
+    location / {
+        if ($http_x_api_key != "${JADEN_API_KEY}") {
+            return 401 '{"error": {"code": "unauthorized", "message": "missing or wrong X-API-Key"}}';
+        }
+        limit_req zone=jaden_per_ip burst=40 nodelay;
+        limit_req_status 429;
+        proxy_pass http://jaden:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 120s;
+    }
+}

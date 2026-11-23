@@ -823,6 +823,13 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 
 Every endpoint also accepts a JSON body by POST, sent as `application/json` (other content types get 415, so a web page cannot post to a local server without the browser asking first). Every address result carries a stable `reason` code (`VERIFIED_CHOME`, `NONEXISTENT_CHOME`, `AMBIGUOUS_MUNICIPALITY`, `POSTAL_CODE_MISMATCH` and so on; the list is in `jaden.models.validation.REASONS`) and the message in Japanese (`message_ja`), so a form can show the reason to the person typing. Errors are JSON (`{"error": {"code", "message"}}`) with 400, 404, 413, 414, 415 or 501. `/v1/extract` takes up to 100,000 characters, and a client that stops sending for 30 seconds is disconnected. The server uses only the Python standard library and the local data; it binds to `127.0.0.1` unless `--host` says otherwise, has no authentication of its own, and sends CORS headers only with `--cors`. Opening `http://127.0.0.1:8000/` shows a demo page for all of the above.
 
+**Docker.** `docker build -t jaden .` then `docker run --rm -p 8000:8000 jaden` runs the same server in a container (non-root, health check on `/health`, no network use at run time; `--build-arg BLOCKS="13 27"` bakes in block-level points). To expose it beyond one machine, put a gateway in front: `deploy/docker-compose.yml` runs JADEN behind nginx with an API key (`X-API-Key`), a per-client rate limit (429) and a request-size limit, publishing only the gateway:
+
+```bash
+JADEN_API_KEY=change-me docker compose -f deploy/docker-compose.yml up --build
+curl -H 'X-API-Key: change-me' 'http://127.0.0.1:8080/v1/normalize?q=港区芝公園4-2-8'
+```
+
 #### 12. `mcp`: Tools for AI Assistants
 
 `jaden mcp` runs JADEN as a [Model Context Protocol](https://modelcontextprotocol.io) server over stdin/stdout, so an AI assistant can check an address instead of guessing it. It offers eight tools: `normalize_address`, `validate_address`, `resolve_address`, `check_address_fields`, `extract_addresses`, `lookup_postal_code`, `compare_addresses` and `suggest_addresses`. Add it to the assistant's MCP settings:

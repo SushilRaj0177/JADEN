@@ -76,4 +76,4 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] F7 Data I/O: pandas helper, `.xlsx`, NDJSON streaming *(`jaden.frame`, stdlib `.xlsx` for batch and dedupe, `jaden stream`)*
 - [x] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`) *(romaji was already read; kana prefecture and municipality now read from their readings)*
 - [ ] F9 `jaden data update` also refreshes the MIC municipality list
-- [ ] F10 Docker image with a gateway example
+- [x] F10 Docker image with a gateway example *(`Dockerfile`, `deploy/docker-compose.yml` + nginx: API key, rate limit, size limit; image and gateway tested)*

@@ -1,0 +1,26 @@
+# JADEN behind an nginx gateway: an API key, a rate limit and a body-size limit in front of the
+# server, which itself has no authentication. Only the gateway is published.
+#
+#   JADEN_API_KEY=change-me docker compose -f deploy/docker-compose.yml up --build
+#   curl -H 'X-API-Key: change-me' 'http://127.0.0.1:8080/v1/normalize?q=港区芝公園4-2-8'
+services:
+  jaden:
+    build: ..
+    image: jaden
+    command: ["serve", "--host", "0.0.0.0", "--port", "8000", "--quiet", "--max-batch", "1000"]
+    restart: unless-stopped
+    expose: ["8000"]
+    read_only: true
+    tmpfs: ["/tmp"]
+
+  gateway:
+    image: nginx:1.27-alpine
+    depends_on:
+      jaden:
+        condition: service_healthy
+    ports: ["8080:8080"]
+    environment:
+      JADEN_API_KEY: ${JADEN_API_KEY:?set JADEN_API_KEY}
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    restart: unless-stopped

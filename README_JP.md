@@ -765,6 +765,13 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 
 すべてのエンドポイントは POST の JSON ボディも受け付けます（`application/json` で送信。それ以外は 415 となり、Web ページがブラウザの確認なしにローカルのサーバーへ送信することを防ぎます）。住所の結果にはすべて、変わらない理由コード `reason`（`VERIFIED_CHOME`、`NONEXISTENT_CHOME`、`AMBIGUOUS_MUNICIPALITY`、`POSTAL_CODE_MISMATCH` など。一覧は `jaden.models.validation.REASONS`）と日本語のメッセージ `message_ja` が付くので、入力フォームで理由をそのまま利用者に示せます。エラーは JSON（`{"error": {"code", "message"}}`）で、ステータスは 400・404・413・414・415・501 です。`/v1/extract` は最大 100,000 文字で、30 秒間送信が止まったクライアントは切断されます。サーバーは Python 標準ライブラリとローカルデータのみを使い、`--host` を指定しない限り `127.0.0.1` で待ち受けます。認証機能はなく、CORS ヘッダーは `--cors` 指定時のみ送ります。`http://127.0.0.1:8000/` を開くと、上記すべてを試せるデモページが表示されます。
 
+**Docker。** `docker build -t jaden .` の後 `docker run --rm -p 8000:8000 jaden` で同じサーバーをコンテナで動かせます（非 root、`/health` でヘルスチェック、実行時の通信なし。`--build-arg BLOCKS="13 27"` で街区データを同梱）。外部に公開する場合はゲートウェイを前に置きます。`deploy/docker-compose.yml` は nginx の後ろで JADEN を動かし、API キー（`X-API-Key`）、クライアントごとの流量制限（429）、リクエストサイズ制限を加え、ゲートウェイだけを公開します。
+
+```bash
+JADEN_API_KEY=change-me docker compose -f deploy/docker-compose.yml up --build
+curl -H 'X-API-Key: change-me' 'http://127.0.0.1:8080/v1/normalize?q=港区芝公園4-2-8'
+```
+
 #### 12. `mcp`: AI アシスタント向けツール
 
 `jaden mcp` は JADEN を [Model Context Protocol](https://modelcontextprotocol.io) サーバーとして標準入出力で動かします。AI アシスタントは住所を推測する代わりに確認できます。ツールは `normalize_address`・`validate_address`・`resolve_address`・`check_address_fields`・`extract_addresses`・`lookup_postal_code`・`compare_addresses`・`suggest_addresses` の 8 つです。アシスタントの MCP 設定に次を追加します。
