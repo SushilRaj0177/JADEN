@@ -38,6 +38,8 @@ from .romaji import looks_romanized, romaji_to_japanese
 from .kana_input import kana_to_japanese, looks_kana
 from .core.text import as_text
 
+# A room or floor written first ('703号室', '3F', '201室')
+_ROOM_OR_FLOOR_FIRST: Final[re.Pattern[str]] = re.compile(r"\d+\s*(?:号室|室|階|[FfＦ](?![a-z])|ごうしつ)")
 # Words of a facility name: '横浜市立第3中学校', '札幌市立白石中学校'
 _FACILITY: Final[re.Pattern[str]] = re.compile(
     r"第\d+(?!\d*(?:番|号|丁目|-))|学校|中学|小学|高校|大学|学園|保育|幼稚園|病院|医院|診療所|図書館|公民館|体育館|"
@@ -521,7 +523,13 @@ class AddressNormalizer:
         # a registered town matching the start of the text decides where the town ends.
         fixed_town = self._registered_town_prefix(text_after_conventions, muni_rec, candidate_records,
                                                   pref_rec if muni_rec is None else None)
-        if fixed_town:
+        grid_rest = text_after_conventions.strip().lstrip("-").strip()
+        if hokkaido_clause is not None and (not grid_rest[:1].isdigit() or _ROOM_OR_FLOOR_FIRST.match(grid_rest)):
+            # After '北11条西7丁目' text that does not start with a block number is the building, floor or
+            # room ('中央ビルディング 3F', '703号室'), never the block
+            block_dict, town_name, _ = BlockFSM.parse("", has_chome_already=True)
+            tail_text = grid_rest
+        elif fixed_town:
             block_dict, _, tail_text = BlockFSM.parse(
                 text_after_conventions[len(fixed_town):], has_chome_already=has_chome_from_hokkaido)
             town_name = fixed_town
@@ -1016,7 +1024,11 @@ class AddressNormalizer:
         if floor_val:
             secondary_parts.append(floor_val)
         if unit_val:
-            secondary_parts.append(unit_val)
+            # A bare room number right after a number without 号 ('潮見188番 703') would read back as the
+            # 号: it is written as a room
+            bare_after_open = (re.fullmatch(r"\d+[A-Za-z]?", unit_val) is not None
+                               and bool(canonical_parts) and not canonical_parts[-1].endswith("号"))
+            secondary_parts.append(f"{unit_val}号室" if bare_after_open else unit_val)
 
         base_addr = sanitized if stem_only_name else "".join(canonical_parts)
         if secondary_parts:

@@ -203,7 +203,9 @@ class BlockFSM:
                 return result, town, tail
 
             # 1c. Single number with 号 or bare number: e.g. '10号' or '10'
-            sub_single = re.search(rf"^(?P<num>{_NUM_TOKEN})(?:号)?(?P<tail>.*)$", rest)
+            # (not a room or floor: '4丁目 201号室', '7丁目 3F' name no block)
+            sub_single = re.search(rf"^(?P<num>{_NUM_TOKEN})(?!\d|\s*(?:号室|室|階|[FfＦ](?![a-z])|ごうしつ))(?:号)?(?P<tail>.*)$",
+                                   rest)
             if sub_single:
                 result["ban"] = _parse_num(sub_single.group("num"))
                 result["address_regime"] = AddressRegime.UNSPECIFIED.value

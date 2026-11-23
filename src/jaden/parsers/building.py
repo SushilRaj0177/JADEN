@@ -29,8 +29,11 @@ _BASEMENT_TOKEN: Final[re.Pattern[str]] = re.compile(r"(?:^|\s)(?P<floor>B\d{1,2
 
 # Room / Unit patterns: e.g. '301号室', '502号', '101号室'
 _ROOM_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"(?P<room>\d+[\s]*(?:号室|号(?!棟|館|地))|(?:^|\s)\d{3,4}(?:\s|$))"
+    r"(?P<room>\d+[\s]*(?:号室|ごうしつ|室|号(?!棟|館|地))|(?:^|\s)\d{3,4}(?:\s|$))"
 )
+# A wing then a room, with no building name: 'A-201号室', '1-201号室' ('B棟305' keeps B棟 as the building)
+_WING_THEN_ROOM: Final[re.Pattern[str]] = re.compile(
+    r"^(?P<wing>[A-Za-z]|\d{1,2})\s*(?P<sep>-)\s*(?P<room>\d{2,4})\s*(?:号室|ごうしつ|室|号)?$")
 
 # English unit labels: '#302', 'Apt 302', 'Apt. 302', 'Room 302', 'Rm 302', 'Unit 302'
 _LABELLED_ROOM: Final[re.Pattern[str]] = re.compile(
@@ -78,9 +81,12 @@ class BuildingParser:
         floor: Optional[str] = None
         unit: Optional[str] = None
 
-        # 0. A room on its own: '4-2-8-101', '… 1', 'A-302', '2-302'
+        # 0. A room on its own: '4-2-8-101', '… 1', 'A-302', '2-302'; or a wing and room ('A-201号室')
         if _ROOM_ALONE.match(working):
             return None, None, working
+        wing_room = _WING_THEN_ROOM.match(working)
+        if wing_room:
+            return None, None, f"{wing_room.group('wing').upper()}-{wing_room.group('room')}"
 
         # 1. Extract Floor if present. Two floors ('2階・3階') stay in the building text: neither is the address's
         floors = list(_FLOOR_PATTERN.finditer(working))
@@ -109,6 +115,10 @@ class BuildingParser:
         elif wing_room and len(wing_room.group("name").strip()) >= 2 and _looks_like_building(wing_room.group("name")):
             unit = re.sub(r"\s+", "", wing_room.group("room"))
             working = wing_room.group("name").strip()
+            if working.endswith("第"):
+                # 'ライオンズマンション第2-305': 第2 is the building's number, 305 the room
+                number, _, unit = unit.partition("-")
+                working += number
         elif trailing and len(trailing.group("name").strip()) >= 2:
             unit = trailing.group("room")
             working = trailing.group("name").strip()

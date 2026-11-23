@@ -86,13 +86,14 @@ class DuplicatePair:
         return {"i": self.i, "j": self.j, "score": self.score, "verdict": self.verdict, "reasons": list(self.reasons)}
 
 
-_KANJI_NUMERAL = "〇一二三四五六七八九十"
+_KANJI_NUMERAL = "〇一二三四五六七八九十壱弐参拾"
 _ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10}
 _WING_WORD = r"(?:号棟|棟|号館|番館|館)"
 
 
 def _kanji_number(text: str) -> str:
     """'二' -> '2', '十二' -> '12', '二十' -> '20' (building numbers stay small)."""
+    text = text.translate(str.maketrans("壱弐参拾", "一二三十"))       # the old forms used on buildings
     digits = {c: i for i, c in enumerate("〇一二三四五六七八九")}
     if "十" not in text:
         return "".join(str(digits[c]) for c in text)
@@ -174,14 +175,15 @@ def _unit_part(unit: Optional[str], floor: Optional[str], building: Optional[str
         # ('サンハイツB棟', '2号館') or written with the room ('1-201', 'A棟302'). A number that is just
         # part of the name ('第2コーポ') is not: the name is often left out, and the key must not change
         wing = _wing_of(_canonical_building(building), explicit=True)
-        # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302' -> A302
+        # The room as written, without its labels: '302号室', '#302', '-302' -> 302; 'A-302', 'A302' and 'A棟302'
+        # are room 302 of wing A (A棟302)
         u = unicodedata.normalize("NFKC", unit).upper().strip()
         u = re.sub(r"\s+|号室|室|号(?=棟)|号$", "", u)
         u = re.sub(r"^(?:#|ROOM|RM|APT|APARTMENT|UNIT)\.?", "", u).lstrip("-")
-        written = re.fullmatch(r"(\d{1,2})-(\d{2,4})|([A-Z]|\d{1,3}|[東西南北])棟(.+)", u)
+        written = re.fullmatch(r"([A-Z])-?(\d{2,4})|(\d{1,2})-(\d{2,4})|([A-Z]|\d{1,3}|[東西南北])棟(.+)", u)
         if written:
-            unit_wing = written.group(1) or written.group(3)
-            u = written.group(2) or written.group(4)
+            unit_wing = written.group(1) or written.group(3) or written.group(5)
+            u = written.group(2) or written.group(4) or written.group(6)
             wing = unit_wing if not wing or wing == unit_wing else f"{wing}-{unit_wing}"
         u = re.sub(r"(?<=[A-Z])-|-(?=[A-Z])", "", u)
         if not u:
@@ -412,7 +414,8 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
     Rows are compared only where a duplicate can be: the same room of the same house, or a row that
     leaves out its room (or house number) against the rows that give one. So a building with
     thousands of flats costs little. The score starts from compare()'s verdict (same 1.0, same
-    building with a room on one side only 0.6, possibly the same 0.5; different rooms 0.1), times the
+    building with a room on one side only 0.6, divided by the number of flats on record there, possibly
+    the same 0.5; different rooms 0.1), times the
     building-name similarity when both name a building (a one-character typo keeps 0.9 of it, names
     numbering different buildings such as 第一ビル / 第二ビル keep none). ``report`` (a dict) receives 'comparisons' and
     'truncated' (True when ``max_comparisons`` stopped the search early).
@@ -426,18 +429,32 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
 
     to_compare: List[Tuple[int, int]] = []
     seen = set()
+    flats_in: Dict[Tuple[int, int], int] = {}     # pair -> how many flats (or houses) the open side could be
 
-    def add(a: int, b: int) -> None:
+    def add(a: int, b: int, flats: int = 1) -> None:
         pair = (a, b) if a < b else (b, a)
         if a != b and pair not in seen:
             seen.add(pair)
             to_compare.append(pair)
+            if flats > 1:
+                flats_in[pair] = flats
+
+    # Rows written exactly alike are linked to the first of them, not to each other (n rows, n - 1 pairs);
+    # every other comparison is between distinct spellings only
+    first_of: Dict[str, int] = {}
+    rep: List[int] = []
+    for i, res in enumerate(resolved):
+        rep.append(first_of.setdefault(res.canonical or res.input_raw, i))
 
     truncated = False
     for members in by_block.values():
+        for i in members:
+            if rep[i] != i:
+                add(rep[i], i)
+        reps = [i for i in members if rep[i] == i]
         by_house: Dict[str, List[int]] = {}
         no_house: List[int] = []
-        for i in members:
+        for i in reps:
             house = match_key(resolved[i], "house")
             (by_house.setdefault(house, []) if house else no_house).append(i)
         for house_members in by_house.values():
@@ -450,12 +467,23 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
                 for x, a in enumerate(group):
                     for b in group[x + 1:]:
                         add(a, b)
-            for a in no_unit:
-                for b in house_members:
-                    add(a, b)
-        for a in no_house:
-            for b in members:
+            # A row without a room may be any of the k flats on record: each pairing scores 0.6 / k, so
+            # with many flats none is proposed (and none needs comparing)
+            flats = len(by_unit)
+            if no_unit and _VERDICT_SCORE["same_building"] / max(flats, 1) >= min_score:
+                for a in no_unit:
+                    for b in house_members:
+                        if b not in no_unit:
+                            add(a, b, flats)
+        houses = len(by_house)                      # likewise for a row without a house number
+        for x, a in enumerate(no_house):
+            for b in no_house[x + 1:]:
                 add(a, b)
+        if no_house and _VERDICT_SCORE["possibly_same"] / max(houses, 1) >= min_score:
+            for a in no_house:
+                for b in reps:
+                    if b not in no_house:
+                        add(a, b, houses)
         if len(to_compare) > max_comparisons:
             truncated = True
             break
@@ -466,6 +494,8 @@ def duplicate_pairs(addresses: Sequence[Union[str, NormalizedAddress]], min_scor
         score = _VERDICT_SCORE.get(cmp.verdict, 0.0)
         if cmp.verdict == "same_building" and cmp.conflict == "unit":
             score = 0.1                      # different rooms of one building are different addresses
+        elif cmp.verdict in ("same_building", "possibly_same") and (a, b) in flats_in:
+            score /= flats_in[(a, b)]
         reasons = [f"agree down to the {cmp.level}" if cmp.verdict != "same" or cmp.missing
                    else f"same address (agree down to the {cmp.level})"]
         if cmp.conflict:

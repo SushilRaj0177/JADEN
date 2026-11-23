@@ -1153,3 +1153,54 @@ def test_cli_refuses_bad_option_values(args) -> None:
     except SystemExit as exc:
         code = exc.code
     assert code in (2, 64)
+
+
+# ---------------------------------------------------------------- audit round 2: rooms, wings, buildings
+P = "東京都港区芝公園4-2-8 "
+
+
+@pytest.mark.parametrize("a, b", [("A-201号室", "B-201号室"), ("1-201号室", "2-201号室"), ("201室", "202室"),
+                                  ("パレス壱番館101", "パレス弐番館101")])
+def test_different_flats_get_different_keys(a: str, b: str) -> None:
+    assert jaden.match_key(P + a) != jaden.match_key(P + b)
+    assert jaden.compare(P + a, P + b).verdict != "same"
+    assert jaden.find_duplicates([P + a, P + b]) == [1, 2]
+
+
+@pytest.mark.parametrize("forms", [("A-201号室", "A-201", "A201", "A棟201", "コーポA 201号室"),
+                                   ("201室", "201号室", "２０１室", "Apt 201", "#201"),
+                                   ("パレス壱番館101", "パレス一番館101", "パレス1番館 101号室"),
+                                   ("ライオンズマンション第2-305", "ライオンズマンション第2 305号室")])
+def test_one_flat_written_several_ways_gets_one_key(forms) -> None:
+    assert len({jaden.match_key(P + f) for f in forms}) == 1
+
+
+@pytest.mark.parametrize("text, canonical", [
+    ("東京都港区芝公園4丁目 201号室", "東京都港区芝公園4丁目 201号室"),
+    ("北海道札幌市北区北11条西7丁目 703号室", "北海道札幌市北区北11条西7丁目 703号室"),
+    ("北海道札幌市北区北11条西7丁目 中央ビルディング 3F", "北海道札幌市北区北11条西7丁目 中央ビルディング 3F"),
+    ("北海道網走市潮見188 Apt 703", "北海道網走市潮見188番 703号室"),
+    ("北海道網走市潮見188 703", "北海道網走市潮見188番 703号室"),
+])
+def test_a_room_after_an_open_number_stays_a_room(text: str, canonical: str) -> None:
+    res = jaden.normalize(text)
+    assert res.canonical == canonical
+    assert jaden.normalize(res.canonical).canonical == canonical
+    assert jaden.normalize(res.format("hyphen")).canonical == canonical
+    assert jaden.match_key(text) == jaden.match_key(canonical)
+
+
+def test_check_fields_keeps_a_room_line_as_the_room() -> None:
+    r = jaden.check_fields(prefecture="東京都", city="港区", line1="芝公園4丁目", line2="201号室")
+    assert r.fields["line1"] == "芝公園4丁目" and r.fields["line2"] == "201号室"
+
+
+def test_duplicate_pairs_stay_fast_for_one_large_building() -> None:
+    import random
+    rows = [P + f"{100 + i}" for i in range(3000)] + [P] * 900
+    random.Random(1).shuffle(rows)
+    started = time.perf_counter()
+    report: dict = {}
+    pairs = jaden.duplicate_pairs(rows, report=report)
+    assert time.perf_counter() - started < 20
+    assert len(pairs) == 899 and report["comparisons"] < 5000      # the copies, linked to one of them

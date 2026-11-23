@@ -8,6 +8,7 @@
 The hyphen form is lossless for JADEN: normalizing it again gives the same result.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -28,7 +29,11 @@ def _admin_part(res: NormalizedAddress) -> str:
 
 def _secondary(res: NormalizedAddress) -> str:
     c = res.components
-    return " ".join(x for x in (c.building, c.floor, c.unit) if x)
+    unit = c.unit
+    if unit and re.fullmatch(r"\d+[A-Za-z]?", unit) and c.go is None and c.edaban is None \
+            and not (c.lot_number and "-" in c.lot_number):
+        unit = f"{unit}号室"      # after a number without 号 ('188', '4丁目') a bare number would read as the 号
+    return " ".join(x for x in (c.building, c.floor, unit) if x)
 
 
 def hyphenated(res: NormalizedAddress) -> str:

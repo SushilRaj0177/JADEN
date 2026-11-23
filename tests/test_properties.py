@@ -105,3 +105,25 @@ def test_match_key_and_compare_agree_with_buildings_and_rooms() -> None:
             if (ka is not None and ka == kb) != (verdict == "same"):
                 bad.append((a, b, ka, kb, verdict))
     assert bad == []
+
+
+REALLIFE = Path(__file__).resolve().parents[1] / "benchmarks" / "jabench" / "reallife.jsonl"
+
+
+def test_real_life_inputs_read_back_the_same() -> None:
+    """Rooms, buildings, floors, labels and spacing added to real addresses: the canonical and hyphen forms
+    read back to the same canonical form, with the same match key."""
+    with open(REALLIFE, encoding="utf-8") as fh:
+        items = [json.loads(line) for i, line in enumerate(fh) if i % 7 == 0]
+    bad = []
+    for it in items:
+        res = jaden.normalize(it["input"])
+        if res.confidence_score <= 0:
+            continue
+        again = jaden.normalize(res.canonical)
+        if again.canonical != res.canonical or jaden.match_key(it["input"]) != jaden.match_key(res.canonical):
+            bad.append((it["input"], res.canonical, again.canonical))
+        elif jaden.validate(it["input"]).status == "ACCEPTED" and \
+                jaden.normalize(res.format("hyphen")).canonical != res.canonical:
+            bad.append((it["input"], res.canonical, res.format("hyphen")))
+    assert bad == []

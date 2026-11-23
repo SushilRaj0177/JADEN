@@ -104,3 +104,30 @@ Low
 - [x] Glued 7-digit postal code before the prefecture; 之 / ノ lot separators; a few invisible characters; `TEL/FAX` and `携帯` numbers; UTF-16 without BOM; integer postal codes losing the leading zero
 - [x] `jaden.frame.records()` builds a new engine per call; `normalize_frame` duplicates existing `jaden_*` columns; CLI accepts `--jobs 0`, `--min-score 5` *(engines cached; earlier result columns replaced; names aligned by index; option values checked; --name-column needs --resolve)*
 - [x] `extract_addresses` span runs into the next 〒 code
+
+## Audit round 2 (separate high-precision audit, 23 Nov 2026) — open
+High
+- [x] H-a A wing written `A-201号室` / `1-201号室` with no building name drops the wing from the key *(a wing and room with no building name is read as such; letter and digit wings in W-RRR stay in the key)*
+- [x] H-b `201室` is not read as a room *(`室` and `ごうしつ` are room marks)*
+- [ ] H-c `.xlsx`: sparse wide rows (one cell at column XFD per row) are fully materialised
+Medium
+- [x] M-a A room or floor after `丁目` with no block number is read as the block number (canonical not a fixed point) *(after 丁目 or a 条 grid, a number with 号室/室/階/F, or text, is not the block)*
+- [x] M-b Rooms written `Apt 703` / `#703` give a canonical that reads back with a different key *(a bare room after a number without 号 is written `NNN号室` in the canonical and hyphen forms; all 34,032 real-life inputs read back)*
+- [ ] M-c CSV/TSV/xlsx output shifts result columns for rows longer than the header
+- [ ] M-d An address without a town is ACCEPTED at house precision with no warning; a designated city without a ward gets the city code
+- [x] M-e 壱/弐/参/拾 building numbers are not read as numbers *(壱/弐/参/拾 read as numbers)*
+- [x] M-f `第2-305` splits 第 from its number *(`第2-305`: 第2 stays with the name, 305 is the room)*
+- [ ] M-g A kana town after a kanji municipality does not read 条 (`旭川市しゅんこうだい4じょう`)
+- [ ] M-h JADEN's own English output with a leading room (`#101, 4-2-8 Shibakoen, …`) is misread
+- [ ] M-i `reverse_geocode` with a huge `max_km` far from Japan runs for minutes
+- [x] M-j `duplicate_pairs` pairs every room-less row with every flat of a large building *(copies are linked to one row; a room-less row scores 0.6 / number of flats and is compared only when that can reach the minimum score)*
+Low
+- [ ] `--output-encoding` ignored for stdout; an unknown output encoding gives a traceback
+- [ ] xlsx DTD check reads only the first 2 KB
+- [ ] check_fields keeps the wrong municipality's postal code in `fields` after CITY_MISMATCH
+- [ ] English output drops a town that is not registered
+- [ ] English labels: postal code printed twice with `postal_line`; words cut mid-word
+- [ ] `/v1/fields` refuses a JSON number for `postal_code`
+- [ ] OpenAPI: `/v1/label` lacks `style`; `/v1/postal?code=` undocumented
+- [ ] `.xlsx` in Strict OOXML or with lower-case cell references reads wrongly without an error
+- [ ] nginx `map` may match the API key case-insensitively
