@@ -22,6 +22,7 @@ import math
 import os
 import re
 import threading
+import unicodedata
 from array import array
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -532,6 +533,22 @@ class Gazetteer:
                 if sort_key and (sort_key, item) not in seen:
                     seen.add((sort_key, item))
                     pairs.append((sort_key, item))
+            if kind == "kana":
+                # Towns only Japan Post lists (often 字 in rural areas) have readings too
+                ptext = self._postal().text
+                pos = ptext.find("\n") + 1 if ptext.startswith("postal_code") else 0
+                while pos < len(ptext):
+                    nl = ptext.find("\n", pos)
+                    nl = len(ptext) if nl < 0 else nl
+                    parts = ptext[pos:nl].split("\t")
+                    pos = nl + 1
+                    if len(parts) < 7 or not parts[3] or not parts[4] or parts[6] != "town":
+                        continue
+                    item = (parts[1], parts[3])
+                    sort_key = unicodedata.normalize("NFKC", parts[4]).translate(_SMALL_KANA)
+                    if (sort_key, item) not in seen:
+                        seen.add((sort_key, item))
+                        pairs.append((sort_key, item))
             pairs.sort()
             index = ([k for k, _ in pairs], [v for _, v in pairs])
             self._prefix_indexes[kind] = index
@@ -561,6 +578,16 @@ class Gazetteer:
         if not key_prefix:
             return []
         return self._prefix_lookup("key", key_prefix, prefecture_code, limit)
+
+    def municipalities_with_reading(self, reading: str) -> List[str]:
+        """Codes of the municipalities holding a town read exactly ``reading`` (a ``kana_key``)."""
+        keys, items = self._prefix_index("kana")
+        reading = reading.translate(_SMALL_KANA)
+        out: List[str] = []
+        for i in range(bisect.bisect_left(keys, reading), bisect.bisect_right(keys, reading)):
+            if items[i][0] not in out:
+                out.append(items[i][0])
+        return out
 
     def town_kana_prefix(self, reading: str, limit: int = 50) -> List[Tuple[str, str]]:
         """(municipality code, town name) for towns whose reading starts with ``reading`` (a ``kana_key``)."""

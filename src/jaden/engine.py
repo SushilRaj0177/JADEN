@@ -30,7 +30,7 @@ from .parsers.town import (resolve_town, expand_candidates, town_variants, koaza
                            unmarked_koaza, lot_series_follows,
                            TownResolution)
 from .data.gazetteer import Gazetteer, TownMatch, get_gazetteer
-from .core.townkey import INNER_AZA, fold_same_length, one_edit_apart, spelling_key, town_key
+from .core.townkey import INNER_AZA, fold_same_length, kana_key, one_edit_apart, spelling_key, town_key
 from .data.loader import MunicipalityRecord
 from .data.former import get_former_municipalities
 from .readings import kana_reading, romaji_address
@@ -157,9 +157,12 @@ class AddressNormalizer:
             from_kana = kana_to_japanese(raw_address, lambda t: self._normalize(t, allow_reread=True))
             if from_kana is not None:
                 japanese, kana_notes = from_kana
-                res = self.normalize(japanese, autocorrect)
+                res = self._finish(self._normalize(japanese, allow_reread=True), autocorrect)
                 return dataclasses.replace(res, input_raw=raw_address, notes=tuple(kana_notes) + res.notes)
-        res = self._normalize(raw_address, allow_reread=True)
+        return self._finish(self._normalize(raw_address, allow_reread=True), autocorrect)
+
+    def _finish(self, res: NormalizedAddress, autocorrect: Optional[bool]) -> NormalizedAddress:
+        """Typo corrections, then the text as written when nothing was settled."""
         if res.components.town_verified is False and res.components.lg_code and not res.components.is_ambiguous:
             res = self._with_corrections(res, self.autocorrect if autocorrect is None else autocorrect)
         return _uninterpreted_if_unresolved(res)
@@ -593,6 +596,18 @@ class AddressNormalizer:
                         candidates, town_text = whole, pref_rec.stem + town_text
                         pref_rec, pref_name, pref_code, is_pref_inferred = None, None, None, True
             town_res = resolve_town(gaz, candidates, town_text, chome_val, postal_code, chome_explicit, first_number)
+            if (nothing_recognized and not postal_code and town_res.municipality is not None
+                    and re.fullmatch(r"[ぁ-ゖァ-ヺー]+", town_text or "")):
+                # A town written only in kana is a reading: when towns in several places are read that way
+                # (つきのわ: 月輪 in 大津市, 月の輪 in 滑川町), which 丁目 exists is no ground to pick one
+                read_as = [lg for lg in self._towns_read_as(gaz, town_text)]
+                if len(set(read_as) | {town_res.municipality.lg_code}) > 1:
+                    others = [r for r in (self.registry.get_municipality_by_code(lg) for lg in read_as) if r]
+                    town_res = TownResolution(
+                        remaining_candidates=tuple(dict.fromkeys([town_res.municipality, *others])),
+                        postal_code=postal_code,
+                        notes=(f"'{town_text}' is read the same as towns in {len(set(read_as))} place(s)",),
+                    )
             if (town_res.resolved_from_candidates and admin_res.is_ambiguous and matched_raw_name
                     and matched_raw_name[-1] in "町村" and town_text):
                 # '金山町金山' resolved among the two municipalities called 金山町 may still be the
@@ -1369,6 +1384,15 @@ class AddressNormalizer:
                 return "town", [target], surface
         return "ambiguous", [muni_rec] + records, surface
 
+    @staticmethod
+    def _towns_read_as(gaz: Gazetteer, kana: str) -> List[str]:
+        """Municipality codes holding a town read as ``kana`` (with or without 町 read チョウ / マチ)."""
+        key = kana_key(kana)
+        out: List[str] = []
+        for reading in (key, key + "チヨウ", key + "マチ"):
+            out += [lg for lg in gaz.municipalities_with_reading(reading) if lg not in out]
+        return out
+
     def _global_candidates(self, gaz: Gazetteer, town_text: str, postal_code: Optional[str],
                            has_numbers: bool, first_number: Optional[int] = None) -> List[MunicipalityRecord]:
         lgs: List[str] = []
@@ -1391,6 +1415,10 @@ class AddressNormalizer:
                     lgs = [lg for lg, m in loose if m.consumed == longest]
             lgs += [lg for lg in gaz.municipalities_with_exact_town([t for t, _ in town_variants(town_text, first_number)])
                     if lg not in lgs]
+            if re.fullmatch(r"[ぁ-ゖァ-ヺー]+", town_text):
+                # A town written in kana is a reading: 'あさひ' is also every 旭 and 朝日, not only the town
+                # spelled あさひ町, so every town with that reading is a candidate
+                lgs += [lg for lg in self._towns_read_as(gaz, town_text) if lg not in lgs]
         if len(lgs) > _MAX_GLOBAL_TOWN_CANDIDATES:
             return []
         records = [self.registry.get_municipality_by_code(lg) for lg in lgs]

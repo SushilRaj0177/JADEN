@@ -568,7 +568,8 @@ def test_kana_addresses_are_read(text: str, canonical: str) -> None:
 
 def test_kana_that_is_not_an_address_stays_rejected() -> None:
     assert jaden.validate("ふちゅうしふちゅうちょう1-1").status == "AMBIGUOUS"   # two 府中市
-    for text in ("あいうえお1-1", "やまだたろう", "かすみがせき1-2-1"):
+    assert jaden.validate("かすみがせき1-2-1").lg_code == "131016"   # one town in Japan reads かすみがせき
+    for text in ("あいうえお1-1", "やまだたろう", "さくら銀行1-1"):
         assert jaden.validate(text).status == "MALFORMED"
 
 
@@ -766,3 +767,73 @@ def test_mic_refresh_rejects_a_broken_download(tmp_path) -> None:
         refresh(tmp_path / "data", tmp_path / "cache", log=lambda m: None,
                 index_html=_MIC_PAGE.format(name="000000002.xlsx"))
     assert not (tmp_path / "data" / "municipalities.json").exists()
+
+
+# ---------------------------------------------------------------- final scan, round 1: kana input (H1, M2, M9)
+@pytest.mark.parametrize("text, lg, canonical", [
+    ("ならしのだい1-2", "122041", "千葉県船橋市習志野台1丁目2番"),
+    ("ちょうふしんしおうじちょう1-2", "352012", "山口県下関市長府新四王司町1番2号"),
+    ("ほっかいどうあさひかわししゅんこうだい4じょう4-2-4", "012041", "北海道旭川市春光台四条4丁目2番4号"),
+    ("ながのけんしおじりしだいもん7ばんちょう13-24", "202151", "長野県塩尻市大門七番町13番24号"),
+    ("ほっかいどうさっぽろしちゅうおうくきた1じょうにし2ちょうめ1-1", "011011", "北海道札幌市中央区北1条西2丁目1番1号"),
+    ("おおさかふおおさかしきたく梅田3-1-1", "271276", "大阪府大阪市北区梅田3丁目1番1号"),
+    ("とうきょうと港区芝公園4-2-8", "131032", "東京都港区芝公園4丁目2番8号"),
+    ("みやぎけんいわぬましたけくま1-2", "042111", "宮城県岩沼市字武隈1番地の2"),
+])
+def test_kana_reads_the_right_town(text: str, lg: str, canonical: str) -> None:
+    assert jaden.validate(text).lg_code == lg and jaden.normalize(text).canonical == canonical
+
+
+@pytest.mark.parametrize("text", ["さかえまち1-2", "かみちょう1-2", "あさひ1-2", "つきのわ1-2", "うめだ3-1-1",
+                                  "ふちゅうしふちゅうちょう1-1"])
+def test_kana_with_several_readings_is_not_guessed(text: str) -> None:
+    assert jaden.validate(text).status == "AMBIGUOUS"
+
+
+def test_kana_town_homophones_inside_one_city_keep_the_city_only() -> None:
+    res = jaden.normalize("にいがたしこうなんくそがわ1-2")
+    assert res.components.lg_code == "151041" and res.components.town_verified is not True
+    assert any("曽川" in n and "楚川" in n for n in res.notes)
+
+
+def test_random_kana_readings_never_land_in_another_municipality() -> None:
+    import random
+    from jaden.data.gazetteer import get_gazetteer
+    from jaden.data.loader import get_registry
+    from jaden.lookup import _muni_kana
+    gaz, reg = get_gazetteer(), get_registry()
+
+    def hira(s: str) -> str:
+        return "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in s)
+    munis = [m for m in reg.list_municipalities() if _muni_kana(m)]
+    prefs = {p.code: p.kana for p in reg.list_all_prefectures()}
+    rnd = random.Random(20261123)
+    wrong = []
+    for i in range(600):
+        m = rnd.choice(munis)
+        towns = [e for v in gaz.towns_by_kana(m.lg_code).values() for e in v if e.kana and not e.kana[-1].isdigit()]
+        if not towns:
+            continue
+        e = rnd.choice(towns)
+        text = hira(e.kana) + "1-2"
+        if i % 3:
+            text = hira(_muni_kana(m)) + text
+        if i % 3 == 2:
+            text = hira(prefs[m.prefecture_code]) + text
+        v = jaden.validate(text)
+        other = reg.get_municipality_by_code(v.lg_code) if v.lg_code else None
+        if v.status == "ACCEPTED" and other and other.lg_code != m.lg_code and \
+                not (other.city == m.city and other.prefecture_code == m.prefecture_code):
+            wrong.append((text, m.name, e.name, other.name))
+    assert wrong == []
+
+
+def test_check_fields_reads_kana_fields_and_its_status_agrees_with_valid() -> None:
+    r = jaden.check_fields(prefecture="とうきょうと", city="みなとく", line1="しばこうえん4-2-8")
+    assert r.valid and r.status == "ACCEPTED" and r.fields["line1"] == "芝公園4丁目2番8号"
+    r = jaden.check_fields(prefecture="東京都", city="とうきょうとみなとく", line1="芝公園4-2-8")
+    assert r.valid and r.fields["city"] == "港区"
+    r = jaden.check_fields(postal_code="100-0001", prefecture="東京都", city="港区", line1="芝公園4-2-8")
+    assert (r.status, r.reason, r.valid) == ("MALFORMED", "POSTAL_CODE_MISMATCH", False)
+    assert jaden.check_fields(postal_code=1050011, city="港区", line1="芝公園4-2-8").valid
+    assert jaden.check_fields(postal_code=600063.0, prefecture="北海道", city="札幌市中央区", line1="南3条西1-2").valid

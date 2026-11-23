@@ -23,6 +23,8 @@ REASONS: Dict[str, str] = {
     "NONEXISTENT_CHOME": "MALFORMED",
     "TOWN_IN_OTHER_MUNICIPALITY": "MALFORMED",
     "POSTAL_CODE_MISMATCH": "MALFORMED",
+    "POSTAL_CODE_FORMAT": "MALFORMED",       # check_fields: the postal code field is not seven digits
+    "CITY_MISMATCH": "MALFORMED",            # check_fields: the city field names another municipality
     "IMPOSSIBLE_NUMBER": "MALFORMED",        # a 丁目, block or lot numbered 0
     "UNPARSED_TEXT": "UNSUPPORTED",
     "NAME_NOT_ADDRESS": "UNSUPPORTED",       # a facility name that mentions a place, without block numbers

@@ -55,6 +55,29 @@ def _clean(value: Any) -> str:
     return unicodedata.normalize("NFKC", as_text(value)).strip()
 
 
+def _postal_text(value: Any) -> str:
+    """A postal code given as a number (a spreadsheet drops the leading zero of 0600063) back as 7 digits."""
+    if isinstance(value, bool):
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if isinstance(value, int) and 0 <= value < 10_000_000:
+        return f"{value:07d}"
+    return _clean(value)
+
+
+_KANA_ONLY = re.compile(r"[ぁ-ゖァ-ヺー・\s]+")
+
+
+def _reads_as(field_text: str, *readings: str) -> bool:
+    """A field typed in kana that reads as one of ``readings`` (katakana)."""
+    from .core.townkey import kana_key
+    if not field_text or not _KANA_ONLY.fullmatch(field_text):
+        return False
+    key = kana_key(field_text)
+    return any(r and key == kana_key(r) for r in readings)
+
+
 def _postal_digits(value: str) -> str:
     return re.sub(r"[\s〒\-‐―−ー]", "", value)
 
@@ -84,7 +107,7 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
                  strict: bool = False) -> FieldResult:
     """Reads an address given as separate fields and checks each field against the others."""
     from .engine import get_engine
-    given = {"postal_code": _clean(postal_code), "prefecture": _clean(prefecture), "city": _clean(city),
+    given = {"postal_code": _postal_text(postal_code), "prefecture": _clean(prefecture), "city": _clean(city),
              "line1": _clean(line1), "line2": _clean(line2)}
     issues: List[FieldIssue] = []
 
@@ -95,7 +118,9 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
                                  f"'{given['postal_code']}' is not a seven-digit postal code.",
                                  f"「{given['postal_code']}」は 7 桁の郵便番号ではありません。"))
 
-    body = given["prefecture"] + given["city"] + given["line1"]
+    from .kana_input import admin_fields_to_kanji
+    pref_text, city_text = admin_fields_to_kanji(given["prefecture"], given["city"])
+    body = pref_text + city_text + given["line1"]
     if given["line2"]:
         body += " " + given["line2"]
     text = (f"〒{postal[:3]}-{postal[3:]} " if postal_ok else "") + body
@@ -119,8 +144,20 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
             right))
 
     if res.confidence_score > 0 and c.prefecture:
+        from .data.loader import get_registry
+        from .lookup import _muni_kana, _ward_kana
+        registry = get_registry()
+        pref_rec = registry.get_prefecture_by_code(c.prefecture_code) if c.prefecture_code else None
+        pref_kana = pref_rec.kana if pref_rec else ""
+        muni = registry.get_municipality_by_code(c.lg_code) if c.lg_code else None
+        muni_readings = [_muni_kana(muni), _ward_kana(muni)] if muni else []
+        if muni and muni.ward:
+            city = next(iter(registry.find_municipalities(muni.city, muni.prefecture_code)), None)
+            if city is not None:
+                muni_readings.append(_muni_kana(city))
         if given["prefecture"] and not (c.prefecture.startswith(given["prefecture"])
-                                        or given["prefecture"].startswith(c.prefecture)):
+                                        or given["prefecture"].startswith(c.prefecture)
+                                        or _reads_as(given["prefecture"], pref_kana)):
             issues.append(FieldIssue("prefecture", "PREFECTURE_MISMATCH",
                                      f"The prefecture field says {given['prefecture']}; the address is in {c.prefecture}.",
                                      f"都道府県欄は「{given['prefecture']}」ですが、住所は{c.prefecture}です。",
@@ -130,18 +167,33 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
             if pref_name and city_field.startswith(pref_name):
                 city_field = city_field[len(pref_name):]
         names = [n for n in (c.city, c.ward, c.county) if n]
-        if city_field and out["city"] and not any(n in city_field for n in names) and city_field not in out["city"]:
+        city_kana = city_field
+        if pref_kana and _KANA_ONLY.fullmatch(city_kana or "x"):
+            from .core.townkey import kana_key
+            if kana_key(city_kana).startswith(kana_key(pref_kana)):
+                city_kana = city_kana[len(pref_kana):]          # 'とうきょうとみなとく'
+        if city_field and out["city"] and not any(n in city_field for n in names) and city_field not in out["city"] \
+                and not _reads_as(city_kana, *muni_readings):
             issues.append(FieldIssue("city", "CITY_MISMATCH",
                                      f"The city field says {given['city']}; the address is in {out['city']}.",
                                      f"市区町村欄は「{given['city']}」ですが、住所は{out['city']}です。",
                                      out["city"]))
         for name in (("prefecture", "city", "postal_code") if val.status == "ACCEPTED" else ()):
+            if name == "postal_code" and (out[name].endswith("-0000") or c.town_verified is not True):
+                continue    # a municipality-wide code is no answer for the town
             if not given[name] and out[name]:
                 issues.append(FieldIssue(name, "FILLED_IN", f"{name} filled in from the address: {out[name]}.",
                                          f"{ {'prefecture': '都道府県', 'city': '市区町村', 'postal_code': '郵便番号'}[name]}"
                                          f"を住所から補いました: {out[name]}", out[name]))
 
-    valid = val.valid and not any(i.code != "FILLED_IN" for i in issues)
-    return FieldResult(status=val.status, valid=valid, reason=val.reason, message=val.message,
-                       message_ja=val.message_ja, canonical=res.canonical if res.confidence_score > 0 else "",
+    errors = [i for i in issues if i.code != "FILLED_IN"]
+    valid = val.valid and not errors
+    status, reason, message, message_ja = val.status, val.reason, val.message, val.message_ja
+    if errors and val.status == "ACCEPTED":
+        # The address exists, but the form contradicts it: report the form's first error, as validate()
+        # reports a postal code that does not belong to the address
+        first = errors[0]
+        status, reason, message, message_ja = "MALFORMED", first.code, first.message, first.message_ja
+    return FieldResult(status=status, valid=valid, reason=reason, message=message,
+                       message_ja=message_ja, canonical=res.canonical if res.confidence_score > 0 else "",
                        lg_code=val.lg_code, input=given, fields=out, issues=issues)
