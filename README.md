@@ -818,7 +818,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/batch` `{"addresses": [...]}` | up to `--max-batch` addresses (default 1,000) |
 | `GET /v1/resolve?q=&name=` | candidate municipalities with calibrated probabilities, the answer at the 1% threshold, the 95% set |
 | `GET /v1/fields?postal_code=&prefecture=&city=&line1=&line2=` | an address in separate form fields, each checked; corrected fields |
-| `GET /v1/label?q=&width=&lines=&count=&fullwidth=` | the address split into label lines |
+| `GET /v1/label?q=&width=&lines=&count=&fullwidth=&style=` | the address split into label lines |
 | `GET /v1/openapi.json` | OpenAPI 3.1 description, for Swagger UI, Postman or a client generator |
 | `GET /v1`, `GET /health` | endpoint list, data versions, liveness |
 

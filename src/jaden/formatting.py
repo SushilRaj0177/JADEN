@@ -138,6 +138,11 @@ def _cut(text: str, width: int, count: str) -> Tuple[str, str, bool]:
             back -= 1
         if back > 0:
             end = back
+    if 0 < end < len(text) and text[end - 1].isascii() and text[end].isascii() and not text[end].isspace() \
+            and not text[end - 1].isspace():
+        space = text.rfind(" ", 0, end)          # an English word is not cut when a space comes before it
+        if space > 0:
+            end = space
     inside = 0 < end < len(text) and not text[end - 1].isspace() and not text[end].isspace()
     return text[:end].rstrip(), text[end:].lstrip(), inside
 
@@ -161,7 +166,10 @@ def label_lines(res: NormalizedAddress, width: int = 20, max_lines: int = 3, cou
     # (text, what joins it to the previous part on one line)
     parts: List[Tuple[str, str]] = []
     if style == "en" and resolved and res.romaji:
-        pieces = res.romaji.split(", ")
+        english = res.romaji
+        if postal_line and c.postal_code and english.endswith(" " + c.postal_code):
+            english = english[: -len(c.postal_code) - 1]      # the code gets its own line instead
+        pieces = english.split(", ")
         parts = [(p if i == len(pieces) - 1 else p + ",", " ") for i, p in enumerate(pieces)]
     elif resolved:
         text = format_address(res, "canonical" if style == "en" else style)

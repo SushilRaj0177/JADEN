@@ -1270,3 +1270,73 @@ def test_reverse_geocode_far_away_is_quick() -> None:
 def test_check_fields_gives_no_postal_code_for_a_town_in_another_city() -> None:
     r = jaden.check_fields(prefecture="東京都", city="新宿区", line1="芝公園4-2-8")
     assert r.fields["postal_code"] == "" and r.reason == "CITY_MISMATCH"
+
+
+# ---------------------------------------------------------------- audit round 2: files, server, labels
+def test_xlsx_sparse_wide_rows_strict_ooxml_and_late_dtd(tmp_path) -> None:
+    import zipfile
+    from jaden.xlsx import read_xlsx
+    wide = "".join(f'<row r="{i}"><c r="XFD{i}"><v>1</v></c></row>' for i in range(1, 2001))
+    with pytest.raises(ValueError, match="too wide"):
+        import jaden.xlsx as xl
+        old, xl.MAX_MATERIALIZED = xl.MAX_MATERIALIZED, 1_000_000
+        try:
+            read_xlsx(_xlsx(tmp_path, wide, name="wide.xlsx"))
+        finally:
+            xl.MAX_MATERIALIZED = old
+    strict = tmp_path / "strict.xlsx"
+    ns, rns = "http://purl.oclc.org/ooxml/spreadsheetml/main", "http://purl.oclc.org/ooxml/officeDocument/relationships"
+    with zipfile.ZipFile(strict, "w") as z:
+        z.writestr("xl/workbook.xml", f'<workbook xmlns="{ns}" xmlns:r="{rns}"><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>')
+        z.writestr("xl/_rels/workbook.xml.rels", '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                   '<Relationship Id="rId1" Type="x" Target="worksheets/sheet1.xml"/></Relationships>')
+        z.writestr("xl/worksheets/sheet1.xml", f'<worksheet xmlns="{ns}"><sheetData><row r="1"><c r="b1" t="inlineStr">'
+                   '<is><t>住所</t></is></c></row></sheetData></worksheet>')
+    assert read_xlsx(strict) == [["", "住所"]]
+    late = tmp_path / "late.xlsx"
+    with zipfile.ZipFile(_xlsx(tmp_path, "", name="base.xlsx")) as zin, zipfile.ZipFile(late, "w") as zout:
+        for item in zin.namelist():
+            data = zin.read(item)
+            if item.endswith("sheet1.xml"):
+                data = b'<?xml version="1.0"?><!--' + b"x" * 5000 + b'--><!DOCTYPE w [<!ENTITY a "a">]><worksheet/>'
+            zout.writestr(item, data)
+    with pytest.raises(ValueError, match="DTD"):
+        read_xlsx(late)
+
+
+def test_rows_longer_than_the_header_keep_the_result_columns_in_place(tmp_path) -> None:
+    import csv
+    import io
+    from jaden.batch import run_batch, run_dedupe
+    src = tmp_path / "in.csv"
+    src.write_text("id,住所,note\n1,東京都港区芝公園4-2-8,x,EXTRA\n2,府中市1-1,y\n", encoding="utf-8")
+    for run in (run_batch, run_dedupe):
+        run(src, tmp_path / "out.csv", log=io.StringIO())
+        rows = list(csv.DictReader(open(tmp_path / "out.csv", encoding="utf-8")))
+        assert rows[0]["column4"] == "EXTRA" and rows[0]["jaden_status"] == "ACCEPTED"
+
+
+def test_output_encoding_is_checked_and_applied(tmp_path, capsys) -> None:
+    from jaden.cli import main
+    src = tmp_path / "in.csv"
+    src.write_text("住所\n東京都港区芝公園4-2-8\n", encoding="utf-8")
+    assert main(["batch", str(src), "--output-encoding", "bogus", "-o", str(tmp_path / "x.csv")]) == 64
+    assert "unknown output encoding" in capsys.readouterr().err
+
+
+def test_server_fields_take_a_numeric_postal_code_and_label_takes_a_style() -> None:
+    from jaden.server import JadenApi
+    api = JadenApi()
+    assert api.handle("/v1/fields", {"postal_code": 1050011, "city": "港区", "line1": "芝公園4-2-8"})["valid"]
+    assert api.handle("/v1/label", {"q": "東京都港区芝公園4-2-8", "style": "en", "width": "30"})["lines"][0].startswith("4-2-8")
+    spec = api.handle("/v1/openapi.json", {})
+    assert any(p["name"] == "style" for p in spec["paths"]["/v1/label"]["get"]["parameters"])
+    assert "/v1/postal" in spec["paths"]
+
+
+def test_english_labels_print_the_postal_code_once_and_keep_words_whole() -> None:
+    res = jaden.normalize("三重県伊勢市楠部町2484")
+    lines = res.label(width=20, style="en", postal_line=True).lines
+    assert "".join(lines).count("516-0014") == 1
+    lines = jaden.normalize("東京都港区芝公園4-2-8").label(width=12, style="en", max_lines=9).lines
+    assert "Shibakoen," in lines and all(len(x) <= 12 for x in lines)

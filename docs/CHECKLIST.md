@@ -78,7 +78,7 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] F9 `jaden data update` also refreshes the MIC municipality list *(finds the current list on MIC's code page, checks it, installs it only when it differs; `jaden data info` shows which list is in use)*
 - [x] F10 Docker image with a gateway example *(`Dockerfile`, `deploy/docker-compose.yml` + nginx: API key, rate limit, size limit; image and gateway tested)*
 
-## Final scan (separate audit, 23 Nov 2026) — open
+## Final scan (separate audit, 23 Nov 2026)
 High
 - [x] H1 Kana input picks the longest municipality reading even when the rest is not a town there (`ならしのだい1-2` → 奈良市); 131 of 132 random kana town readings went to the wrong municipality *(a kana municipality is taken only when a registered town follows by reading; kana towns are readings, so several spellings stay ambiguous; random check: 0 wrong in 5,000)*
 - [x] H2 `.xlsx` reader glues Excel's furigana (`rPh`) onto cell text *(only a string's own text and rich-text runs are read; `rPh` furigana skipped)*
@@ -105,15 +105,15 @@ Low
 - [x] `jaden.frame.records()` builds a new engine per call; `normalize_frame` duplicates existing `jaden_*` columns; CLI accepts `--jobs 0`, `--min-score 5` *(engines cached; earlier result columns replaced; names aligned by index; option values checked; --name-column needs --resolve)*
 - [x] `extract_addresses` span runs into the next 〒 code
 
-## Audit round 2 (separate high-precision audit, 23 Nov 2026) — open
+## Audit round 2 (separate high-precision audit, 23 Nov 2026)
 High
 - [x] H-a A wing written `A-201号室` / `1-201号室` with no building name drops the wing from the key *(a wing and room with no building name is read as such; letter and digit wings in W-RRR stay in the key)*
 - [x] H-b `201室` is not read as a room *(`室` and `ごうしつ` are room marks)*
-- [ ] H-c `.xlsx`: sparse wide rows (one cell at column XFD per row) are fully materialised
+- [x] H-c `.xlsx`: sparse wide rows (one cell at column XFD per row) are fully materialised *(at most 20,000,000 cells counting the padding; refused in under a second)*
 Medium
 - [x] M-a A room or floor after `丁目` with no block number is read as the block number (canonical not a fixed point) *(after 丁目 or a 条 grid, a number with 号室/室/階/F, or text, is not the block)*
 - [x] M-b Rooms written `Apt 703` / `#703` give a canonical that reads back with a different key *(a bare room after a number without 号 is written `NNN号室` in the canonical and hyphen forms; all 34,032 real-life inputs read back)*
-- [ ] M-c CSV/TSV/xlsx output shifts result columns for rows longer than the header
+- [x] M-c CSV/TSV/xlsx output shifts result columns for rows longer than the header *(the header is widened with columnN names, as for JSONL)*
 - [x] M-d An address without a town is ACCEPTED at house precision with no warning; a designated city without a ward gets the city code *(numbers with no town in a municipality that Japan Post divides into towns: precision municipality and a warning; a designated city with numbers but no ward or town: AMBIGUOUS among its wards)*
 - [x] M-e 壱/弐/参/拾 building numbers are not read as numbers *(壱/弐/参/拾 read as numbers)*
 - [x] M-f `第2-305` splits 第 from its number *(`第2-305`: 第2 stays with the name, 305 is the room)*
@@ -122,12 +122,12 @@ Medium
 - [x] M-i `reverse_geocode` with a huge `max_km` far from Japan runs for minutes *(wide searches scan the points once with great-circle distances: under a second)*
 - [x] M-j `duplicate_pairs` pairs every room-less row with every flat of a large building *(copies are linked to one row; a room-less row scores 0.6 / number of flats and is compared only when that can reach the minimum score)*
 Low
-- [ ] `--output-encoding` ignored for stdout; an unknown output encoding gives a traceback
-- [ ] xlsx DTD check reads only the first 2 KB
+- [x] `--output-encoding` ignored for stdout; an unknown output encoding gives a traceback
+- [x] xlsx DTD check reads only the first 2 KB
 - [x] check_fields keeps the wrong municipality's postal code in `fields` after CITY_MISMATCH
 - [x] English output drops a town that is not registered
-- [ ] English labels: postal code printed twice with `postal_line`; words cut mid-word
-- [ ] `/v1/fields` refuses a JSON number for `postal_code`
-- [ ] OpenAPI: `/v1/label` lacks `style`; `/v1/postal?code=` undocumented
-- [ ] `.xlsx` in Strict OOXML or with lower-case cell references reads wrongly without an error
-- [ ] nginx `map` may match the API key case-insensitively
+- [x] English labels: postal code printed twice with `postal_line`; words cut mid-word
+- [x] `/v1/fields` refuses a JSON number for `postal_code`
+- [x] OpenAPI: `/v1/label` lacks `style`; `/v1/postal?code=` undocumented
+- [x] `.xlsx` in Strict OOXML or with lower-case cell references reads wrongly without an error
+- [x] nginx `map` may match the API key case-insensitively

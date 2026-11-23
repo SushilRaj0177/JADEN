@@ -259,13 +259,19 @@ class JadenApi:
         if count not in ("chars", "bytes"):
             raise ApiError(400, "bad_parameter", "'count' must be 'chars' or 'bytes'")
         res = get_engine().normalize(_required(params, "q"), autocorrect=_flag(params.get("fix")))
-        out = res.label(_int(params, "width", 20, 4, 200), _int(params, "lines", 3, 1, 20), count=count,
+        style = _optional_text(params, "style") or "hyphen"
+        if style not in ("canonical", "hyphen", "en"):
+            raise ApiError(400, "bad_parameter", "'style' must be 'canonical', 'hyphen' or 'en'")
+        out = res.label(_int(params, "width", 20, 4, 200), _int(params, "lines", 3, 1, 20), count=count, style=style,
                         fullwidth=_flag(params.get("fullwidth")), postal_line=_flag(params.get("postal"))).to_dict()
         out["canonical"] = res.canonical if res.confidence_score > 0 else None
         return out
 
     def fields(self, params: Dict[str, Any]) -> Any:
         from .fields import FIELD_NAMES, check_fields
+        raw_postal = params.get("postal_code")
+        if isinstance(raw_postal, int) and not isinstance(raw_postal, bool):
+            params = {**params, "postal_code": f"{raw_postal:07d}" if 0 <= raw_postal < 10_000_000 else str(raw_postal)}
         values = {k: _optional_text(params, k) for k in FIELD_NAMES}
         if not any(values.values()):
             raise ApiError(400, "missing_parameter", f"give at least one of: {', '.join(FIELD_NAMES)}")

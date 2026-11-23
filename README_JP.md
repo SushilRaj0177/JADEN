@@ -760,7 +760,7 @@ $ curl -G http://127.0.0.1:8000/v1/normalize --data-urlencode "q=港区芝公園
 | `POST /v1/batch` `{"addresses": [...]}` | 最大 `--max-batch` 件（既定 1,000） |
 | `GET /v1/resolve?q=&name=` | 候補の市区町村と較正された確率、誤答率 1% の閾値での回答、95% 候補集合 |
 | `GET /v1/fields?postal_code=&prefecture=&city=&line1=&line2=` | 項目別に入力された住所を項目ごとに確認し、訂正済みの項目を返す |
-| `GET /v1/label?q=&width=&lines=&count=&fullwidth=` | 住所を送り状の行に分割 |
+| `GET /v1/label?q=&width=&lines=&count=&fullwidth=&style=` | 住所を送り状の行に分割 |
 | `GET /v1/openapi.json` | OpenAPI 3.1 の定義（Swagger UI・Postman・クライアント生成用） |
 | `GET /v1`, `GET /health` | エンドポイント一覧、データの版、死活確認 |
 

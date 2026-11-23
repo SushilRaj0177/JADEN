@@ -4,12 +4,6 @@ limit_req_zone $binary_remote_addr zone=jaden_per_ip:10m rate=20r/s;
 upstream jaden_api  { server jaden:8000; }
 upstream jaden_deny { server 127.0.0.1:8099; }     # answers 401 (below)
 
-# Requests with the right key go to JADEN, all others to the 401 server. Choosing the upstream (instead of
-# answering 401 with 'return', which nginx runs before any rate limit) keeps refused requests rate-limited.
-map $http_x_api_key $jaden_upstream {
-    default              jaden_deny;
-    "${JADEN_API_KEY}"   jaden_api;
-}
 # An empty or unset key would match a request without the header: then every request is refused
 map "${JADEN_API_KEY}" $jaden_key_configured {
     ""      0;
@@ -33,6 +27,13 @@ server {
     location / {
         if ($jaden_key_configured = 0) {
             return 503 '{"error": {"code": "not_configured", "message": "the gateway has no API key set"}}';
+        }
+        # Requests with the right key go to JADEN, all others to the 401 server. Choosing the upstream
+        # (instead of answering 401 with 'return', which nginx runs before any rate limit) keeps refused
+        # requests rate-limited. 'if' compares case-sensitively ('map' would accept the key in any case).
+        set $jaden_upstream jaden_deny;
+        if ($http_x_api_key = "${JADEN_API_KEY}") {
+            set $jaden_upstream jaden_api;
         }
         proxy_pass http://$jaden_upstream;
         proxy_set_header Host $host;

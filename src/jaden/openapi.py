@@ -90,6 +90,8 @@ def openapi_spec(version: str, max_batch: int) -> Dict[str, Any]:
             "/v1/postal/{code}": {"get": {"summary": "Postal code to addresses", "parameters": [
                 {"name": "code", "in": "path", "required": True, "schema": {"type": "string"}, "example": "105-0011"}],
                 "responses": {"200": {"description": "OK"}, "404": {"description": "unknown postal code"}}}},
+            "/v1/postal": _get("Postal code to addresses (the code as a parameter)", [
+                _q("code", "the postal code", True, example="105-0011")], obj),
             "/v1/reverse": _get("Coordinate to the nearest towns", [
                 _q("lat", "latitude", True, "number", 35.6586), _q("lon", "longitude", True, "number", 139.7454),
                 _q("limit", "1-20, default 1", kind="integer")], obj),
@@ -100,7 +102,8 @@ def openapi_spec(version: str, max_batch: int) -> Dict[str, Any]:
                 _q("name", "side information such as a facility or company name"),
                 _q("limit", "1-60, default 10", kind="integer")], obj),
             "/v1/fields": _get("An address in separate form fields, each checked against the others", [
-                _q("postal_code", "postal code", example="105-0011"), _q("prefecture", "prefecture", example="東京都"),
+                {"name": "postal_code", "in": "query", "required": False, "description": "postal code (a JSON number is accepted in a POST body)",
+                 "schema": {"type": ["string", "integer"]}, "example": "105-0011"}, _q("prefecture", "prefecture", example="東京都"),
                 _q("city", "municipality", example="港区"), _q("line1", "town and numbers", example="芝公園4-2-8"),
                 _q("line2", "building, floor, room"), _STRICT], obj),
             "/v1/label": _get("The address split into lines for a label or fixed-length fields", [
@@ -108,7 +111,8 @@ def openapi_spec(version: str, max_batch: int) -> Dict[str, Any]:
                 _q("lines", "at most this many lines, 1-20, default 3", kind="integer"),
                 _q("count", "'chars' (default) or 'bytes' (Shift_JIS: full-width 2, half-width 1)"),
                 _q("fullwidth", "1 = digits, letters and hyphens in full width", kind="boolean"),
-                _q("postal", "1 = the postal code on a line of its own first", kind="boolean"), _FIX], obj),
+                _q("postal", "1 = the postal code on a line of its own first", kind="boolean"),
+                _q("style", "'hyphen' (default), 'canonical' or 'en' (English order)"), _FIX], obj),
             "/v1/extract": _post("Addresses inside a text",
                                  {"type": "object", "required": ["text"], "properties": {"text": {"type": "string"}}},
                                  obj),

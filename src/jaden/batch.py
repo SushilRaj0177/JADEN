@@ -200,7 +200,16 @@ def _formats(input_path: Path, output: Optional[Path], fmt: Optional[str]) -> Tu
 
 def _open_output(output: Optional[Path], out_fmt: str, to_stdout: bool, out_encoding: str) -> Tuple[TextIO, str, Any]:
     """(text stream to write rows to, the format to write them in, a function that finishes the file)."""
+    import codecs
+    try:
+        codecs.lookup(out_encoding)
+    except LookupError:
+        raise ValueError(f"unknown output encoding '{out_encoding}'") from None
     if to_stdout or output is None:
+        reconfigure = getattr(sys.stdout, "reconfigure", None)
+        if reconfigure is not None and codecs.lookup(out_encoding).name != codecs.lookup(sys.stdout.encoding or "utf-8").name:
+            sys.stdout.flush()
+            reconfigure(encoding=out_encoding, errors="replace")     # '--output-encoding cp932 > out.csv'
         return sys.stdout, out_fmt, lambda: None
     if out_fmt == "xlsx":
         from .xlsx import write_xlsx
@@ -312,6 +321,13 @@ def _named(header: Sequence[str], values: Sequence[Any]) -> Dict[str, Any]:
     return out
 
 
+def _widened(header: List[str], rows: Sequence[Tuple[Row, str]]) -> List[str]:
+    """The header with 'column4', 'column5', … for values beyond it, so a row longer than the header keeps
+    its extra values and the result columns stay in place."""
+    width = max((len(row) for row, _ in rows if isinstance(row, list)), default=0)
+    return list(header) + [f"column{i + 1}" for i in range(len(header), width)] if header else list(header)
+
+
 def _union_header(rows: Sequence[Tuple[Row, str]]) -> List[str]:
     """Every key of a file of JSON objects, in the order they first appear (not only the first row's)."""
     names: Dict[str, None] = {}
@@ -379,6 +395,8 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     materialized = list(rows)
     if in_fmt == "jsonl":
         header = _union_header(materialized)
+    else:
+        header = _widened(header, materialized)
     side_of = _side_reader(header, in_fmt, name_column)
 
     out_stream, out_fmt, finish = _open_output(output, out_fmt, to_stdout, out_encoding)
@@ -436,6 +454,8 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     materialized = list(rows)
     if in_fmt == "jsonl":
         header = _union_header(materialized)
+    else:
+        header = _widened(header, materialized)
     engine = get_engine()
 
     records: List[Dict[str, Any]] = []

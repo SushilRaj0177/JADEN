@@ -11,7 +11,7 @@ row and column numbers beyond Excel's limits, more than MAX_CELLS cells.
 import re
 import zipfile
 from pathlib import Path
-from typing import IO, Dict, List, Sequence, Union
+from typing import IO, Dict, List, Optional, Sequence, Union
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
@@ -21,6 +21,7 @@ _NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
 _CELL_REF = re.compile(r"([A-Z]+)(\d+)$")
 _XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff\ud800-\udfff]")
 MAX_CELLS = 5_000_000
+MAX_MATERIALIZED = 20_000_000                      # cells after padding each row to its last cell
 MAX_ROWS, MAX_COLUMNS = 1_048_576, 16_384          # Excel's own limits
 MAX_PART_BYTES = 512 * 1024 * 1024                  # one uncompressed part (a sheet, the shared strings)
 MAX_RATIO = 200                                     # uncompressed / compressed: more is a zip bomb
@@ -42,17 +43,27 @@ def _column_letters(index: int) -> str:
     return letters
 
 
-def _q(tag: str) -> str:
-    return f"{{{_NS['m']}}}{tag}"
+def _local(tag: object) -> str:
+    """A tag without its namespace: transitional and Strict OOXML name the same elements differently."""
+    return tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
+
+
+def _kids(node: ET.Element, name: str) -> List[ET.Element]:
+    return [child for child in node if _local(child.tag) == name]
+
+
+def _kid(node: ET.Element, name: str) -> Optional[ET.Element]:
+    return next((child for child in node if _local(child.tag) == name), None)
 
 
 def _string_text(node: ET.Element) -> str:
     """The text of a shared or inline string: its own <t>, or the <t> of each rich-text run <r>. The
     phonetic runs (<rPh>: the furigana Japanese Excel stores) are not part of the text."""
-    t = node.find(_q("t"))
+    t = _kid(node, "t")
     if t is not None:
         return t.text or ""
-    return "".join((r.findtext(_q("t")) or "") for r in node.findall(_q("r")))
+    runs = (_kid(r, "t") for r in _kids(node, "r"))
+    return "".join((t.text or "") for t in runs if t is not None)
 
 
 def _number(value: str) -> str:
@@ -72,10 +83,16 @@ def _open_part(book: zipfile.ZipFile, name: str, path: object) -> IO[bytes]:
         raise ValueError(f"{path}: not a valid .xlsx file (missing {name})") from None
     if info.file_size > MAX_PART_BYTES or info.file_size > MAX_RATIO * max(info.compress_size, 1) + 1_000_000:
         raise ValueError(f"{path}: {name} is too large ({info.file_size:,} bytes uncompressed)")
-    with book.open(info) as fh:
-        start = fh.read(2048)
-    if b"<!DOCTYPE" in start or b"<!ENTITY" in start:
-        raise ValueError(f"{path}: {name} declares a DTD, which a spreadsheet never needs")
+    with book.open(info) as fh:                     # anywhere in the part, not only at its start
+        previous = b""
+        while True:
+            chunk = fh.read(1 << 20)
+            if not chunk:
+                break
+            window = previous + chunk
+            if b"<!DOCTYPE" in window or b"<!ENTITY" in window:
+                raise ValueError(f"{path}: {name} declares a DTD, which a spreadsheet never needs")
+            previous = chunk[-16:]
     return book.open(info)
 
 
@@ -100,7 +117,7 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
             with _open_part(book, "xl/sharedStrings.xml", path) as fh:
                 try:
                     for _event, node in ET.iterparse(fh):
-                        if node.tag == _q("si"):
+                        if _local(node.tag) == "si":
                             shared.append(_string_text(node))
                             node.clear()
                             if len(shared) > MAX_CELLS:
@@ -108,24 +125,25 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
                 except ET.ParseError as exc:
                     raise ValueError(f"{path}: the shared strings are not valid XML ({exc})") from None
         workbook = _parse(book, "xl/workbook.xml", path)
-        sheets = workbook.findall("m:sheets/m:sheet", _NS)
+        sheets = [n for n in workbook.iter() if _local(n.tag) == "sheet"]
         if not sheets or sheet >= len(sheets):
             raise ValueError(f"{path} has no worksheet {sheet + 1}")
-        rel_id = sheets[sheet].get(f"{{{_NS['r']}}}id")
+        rel_id = next((v for k, v in sheets[sheet].attrib.items() if _local(k) == "id"), None)
         rels = _parse(book, "xl/_rels/workbook.xml.rels", path)
-        target = next((r.get("Target") for r in rels.findall("rel:Relationship", _NS) if r.get("Id") == rel_id), None)
+        target = next((r.get("Target") for r in rels.iter() if _local(r.tag) == "Relationship"
+                       and r.get("Id") == rel_id), None)
         if not target:
             raise ValueError(f"{path}: worksheet {sheet + 1} not found")
         target = target.lstrip("/")
         part = target if target.startswith("xl/") else f"xl/{target}"
 
         out: List[List[str]] = []
-        cells = 0
+        cells = materialized = 0
         last_row = -1
         with _open_part(book, part, path) as fh:
             try:
                 for _event, row in ET.iterparse(fh):
-                    if row.tag != _q("row"):
+                    if _local(row.tag) != "row":
                         continue
                     r_attr = row.get("r")
                     number = int(r_attr) - 1 if r_attr and r_attr.isdigit() else last_row + 1
@@ -133,22 +151,23 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
                         raise ValueError(f"{path}: row number {r_attr} is out of order or beyond Excel's limit")
                     last_row = number
                     values: Dict[int, str] = {}
-                    for c_index, cell in enumerate(row.findall(_q("c"))):
+                    for c_index, cell in enumerate(_kids(row, "c")):
                         cells += 1
                         if cells > MAX_CELLS:
                             raise ValueError(f"{path} has more than {MAX_CELLS:,} cells")
-                        ref = _CELL_REF.match(cell.get("r") or "")
+                        ref = _CELL_REF.match((cell.get("r") or "").upper())
                         if ref and len(ref.group(1)) > 3:
                             raise ValueError(f"{path}: cell {cell.get('r')} is beyond Excel's column limit")
                         col = _column_number(ref.group(1)) if ref else (max(values) + 1 if values else c_index)
                         if not 0 <= col < MAX_COLUMNS:
                             raise ValueError(f"{path}: cell {cell.get('r')} is beyond Excel's column limit")
                         kind = cell.get("t", "n")
-                        raw = cell.findtext(_q("v")) or ""
+                        v_node = _kid(cell, "v")
+                        raw = (v_node.text if v_node is not None else "") or ""
                         if kind == "s":
                             value = shared[int(raw)] if raw.isdigit() and int(raw) < len(shared) else ""
                         elif kind == "inlineStr":
-                            inline = cell.find(_q("is"))
+                            inline = _kid(cell, "is")
                             value = _string_text(inline) if inline is not None else ""
                         elif kind == "b":
                             value = "TRUE" if raw == "1" else "FALSE"
@@ -159,7 +178,14 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
                         values[col] = value
                     row.clear()
                     if values:
-                        out.append([values.get(i, "") for i in range(max(values) + 1)])
+                        width = max(values) + 1
+                        materialized += width
+                        if materialized > MAX_MATERIALIZED:
+                            # Sparse wide rows (one cell far to the right on every row) would be padded into
+                            # millions of empty cells
+                            raise ValueError(f"{path}: the rows are too wide to read ({materialized:,} cells "
+                                             f"counting the empty ones)")
+                        out.append([values.get(i, "") for i in range(width)])
             except ET.ParseError as exc:
                 raise ValueError(f"{path}: the worksheet is not valid XML ({exc})") from None
     return out
