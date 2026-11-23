@@ -4,16 +4,16 @@ Every tool gets the same text and is scored by the same rule (see `compare_tools
 
 | Input | Tool | Addresses | Right | Wrong | Wrong, tools disagree | City, not ward | No answer | Precision |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Care offices, as typed | JADEN | 223,146 | **97.88%** | 141 (0.06%) | **22** | 11 | 4,568 (2.05%) | 99.93% |
+| Care offices, as typed | JADEN | 223,146 | **97.89%** | 136 (0.06%) | **17** | 0 | 4,583 (2.05%) | 99.94% |
 |  | geolonia | 223,146 | **94.76%** | 345 (0.15%) | **226** | 0 | 11,338 (5.08%) | 99.84% |
 |  | jageocoder | 223,146 | **98.53%** | 2,039 (0.91%) | **1,920** | 133 | 1,106 (0.50%) | 99.02% |
-| Care offices, with the row's prefecture and municipality | JADEN | 223,146 | **99.88%** | 125 (0.06%) | **18** | 11 | 133 (0.06%) | 99.94% |
+| Care offices, with the row's prefecture and municipality | JADEN | 223,146 | **99.88%** | 123 (0.06%) | **16** | 0 | 146 (0.07%) | 99.94% |
 |  | geolonia | 223,146 | **99.40%** | 109 (0.05%) | **2** | 0 | 1,234 (0.55%) | 99.95% |
 |  | jageocoder | 223,146 | **99.48%** | 188 (0.08%) | **81** | 118 | 861 (0.39%) | 99.86% |
-| Companies, registered address | JADEN | 100,992 | **99.99%** | 0 (0.00%) | **0** | 0 | 10 (0.01%) | 100.00% |
+| Companies, registered address | JADEN | 100,992 | **99.99%** | 0 (0.00%) | **0** | 0 | 12 (0.01%) | 100.00% |
 |  | geolonia | 100,992 | **99.99%** | 0 (0.00%) | **0** | 0 | 12 (0.01%) | 100.00% |
 |  | jageocoder | 100,992 | **100.00%** | 0 (0.00%) | **0** | 0 | 0 (0.00%) | 100.00% |
-| Companies, without the prefecture | JADEN | 100,992 | **99.74%** | 1 (0.00%) | **1** | 0 | 264 (0.26%) | 100.00% |
+| Companies, without the prefecture | JADEN | 100,992 | **99.74%** | 1 (0.00%) | **1** | 0 | 266 (0.26%) | 100.00% |
 |  | geolonia | 100,992 | **99.96%** | 24 (0.02%) | **24** | 0 | 14 (0.01%) | 99.98% |
 |  | jageocoder | 100,992 | **99.92%** | 78 (0.08%) | **78** | 0 | 1 (0.00%) | 99.92% |
 | Companies, postal code in front | JADEN | 100,938 | **99.99%** | 0 (0.00%) | **0** | 0 | 9 (0.01%) | 100.00% |
@@ -22,7 +22,7 @@ Every tool gets the same text and is scored by the same rule (see `compare_tools
 
 **Wrong, tools disagree** leaves out the wrong answers that every tool shares: when all of them read the text as the same other municipality, the row's own code is most likely what is wrong (for example `北海道網走郡美幌町…` filed under 網走市). The examples below leave them out too.
 
-JADEN's "no answer" includes its ambiguous results, where it returns the possible municipalities instead of one; the row's municipality is in that list for 4,092 (care offices, as typed), 13 (care offices, with the row's prefecture and municipality), 254 (companies, without the prefecture).
+JADEN's "no answer" includes its ambiguous results, where it returns the possible municipalities instead of one; the row's municipality is in that list for 4,126 (care offices, as typed), 23 (care offices, with the row's prefecture and municipality), 254 (companies, without the prefecture).
 
 102 of jageocoder's wrong answers name a municipality that no longer exists (for example 浜松市中区, abolished in 2024): it read an old address under its old name.
 
@@ -30,16 +30,16 @@ Left out for every tool: 45 inputs whose row carries a municipality code that no
 
 ## Examples of wrong answers (and of a designated city named without its ward)
 
-**Care offices, as typed, JADEN** (8 of 33, spread over the data)
+**Care offices, as typed, JADEN** (8 of 17, spread over the data)
 
 - `肥塚四丁目150番` → 埼玉県熊谷市 (row: 埼玉県越谷市)
 - `御車道通清和院口上る東側梶井町457-1` → 京都府京都市上京区 (row: 京都府京都市右京区)
-- `広島市県広島市安佐南区伴東7丁目55番9号villa大原駅前101号` → 広島県広島市 (row: 広島県広島市安佐南区)
+- `西宮市1丁目6番25号` → 兵庫県西宮市 (row: 福岡県行橋市)
 - `舞原344-2あすなろ熊本壱番館` → 佐賀県有田町 (row: 熊本県熊本市南区)
-- `茨城県駒場3丁目7－15` → 茨城県取手市 (row: 茨城県阿見町)
-- `静岡県浜松市南j区御給町263` → 静岡県浜松市 (row: 静岡県浜松市中央区)
-- `静岡県静岡市岡部町岡部437番地の3` → 静岡県静岡市 (row: 静岡県藤枝市)
-- `大字鉄輪828番地の6` → 福井県敦賀市 (row: 大分県別府市)
+- `大阪巣堺市中区東山62番地1　2階` → 大阪府堺市中区 (row: 大阪府堺市東区)
+- `兵庫県赤穂市上郡町竹万381-5シャイン上郡` → 兵庫県上郡町 (row: 兵庫県赤穂市)
+- `熊本県熊本市流通団地2-20-1センコービル2階` → 熊本県熊本市南区 (row: 熊本県熊本市中央区)
+- `丹波市町295` → 兵庫県丹波市 (row: 奈良県天理市)
 
 **Care offices, as typed, geolonia** (8 of 226, spread over the data)
 
@@ -63,16 +63,16 @@ Left out for every tool: 45 inputs whose row carries a municipality code that no
 - `植木757-7` → 神奈川県鎌倉市 (row: 福岡県直方市)
 - `小野1丁目11-29ＧＩＮＹＡビル102` → 岐阜県大垣市 (row: 鹿児島県鹿児島市)
 
-**Care offices, with the row's prefecture and municipality, JADEN** (8 of 29, spread over the data)
+**Care offices, with the row's prefecture and municipality, JADEN** (8 of 16, spread over the data)
 
 - `茨城県茨城町つくばみらい市陽光台４丁目９番地3` → 茨城県つくばみらい市 (row: 茨城県茨城町)
-- `大阪府堺市緑ヶ丘南町4-2-23グリーンヒルズ2D` → 大阪府堺市堺区 (row: 大阪府堺市東区)
 - `広島県熊野町呉市音戸町畑１丁目２番５１号` → 広島県呉市 (row: 広島県熊野町)
-- `愛知県名古屋市横井2丁目14ロイヤルマンション横井203号・205号` → 愛知県名古屋市 (row: 愛知県名古屋市中村区)
+- `埼玉県入間市毛呂山町岩井西5丁目5-19第二いづも荘1号棟` → 埼玉県毛呂山町 (row: 埼玉県入間市)
 - `茨城県駒場3丁目7－15` → 茨城県取手市 (row: 茨城県阿見町)
 - `兵庫県赤穂市上郡町竹万381-5シャイン上郡` → 兵庫県上郡町 (row: 兵庫県赤穂市)
-- `長野県小諸市南佐久郡小海町小海3130番地4` → 長野県小海町 (row: 長野県小諸市)
-- `大阪府大阪市六万寺町1丁目14番20号` → 大阪府大阪市 (row: 大阪府東大阪市)
+- `茨城県阿見町牛久市柏田町１５８９－３` → 茨城県牛久市 (row: 茨城県阿見町)
+- `茨城県阿見町稲敷郡美浦村大字土屋字山下1979番地` → 茨城県美浦村 (row: 茨城県阿見町)
+- `北海道上川町帯広市西22条南3丁目33-1` → 北海道帯広市 (row: 北海道上川町)
 
 **Care offices, with the row's prefecture and municipality, geolonia** (2 of 2, spread over the data)
 

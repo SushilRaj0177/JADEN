@@ -47,3 +47,4 @@
 | Data | Municipality | Town | 丁目 (when town right) | Median distance to matched point |
 |---|---:|---:|---:|---:|
 | bundled town points | 98.5% | 67.6% | 91.0% | 287 m |
+| + block data | 99.2% | 87.3% | 96.2% | 53 m |
