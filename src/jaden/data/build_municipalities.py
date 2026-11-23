@@ -109,7 +109,10 @@ def build_municipalities_dataset(
     metadata_json_path: Path
 ) -> List[Dict[str, Any]]:
     """Parses official MIC Excel file into verified municipalities.json."""
+    from ..xlsx import _open_part
     with zipfile.ZipFile(xlsx_path) as z:
+        for part in ("xl/sharedStrings.xml", "xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"):
+            _open_part(z, part, xlsx_path).close()    # size, compression ratio and DTD checks before parsing
         strings = parse_xlsx_shared_strings(z)
         s1_rows = parse_sheet_rows(z, "xl/worksheets/sheet1.xml", strings)[1:]  # skip header
         s2_rows = parse_sheet_rows(z, "xl/worksheets/sheet2.xml", strings)[1:]  # skip header

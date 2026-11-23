@@ -837,3 +837,77 @@ def test_check_fields_reads_kana_fields_and_its_status_agrees_with_valid() -> No
     assert (r.status, r.reason, r.valid) == ("MALFORMED", "POSTAL_CODE_MISMATCH", False)
     assert jaden.check_fields(postal_code=1050011, city="港区", line1="芝公園4-2-8").valid
     assert jaden.check_fields(postal_code=600063.0, prefecture="北海道", city="札幌市中央区", line1="南3条西1-2").valid
+
+
+# ---------------------------------------------------------------- final scan, round 1: hostile and Japanese .xlsx (H2, H3)
+def _xlsx(tmp_path, sheet: str, shared: str = "", name: str = "t.xlsx", compress: bool = True):
+    import zipfile
+    from jaden.xlsx import _NS
+    path = tmp_path / name
+    head = '<?xml version="1.0" encoding="UTF-8"?>'
+    files = {
+        "[Content_Types].xml": head + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>',
+        "xl/workbook.xml": head + f'<workbook xmlns="{_NS["m"]}" xmlns:r="{_NS["r"]}"><sheets>'
+                           '<sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>',
+        "xl/_rels/workbook.xml.rels": head + f'<Relationships xmlns="{_NS["rel"]}"><Relationship Id="rId1" '
+                                      'Type="x" Target="worksheets/sheet1.xml"/></Relationships>',
+        "xl/worksheets/sheet1.xml": head + f'<worksheet xmlns="{_NS["m"]}"><sheetData>{sheet}</sheetData></worksheet>',
+    }
+    if shared:
+        files["xl/sharedStrings.xml"] = head + f'<sst xmlns="{_NS["m"]}">{shared}</sst>'
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED) as z:
+        for k, v in files.items():
+            z.writestr(k, v)
+    return path
+
+
+def test_xlsx_furigana_is_not_part_of_the_text(tmp_path) -> None:
+    from jaden.xlsx import read_xlsx
+    shared = ('<si><t>東京都港区芝公園4-2-8</t><rPh sb="0" eb="3"><t>トウキョウト</t></rPh><rPh sb="3" eb="5"><t>ミナトク</t></rPh>'
+              '<phoneticPr fontId="1"/></si><si><r><t>港区</t></r><r><t>芝公園</t></r><rPh sb="0" eb="2"><t>ミナトク</t></rPh></si>')
+    path = _xlsx(tmp_path, '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>', shared)
+    assert read_xlsx(path) == [["東京都港区芝公園4-2-8", "港区芝公園"]]
+
+
+@pytest.mark.parametrize("sheet, message", [
+    ('<row r="300000000"><c r="A300000000"><v>1</v></c></row>', "limit"),
+    ('<row r="1"><c r="ZZZZZZ1"><v>1</v></c></row>', "limit"),
+    ('<row r="2"><c r="A2"><v>1</v></c></row><row r="1"><c r="A1"><v>1</v></c></row>', "order"),
+    ('<row r="1"><c r="A1"><v>1</v></row>', "not valid XML"),
+])
+def test_xlsx_hostile_sheets_are_refused_quickly(tmp_path, sheet: str, message: str) -> None:
+    from jaden.xlsx import read_xlsx
+    started = time.perf_counter()
+    with pytest.raises(ValueError, match=message):
+        read_xlsx(_xlsx(tmp_path, sheet))
+    assert time.perf_counter() - started < 2
+
+
+def test_xlsx_zip_bomb_dtd_and_missing_parts_are_refused(tmp_path) -> None:
+    import zipfile
+    from jaden.xlsx import read_xlsx
+    bomb = _xlsx(tmp_path, '<row r="1"><c r="A1"><v>1</v></c></row>' + " " * 50_000_000, name="bomb.xlsx")
+    with pytest.raises(ValueError, match="too large"):
+        read_xlsx(bomb)
+    dtd = tmp_path / "dtd.xlsx"
+    with zipfile.ZipFile(_xlsx(tmp_path, "", name="src.xlsx")) as zin, zipfile.ZipFile(dtd, "w") as zout:
+        for item in zin.namelist():
+            data = zin.read(item)
+            if item == "xl/worksheets/sheet1.xml":
+                data = b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "aaaa">]><worksheet/>'
+            zout.writestr(item, data)
+    with pytest.raises(ValueError, match="DTD"):
+        read_xlsx(dtd)
+    broken = tmp_path / "broken.xlsx"
+    with zipfile.ZipFile(broken, "w") as z:
+        z.writestr("[Content_Types].xml", "<Types/>")
+    with pytest.raises(ValueError, match="missing"):
+        read_xlsx(broken)
+
+
+def test_xlsx_errors_reach_the_cli_as_a_message(tmp_path, capsys) -> None:
+    from jaden.cli import main
+    path = tmp_path / "bad.xlsx"
+    path.write_bytes(b"PK\x03\x04 broken")
+    assert main(["batch", str(path)]) == 64
+    assert "Error:" in capsys.readouterr().err

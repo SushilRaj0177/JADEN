@@ -1,23 +1,29 @@
 """Minimal Excel (.xlsx) reading and writing with the standard library only.
 
-Reads the first worksheet as rows of text (shared strings, inline strings, numbers, booleans) and
+Reads the first worksheet as rows of text (shared strings, inline strings, numbers, booleans; never the
+furigana Japanese Excel stores beside a string) and
 writes one worksheet of text cells, so postal codes such as 0600063 keep their leading zero. Enough
 for `jaden batch` and `jaden dedupe` to take a spreadsheet straight from Excel and give one back.
+Hostile files are refused before they cost memory: parts too large or compressed too well, DTDs,
+row and column numbers beyond Excel's limits, more than MAX_CELLS cells.
 """
 
 import re
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import IO, Dict, List, Sequence, Union
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
 _NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
        "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
        "rel": "http://schemas.openxmlformats.org/package/2006/relationships"}
-_CELL_REF = re.compile(r"([A-Z]+)(\d+)")
-_XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f￾￿]")
-MAX_CELLS = 20_000_000
+_CELL_REF = re.compile(r"([A-Z]+)(\d+)$")
+_XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff\ud800-\udfff]")
+MAX_CELLS = 5_000_000
+MAX_ROWS, MAX_COLUMNS = 1_048_576, 16_384          # Excel's own limits
+MAX_PART_BYTES = 512 * 1024 * 1024                  # one uncompressed part (a sheet, the shared strings)
+MAX_RATIO = 200                                     # uncompressed / compressed: more is a zip bomb
 
 
 def _column_number(letters: str) -> int:
@@ -36,11 +42,17 @@ def _column_letters(index: int) -> str:
     return letters
 
 
-def _text(node: Optional[ET.Element]) -> str:
-    """All <t> text inside a shared or inline string (rich text comes in runs)."""
-    if node is None:
-        return ""
-    return "".join(t.text or "" for t in node.iter(f"{{{_NS['m']}}}t"))
+def _q(tag: str) -> str:
+    return f"{{{_NS['m']}}}{tag}"
+
+
+def _string_text(node: ET.Element) -> str:
+    """The text of a shared or inline string: its own <t>, or the <t> of each rich-text run <r>. The
+    phonetic runs (<rPh>: the furigana Japanese Excel stores) are not part of the text."""
+    t = node.find(_q("t"))
+    if t is not None:
+        return t.text or ""
+    return "".join((r.findtext(_q("t")) or "") for r in node.findall(_q("r")))
 
 
 def _number(value: str) -> str:
@@ -52,62 +64,104 @@ def _number(value: str) -> str:
     return str(int(f)) if f.is_integer() and "e" not in value.lower() and abs(f) < 1e15 else value
 
 
-def read_xlsx(path: Path, sheet: int = 0) -> List[List[str]]:
-    """The rows of one worksheet (the first by default) as lists of text."""
+def _open_part(book: zipfile.ZipFile, name: str, path: object) -> IO[bytes]:
+    """A part of the package, refused when it is too large, compresses suspiciously well, or declares a DTD."""
+    try:
+        info = book.getinfo(name)
+    except KeyError:
+        raise ValueError(f"{path}: not a valid .xlsx file (missing {name})") from None
+    if info.file_size > MAX_PART_BYTES or info.file_size > MAX_RATIO * max(info.compress_size, 1) + 1_000_000:
+        raise ValueError(f"{path}: {name} is too large ({info.file_size:,} bytes uncompressed)")
+    with book.open(info) as fh:
+        start = fh.read(2048)
+    if b"<!DOCTYPE" in start or b"<!ENTITY" in start:
+        raise ValueError(f"{path}: {name} declares a DTD, which a spreadsheet never needs")
+    return book.open(info)
+
+
+def _parse(book: zipfile.ZipFile, name: str, path: object) -> ET.Element:
+    with _open_part(book, name, path) as fh:
+        try:
+            return ET.parse(fh).getroot()
+        except ET.ParseError as exc:
+            raise ValueError(f"{path}: {name} is not valid XML ({exc})") from None
+
+
+def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
+    """The rows of one worksheet (the first by default) as lists of text. Rows with no cells are left out."""
     try:
         book = zipfile.ZipFile(path)
-    except zipfile.BadZipFile:
+    except (zipfile.BadZipFile, OSError):
         raise ValueError(f"{path} is not an .xlsx file") from None
     with book:
         names = set(book.namelist())
         shared: List[str] = []
         if "xl/sharedStrings.xml" in names:
-            root = ET.fromstring(book.read("xl/sharedStrings.xml"))
-            shared = [_text(si) for si in root.findall("m:si", _NS)]
-        workbook = ET.fromstring(book.read("xl/workbook.xml"))
+            with _open_part(book, "xl/sharedStrings.xml", path) as fh:
+                try:
+                    for _event, node in ET.iterparse(fh):
+                        if node.tag == _q("si"):
+                            shared.append(_string_text(node))
+                            node.clear()
+                            if len(shared) > MAX_CELLS:
+                                raise ValueError(f"{path} has more than {MAX_CELLS:,} strings")
+                except ET.ParseError as exc:
+                    raise ValueError(f"{path}: the shared strings are not valid XML ({exc})") from None
+        workbook = _parse(book, "xl/workbook.xml", path)
         sheets = workbook.findall("m:sheets/m:sheet", _NS)
         if not sheets or sheet >= len(sheets):
             raise ValueError(f"{path} has no worksheet {sheet + 1}")
         rel_id = sheets[sheet].get(f"{{{_NS['r']}}}id")
-        rels = ET.fromstring(book.read("xl/_rels/workbook.xml.rels"))
+        rels = _parse(book, "xl/_rels/workbook.xml.rels", path)
         target = next((r.get("Target") for r in rels.findall("rel:Relationship", _NS) if r.get("Id") == rel_id), None)
-        if target is None:
+        if not target:
             raise ValueError(f"{path}: worksheet {sheet + 1} not found")
         target = target.lstrip("/")
         part = target if target.startswith("xl/") else f"xl/{target}"
-        root = ET.fromstring(book.read(part))
 
-    rows: Dict[int, Dict[int, str]] = {}
-    cells = 0
-    for r_index, row in enumerate(root.iter(f"{{{_NS['m']}}}row")):
-        number = int(row.get("r") or r_index + 1) - 1
-        values = rows.setdefault(number, {})
-        for c_index, cell in enumerate(row.findall("m:c", _NS)):
-            cells += 1
-            if cells > MAX_CELLS:
-                raise ValueError(f"{path} has more than {MAX_CELLS:,} cells")
-            ref = _CELL_REF.match(cell.get("r") or "")
-            col = _column_number(ref.group(1)) if ref else c_index
-            kind = cell.get("t", "n")
-            v = cell.find("m:v", _NS)
-            raw = v.text if v is not None and v.text is not None else ""
-            if kind == "s":
-                value = shared[int(raw)] if raw.isdigit() and int(raw) < len(shared) else ""
-            elif kind == "inlineStr":
-                value = _text(cell.find("m:is", _NS))
-            elif kind == "b":
-                value = "TRUE" if raw == "1" else "FALSE"
-            elif kind == "n":
-                value = _number(raw)
-            else:                       # 'str' (formula result), 'e' (error)
-                value = raw
-            values[col] = value
-    if not rows:
-        return []
-    out: List[List[str]] = []
-    for number in range(max(rows) + 1):
-        values = rows.get(number, {})
-        out.append([values.get(i, "") for i in range(max(values) + 1)] if values else [])
+        out: List[List[str]] = []
+        cells = 0
+        last_row = -1
+        with _open_part(book, part, path) as fh:
+            try:
+                for _event, row in ET.iterparse(fh):
+                    if row.tag != _q("row"):
+                        continue
+                    r_attr = row.get("r")
+                    number = int(r_attr) - 1 if r_attr and r_attr.isdigit() else last_row + 1
+                    if not 0 <= number < MAX_ROWS or number <= last_row:
+                        raise ValueError(f"{path}: row number {r_attr} is out of order or beyond Excel's limit")
+                    last_row = number
+                    values: Dict[int, str] = {}
+                    for c_index, cell in enumerate(row.findall(_q("c"))):
+                        cells += 1
+                        if cells > MAX_CELLS:
+                            raise ValueError(f"{path} has more than {MAX_CELLS:,} cells")
+                        ref = _CELL_REF.match(cell.get("r") or "")
+                        if ref and len(ref.group(1)) > 3:
+                            raise ValueError(f"{path}: cell {cell.get('r')} is beyond Excel's column limit")
+                        col = _column_number(ref.group(1)) if ref else (max(values) + 1 if values else c_index)
+                        if not 0 <= col < MAX_COLUMNS:
+                            raise ValueError(f"{path}: cell {cell.get('r')} is beyond Excel's column limit")
+                        kind = cell.get("t", "n")
+                        raw = cell.findtext(_q("v")) or ""
+                        if kind == "s":
+                            value = shared[int(raw)] if raw.isdigit() and int(raw) < len(shared) else ""
+                        elif kind == "inlineStr":
+                            inline = cell.find(_q("is"))
+                            value = _string_text(inline) if inline is not None else ""
+                        elif kind == "b":
+                            value = "TRUE" if raw == "1" else "FALSE"
+                        elif kind == "n":
+                            value = _number(raw)
+                        else:                       # 'str' (formula result), 'e' (error)
+                            value = raw
+                        values[col] = value
+                    row.clear()
+                    if values:
+                        out.append([values.get(i, "") for i in range(max(values) + 1)])
+            except ET.ParseError as exc:
+                raise ValueError(f"{path}: the worksheet is not valid XML ({exc})") from None
     return out
 
 

@@ -81,8 +81,8 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 ## Final scan (separate audit, 23 Nov 2026) — open
 High
 - [x] H1 Kana input picks the longest municipality reading even when the rest is not a town there (`ならしのだい1-2` → 奈良市); 131 of 132 random kana town readings went to the wrong municipality *(a kana municipality is taken only when a registered town follows by reading; kana towns are readings, so several spellings stay ambiguous; random check: 0 wrong in 5,000)*
-- [ ] H2 `.xlsx` reader glues Excel's furigana (`rPh`) onto cell text
-- [ ] H3 `.xlsx` denial of service: huge row/column indices, zip bombs, no size cap before parsing
+- [x] H2 `.xlsx` reader glues Excel's furigana (`rPh`) onto cell text *(only a string's own text and rich-text runs are read; `rPh` furigana skipped)*
+- [x] H3 `.xlsx` denial of service: huge row/column indices, zip bombs, no size cap before parsing *(streaming parse; parts capped by size and compression ratio; DTDs refused; Excel's row and column limits; at most 5,000,000 cells; empty rows not materialized)*
 - [ ] H4 `コーポ1-201` / `コーポ1-202` keep the room inside the building name, so dedupe merges different flats
 Medium
 - [ ] M1 `duplicate_pairs` silently skips rows past 200 on one block
@@ -100,7 +100,7 @@ Low
 - [ ] Server: `text/plain; a=json` accepted; JSON numbers refused in POST; chunked bodies mis-parsed; unbounded threads
 - [ ] Gateway: 401s not rate-limited; `/health` location reachable with crafted paths; empty key fails open
 - [ ] MCP: booleans and tool names not type-checked; empty batch gets no reply
-- [ ] xlsx: missing parts give a traceback instead of an error message
+- [x] xlsx: missing parts give a traceback instead of an error message *(every malformed file is a ValueError, shown as `Error:` with exit 64)*
 - [ ] Glued 7-digit postal code before the prefecture; 之 / ノ lot separators; a few invisible characters; `TEL/FAX` and `携帯` numbers; UTF-16 without BOM; integer postal codes losing the leading zero
 - [ ] `jaden.frame.records()` builds a new engine per call; `normalize_frame` duplicates existing `jaden_*` columns; CLI accepts `--jobs 0`, `--min-score 5`
 - [ ] `extract_addresses` span runs into the next 〒 code
