@@ -627,6 +627,10 @@ def _add_toolkit_parsers(subparsers: Any) -> None:
     _file_arguments(dd_p)
     dd_p.add_argument("--level", choices=["unit", "house", "block", "chome", "town"], default="unit",
                       help="How precisely addresses must agree (default: unit = same house and same room).")
+    dd_p.add_argument("--pairs", metavar="FILE",
+                      help="Also write likely duplicate pairs (same block) to this CSV, with a score and the reasons; "
+                           "catches near-matches such as a misspelt building name or a missing room.")
+    dd_p.add_argument("--min-score", type=float, default=0.5, help="Lowest pair score written with --pairs (default: 0.5).")
 
 
 def _positive_int(value: str) -> int:
@@ -818,7 +822,8 @@ def _handle_dedupe(args: argparse.Namespace) -> int:
     from .batch import run_dedupe
     run_dedupe(Path(args.input), Path(args.output) if args.output else None, fmt=args.format, column=args.column,
                encoding=args.encoding, out_encoding=args.output_encoding, level=args.level,
-               header_row=False if args.no_header else None)
+               header_row=False if args.no_header else None,
+               pairs=Path(args.pairs) if args.pairs else None, min_score=args.min_score)
     return 0
 
 

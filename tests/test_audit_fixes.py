@@ -570,3 +570,41 @@ def test_kana_that_is_not_an_address_stays_rejected() -> None:
     assert jaden.validate("ふちゅうしふちゅうちょう1-1").status == "AMBIGUOUS"   # two 府中市
     for text in ("あいうえお1-1", "やまだたろう", "かすみがせき1-2-1"):
         assert jaden.validate(text).status == "MALFORMED"
+
+
+# ---------------------------------------------------------------- F6: explainable fuzzy dedupe
+@pytest.mark.parametrize("a, b, score, word", [
+    ("グランドメゾン芝公園", "グランドメゾン芝公園", 1.0, "same"),
+    ("芝公園ビル", "芝公園ビルディング", 1.0, "same"),
+    ("グランドメゾン芝公園", "グランドメゾン芝公演", 0.9, "typo"),
+    ("グランドメゾン", "グランドメゾン芝公園", 0.9, "shortened"),
+    ("第一ビル", "第二ビル", 0.0, "separate"),
+    ("サンハイツA棟", "サンハイツB棟", 0.0, "separate"),
+    ("グランドメゾン芝公園", "Grand Maison", None, "scripts"),
+])
+def test_building_similarity_explains_itself(a: str, b: str, score, word: str) -> None:
+    got, reason = jaden.building_similarity(a, b)
+    assert got == score and word in reason
+
+
+def test_numbered_buildings_on_one_lot_are_not_the_same_address() -> None:
+    cmp = jaden.compare("東京都港区芝公園4-2-8 第一ビル", "東京都港区芝公園4-2-8 第二ビル")
+    assert cmp.verdict == "possibly_same" and cmp.building_similarity == 0.0
+    assert jaden.compare("東京都港区芝公園4-2-8 グランドメゾン芝公園302",
+                         "東京都港区芝公園4-2-8 グランドメゾン芝公演302").verdict == "same"
+
+
+def test_duplicate_pairs_score_and_explain(tmp_path) -> None:
+    import csv
+    from jaden.batch import run_dedupe
+    rows = ["東京都港区芝公園4-2-8 グランドメゾン芝公園302", "港区芝公園４丁目２番８号　グランドメゾン芝公演　３０２号室",
+            "東京都港区芝公園4-2-8 第一ビル", "東京都港区芝公園4-2-8 第二ビル", "東京都港区芝公園4-2-8 グランドメゾン芝公園",
+            "東京都港区芝公園4-2-9"]
+    pairs = jaden.duplicate_pairs(rows)
+    assert [(p.i, p.j) for p in pairs] == [(0, 1), (0, 4), (1, 4)]
+    assert pairs[0].score == 0.95 and any("typo" in r for r in pairs[0].reasons)
+    src, out = tmp_path / "in.csv", tmp_path / "pairs.csv"
+    src.write_text("address\n" + "\n".join(rows) + "\n", encoding="utf-8")
+    run_dedupe(src, tmp_path / "out.csv", pairs=out, log=open(tmp_path / "log", "w"))
+    written = list(csv.DictReader(open(out, encoding="utf-8")))
+    assert [(r["row_a"], r["row_b"]) for r in written] == [("1", "2"), ("1", "5"), ("2", "5")]

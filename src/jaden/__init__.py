@@ -14,7 +14,7 @@ from .models.validation import ValidationStatus, ValidationResult
 from .models.geospatial import GeocodingStatus, Coordinates, GeospatialResult
 from .geocoding import BaseGeospatialResolver, GSIGeocoder, OfflineGeocoder, geocode
 from .data.loader import get_registry
-from .matching import AddressComparison, compare, find_duplicates, match_key
+from .matching import AddressComparison, DuplicatePair, building_similarity, compare, duplicate_pairs, find_duplicates, match_key
 from .extract import ExtractedAddress, extract_addresses
 from .lookup import PostalAddress, ReverseResult, Suggestion, lookup_postal, reverse_geocode, suggest
 from .resolve import RankedCandidate, Resolution, resolve
@@ -29,6 +29,9 @@ __all__ = [
     "validate",
     "geocode",
     "check_fields",
+    "duplicate_pairs",
+    "DuplicatePair",
+    "building_similarity",
     "FieldResult",
     "FieldIssue",
     "AddressComponents",

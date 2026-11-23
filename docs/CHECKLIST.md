@@ -72,7 +72,7 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] F3 Machine-readable reason codes, Japanese messages, OpenAPI description *(`reason`, `message_ja`, `/v1/openapi.json`)*
 - [x] F4 MCP server: normalize, validate and resolve as tools for AI assistants *(`jaden mcp`, 8 tools)*
 - [ ] F5 Shipping-label output: fields split to carrier length limits
-- [ ] F6 Explainable fuzzy dedupe: building-name similarity with a reason per pair
+- [x] F6 Explainable fuzzy dedupe: building-name similarity with a reason per pair *(`building_similarity`, `duplicate_pairs`, `jaden dedupe --pairs`; match keys still ignore building names, so 第一ビル and 第二ビル on one lot share a group: the pairs file and `compare` tell them apart)*
 - [ ] F7 Data I/O: pandas helper, `.xlsx`, NDJSON streaming
 - [x] F8 Full kana / romaji input (`とうきょうとちよだくかすみがせき1-2-1`) *(romaji was already read; kana prefecture and municipality now read from their readings)*
 - [ ] F9 `jaden data update` also refreshes the MIC municipality list

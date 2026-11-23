@@ -684,7 +684,7 @@ Note:     different rooms in the same building
 # 同じ住所の行をグループ化
 $ jaden dedupe customers.csv -o grouped.csv
 ```
-`compare` の終了コード: 同一 0、別の住所 1、同じ建物または同一の可能性あり 2、住所でない入力 3。`dedupe` は `jaden_match_key`、`jaden_group`、`jaden_group_size` の列を追加します（`--level house` で部屋番号を無視、`--level town` で町単位）。
+`compare` の終了コード: 同一 0、別の住所 1、同じ建物または同一の可能性あり 2、住所でない入力 3。`dedupe` は `jaden_match_key`、`jaden_group`、`jaden_group_size` の列を追加します（`--level house` で部屋番号を無視、`--level town` で町単位）。`--pairs pairs.csv` を付けると、同じ街区にある重複らしい行の組を、スコアと理由付きで書き出します。グループでは別扱いになる近い組も拾います: 建物名の誤字（`グランドメゾン芝公園` / `グランドメゾン芝公演`: 1 文字違い）、片方だけの部屋番号、略した建物名など。同じ番地の番号違いの建物（`第一ビル` / `第二ビル`）はスコアが低く、`compare` も「同一の可能性あり」にとどめます。Python からは `jaden.duplicate_pairs(addresses)` と `jaden.building_similarity(a, b)`。
 
 判定: **same**（街区・号まで一致し、部屋番号があればそれも一致）、**same_building**（部屋番号が異なる、または片方だけにある）、**possibly_same**（矛盾はないが片方の情報が少ない、曖昧な市区町村がもう一方と両立する、片方だけが字を書いている）、**different**（食い違う階層を返す）、**undetermined**（住所ではない）。
 

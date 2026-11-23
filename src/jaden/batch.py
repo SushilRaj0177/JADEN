@@ -338,11 +338,15 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
 
 def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
                encoding: Optional[str] = None, out_encoding: str = "utf-8", level: str = "unit",
-               prefix: str = "jaden_", log: TextIO = sys.stderr, header_row: Optional[bool] = None) -> Dict[str, int]:
+               prefix: str = "jaden_", log: TextIO = sys.stderr, header_row: Optional[bool] = None,
+               pairs: Optional[Path] = None, min_score: float = 0.5) -> Dict[str, int]:
     """Groups the rows of a file by address (名寄せ) and writes them back with group columns.
 
     Appended columns: status, canonical, match_key, group (same number = same address at
     ``level``), group_size. Rows whose address cannot be keyed keep an empty group.
+    ``pairs``: also write a CSV of likely duplicate pairs (rows on the same block) with a score
+    and the reasons, including near-matches the groups leave apart (a typo in the building name,
+    a room on one side only).
     """
     from .engine import get_engine
     from .matching import match_key
@@ -359,9 +363,12 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     records: List[Dict[str, Any]] = []
     groups: Dict[str, int] = {}
     sizes: Counter = Counter()
-    for _, address in materialized:
+    resolved: List[Tuple[int, Any]] = []
+    for row_number, (_, address) in enumerate(materialized, 1):
         address = (address or "").strip()
         res = engine.normalize(address) if address else None
+        if res is not None:
+            resolved.append((row_number, res))
         val = engine.validate(address, normalized=res) if address else None
         key = match_key(res, level) if res is not None else None
         group = groups.setdefault(key, len(groups) + 1) if key else None
@@ -384,6 +391,17 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     finally:
         if out_stream is not sys.stdout:
             out_stream.close()
+
+    if pairs is not None:
+        from .matching import duplicate_pairs
+        found = duplicate_pairs([r for _, r in resolved], min_score=min_score)
+        with open(pairs, "w", encoding=out_encoding, newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["row_a", "row_b", "score", "verdict", "address_a", "address_b", "reasons"])
+            for pair in found:
+                (ra, a), (rb, b) = resolved[pair.i], resolved[pair.j]
+                w.writerow([ra, rb, pair.score, pair.verdict, a.input_raw, b.input_raw, "; ".join(pair.reasons)])
+        log.write(f"{len(found)} likely duplicate pairs written to {pairs}\n")
 
     duplicate_groups = sum(1 for n in sizes.values() if n > 1)
     duplicate_rows = sum(n for n in sizes.values() if n > 1)

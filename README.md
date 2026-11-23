@@ -738,7 +738,7 @@ Note:     different rooms in the same building
 $ jaden dedupe customers.csv -o grouped.csv
 7 rows: 2 duplicate groups covering 4 rows; 2 rows could not be keyed at the unit level
 ```
-`compare` exits 0 for the same address, 1 for different, 2 for the same building or possibly the same, 3 when one input is not an address. `dedupe` appends `jaden_match_key`, `jaden_group` and `jaden_group_size`; `--level house` ignores room numbers, `--level town` groups by town.
+`compare` exits 0 for the same address, 1 for different, 2 for the same building or possibly the same, 3 when one input is not an address. `dedupe` appends `jaden_match_key`, `jaden_group` and `jaden_group_size`; `--level house` ignores room numbers, `--level town` groups by town. `--pairs pairs.csv` also lists likely duplicates on the same block with a score and the reasons, including near-matches the groups keep apart: a misspelt building name (`グランドメゾン芝公園` / `グランドメゾン芝公演`: one character apart, likely a typo), a room on one side only, a shortened name. Numbered buildings on one lot (`第一ビル` / `第二ビル`) score low, and `compare` calls them only possibly the same. From Python: `jaden.duplicate_pairs(addresses)` and `jaden.building_similarity(a, b)`.
 
 Verdicts: **same** (agree down to the block / house number, and on the room if either has one), **same_building** (rooms differ or only one side has a room), **possibly_same** (nothing conflicts but one side is less specific, an ambiguous municipality could be the other's, or only one side names the 字), **different** (the result names the level that conflicts), **undetermined** (not an address).
 
