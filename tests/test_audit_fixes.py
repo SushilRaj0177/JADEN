@@ -483,3 +483,29 @@ def test_mcp_reports_bad_input_without_dying() -> None:
     assert replies[1]["error"]["code"] == -32602
     assert replies[2]["result"]["isError"] and replies[3]["result"]["isError"]
     assert replies[4]["error"]["code"] == -32601 and replies[5]["result"] == {}
+
+
+# ---------------------------------------------------------------- F1: resolver columns in jaden batch
+def test_batch_resolve_columns(tmp_path) -> None:
+    import csv
+    from jaden.batch import run_batch
+    src = tmp_path / "in.csv"
+    src.write_text("address,name\n南3条東1-2-1,\n東京都港区芝公園4-2-8,東京タワー\n,空欄\n", encoding="utf-8")
+    out = tmp_path / "out.csv"
+    run_batch(src, out, resolve=True, name_column="name", log=open(tmp_path / "log", "w"))
+    rows = list(csv.DictReader(open(out, encoding="utf-8")))
+    assert rows[0]["jaden_resolved_lg_code"] == "" and "北海道札幌市中央区 (011011)" in rows[0]["jaden_resolved_candidates"]
+    assert rows[1]["jaden_resolved_lg_code"] == "131032" and rows[1]["jaden_resolved_name"] == "東京都港区"
+    assert rows[2]["jaden_status"] == "EMPTY" and rows[2]["jaden_resolved_candidates"] == ""
+
+
+def test_batch_resolve_works_with_workers_and_rejects_a_bad_name_column(tmp_path) -> None:
+    import csv
+    from jaden.batch import run_batch
+    src = tmp_path / "in.csv"
+    src.write_text("address\n" + "東京都港区芝公園4-2-8\n" * 4, encoding="utf-8")
+    out = tmp_path / "out.csv"
+    run_batch(src, out, resolve=True, jobs=2, log=open(tmp_path / "log", "w"))
+    assert {r["jaden_resolved_lg_code"] for r in csv.DictReader(open(out, encoding="utf-8"))} == {"131032"}
+    with pytest.raises(ValueError, match="not found"):
+        run_batch(src, out, resolve=True, name_column="nope", log=open(tmp_path / "log", "w"))

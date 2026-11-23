@@ -657,8 +657,11 @@ $ jaden batch customers.csv -o checked.csv
 
 # 列の指定、Excel 向け BOM 付き UTF-8、4 プロセスで並列処理
 $ jaden batch customers.csv --column 3 -o checked.csv --output-encoding utf-8-sig --jobs 4
+
+# 市区町村が書かれていない住所: 較正済みリゾルバーの列を追加（店名の列を手がかりに使用）
+$ jaden batch shops.csv --resolve --name-column 店名 -o resolved.csv
 ```
-入力の各行はそのまま出力され、`jaden_status`、`jaden_canonical`、`jaden_lg_code`、住所の各要素、建物名・階・部屋番号、郵便番号、読み、ローマ字、緯度・経度などの列が追加されます。`--fix` で 1 文字違いの町名を訂正します。
+入力の各行はそのまま出力され、`jaden_status`、`jaden_canonical`、`jaden_lg_code`、住所の各要素、建物名・階・部屋番号、郵便番号、読み、ローマ字、緯度・経度などの列が追加されます。`--fix` で 1 文字違いの町名を訂正します。`--resolve` を付けると、`jaden_resolved_lg_code`・`jaden_resolved_name`（誤答率 1% の閾値を超えたときのみ）、`jaden_resolved_probability`、`jaden_resolved_candidates`（上位 5 候補と確率）が加わります。
 
 #### 7. `compare` / `dedupe`: 名寄せ
 ```bash

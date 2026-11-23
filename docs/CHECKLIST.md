@@ -67,7 +67,7 @@ Remaining edge cases found by the property check (28 of 45,294 inputs, 0.06%): d
 - [x] I10 CLI: multi-line stdin, `--limit`, resolve from stdin
 
 ## Features
-- [~] F1 `resolve` in the HTTP API (`/v1/resolve`) and as columns in `jaden batch` *(HTTP done)*
+- [x] F1 `resolve` in the HTTP API (`/v1/resolve`) and as columns in `jaden batch` *(`--resolve`, `--name-column`)*
 - [ ] F2 Structured input (prefecture, municipality, line 1, line 2, postal code) with cross-checks
 - [x] F3 Machine-readable reason codes, Japanese messages, OpenAPI description *(`reason`, `message_ja`, `/v1/openapi.json`)*
 - [x] F4 MCP server: normalize, validate and resolve as tools for AI assistants *(`jaden mcp`, 7 tools)*

@@ -72,15 +72,41 @@ def flat_record(res: NormalizedAddress, val: ValidationResult) -> Dict[str, Any]
     }
 
 
+RESOLVE_FIELDS: Tuple[str, ...] = ("resolved_lg_code", "resolved_name", "resolved_probability", "resolved_candidates")
+
 _ENGINE: Any = None
 _STRICT = False
+_RESOLVE = False
 
 
-def _init_worker(strict: bool, autocorrect: bool = False) -> None:
-    global _ENGINE, _STRICT
+def _init_worker(strict: bool, autocorrect: bool = False, resolve: bool = False) -> None:
+    global _ENGINE, _STRICT, _RESOLVE
     from .engine import AddressNormalizer
     _ENGINE = AddressNormalizer(autocorrect=autocorrect)
     _STRICT = strict
+    _RESOLVE = resolve
+
+
+def resolve_record(address: str, side: str = "") -> Dict[str, Any]:
+    """The calibrated resolver's verdict as flat columns: the municipality when it clears the 1%-risk
+    threshold, its probability, and the five most likely candidates."""
+    from .resolve import resolve
+    if not (address or "").strip():
+        return {k: "" for k in RESOLVE_FIELDS}
+    r = resolve(address, side)
+    return {
+        "resolved_lg_code": r.lg_code if r.answered else "",
+        "resolved_name": r.name if r.answered else "",
+        "resolved_probability": round(r.probability, 4) if r.candidates else "",
+        "resolved_candidates": " | ".join(f"{c.name} ({c.lg_code}) {c.probability:.2f}" for c in r.candidates[:5]),
+    }
+
+
+def _process_item(item: Tuple[str, str]) -> Dict[str, Any]:
+    rec = process_address(item[0])
+    if _RESOLVE:
+        rec.update(resolve_record(item[0], item[1]))
+    return rec
 
 
 def process_address(address: str) -> Dict[str, Any]:
@@ -245,11 +271,26 @@ class _Writer:
         self.writer.writerow(values + [("" if v is None else v) for v in rec.values()])
 
 
+def _side_reader(header: Sequence[str], fmt: str, name_column: Optional[str]) -> Any:
+    """A function giving the side-information text (a company or facility name) of a row."""
+    from .core.text import as_text
+    if not name_column:
+        return lambda row: ""
+    if fmt == "jsonl":
+        return lambda row: as_text(row.get(name_column)) if isinstance(row, dict) else ""
+    if fmt == "txt":
+        raise ValueError("--name-column needs a CSV, TSV or JSONL file")
+    index = _column_index(header, name_column)
+    return lambda row: row[index] if index < len(row) else ""
+
+
 def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
               encoding: Optional[str] = None, out_encoding: str = "utf-8", strict: bool = False, jobs: int = 1,
               prefix: str = "jaden_", log: TextIO = sys.stderr, autocorrect: bool = False,
-              header_row: Optional[bool] = None) -> Counter:
-    """Processes a file and writes the rows with result columns appended; returns counts by status."""
+              header_row: Optional[bool] = None, resolve: bool = False, name_column: Optional[str] = None) -> Counter:
+    """Processes a file and writes the rows with result columns appended; returns counts by status.
+    ``resolve`` adds the calibrated resolver's columns; ``name_column`` names the column holding a company
+    or facility name to use as evidence."""
     in_fmt = detect_format(input_path, fmt)
     to_stdout = output is None or str(output) == "-"
     out_fmt = in_fmt if to_stdout else detect_format(output, None)
@@ -257,6 +298,7 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
         out_fmt = "csv"
     header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
     materialized = list(rows)
+    side_of = _side_reader(header, in_fmt, name_column)
 
     out_stream: TextIO = sys.stdout
     if not to_stdout and output is not None:
@@ -264,16 +306,17 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     counts: Counter = Counter()
     started = time.perf_counter()
     pool = None
-    writer = _Writer(out_stream, out_fmt, header, [prefix + k for k in RESULT_FIELDS], log)
+    fields = RESULT_FIELDS + (RESOLVE_FIELDS if resolve else ())
+    writer = _Writer(out_stream, out_fmt, header, [prefix + k for k in fields], log)
     try:
-        addresses = [a for _, a in materialized]
+        items = [(a, side_of(row)) for row, a in materialized]
         results: Iterable[Dict[str, Any]]
-        if jobs > 1 and len(addresses) > 1:
-            pool = Pool(jobs, initializer=_init_worker, initargs=(strict, autocorrect))
-            results = pool.imap(process_address, addresses, chunksize=256)
+        if jobs > 1 and len(items) > 1:
+            pool = Pool(jobs, initializer=_init_worker, initargs=(strict, autocorrect, resolve))
+            results = pool.imap(_process_item, items, chunksize=256)
         else:
-            _init_worker(strict, autocorrect)
-            results = map(process_address, addresses)
+            _init_worker(strict, autocorrect, resolve)
+            results = map(_process_item, items)
         for (row, _), rec in zip(materialized, results):
             counts[rec["status"]] += 1
             writer.write(row, rec)

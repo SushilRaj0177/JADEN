@@ -567,6 +567,11 @@ def build_parser() -> argparse.ArgumentParser:
     batch_p.add_argument("--fix", action="store_true",
                          help="Correct misspelt towns (unique one-character corrections only; the original is reported).")
     batch_p.add_argument("--jobs", type=int, default=1, help="Worker processes (default: 1).")
+    batch_p.add_argument("--resolve", action="store_true",
+                         help="Add the calibrated resolver's columns (municipality, probability, candidates) "
+                              "for addresses that leave out their municipality.")
+    batch_p.add_argument("--name-column", metavar="COLUMN",
+                         help="With --resolve: column holding a company or facility name to use as evidence.")
 
     _add_toolkit_parsers(subparsers)
     _add_lookup_parsers(subparsers)
@@ -867,7 +872,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             run_batch(Path(args.input), Path(args.output) if args.output else None, fmt=args.format,
                       column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,
                       strict=args.strict, jobs=max(1, args.jobs), autocorrect=args.fix,
-                      header_row=False if args.no_header else None)
+                      header_row=False if args.no_header else None, resolve=args.resolve,
+                      name_column=args.name_column)
             return 0
         except (ValueError, OSError, UnicodeDecodeError) as exc:
             sys.stderr.write(f"Error: {exc}\n")

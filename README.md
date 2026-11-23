@@ -710,8 +710,11 @@ $ jaden batch customers.csv --column 3 -o checked.csv --output-encoding utf-8-si
 
 # Text file with one address per line, JSONL out
 $ jaden batch addresses.txt -o checked.jsonl
+
+# Addresses without their municipality: add the calibrated resolver's columns, using a name column as evidence
+$ jaden batch shops.csv --resolve --name-column 店名 -o resolved.csv
 ```
-Every input row is written back unchanged, followed by `jaden_status`, `jaden_canonical`, `jaden_lg_code`, the address components, `jaden_building` / `jaden_floor` / `jaden_unit`, `jaden_postal_code`, `jaden_kana`, `jaden_romaji`, `jaden_latitude` / `jaden_longitude`, `jaden_verification_level`, `jaden_former_municipality`, `jaden_candidates` and `jaden_message`. From Python, `jaden.batch.flat_record(normalize(a), validate(a))` returns the same flat record.
+Every input row is written back unchanged, followed by `jaden_status`, `jaden_canonical`, `jaden_lg_code`, the address components, `jaden_building` / `jaden_floor` / `jaden_unit`, `jaden_postal_code`, `jaden_kana`, `jaden_romaji`, `jaden_latitude` / `jaden_longitude`, `jaden_verification_level`, `jaden_former_municipality`, `jaden_candidates`, `jaden_message`, `jaden_reason` and `jaden_message_ja`. With `--resolve`, four more: `jaden_resolved_lg_code` and `jaden_resolved_name` (filled only when the answer clears the 1%-risk threshold), `jaden_resolved_probability` and `jaden_resolved_candidates` (the five most likely, with probabilities). From Python, `jaden.batch.flat_record(normalize(a), validate(a))` returns the same flat record.
 
 #### 7. `compare` and `dedupe`: Matching (名寄せ)
 ```bash
