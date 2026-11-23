@@ -158,7 +158,7 @@ def score(batch: List[Item]) -> Tuple[Tally, Any]:
             b = base.components
             if b.building or b.unit or b.floor:
                 tally.add("building", "not scored: the 方書 column holds only part of the building text")
-            elif b.precision in ("municipality", "town", "chome"):
+            elif b.precision in ("municipality", "town", "chome") and not b.numbers_unplaced:
                 tally.add("building", "not scored: the 方書 column holds the house number too")
             elif _address_part(base) == _address_part(res):
                 mine = _squash(" ".join(x for x in (c.building, c.floor, c.unit) if x))
