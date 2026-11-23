@@ -135,19 +135,25 @@ def _tool_list() -> List[Dict[str, Any]]:
 
 def _call(params: Dict[str, Any]) -> Dict[str, Any]:
     name = params.get("name")
-    if name not in TOOLS:
-        raise _RpcError(-32602, f"unknown tool: {name}")
+    if not isinstance(name, str) or name not in TOOLS:
+        raise _RpcError(-32602, f"unknown tool: {name!r}")
     _desc, schema, func = TOOLS[name]
     args = params.get("arguments") or {}
     if not isinstance(args, dict):
         raise _RpcError(-32602, "'arguments' must be an object")
     try:
         for key in schema["required"]:
-            if not isinstance(args.get(key), str):
-                raise ValueError(f"'{key}' is required and must be a string")
+            if key not in args:
+                raise ValueError(f"'{key}' is required")
         unknown = set(args) - set(schema["properties"])
         if unknown:
             raise ValueError(f"unknown argument(s): {', '.join(sorted(unknown))}")
+        for key, value in args.items():      # every argument has the type its schema declares
+            kind = schema["properties"][key].get("type")
+            ok = {"string": isinstance(value, str), "boolean": isinstance(value, bool),
+                  "integer": isinstance(value, int) and not isinstance(value, bool)}.get(kind, True)
+            if not ok:
+                raise ValueError(f"'{key}' must be a {kind}")
         result = func(args)
     except ValueError as exc:   # a tool error is reported to the model, not as a protocol error
         return {"content": [{"type": "text", "text": str(exc)}], "isError": True}
@@ -169,6 +175,8 @@ def handle(message: Any) -> Optional[Dict[str, Any]]:
     method, params, msg_id = message["method"], message.get("params") or {}, message.get("id")
     if "id" not in message:          # notification (initialized, cancelled, ...): no reply
         return None
+    if msg_id is not None and (isinstance(msg_id, bool) or not isinstance(msg_id, (str, int))):
+        return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "invalid request: bad id"}}
     try:
         if not isinstance(params, dict):
             raise _RpcError(-32602, "'params' must be an object")
@@ -213,6 +221,11 @@ def serve_stdio(stdin: TextIO = sys.stdin, stdout: TextIO = sys.stdout) -> int:
             reply: Optional[Dict[str, Any]] = {"jsonrpc": "2.0", "id": None,
                                                "error": {"code": -32700, "message": "parse error"}}
         else:
+            if isinstance(message, list) and not message:
+                reply = {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "invalid request: empty batch"}}
+                stdout.write(json.dumps(reply) + "\n")
+                stdout.flush()
+                continue
             if isinstance(message, list):   # batches (older protocol versions)
                 replies = [r for r in (handle(m) for m in message) if r is not None]
                 if replies:

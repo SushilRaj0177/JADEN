@@ -88,19 +88,19 @@ Medium
 - [x] M1 `duplicate_pairs` silently skips rows past 200 on one block *(bucketed by house and room instead of a 200-row cut; a comparison cap, if ever reached, is reported)*
 - [x] M2 Kana addresses with 条 / 丁目 / 番町 towns accepted with garbage town text *(town readings include their numbers: 春光台四条, 大門七番町, 北一条西; じょう/ちょうめ/ばんち read as 条/丁目/番地)*
 - [x] M3 `building_similarity`: 一号館/二号館, Ⅰ/Ⅱ, A/B, 東/西 called typos; 第1 vs 第一 not equal *(kanji and Roman numerals in digits, wings A/B and 東/西 tell buildings apart; 第1 = 第一)*
-- [ ] M4 JSONL→CSV drops keys missing from the first row; CSV→JSONL loses duplicate headers and extra values
+- [x] M4 JSONL→CSV drops keys missing from the first row; CSV→JSONL loses duplicate headers and extra values *(JSONL headers are the union of every row's keys, nested values written as JSON; CSV rows become objects with repeated names numbered and extra values kept)*
 - [x] M5 Lone surrogates survive cleaning and crash CSV/xlsx output, `jaden stream` and the server (500) *(lone surrogates and more invisible characters removed; every writer tolerates what its encoding cannot hold)*
 - [x] M6 `4-2、8` reads 8 as a room: canonical is not a fixed point, keys differ *(a comma between numbers is a hyphen, after 番/丁目 it goes, before a room or floor it is a space)*
 - [x] M7 `横浜市立第3中学校` accepted as an address *(…市立 followed by a facility word is a name, not an address)*
 - [x] M8 A town from another ward (新宿区芝公園) accepted at municipality level; `xxx-0000` postal codes filled in; 広島市 designated-city code instead of the ward *(rejecting such towns also rejected real addresses missing from the registry, so the address is kept and the municipality where the town is registered is offered in `suggestions`; check_fields reports CITY_MISMATCH; a designated city without a resolvable ward is AMBIGUOUS among its wards; 広島市県広島市 is read as 広島県広島市)*
 - [x] M9 `check_fields` rejects kana prefecture/city fields; status and `valid` disagree after a postal mismatch *(kana fields converted by reading; a form error makes the status MALFORMED with its code)*
-- [ ] M10 Label: postal line not measured, `style='en'` repeats Japanese parts, full-width numbers split
+- [x] M10 Label: postal line not measured, `style='en'` repeats Japanese parts, full-width numbers split *(every line within the width, the postal line included; 'en' splits the English line; numbers such as ４－２－８ never split when a break is possible; overflow as written)*
 - [x] M11 `茶山台99-5-1` accepted (registry spells 一丁, so the 丁目 range check is skipped); README chome_99 claim overstated *(a 丁目 is checked against a 丁 family such as 茶山台一丁–三丁; no 丁目 above 90 is accepted unchecked; a large first number in N-N-N is a lot number)*
 Low
-- [ ] Server: `text/plain; a=json` accepted; JSON numbers refused in POST; chunked bodies mis-parsed; unbounded threads
-- [ ] Gateway: 401s not rate-limited; `/health` location reachable with crafted paths; empty key fails open
-- [ ] MCP: booleans and tool names not type-checked; empty batch gets no reply
+- [x] Server: `text/plain; a=json` accepted; JSON numbers refused in POST; chunked bodies mis-parsed; unbounded threads *(media type must be application/json; numbers accepted; chunked gets 411; 64 connections at once, then 503)*
+- [x] Gateway: 401s not rate-limited; `/health` location reachable with crafted paths; empty key fails open *(refused requests go to a deny upstream, so the rate limit applies; /health proxies to a fixed path; no key gives 503; tested with the nginx image)*
+- [x] MCP: booleans and tool names not type-checked; empty batch gets no reply *(every argument checked against its schema type; ids must be strings or integers; an empty batch gets an error)*
 - [x] xlsx: missing parts give a traceback instead of an error message *(every malformed file is a ValueError, shown as `Error:` with exit 64)*
-- [~] Glued 7-digit postal code before the prefecture; 之 / ノ lot separators; a few invisible characters; `TEL/FAX` and `携帯` numbers; UTF-16 without BOM; integer postal codes losing the leading zero *(all but UTF-16 and lookup_postal(int) done)*
-- [ ] `jaden.frame.records()` builds a new engine per call; `normalize_frame` duplicates existing `jaden_*` columns; CLI accepts `--jobs 0`, `--min-score 5`
-- [ ] `extract_addresses` span runs into the next 〒 code
+- [x] Glued 7-digit postal code before the prefecture; 之 / ノ lot separators; a few invisible characters; `TEL/FAX` and `携帯` numbers; UTF-16 without BOM; integer postal codes losing the leading zero
+- [x] `jaden.frame.records()` builds a new engine per call; `normalize_frame` duplicates existing `jaden_*` columns; CLI accepts `--jobs 0`, `--min-score 5` *(engines cached; earlier result columns replaced; names aligned by index; option values checked; --name-column needs --resolve)*
+- [x] `extract_addresses` span runs into the next 〒 code

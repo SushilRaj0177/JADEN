@@ -1,26 +1,50 @@
 # Rendered by the nginx image with the environment (JADEN_API_KEY) at start-up.
 limit_req_zone $binary_remote_addr zone=jaden_per_ip:10m rate=20r/s;
 
+upstream jaden_api  { server jaden:8000; }
+upstream jaden_deny { server 127.0.0.1:8099; }     # answers 401 (below)
+
+# Requests with the right key go to JADEN, all others to the 401 server. Choosing the upstream (instead of
+# answering 401 with 'return', which nginx runs before any rate limit) keeps refused requests rate-limited.
+map $http_x_api_key $jaden_upstream {
+    default              jaden_deny;
+    "${JADEN_API_KEY}"   jaden_api;
+}
+# An empty or unset key would match a request without the header: then every request is refused
+map "${JADEN_API_KEY}" $jaden_key_configured {
+    ""      0;
+    default 1;
+}
+
 server {
     listen 8080;
     client_max_body_size 2m;
     client_body_timeout 30s;
     default_type application/json;   # for the gateway's own error replies
+    limit_req zone=jaden_per_ip burst=40 nodelay;
+    limit_req_status 429;
 
-    # The health check needs no key
+    # The health check needs no key. The upstream path is fixed, so no other path can be reached through
+    # this location ('/v1/normalize%23/../../health' is normalized to /health and still only reaches /health)
     location = /health {
-        proxy_pass http://jaden:8000;
+        proxy_pass http://jaden_api/health;
     }
 
     location / {
-        if ($http_x_api_key != "${JADEN_API_KEY}") {
-            return 401 '{"error": {"code": "unauthorized", "message": "missing or wrong X-API-Key"}}';
+        if ($jaden_key_configured = 0) {
+            return 503 '{"error": {"code": "not_configured", "message": "the gateway has no API key set"}}';
         }
-        limit_req zone=jaden_per_ip burst=40 nodelay;
-        limit_req_status 429;
-        proxy_pass http://jaden:8000;
+        proxy_pass http://$jaden_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_read_timeout 120s;
+    }
+}
+
+server {
+    listen 127.0.0.1:8099;
+    default_type application/json;
+    location / {
+        return 401 '{"error": {"code": "unauthorized", "message": "missing or wrong X-API-Key"}}';
     }
 }

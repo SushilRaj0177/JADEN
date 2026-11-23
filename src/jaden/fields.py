@@ -56,14 +56,8 @@ def _clean(value: Any) -> str:
 
 
 def _postal_text(value: Any) -> str:
-    """A postal code given as a number (a spreadsheet drops the leading zero of 0600063) back as 7 digits."""
-    if isinstance(value, bool):
-        return ""
-    if isinstance(value, float) and value.is_integer():
-        value = int(value)
-    if isinstance(value, int) and 0 <= value < 10_000_000:
-        return f"{value:07d}"
-    return _clean(value)
+    from .core.text import postal_text
+    return unicodedata.normalize("NFKC", postal_text(value)).strip()
 
 
 _KANA_ONLY = re.compile(r"[ぁ-ゖァ-ヺー・\s]+")

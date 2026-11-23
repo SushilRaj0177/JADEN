@@ -617,7 +617,7 @@ def build_parser() -> argparse.ArgumentParser:
     batch_p.add_argument("--strict", action="store_true", help="Require town-level verification for ACCEPTED.")
     batch_p.add_argument("--fix", action="store_true",
                          help="Correct misspelt towns (unique one-character corrections only; the original is reported).")
-    batch_p.add_argument("--jobs", type=int, default=1, help="Worker processes (default: 1).")
+    batch_p.add_argument("--jobs", type=_positive_int, default=1, help="Worker processes (default: 1).")
     batch_p.add_argument("--resolve", action="store_true",
                          help="Add the calibrated resolver's columns (municipality, probability, candidates) "
                               "for addresses that leave out their municipality.")
@@ -682,8 +682,10 @@ def _add_toolkit_parsers(subparsers: Any) -> None:
                       help="How precisely addresses must agree (default: unit = same house and same room).")
     dd_p.add_argument("--pairs", metavar="FILE",
                       help="Also write likely duplicate pairs (same block) to this CSV, with a score and the reasons; "
-                           "catches near-matches such as a misspelt building name or a missing room.")
-    dd_p.add_argument("--min-score", type=float, default=0.5, help="Lowest pair score written with --pairs (default: 0.5).")
+                           "catches near-matches such as a misspelt building name or a missing room. row_a and "
+                           "row_b count data rows from 1 (a header row is not counted).")
+    dd_p.add_argument("--min-score", type=_score, default=0.5,
+                      help="Lowest pair score written with --pairs, from 0 to 1 (default: 0.5).")
 
 
 def _label_size(value: str) -> Tuple[int, int]:
@@ -693,8 +695,21 @@ def _label_size(value: str) -> Tuple[int, int]:
     return int(m.group(1)), int(m.group(2))
 
 
+def _score(value: str) -> float:
+    try:
+        number = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a number from 0 to 1") from None
+    if not 0 <= number <= 1:
+        raise argparse.ArgumentTypeError("must be a number from 0 to 1")
+    return number
+
+
 def _positive_int(value: str) -> int:
-    number = int(value)
+    try:
+        number = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a whole number") from None
     if number < 1:
         raise argparse.ArgumentTypeError("must be at least 1")
     return number
@@ -806,6 +821,9 @@ def _resolve_one(args: argparse.Namespace) -> int:
 
 def _handle_stream(args: argparse.Namespace) -> int:
     from .frame import stream
+    if args.name_column and not args.resolve:
+        sys.stderr.write("Error: --name-column is evidence for --resolve; add --resolve.\n")
+        return EX_USAGE
     reconfigure = getattr(sys.stdin, "reconfigure", None)
     if reconfigure is not None:
         reconfigure(encoding="utf-8", errors="replace")
@@ -954,6 +972,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.command == "batch":
         from pathlib import Path
         from .batch import run_batch
+        if args.name_column and not args.resolve:
+            sys.stderr.write("Error: --name-column is evidence for --resolve; add --resolve.\n")
+            return EX_USAGE
         try:
             run_batch(Path(args.input), Path(args.output) if args.output else None, fmt=args.format,
                       column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,

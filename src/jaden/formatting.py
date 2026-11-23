@@ -111,72 +111,94 @@ def _measure(text: str, count: str) -> int:
     return sum(1 if (ord(ch) < 0x80 or 0xFF61 <= ord(ch) <= 0xFF9F) else 2 for ch in text)
 
 
-def _cut(text: str, width: int, count: str) -> Tuple[str, str]:
-    """The longest head of ``text`` that fits, not ending inside a run of digits when that can be avoided."""
+def _in_number(text: str, at: int) -> bool:
+    """True when a cut before ``text[at]`` would split a number such as '4-2-8' or '４－２－８'."""
+    if not 0 < at < len(text):
+        return False
+    before, after = text[at - 1], text[at]
+    dash = "-－‐"
+    joined = (before.isdigit() and (after.isdigit() or after in dash)) or (before in dash and after.isdigit())
+    return joined
+
+
+def _cut(text: str, width: int, count: str) -> Tuple[str, str, bool]:
+    """(the longest head of ``text`` that fits, the rest, whether the cut fell inside a word). A number
+    such as '4-2-8' is never split when the line can break before it."""
     end = 0
     while end < len(text) and _measure(text[:end + 1], count) <= width:
         end += 1
-    if 0 < end < len(text) and text[end - 1].isdigit() and text[end].isdigit():
+    if _in_number(text, end):
         back = end
-        while back > 0 and text[back - 1].isdigit():
+        while back > 0 and _in_number(text, back):
             back -= 1
         if back > 0:
             end = back
-    return text[:end].rstrip(), text[end:].lstrip()
+    inside = 0 < end < len(text) and not text[end - 1].isspace() and not text[end].isspace()
+    return text[:end].rstrip(), text[end:].lstrip(), inside
 
 
 def label_lines(res: NormalizedAddress, width: int = 20, max_lines: int = 3, count: str = "chars",
                 style: str = "hyphen", fullwidth: bool = False, postal_line: bool = False) -> LabelLines:
     """The address in at most ``max_lines`` lines of at most ``width`` characters (or Shift_JIS bytes),
-    broken between its parts: prefecture and municipality, town and numbers, building, floor and room.
-    A part longer than a line is cut, never inside a number. ``fullwidth`` writes digits, letters and
-    hyphens in full width, as many label systems require."""
+    broken between its parts: prefecture and municipality, town and numbers, building, floor and room
+    ('en': between the comma-separated parts of the English line). A part longer than a line is cut,
+    never inside a number when the line can break before it. ``fullwidth`` writes digits, letters and
+    hyphens in full width, as many label systems require. Every line, the postal line included, is
+    within ``width``; ``overflow`` is what did not fit, as written."""
     if width < 4 or max_lines < 1:
         raise ValueError("width must be at least 4 and max_lines at least 1")
     if count not in ("chars", "bytes"):
         raise ValueError("count must be 'chars' or 'bytes'")
+    if style not in STYLES:
+        raise ValueError(f"unknown style '{style}'; use one of {', '.join(STYLES)}")
     c = res.components
-    text = format_address(res, style)
-    tail = _secondary(res)
     resolved = res.confidence_score > 0 and bool(c.lg_code) and not c.is_ambiguous
-    # (text, joined to the previous part with a space): the prefecture, county, municipality and town
-    # run together as written; the building and the room are set apart
-    parts: List[Tuple[str, bool]] = []
-    if resolved:
+    # (text, what joins it to the previous part on one line)
+    parts: List[Tuple[str, str]] = []
+    if style == "en" and resolved and res.romaji:
+        pieces = res.romaji.split(", ")
+        parts = [(p if i == len(pieces) - 1 else p + ",", " ") for i, p in enumerate(pieces)]
+    elif resolved:
+        text = format_address(res, "canonical" if style == "en" else style)
+        tail = _secondary(res)
         body = text[: len(text) - len(tail)].rstrip() if tail and text.endswith(tail) else text
         admin = _admin_part(res)
         if body.startswith(admin):
             muni = admin[len(c.prefecture or "") + len(c.county or ""):]
-            parts += [(c.prefecture or "", False), (c.county or "", False), (muni, False), (body[len(admin):], False)]
+            parts += [(c.prefecture or "", ""), (c.county or "", ""), (muni, ""), (body[len(admin):], "")]
         else:
-            parts.append((body, False))
-        parts += [(c.building or "", True), (" ".join(x for x in (c.floor, c.unit) if x), True)]
+            parts.append((body, ""))
+        parts += [(c.building or "", " "), (" ".join(x for x in (c.floor, c.unit) if x), " ")]
     else:
-        parts.append((text, False))
+        parts.append((res.canonical, ""))
     parts = [(t, sp) for t, sp in parts if t]
     if fullwidth:
-        parts = [(t.translate(_TO_FULLWIDTH), sp) for t, sp in parts]
-    space = "　" if fullwidth else " "
+        parts = [(t.translate(_TO_FULLWIDTH), sp.translate(_TO_FULLWIDTH)) for t, sp in parts]
 
-    lines: List[str] = []
+    # Lines as (text, what joins it to the previous line in the overflow: the part separator, or '' when
+    # the line continues a cut word)
+    lines: List[Tuple[str, str]] = []
     if postal_line and c.postal_code:
-        lines.append(f"〒{c.postal_code}".translate(_TO_FULLWIDTH) if fullwidth else f"〒{c.postal_code}")
-    current = ""
-    for part, spaced in parts:
-        joined = f"{current}{space if spaced else ''}{part}"
-        if current and _measure(joined, count) <= width:
+        postal = f"〒{c.postal_code}"
+        parts.insert(0, (postal.translate(_TO_FULLWIDTH) if fullwidth else postal, ""))
+    current, current_join = "", ""
+    for index, (part, joiner) in enumerate(parts):
+        own_line = postal_line and c.postal_code and index <= 1      # the postal code stands alone
+        joined = f"{current}{joiner}{part}"
+        if current and not own_line and _measure(joined, count) <= width:
             current = joined
             continue
         if current:
-            lines.append(current)
-        current = part
+            lines.append((current, current_join))
+        current, current_join = part, joiner
         while _measure(current, count) > width:
-            head, current = _cut(current, width, count)
+            head, current, inside = _cut(current, width, count)
             if not head:
-                head, current = current[:1], current[1:]
-            lines.append(head)
+                head, current, inside = current[:1], current[1:], True
+            lines.append((head, current_join))
+            current_join = "" if inside else " "
     if current:
-        lines.append(current)
+        lines.append((current, current_join))
     fits = len(lines) <= max_lines
-    return LabelLines(tuple(lines[:max_lines]), fits, width, count,
-                      "" if fits else space.join(lines[max_lines:]))
+    overflow = "".join(join + text for text, join in lines[max_lines:]).lstrip()
+    return LabelLines(tuple(t for t, _ in lines[:max_lines]), fits, width, count, "" if fits else overflow)

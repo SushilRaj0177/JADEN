@@ -39,6 +39,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 MAX_BODY_BYTES = 2 * 1024 * 1024
 MAX_EXTRACT_CHARS = 100_000      # extraction time grows with the text; more than this is not one document
 SOCKET_TIMEOUT = 30              # seconds a client may take to send its request
+MAX_CONNECTIONS = 64             # connections served at once; more get 503 instead of a thread each
 DEFAULT_MAX_BATCH = 1000
 _WEB_DIR = Path(__file__).parent / "web"
 
@@ -69,6 +70,19 @@ def _optional_text(params: Dict[str, Any], name: str) -> str:
     if not isinstance(value, str):
         raise ApiError(400, "bad_parameter", f"parameter '{name}' must be a string")
     return value
+
+
+def _number(params: Dict[str, Any], name: str) -> float:
+    """A required number, given as a JSON number or as text."""
+    value = params.get(name)
+    if value is None or (isinstance(value, str) and not value.strip()):
+        raise ApiError(400, "missing_parameter", f"parameter '{name}' is required")
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        raise ApiError(400, "bad_parameter", f"parameter '{name}' must be a number")
+    try:
+        return float(value)
+    except ValueError:
+        raise ApiError(400, "bad_parameter", f"parameter '{name}' must be a number") from None
 
 
 def _int(params: Dict[str, Any], name: str, default: int, low: int, high: int) -> int:
@@ -211,8 +225,8 @@ class JadenApi:
 
     def reverse(self, params: Dict[str, Any]) -> Any:
         from .lookup import reverse_geocode
+        lat, lon = _number(params, "lat"), _number(params, "lon")
         try:
-            lat, lon = float(_required(params, "lat")), float(_required(params, "lon"))
             found = reverse_geocode(lat, lon, limit=_int(params, "limit", 1, 1, 20))
         except ValueError as exc:
             raise ApiError(400, "bad_parameter", str(exc) or "lat and lon must be numbers") from None
@@ -360,6 +374,11 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
             self._dispatch({})
 
         def do_POST(self) -> None:
+            if "chunked" in (self.headers.get("Transfer-Encoding") or "").lower():
+                # The body length must be known before reading it
+                self.close_connection = True
+                self._error(ApiError(411, "length_required", "send the body with a Content-Length header"))
+                return
             try:
                 length = int(self.headers.get("Content-Length") or 0)
             except ValueError:
@@ -371,8 +390,8 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
                 self.close_connection = True
                 self._error(ApiError(413, "too_large", f"request body is limited to {MAX_BODY_BYTES} bytes"))
                 return
-            content_type = (self.headers.get("Content-Type") or "").lower()
-            if length and "json" not in content_type:
+            media_type = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+            if length and media_type != "application/json":
                 self.close_connection = True
                 self._error(ApiError(415, "unsupported_media_type", "send the body as application/json"))
                 return
@@ -400,9 +419,41 @@ def create_server(host: str = "127.0.0.1", port: int = 8000, cors: Optional[str]
     api = JadenApi(max_batch=max_batch)
     if warm_up:
         api.warm_up()
-    server = ThreadingHTTPServer((host, port), _make_handler(api, cors, quiet))
+    server = _BoundedServer((host, port), _make_handler(api, cors, quiet))
     server.daemon_threads = True
     return server
+
+
+class _BoundedServer(ThreadingHTTPServer):
+    """A thread per connection, up to MAX_CONNECTIONS at once; beyond that the connection gets 503 at once,
+    so slow or idle clients cannot make the server start threads without limit."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        import threading
+        super().__init__(*args, **kwargs)
+        self._slots = threading.BoundedSemaphore(MAX_CONNECTIONS)
+
+    def process_request(self, request: Any, client_address: Any) -> None:
+        if not self._slots.acquire(blocking=False):
+            try:
+                body = b'{"error": {"code": "busy", "message": "too many connections; try again"}}'
+                request.sendall(b"HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\n"
+                                b"Content-Length: " + str(len(body)).encode() + b"\r\nConnection: close\r\n\r\n" + body)
+            except OSError:
+                pass
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self._slots.release()
+            raise
+
+    def process_request_thread(self, request: Any, client_address: Any) -> None:
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._slots.release()
 
 
 def serve(host: str = "127.0.0.1", port: int = 8000, cors: Optional[str] = None, quiet: bool = False,

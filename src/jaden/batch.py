@@ -145,8 +145,12 @@ def read_text(path: Path, encoding: Optional[str]) -> str:
         return raw.decode(encoding)
     if raw.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
         return raw.decode("utf-16")
-    if len(raw) >= 4 and raw.count(b"\x00") > len(raw) // 4:
-        return raw.decode("utf-16-le" if raw[1:2] == b"\x00" else "utf-16-be", errors="replace")
+    # UTF-16 without a byte-order mark: the zero bytes of ASCII (digits, newlines) sit at odd offsets in
+    # little-endian text and at even offsets in big-endian text, wherever the first character is kanji
+    zeros_odd, zeros_even = raw[1::2].count(0), raw[0::2].count(0)
+    if len(raw) >= 4 and len(raw) % 2 == 0 and max(zeros_odd, zeros_even) >= max(2, len(raw) // 16) \
+            and min(zeros_odd, zeros_even) * 4 < max(zeros_odd, zeros_even):
+        return raw.decode("utf-16-le" if zeros_odd > zeros_even else "utf-16-be", errors="replace")
     try:
         return raw.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -285,6 +289,38 @@ def read_rows(text: str, fmt: str, column: Optional[str],
     return ["address"], gen_txt()
 
 
+def _cell(value: Any) -> Any:
+    """A JSON value as a spreadsheet cell: nested objects and lists as JSON text, null as empty."""
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False)
+    return value
+
+
+def _named(header: Sequence[str], values: Sequence[Any]) -> Dict[str, Any]:
+    """A CSV row as an object with nothing lost: a repeated column name gets '_2', '_3'; values beyond the
+    header get 'column4', 'column5' (counted from 1)."""
+    out: Dict[str, Any] = {}
+    for i, value in enumerate(values):
+        name = header[i] if i < len(header) and header[i] else f"column{i + 1}"
+        key, n = name, 1
+        while key in out:
+            n += 1
+            key = f"{name}_{n}"
+        out[key] = value
+    return out
+
+
+def _union_header(rows: Sequence[Tuple[Row, str]]) -> List[str]:
+    """Every key of a file of JSON objects, in the order they first appear (not only the first row's)."""
+    names: Dict[str, None] = {}
+    for row, _ in rows:
+        if isinstance(row, dict):
+            names.update(dict.fromkeys(row))
+    return list(names)
+
+
 class _Writer:
     """Writes input rows with result columns appended, by position for CSV / TSV (nothing overwritten)."""
 
@@ -302,7 +338,8 @@ class _Writer:
         else:
             row = [encodable(v) if isinstance(v, str) else v for v in row]
         if self.out_fmt == "jsonl":
-            base = row if isinstance(row, dict) else {"address": row[0]} if len(row) == 1 else dict(zip(self.header, row))
+            base = row if isinstance(row, dict) else {"address": row[0]} if len(row) == 1 and not self.header \
+                else _named(self.header, row)
             self.stream.write(json.dumps({**base, "jaden": rec}, ensure_ascii=False) + "\n")
             return
         if self.writer is None:
@@ -311,7 +348,7 @@ class _Writer:
             self.header = names
             self.writer.writerow(names + self.result_names)
         if isinstance(row, dict):
-            values = [("" if row.get(n) is None else row.get(n)) for n in self.header]
+            values = [_cell(row.get(n)) for n in self.header]
         else:
             values = list(row) + [""] * (len(self.header) - len(row))
         self.writer.writerow(values + [("" if v is None else v) for v in rec.values()])
@@ -340,6 +377,8 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     in_fmt, out_fmt, to_stdout = _formats(input_path, output, fmt)
     header, rows, in_fmt = _load(input_path, in_fmt, encoding, column, header_row)
     materialized = list(rows)
+    if in_fmt == "jsonl":
+        header = _union_header(materialized)
     side_of = _side_reader(header, in_fmt, name_column)
 
     out_stream, out_fmt, finish = _open_output(output, out_fmt, to_stdout, out_encoding)
@@ -393,6 +432,8 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     in_fmt, out_fmt, to_stdout = _formats(input_path, output, fmt)
     header, rows, in_fmt = _load(input_path, in_fmt, encoding, column, header_row)
     materialized = list(rows)
+    if in_fmt == "jsonl":
+        header = _union_header(materialized)
     engine = get_engine()
 
     records: List[Dict[str, Any]] = []

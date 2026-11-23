@@ -32,7 +32,7 @@ _PREFECTURE = re.compile(
 
 # Where an address certainly ends
 _HARD_STOP = re.compile(
-    r"[\n\r。！？!?、，,；;「」『』【】〔〕<>＜＞|｜/／\t]"
+    r"[\n\r。！？!?、，,；;「」『』【】〔〕<>＜＞|｜/／\t〒]"
     r"|[（()）]"
     r"|\s{2,}|　{2,}"
     r"|\s*(?:TEL|Tel|tel|ＴＥＬ|電話|FAX|Fax|fax|ＦＡＸ|℡|☎|📞|E-?mail|Mail|メール|URL|https?:|www\.|営業時間|定休日|"

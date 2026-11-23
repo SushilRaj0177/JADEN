@@ -29,3 +29,15 @@ def as_text(value: Any) -> str:
     if type(value).__name__ in ("NAType", "NaTType"):
         return ""
     return str(value)
+
+
+def postal_text(value: Any) -> str:
+    """A postal code as text. One given as a number (a spreadsheet drops the leading zero of 0600063) comes
+    back as its seven digits."""
+    if isinstance(value, bool):
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if isinstance(value, int) and 0 <= value < 10_000_000:
+        return f"{value:07d}"
+    return as_text(value)

@@ -128,8 +128,8 @@ def lookup_postal(postal_code: str) -> List[PostalAddress]:
     Most codes cover one town; some cover several towns or municipalities, and codes of large
     buildings name the building. Returns [] for an unknown or malformed code.
     """
-    from .core.text import as_text
-    digits = re.sub(r"[^\d]", "", unicodedata.normalize("NFKC", as_text(postal_code)))
+    from .core.text import postal_text
+    digits = re.sub(r"[^\d]", "", unicodedata.normalize("NFKC", postal_text(postal_code)))
     if len(digits) != 7:
         return []
     gaz = get_gazetteer()

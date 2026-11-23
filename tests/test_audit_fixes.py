@@ -1014,3 +1014,137 @@ def test_a_designated_city_without_its_ward_is_not_accepted_with_the_city_code()
 def test_chome_beyond_a_numbered_town_family_does_not_exist(text: str) -> None:
     assert jaden.validate(text).reason == "NONEXISTENT_CHOME"
     assert jaden.validate("大阪府堺市南区茶山台2-5-1").status == "ACCEPTED"
+
+
+# ---------------------------------------------------------------- final scan, round 1: files, labels, server, MCP, CLI
+def test_jsonl_to_csv_keeps_every_key_and_csv_to_jsonl_every_value(tmp_path) -> None:
+    import csv
+    import io
+    from jaden.batch import run_batch
+    src = tmp_path / "in.jsonl"
+    src.write_text('{"address": "港区芝公園4-2-8", "id": 1}\n'
+                   '{"address": "府中市1-1", "id": 2, "phone": "03-1111", "tags": ["a", "b"]}\n', encoding="utf-8")
+    run_batch(src, tmp_path / "out.csv", log=io.StringIO())
+    rows = list(csv.DictReader(open(tmp_path / "out.csv", encoding="utf-8")))
+    assert rows[1]["phone"] == "03-1111" and json.loads(rows[1]["tags"]) == ["a", "b"]
+    src = tmp_path / "in.csv"
+    src.write_text("住所,メモ,メモ\n港区芝公園4-2-8,a,b,c\n", encoding="utf-8")
+    run_batch(src, tmp_path / "out.jsonl", log=io.StringIO())
+    row = json.loads(open(tmp_path / "out.jsonl", encoding="utf-8").readline())
+    assert {k: row[k] for k in ("住所", "メモ", "メモ_2", "column4")} == \
+        {"住所": "港区芝公園4-2-8", "メモ": "a", "メモ_2": "b", "column4": "c"}
+
+
+def test_labels_keep_every_line_within_the_width() -> None:
+    res = jaden.normalize("東京都港区芝公園4-2-8 グランドメゾン芝公園302号室")
+    for width in range(4, 30):
+        for kw in ({}, {"postal_line": True}, {"fullwidth": True}, {"count": "bytes"}, {"style": "en"}):
+            label = res.label(width=width, max_lines=9, **kw)
+            measure = (lambda t: len(t.encode("cp932"))) if kw.get("count") == "bytes" else len
+            assert all(measure(line) <= width for line in label.lines), (width, kw, label.lines)
+    assert res.label(width=12, fullwidth=True).lines[1] == "芝公園４－２－８"
+    assert res.label(width=9, fullwidth=True).overflow == "園　３０２号室"
+    en = res.label(width=30, max_lines=5, style="en").lines
+    assert "".join(en).count("グランドメゾン") == 1 and "4-2-8 Shibakoen, Minato-ku," in en
+
+
+def test_extract_stops_at_the_next_postal_code() -> None:
+    found = jaden.extract_addresses("〒105-0011東京都港区芝公園4-2-8〒160-0023東京都新宿区西新宿2-8-1")
+    assert [x.to_dict()["text"] for x in found] == ["〒105-0011東京都港区芝公園4-2-8", "〒160-0023東京都新宿区西新宿2-8-1"]
+
+
+def test_bom_less_utf16_and_integer_postal_codes(tmp_path) -> None:
+    from jaden.batch import read_text
+    for enc in ("utf-16-le", "utf-16-be"):
+        path = tmp_path / f"{enc}.txt"
+        path.write_bytes("東京都港区芝公園4-2-8\n大阪府大阪市北区梅田3-1-1\n".encode(enc))
+        assert read_text(path, None).startswith("東京都港区")
+    assert jaden.lookup_postal(600063) and jaden.lookup_postal(600063)[0].postal_code == "060-0063"
+
+
+def test_pandas_helper_reuses_its_engine_and_replaces_earlier_results() -> None:
+    pd = pytest.importorskip("pandas")
+    from jaden.frame import normalize_frame, records
+    started = time.perf_counter()
+    for _ in range(100):
+        list(records(["港区芝公園4-2-8"]))
+    assert time.perf_counter() - started < 2
+    df = pd.DataFrame({"住所": ["港区芝公園4-2-8"], "name": ["x"]}, index=[5])
+    once = normalize_frame(df, "住所")
+    twice = normalize_frame(once, "住所")
+    assert list(twice.columns).count("jaden_status") == 1
+    names = pd.Series(["a", "b"], index=[6, 5])
+    from jaden.frame import normalize_series
+    out = normalize_series(pd.Series(["錦町1番2号"], index=[5]), resolve=True, names=names)
+    assert list(out.index) == [5]
+
+
+def test_server_rejects_non_json_and_chunked_bodies_and_takes_numbers(base_server) -> None:
+    import http.client
+    host, port = base_server
+    conn = http.client.HTTPConnection(host, port, timeout=5)
+    conn.request("POST", "/v1/normalize", body=b'{"q": "x"}', headers={"Content-Type": "text/plain; a=json"})
+    assert conn.getresponse().status == 415
+    conn = http.client.HTTPConnection(host, port, timeout=5)
+    conn.putrequest("POST", "/v1/normalize")
+    conn.putheader("Content-Type", "application/json")
+    conn.putheader("Transfer-Encoding", "chunked")
+    conn.endheaders()
+    conn.send(b"a\r\n{\"q\":\"x\"}\r\n0\r\n\r\n")
+    assert conn.getresponse().status == 411
+    conn = http.client.HTTPConnection(host, port, timeout=5)
+    conn.request("POST", "/v1/reverse", body=json.dumps({"lat": 35.6586, "lon": 139.7454}).encode(),
+                 headers={"Content-Type": "application/json; charset=utf-8"})
+    resp = conn.getresponse()
+    assert resp.status == 200 and json.loads(resp.read())["results"]
+
+
+def test_server_caps_concurrent_connections(monkeypatch) -> None:
+    import socket
+    import threading
+    import jaden.server as srv
+    monkeypatch.setattr(srv, "MAX_CONNECTIONS", 4)
+    server = srv.create_server(port=0, quiet=True, warm_up=False)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    host, port = server.server_address[:2]
+    idle = [socket.create_connection((host, port)) for _ in range(4)]
+    time.sleep(0.3)
+    extra = socket.create_connection((host, port))
+    extra.settimeout(5)
+    assert b"503" in extra.recv(200)
+    for s in idle + [extra]:
+        s.close()
+    server.shutdown()
+    server.server_close()
+
+
+@pytest.fixture(scope="module")
+def base_server():
+    import threading
+    from jaden.server import create_server
+    server = create_server(port=0, quiet=True)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield server.server_address[:2]
+    server.shutdown()
+    server.server_close()
+
+
+def test_mcp_checks_argument_types_ids_and_empty_batches() -> None:
+    replies = _mcp("[]", {"jsonrpc": "2.0", "id": {"x": 1}, "method": "ping"},
+                   {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": ["x"]}},
+                   {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                    "params": {"name": "normalize_address", "arguments": {"address": "港区芝公園4-2-8", "strict": "false"}}})
+    assert replies[0]["error"]["code"] == -32600 and replies[1]["error"]["code"] == -32600
+    assert replies[2]["error"]["code"] == -32602
+    assert replies[3]["result"]["isError"] and "boolean" in replies[3]["result"]["content"][0]["text"]
+
+
+@pytest.mark.parametrize("args", [["batch", "x.csv", "--jobs", "0"], ["dedupe", "x.csv", "--min-score", "5"],
+                                  ["batch", "x.csv", "--name-column", "n"]])
+def test_cli_refuses_bad_option_values(args) -> None:
+    from jaden.cli import main
+    try:
+        code = main(args)
+    except SystemExit as exc:
+        code = exc.code
+    assert code in (2, 64)
