@@ -100,16 +100,24 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
     if not numbers:
         numbers = [n for n in (c.banchi, c.edaban) if n is not None]
     number_str = "-".join(str(n) for n in numbers)
+    if c.lot_number:
+        number_str = c.lot_number          # a three-part lot ('17-24-13') or one written without a number
 
     first = []
+    written = re.sub(r"^大字", "", c.town or "")
     if town is not None:
         if not town.romaji:
             return None
         town_words = " ".join(_words(town.romaji))
+        base, plain = town.name.replace("大字", ""), written.replace("大字", "")
+        if plain.startswith(base) and plain[len(base):]:
+            town_words += " " + plain[len(base):]       # a 字 below the town has no reading: kept as written
         if c.hokkaido_grid is not None and c.hokkaido_grid.chome is not None and c.ban is None and c.banchi is None:
             first.append(f"{town_words} {c.hokkaido_grid.chome}-chome")
         else:
             first.append(f"{number_str} {town_words}".strip())
+    elif written and c.hokkaido_grid is None:
+        first.append(f"{number_str} {written}".strip())   # a town the registry does not hold, as written
     elif number_str:
         first.append(number_str)
 

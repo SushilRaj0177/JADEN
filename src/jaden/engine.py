@@ -38,6 +38,20 @@ from .romaji import looks_romanized, romaji_to_japanese
 from .kana_input import kana_to_japanese, looks_kana
 from .core.text import as_text
 
+# A town with a number and a direction ('本郷通6-南1-1' for 本郷通六丁目南 1-1)
+_CHOME_DIRECTION_SHORT: Final[re.Pattern[str]] = re.compile(
+    r"^(?P<base>[^\d\s]+?)(?P<n>\d{1,2})-?(?P<dir>[東西南北])(?P<rest>\d.*)$")
+
+
+def _kanji_numeral(n: int) -> str:
+    """6 -> '六', 12 -> '十二', 20 -> '二十' (as town names write their numbers)."""
+    digits = "〇一二三四五六七八九"
+    if n < 10:
+        return digits[n]
+    tens, ones = divmod(n, 10)
+    return (digits[tens] if tens > 1 else "") + "十" + (digits[ones] if ones else "")
+
+
 # A room or floor written first ('703号室', '3F', '201室')
 _ROOM_OR_FLOOR_FIRST: Final[re.Pattern[str]] = re.compile(r"\d+\s*(?:号室|室|階|[FfＦ](?![a-z])|ごうしつ)")
 # Words of a facility name: '横浜市立第3中学校', '札幌市立白石中学校'
@@ -469,6 +483,29 @@ class AddressNormalizer:
                     ambiguous_candidates = ()
                     candidate_records = ()
                     tier_map["prefecture"] = TaxonomyTier.TIER_2_CONVENTIONAL.value
+
+        # A town typed in kana after the municipality ('旭川市しゅんこうだい4じょう1-2-3'): read it by its full
+        # reading, numbers included, as the all-kana input is ('シュンコウダイ4ジヨウ' is 春光台四条); before the
+        # Hokkaido grid parser, so 'きた1じょうにし2ちょうめ' becomes the grid 北1条西2丁目
+        if muni_rec is not None and not is_ambiguous and re.match(r"[ぁ-ゖァ-ヺ]", text_after_conventions.strip()):
+            from .kana_input import kana_town_in
+            converted = kana_town_in(self.registry.wards_of(muni_rec) or [muni_rec], text_after_conventions.strip())
+            if converted is not None:
+                text_after_conventions, kana_note = converted
+                notes.append(kana_note)
+
+        # '本郷通6-南1-1', '本郷通6南1-1': Sapporo's 本郷通六丁目南 written with the 丁目 left out
+        directional = _CHOME_DIRECTION_SHORT.match(text_after_conventions.strip())
+        if directional and muni_rec is not None and not is_ambiguous and self.gazetteer is not None:
+            name = (f"{directional.group('base')}{_kanji_numeral(int(directional.group('n')))}丁目"
+                    f"{directional.group('dir')}")
+            towns_of = self.gazetteer.towns_in
+            if any(any(e.name == name for e in towns_of(m.lg_code).values())
+                   for m in (self.registry.wards_of(muni_rec) or [muni_rec])):
+                text_after_conventions = (f"{directional.group('base')}{directional.group('n')}丁目"
+                                          f"{directional.group('dir')}{directional.group('rest')}")
+                notes.append(f"read '{directional.group(0)[:len(directional.group(0)) - len(directional.group('rest'))]}'"
+                             f" as the registered town {name}")
 
         # 4b. Hokkaido Jo-Chome Grid Parser
         is_hokkaido_candidate = (
@@ -1037,6 +1074,23 @@ class AddressNormalizer:
             canonical_str = base_addr
 
         town_verified = town_res.town_verified if town_res else None
+        numbers_unplaced = False
+        if (muni_rec is not None and not is_ambiguous and gaz is not None and has_numbers and not town_text
+                and hokkaido_clause is None and kyoto_clause is None):
+            if self.registry.wards_of(muni_rec):
+                # '広島県広島市1-1': numbers in a designated city, with neither ward nor town
+                notes.append(f"no ward or town is written: the numbers cannot be placed in {muni_rec.name}")
+                is_ambiguous = True
+                ambiguous_candidates = tuple(f"{w.prefecture_name}{w.name} ({w.lg_code})"
+                                             for w in self.registry.wards_of(muni_rec))
+                lg_code = None
+            elif lg_code and gaz.has_municipality(lg_code) and len(gaz._postal_rows(lg_code)) > 1 and \
+                    sum(1 for e in gaz.towns_in(lg_code).values() if not e.name.startswith("字")) > 1:
+                # Where Japan Post lists no town ('南箕輪村6744-7') or every town is a 字 ('檜枝岐村1234'),
+                # lot numbers run across the municipality and the address is whole without one
+                # '東京都新宿区1-1': the municipality has towns and none is written, so the numbers place nothing
+                numbers_unplaced = True
+                notes.append(f"no town is written: the numbers cannot be placed in {muni_rec.name}")
         if (town_res is not None and town_res.municipality is None and town_text and muni_rec is not None
                 and not is_ambiguous and gaz is not None and self.registry.wards_of(muni_rec)):
             # A designated city whose wards were searched without success ('札幌市立白石中学校'): the
@@ -1126,6 +1180,7 @@ class AddressNormalizer:
             lot_number=lot_number,
             town_registered_elsewhere=registered_elsewhere,
             former_municipality=former_name,
+            numbers_unplaced=numbers_unplaced,
         )
 
         # Offline location: the 丁目 / town representative point
@@ -1578,7 +1633,8 @@ class AddressNormalizer:
         c = res.components
         level = _verification_level(c)
         warnings = tuple(res.notes)
-        if c.lg_code and c.precision in ("municipality", "town", "chome") and res.confidence_score > 0:
+        if c.lg_code and c.precision in ("municipality", "town", "chome") and res.confidence_score > 0 \
+                and not c.numbers_unplaced:
             warnings += ("no block or lot number: this locates an area, not a building",)
         if c.chome_unlisted:
             warnings += (f"{c.chome}丁目 is not in the registry for {c.town}: accepted, but not verified",)

@@ -639,6 +639,18 @@ class Gazetteer:
         cell_m = _CELL_DEG * 111_000 * min(1.0, max(cos_lat, 0.5))
         ring = 0
         max_ring = int(max_km * 1000 / cell_m) + 2
+        if max_ring > 300:
+            # A wide search (or a point far from Japan): reading every point once is cheaper than walking
+            # rings of mostly empty cells, whose number grows with the square of the radius
+            # (great-circle distances: far from Japan the flat approximation is meaningless)
+            p1, l1 = math.radians(latitude), math.radians(longitude)
+
+            def great_circle(i: int) -> float:
+                p2, l2 = math.radians(lats[i]), math.radians(lons[i])
+                h = math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin((l2 - l1) / 2) ** 2
+                return 2 * 6_371_000 * math.asin(min(1.0, math.sqrt(h)))
+            best = sorted((great_circle(i), i) for i in range(len(lats)))[:max(limit, 8)]
+            max_ring = -1
         while ring <= max_ring:
             for dy in range(-ring, ring + 1):
                 for dx in range(-ring, ring + 1):

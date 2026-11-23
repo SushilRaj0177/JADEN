@@ -31,6 +31,12 @@ _TOWN_SUFFIX_EQUIV: Final[Dict[str, Set[str]]] = {"MACHI": {"MACHI", "CHO"}, "CH
 _POSTAL: Final[re.Pattern[str]] = re.compile(r"(?<!\d)(\d{3})-?(\d{4})(?!\d)")
 _NUMBERS: Final[re.Pattern[str]] = re.compile(
     r"(?<![A-Za-z\d])(\d+)(?:\s*-?\s*chome)?(?:\s*-\s*(\d+))?(?:\s*-\s*(\d+))?(?![A-Za-z\d])", re.IGNORECASE)
+# The first part when the block numbers and town follow it ('Grand Maison 302, 4-2-8 Shibakoen, …')
+_LEADING_BUILDING: Final[re.Pattern[str]] = re.compile(
+    r"^\s*(?P<head>[^,]+?)\s*,\s*(?=\d+(?:-\d+)*\s+[^\s,\d][^,]*,\s*[A-Za-z])")
+_UNIT_PART: Final[re.Pattern[str]] = re.compile(
+    r"(?:^|(?<=[,\s]))(?:#\s*|(?:Room|Rm|Apt|Apartment|Unit|No)\.?\s*#?\s*)(?P<room>\d{1,5}[A-Za-z]?)(?=\s*(?:,|$))",
+    re.IGNORECASE)
 _CHOME_WORD: Final[re.Pattern[str]] = re.compile(r"(\d+)\s*-?\s*chome", re.IGNORECASE)
 _JO: Final[re.Pattern[str]] = re.compile(r"\b(KITA|MINAMI)\s*(\d+)\s*-?\s*JO\s*(HIGASHI|NISHI)\b", re.IGNORECASE)
 
@@ -47,6 +53,11 @@ def romaji_key(text: str) -> str:
 
 
 def looks_romanized(text: str) -> bool:
+    # A building name in Japanese before the English address ('グランドメゾン芝公園 #302, 4-2-8 Shibakoen,
+    # Minato-ku, Tokyo', JADEN's own English line) does not make it Japanese
+    lead = _LEADING_BUILDING.match(unicodedata.normalize("NFKC", text))
+    if lead:
+        text = text[lead.end():] if len(text) > lead.end() else text
     letters = [c for c in text if c.isalpha()]
     latin = sum(unicodedata.normalize("NFKD", c)[0].isascii() for c in letters)
     return bool(letters) and latin / len(letters) > 0.8
@@ -172,6 +183,25 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         postal = f"{m.group(1)}-{m.group(2)}"
         work = work[:m.start()] + " " + work[m.end():]
     work = re.sub(r"\bJAPAN\b", " ", work, flags=re.IGNORECASE)
+    # A room written as its own part ('#101, 4-2-8 Shibakoen, …', 'Apt 101', 'Room 101'): the English
+    # order puts it first; it is kept for the end, so its number is not read as the block
+    unit = None
+    head_building: Optional[str] = None
+    lead = _LEADING_BUILDING.match(work)
+    if lead:
+        # English order puts the building and room first: 'グランドメゾン芝公園 #302, 4-2-8 Shibakoen, …'
+        head = lead.group("head").strip()
+        room = None if re.search(r"\d\s*(?:F|階)$", head, re.IGNORECASE) else re.search(   # '3F' is a floor
+            r"(?:#|\b(?:Room|Rm|Apt|Apartment|Unit|No)\.?\s*#?)?\s*(\d{1,5}[A-Za-z]?)$", head, re.IGNORECASE)
+        if room:
+            unit = room.group(1)
+            head = head[:room.start()].strip()
+        head_building = head or None
+        work = work[lead.end():]
+    labelled = None if unit else _UNIT_PART.search(work)
+    if labelled:
+        unit = labelled.group("room")
+        work = work[:labelled.start()] + " , " + work[labelled.end():]
 
     grid = _JO.search(work)
     grid_text = None
@@ -232,12 +262,18 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     building: List[str] = []
     unmatched_town: Optional[str] = None
     for seg in leftovers:
+        # A 字 or a town without a reading is written in Japanese inside the English line
+        # ('44-29 Samemachi 字大作平', '3-8-4 常磐町'): it is kept as written after the town
+        japanese_part = "".join(re.findall(r"[^\x00-\x7f]+", seg))
+        latin_seg = re.sub(r"[^\x00-\x7f]+", " ", seg).strip()
         hits = {}
         for lg in muni_lgs:
             names = idx.town_entries(lg)
-            for k in _segment_keys(seg):
+            for k in (_segment_keys(latin_seg) if latin_seg else []):
                 if k in names:
                     hits[lg] = names[k]
+        if hits and japanese_part:
+            hits = {lg: name + japanese_part for lg, name in hits.items()}
         if hits and town_name is None:
             town_lgs = set(hits)
             names_found = set(hits.values())
@@ -279,8 +315,12 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         num = f"{numbers[0]}丁目{rest}" if explicit_chome else "-".join(str(n) for n in numbers)
     town_text = town_name or (f"{unmatched_town} " if unmatched_town else "")
     japanese = f"{'〒' + postal + ' ' if postal else ''}{head}{town_text}{num}"
+    if head_building:
+        building.insert(0, head_building)
     if building:
         japanese += " " + " ".join(building)
+    if unit:
+        japanese += f" {unit}号室"
     notes.insert(0, f"romaji input read as '{japanese}'")
     return japanese, notes
 

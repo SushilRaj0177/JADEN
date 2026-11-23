@@ -178,6 +178,7 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
             suggested = re.match(r"did you mean (.+?)\? ", moved)
             other = _split_fields(engine.normalize(suggested.group(1))) if suggested else None
             if other and other["city"]:
+                out["postal_code"] = ""         # the written city's code is no answer for a town elsewhere
                 issues.append(FieldIssue("city", "CITY_MISMATCH",
                                          f"{c.town} is not in {given['city']}; it is in {other['city']}.",
                                          f"{c.town}は{given['city']}ではなく{other['city']}にあります。", other["city"]))

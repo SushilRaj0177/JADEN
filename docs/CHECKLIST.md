@@ -114,18 +114,18 @@ Medium
 - [x] M-a A room or floor after `丁目` with no block number is read as the block number (canonical not a fixed point) *(after 丁目 or a 条 grid, a number with 号室/室/階/F, or text, is not the block)*
 - [x] M-b Rooms written `Apt 703` / `#703` give a canonical that reads back with a different key *(a bare room after a number without 号 is written `NNN号室` in the canonical and hyphen forms; all 34,032 real-life inputs read back)*
 - [ ] M-c CSV/TSV/xlsx output shifts result columns for rows longer than the header
-- [ ] M-d An address without a town is ACCEPTED at house precision with no warning; a designated city without a ward gets the city code
+- [x] M-d An address without a town is ACCEPTED at house precision with no warning; a designated city without a ward gets the city code *(numbers with no town in a municipality that Japan Post divides into towns: precision municipality and a warning; a designated city with numbers but no ward or town: AMBIGUOUS among its wards)*
 - [x] M-e 壱/弐/参/拾 building numbers are not read as numbers *(壱/弐/参/拾 read as numbers)*
 - [x] M-f `第2-305` splits 第 from its number *(`第2-305`: 第2 stays with the name, 305 is the room)*
-- [ ] M-g A kana town after a kanji municipality does not read 条 (`旭川市しゅんこうだい4じょう`)
-- [ ] M-h JADEN's own English output with a leading room (`#101, 4-2-8 Shibakoen, …`) is misread
-- [ ] M-i `reverse_geocode` with a huge `max_km` far from Japan runs for minutes
+- [x] M-g A kana town after a kanji municipality does not read 条 (`旭川市しゅんこうだい4じょう`) *(a kana town after a kanji municipality is read by its full reading, numbers included, before the Sapporo grid; `本郷通6-南1-1` reads as 本郷通六丁目南)*
+- [x] M-h JADEN's own English output with a leading room (`#101, 4-2-8 Shibakoen, …`) is misread *(a leading building and room in an English line are read as such; JADEN's English line reads back to the same key)*
+- [x] M-i `reverse_geocode` with a huge `max_km` far from Japan runs for minutes *(wide searches scan the points once with great-circle distances: under a second)*
 - [x] M-j `duplicate_pairs` pairs every room-less row with every flat of a large building *(copies are linked to one row; a room-less row scores 0.6 / number of flats and is compared only when that can reach the minimum score)*
 Low
 - [ ] `--output-encoding` ignored for stdout; an unknown output encoding gives a traceback
 - [ ] xlsx DTD check reads only the first 2 KB
-- [ ] check_fields keeps the wrong municipality's postal code in `fields` after CITY_MISMATCH
-- [ ] English output drops a town that is not registered
+- [x] check_fields keeps the wrong municipality's postal code in `fields` after CITY_MISMATCH
+- [x] English output drops a town that is not registered
 - [ ] English labels: postal code printed twice with `postal_line`; words cut mid-word
 - [ ] `/v1/fields` refuses a JSON number for `postal_code`
 - [ ] OpenAPI: `/v1/label` lacks `style`; `/v1/postal?code=` undocumented

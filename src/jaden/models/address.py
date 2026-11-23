@@ -98,6 +98,7 @@ class AddressComponents:
     town_registered_elsewhere: Tuple[str, ...] = field(default_factory=tuple)  # same-named municipalities that have the town
     former_municipality: Optional[str] = None # A merged / abolished municipality name the input used ('浦和市')
     town_corrected_from: Optional[str] = None # The misspelt town as written, when autocorrect replaced it
+    numbers_unplaced: bool = False            # numbers written without the town they belong to ('新宿区1-1')
 
     @property
     def precision(self) -> str:
@@ -105,6 +106,8 @@ class AddressComponents:
         'prefecture' or 'none'. 'house' identifies a building or lot; 'block' is a 番 without 号."""
         if self.lg_code is None and not self.is_ambiguous:
             return "prefecture" if self.prefecture else "none"
+        if self.numbers_unplaced:
+            return "municipality"
         has_house = ((self.lot_number is not None and self.lot_number not in UNNUMBERED_LOTS)
                      or self.banchi is not None or (self.ban is not None and self.go is not None))
         if has_house:

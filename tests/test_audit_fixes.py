@@ -2,6 +2,7 @@
 
 import json
 import time
+from pathlib import Path
 
 import pytest
 
@@ -1204,3 +1205,68 @@ def test_duplicate_pairs_stay_fast_for_one_large_building() -> None:
     pairs = jaden.duplicate_pairs(rows, report=report)
     assert time.perf_counter() - started < 20
     assert len(pairs) == 899 and report["comparisons"] < 5000      # the copies, linked to one of them
+
+
+# ---------------------------------------------------------------- audit round 2: engine, kana, English, geocoding
+def test_numbers_without_a_town_are_not_a_house() -> None:
+    v, r = jaden.validate("東京都新宿区1-1"), jaden.normalize("東京都新宿区1-1")
+    assert r.precision == "municipality" and any("no town is written" in w for w in v.warnings)
+    assert not any("no block or lot number" in w for w in v.warnings)
+    for whole in ("長野県上伊那郡南箕輪村6744-7-2", "福島県南会津郡檜枝岐村1234"):   # numbered across the village
+        assert jaden.normalize(whole).precision in ("house", "block")
+    v = jaden.validate("広島県広島市1-1")
+    assert v.status == "AMBIGUOUS" and len(v.ambiguous_candidates) == 8
+    assert jaden.validate("広島県広島市").status == "ACCEPTED"
+
+
+@pytest.mark.parametrize("text, canonical", [
+    ("北海道旭川市しゅんこうだい4じょう1-2-3", "北海道旭川市春光台四条1丁目2番3号"),
+    ("北海道岩見沢市みなみまち1じょう1-2", "北海道岩見沢市南町一条1丁目2番"),
+    ("北海道札幌市中央区きた1じょうにし2ちょうめ1-1", "北海道札幌市中央区北1条西2丁目1番1号"),
+    ("北海道札幌市白石区本郷通6-南1-1", "北海道札幌市白石区本郷通六丁目南1番1号"),
+])
+def test_kana_and_short_town_forms_after_a_kanji_municipality(text: str, canonical: str) -> None:
+    assert jaden.normalize(text).canonical == canonical and jaden.validate(text).status == "ACCEPTED"
+
+
+@pytest.mark.parametrize("english", [
+    "#101, 4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011",
+    "Room 101, 4-2-8 Shibakoen, Minato-ku, Tokyo",
+    "グランドメゾン芝公園 #101, 4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011",
+])
+def test_english_lines_with_a_building_or_room_first(english: str) -> None:
+    res = jaden.normalize(english)
+    assert res.components.lg_code == "131032" and res.components.town == "芝公園"
+    assert res.components.unit and "101" in res.components.unit
+
+
+def test_jadens_own_english_line_reads_back_to_the_same_key() -> None:
+    bad = []
+    bench = Path(__file__).resolve().parents[1] / "benchmarks" / "jabench" / "jabench.jsonl"
+    with open(bench, encoding="utf-8") as fh:
+        rows = [json.loads(line)["input"] for i, line in enumerate(fh) if i % 60 == 0]
+    for text in rows:
+        for tail in ("", " グランドメゾン302", " 302号室"):
+            res = jaden.normalize(text + tail)
+            if res.romaji and jaden.validate(text).status == "ACCEPTED":
+                back = jaden.normalize(res.romaji)
+                if jaden.match_key(back) != jaden.match_key(res):
+                    bad.append((text + tail, res.romaji, back.canonical))
+    assert len(bad) <= len(rows) // 50, bad[:5]      # a few registry towns have no reading to write
+
+
+def test_english_keeps_an_unregistered_town_and_a_koaza() -> None:
+    assert "常磐町" in jaden.normalize("北海道北見市常磐町3-8-4").romaji
+    assert "字大作平" in jaden.normalize("青森県八戸市鮫町字大作平44-29").romaji
+
+
+def test_reverse_geocode_far_away_is_quick() -> None:
+    started = time.perf_counter()
+    jaden.reverse_geocode(10, 100, max_km=5000)
+    found = jaden.reverse_geocode(-1.85, -121.36, max_km=1e9)
+    assert time.perf_counter() - started < 5 and found and found[0].distance_m < 20_037_000
+
+
+def test_check_fields_gives_no_postal_code_for_a_town_in_another_city() -> None:
+    r = jaden.check_fields(prefecture="東京都", city="新宿区", line1="芝公園4-2-8")
+    assert r.fields["postal_code"] == "" and r.reason == "CITY_MISMATCH"
