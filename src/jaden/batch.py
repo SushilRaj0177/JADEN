@@ -166,7 +166,47 @@ def detect_format(path: Optional[Path], fmt: Optional[str]) -> str:
     if fmt:
         return fmt
     suffix = path.suffix.lower() if path is not None else ""
-    return {".csv": "csv", ".tsv": "tsv", ".tab": "tsv", ".jsonl": "jsonl", ".ndjson": "jsonl"}.get(suffix, "txt")
+    return {".csv": "csv", ".tsv": "tsv", ".tab": "tsv", ".jsonl": "jsonl", ".ndjson": "jsonl",
+            ".xlsx": "xlsx"}.get(suffix, "txt")
+
+
+def _load(input_path: Path, in_fmt: str, encoding: Optional[str], column: Optional[str],
+          header_row: Optional[bool]) -> Tuple[List[str], Iterator[Tuple[Any, str]], str]:
+    """(header, rows, the format the rows are in). An .xlsx sheet is read as CSV rows."""
+    if in_fmt == "xlsx":
+        from .xlsx import read_xlsx
+        source: Any = io.BytesIO(sys.stdin.buffer.read()) if str(input_path) == "-" else input_path
+        buf = io.StringIO()
+        csv.writer(buf).writerows(read_xlsx(source))
+        header, rows = read_rows(buf.getvalue(), "csv", column, header_row)
+        return header, rows, "csv"
+    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
+    return header, rows, in_fmt
+
+
+def _formats(input_path: Path, output: Optional[Path], fmt: Optional[str]) -> Tuple[str, str, bool]:
+    """(input format, output format, output to stdout)."""
+    in_fmt = detect_format(input_path, fmt)
+    to_stdout = output is None or str(output) == "-"
+    out_fmt = in_fmt if to_stdout else detect_format(output, None)
+    if out_fmt == "txt" or (out_fmt == "xlsx" and to_stdout):
+        out_fmt = "csv"
+    return in_fmt, out_fmt, to_stdout
+
+
+def _open_output(output: Optional[Path], out_fmt: str, to_stdout: bool, out_encoding: str) -> Tuple[TextIO, str, Any]:
+    """(text stream to write rows to, the format to write them in, a function that finishes the file)."""
+    if to_stdout or output is None:
+        return sys.stdout, out_fmt, lambda: None
+    if out_fmt == "xlsx":
+        from .xlsx import write_xlsx
+        buf = io.StringIO()
+
+        def finish() -> None:
+            write_xlsx(output, list(csv.reader(io.StringIO(buf.getvalue()))))
+        return buf, "csv", finish
+    stream = open(output, "w", encoding=out_encoding, newline="")
+    return stream, out_fmt, stream.close
 
 
 _ADDRESS_HEADERS = ("address", "住所", "所在地", "addr", "full_address")
@@ -291,18 +331,12 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     """Processes a file and writes the rows with result columns appended; returns counts by status.
     ``resolve`` adds the calibrated resolver's columns; ``name_column`` names the column holding a company
     or facility name to use as evidence."""
-    in_fmt = detect_format(input_path, fmt)
-    to_stdout = output is None or str(output) == "-"
-    out_fmt = in_fmt if to_stdout else detect_format(output, None)
-    if out_fmt == "txt":
-        out_fmt = "csv"
-    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
+    in_fmt, out_fmt, to_stdout = _formats(input_path, output, fmt)
+    header, rows, in_fmt = _load(input_path, in_fmt, encoding, column, header_row)
     materialized = list(rows)
     side_of = _side_reader(header, in_fmt, name_column)
 
-    out_stream: TextIO = sys.stdout
-    if not to_stdout and output is not None:
-        out_stream = open(output, "w", encoding=out_encoding, newline="")
+    out_stream, out_fmt, finish = _open_output(output, out_fmt, to_stdout, out_encoding)
     counts: Counter = Counter()
     started = time.perf_counter()
     pool = None
@@ -324,8 +358,7 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
         if pool is not None:
             pool.close()
             pool.join()
-        if out_stream is not sys.stdout:
-            out_stream.close()
+        finish()
     elapsed = time.perf_counter() - started
     total = sum(counts.values())
     summary = ", ".join(f"{k} {v}" for k, v in counts.most_common())
@@ -351,12 +384,8 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     from .engine import get_engine
     from .matching import match_key
 
-    in_fmt = detect_format(input_path, fmt)
-    to_stdout = output is None or str(output) == "-"
-    out_fmt = in_fmt if to_stdout else detect_format(output, None)
-    if out_fmt == "txt":
-        out_fmt = "csv"
-    header, rows = read_rows(read_text(input_path, encoding), in_fmt, column, header_row)
+    in_fmt, out_fmt, to_stdout = _formats(input_path, output, fmt)
+    header, rows, in_fmt = _load(input_path, in_fmt, encoding, column, header_row)
     materialized = list(rows)
     engine = get_engine()
 
@@ -380,17 +409,14 @@ def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = No
     for rec in records:
         rec["group_size"] = sizes[rec["group"]] if rec["group"] else None
 
-    out_stream: TextIO = sys.stdout
-    if not to_stdout and output is not None:
-        out_stream = open(output, "w", encoding=out_encoding, newline="")
+    out_stream, out_fmt, finish = _open_output(output, out_fmt, to_stdout, out_encoding)
     try:
         names = [prefix + k for k in ("status", "canonical", "match_key", "group", "group_size")]
         writer = _Writer(out_stream, out_fmt, header, names, log)
         for (row, _), rec in zip(materialized, records):
             writer.write(row, rec)
     finally:
-        if out_stream is not sys.stdout:
-            out_stream.close()
+        finish()
 
     if pairs is not None:
         from .matching import duplicate_pairs

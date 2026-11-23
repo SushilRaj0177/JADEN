@@ -595,11 +595,13 @@ def build_parser() -> argparse.ArgumentParser:
 # ==============================================================================
 
 def _file_arguments(p: argparse.ArgumentParser) -> None:
-    p.add_argument("input", help="Input file (.csv, .tsv, .jsonl, or text with one address per line); '-' for stdin.")
-    p.add_argument("-o", "--output", help="Output file (format from its extension); default: stdout.")
+    p.add_argument("input", help="Input file (.csv, .tsv, .jsonl, .xlsx, or text with one address per line); "
+                                 "'-' for stdin.")
+    p.add_argument("-o", "--output", help="Output file (format from its extension, .xlsx included); default: stdout.")
     p.add_argument("--column", help="Address column name or 1-based number (default: a column named "
                                     "address/住所/所在地, else the first). For JSONL, the key (default: address).")
-    p.add_argument("--format", choices=["csv", "tsv", "jsonl", "txt"], help="Input format (default: from extension).")
+    p.add_argument("--format", choices=["csv", "tsv", "jsonl", "txt", "xlsx"],
+                   help="Input format (default: from extension; .xlsx reads the first worksheet).")
     p.add_argument("--encoding", help="Input encoding (default: detect UTF-8 / UTF-16 / Shift_JIS / EUC-JP).")
     p.add_argument("--output-encoding", default="utf-8",
                    help="Output encoding; utf-8-sig opens cleanly in Excel, cp932 is Shift_JIS (default: utf-8).")
@@ -672,6 +674,17 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     sv_p.add_argument("--max-batch", type=int, default=1000, help="Most addresses accepted by /v1/batch (default: 1000).")
     sv_p.add_argument("--quiet", action="store_true", help="Do not log requests.")
 
+    st_p = subparsers.add_parser(
+        "stream", help="Read addresses line by line from stdin, write one JSON record per line",
+        description="NDJSON streaming for pipelines: each input line is an address, a JSON string, or a JSON "
+                    "object holding the address; each output line is {\"input\": ..., \"jaden\": {...}}, "
+                    "written as soon as the line is read.")
+    st_p.add_argument("--column", default="address", help="Key of the address in JSON objects (default: address).")
+    st_p.add_argument("--strict", action="store_true", help="Require town-level verification for ACCEPTED.")
+    st_p.add_argument("--fix", action="store_true", help="Correct misspelt towns.")
+    st_p.add_argument("--resolve", action="store_true", help="Add the calibrated resolver's fields.")
+    st_p.add_argument("--name-column", metavar="KEY", help="With --resolve: key holding a company or facility name.")
+
     subparsers.add_parser(
         "mcp", help="Run as an MCP server for AI assistants (stdin/stdout)",
         description="Model Context Protocol server over stdin/stdout: normalize, validate, resolve, extract, "
@@ -731,6 +744,15 @@ def _resolve_one(args: argparse.Namespace) -> int:
             print(f"  ... {len(r.candidates) - args.limit} more")
         print(f"  {r.none_probability:6.3f}  none of these")
     return 0 if r.answered else 3
+
+
+def _handle_stream(args: argparse.Namespace) -> int:
+    from .frame import stream
+    reconfigure = getattr(sys.stdin, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(encoding="utf-8", errors="replace")
+    stream(column=args.column, strict=args.strict, fix=args.fix, resolve=args.resolve, name_column=args.name_column)
+    return 0
 
 
 def _handle_mcp(args: argparse.Namespace) -> int:
@@ -837,6 +859,7 @@ _TOOLKIT_HANDLERS = {
     "extract": _handle_extract,
     "serve": _handle_serve,
     "mcp": _handle_mcp,
+    "stream": _handle_stream,
 }
 
 

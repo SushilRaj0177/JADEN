@@ -608,3 +608,62 @@ def test_duplicate_pairs_score_and_explain(tmp_path) -> None:
     run_dedupe(src, tmp_path / "out.csv", pairs=out, log=open(tmp_path / "log", "w"))
     written = list(csv.DictReader(open(out, encoding="utf-8")))
     assert [(r["row_a"], r["row_b"]) for r in written] == [("1", "2"), ("1", "5"), ("2", "5")]
+
+
+# ---------------------------------------------------------------- F7: pandas, .xlsx, NDJSON stream
+def test_xlsx_round_trip_keeps_text_and_leading_zeros(tmp_path) -> None:
+    from jaden.xlsx import read_xlsx, write_xlsx
+    path = tmp_path / "t.xlsx"
+    write_xlsx(path, [["住所", "郵便番号"], ["東京都港区芝公園4-2-8", "0600063"], ["a<&>\x01", " x "]])
+    assert read_xlsx(path) == [["住所", "郵便番号"], ["東京都港区芝公園4-2-8", "0600063"], ["a<&>", " x "]]
+    with pytest.raises(ValueError, match="not an .xlsx"):
+        (tmp_path / "bad.xlsx").write_text("nope")
+        read_xlsx(tmp_path / "bad.xlsx")
+
+
+def test_xlsx_written_by_excel_tools_is_read(tmp_path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    from jaden.batch import run_batch
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["id", "住所"])
+    ws.append([1, "東京都港区芝公園4-2-8"])
+    ws.append([2, "府中市1-1"])
+    wb.save(tmp_path / "in.xlsx")
+    counts = run_batch(tmp_path / "in.xlsx", tmp_path / "out.xlsx", log=open(tmp_path / "log", "w"))
+    assert counts == {"ACCEPTED": 1, "AMBIGUOUS": 1}
+    rows = [[c.value for c in r] for r in openpyxl.load_workbook(tmp_path / "out.xlsx").active.iter_rows()]
+    assert rows[0][:3] == ["id", "住所", "jaden_status"] and rows[1][2] == "ACCEPTED"
+
+
+def test_dedupe_reads_and_writes_xlsx(tmp_path) -> None:
+    from jaden.batch import run_dedupe
+    from jaden.xlsx import read_xlsx, write_xlsx
+    write_xlsx(tmp_path / "in.xlsx", [["address"], ["東京都港区芝公園4-2-8 302"], ["港区芝公園４丁目２番８号　３０２号室"]])
+    run_dedupe(tmp_path / "in.xlsx", tmp_path / "out.xlsx", log=open(tmp_path / "log", "w"))
+    rows = read_xlsx(tmp_path / "out.xlsx")
+    assert rows[0][-2:] == ["jaden_group", "jaden_group_size"] and rows[1][-2:] == rows[2][-2:] == ["1", "2"]
+
+
+def test_pandas_helper_keeps_the_index() -> None:
+    pd = pytest.importorskip("pandas")
+    from jaden.frame import normalize_frame
+    df = pd.DataFrame({"住所": ["港区芝公園4-2-8", None, "府中市1-1"]}, index=[10, 20, 30])
+    out = normalize_frame(df, "住所", resolve=True)
+    assert list(out.index) == [10, 20, 30]
+    assert list(out["jaden_status"]) == ["ACCEPTED", "EMPTY", "AMBIGUOUS"]
+    assert out.loc[10, "jaden_resolved_lg_code"] == "131032"
+    with pytest.raises(KeyError):
+        normalize_frame(df, "address")
+
+
+def test_stream_writes_one_record_per_line() -> None:
+    import io
+    from jaden.frame import stream
+    src = io.StringIO('港区芝公園4-2-8\n\n{"id": 7, "address": "府中市1-1"}\n[1]\nnot json {\n')
+    out = io.StringIO()
+    assert stream(src, out) == 4
+    lines = [json.loads(x) for x in out.getvalue().splitlines()]
+    assert lines[0]["jaden"]["status"] == "ACCEPTED"
+    assert lines[1]["input"]["id"] == 7 and lines[1]["jaden"]["status"] == "AMBIGUOUS"
+    assert "error" in lines[2] and lines[3]["jaden"]["status"] == "MALFORMED"

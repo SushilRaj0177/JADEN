@@ -662,8 +662,14 @@ $ jaden batch customers.csv --column 3 -o checked.csv --output-encoding utf-8-si
 
 # 市区町村が書かれていない住所: 較正済みリゾルバーの列を追加（店名の列を手がかりに使用）
 $ jaden batch shops.csv --resolve --name-column 店名 -o resolved.csv
+
+# Excel で入力・出力（最初のシート。セルは文字列のままなので 0600063 の先頭の 0 も保持）
+$ jaden batch customers.xlsx -o checked.xlsx
+
+# パイプライン: 1 行に住所または JSON を 1 件。読んだ行から順に 1 行 1 件の JSON を出力
+$ tail -f orders.ndjson | jaden stream --column address
 ```
-入力の各行はそのまま出力され、`jaden_status`、`jaden_canonical`、`jaden_lg_code`、住所の各要素、建物名・階・部屋番号、郵便番号、読み、ローマ字、緯度・経度などの列が追加されます。`--fix` で 1 文字違いの町名を訂正します。`--resolve` を付けると、`jaden_resolved_lg_code`・`jaden_resolved_name`（誤答率 1% の閾値を超えたときのみ）、`jaden_resolved_probability`、`jaden_resolved_candidates`（上位 5 候補と確率）が加わります。
+入力の各行はそのまま出力され、`jaden_status`、`jaden_canonical`、`jaden_lg_code`、住所の各要素、建物名・階・部屋番号、郵便番号、読み、ローマ字、緯度・経度などの列が追加されます。`--fix` で 1 文字違いの町名を訂正します。`--resolve` を付けると、`jaden_resolved_lg_code`・`jaden_resolved_name`（誤答率 1% の閾値を超えたときのみ）、`jaden_resolved_probability`、`jaden_resolved_candidates`（上位 5 候補と確率）が加わります。pandas があれば `jaden.frame.normalize_frame(df, "住所")` で同じ列を DataFrame に追加できます（インデックスは保持）。
 
 #### 7. `compare` / `dedupe`: 名寄せ
 ```bash
