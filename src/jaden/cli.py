@@ -31,7 +31,7 @@ for _stream in (sys.stdout, sys.stderr, sys.stdin):
     _reconfigure = getattr(_stream, "reconfigure", None)
     if _reconfigure is not None:
         try:
-            _reconfigure(encoding="utf-8")
+            _reconfigure(encoding="utf-8", errors="replace")   # one broken character must not stop a run
         except Exception:
             pass
 

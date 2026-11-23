@@ -205,7 +205,8 @@ def _open_output(output: Optional[Path], out_fmt: str, to_stdout: bool, out_enco
         def finish() -> None:
             write_xlsx(output, list(csv.reader(io.StringIO(buf.getvalue()))))
         return buf, "csv", finish
-    stream = open(output, "w", encoding=out_encoding, newline="")
+    # A character the chosen encoding cannot hold (an emoji in cp932) becomes '?' instead of an error
+    stream = open(output, "w", encoding=out_encoding, errors="replace", newline="")
     return stream, out_fmt, stream.close
 
 
@@ -295,6 +296,11 @@ class _Writer:
             log.write(f"warning: the input already has column(s) {', '.join(clash)}; both are kept, the input's first\n")
 
     def write(self, row: Row, rec: Dict[str, Any]) -> None:
+        from .core.text import encodable
+        if isinstance(row, dict):
+            row = {k: (encodable(v) if isinstance(v, str) else v) for k, v in row.items()}
+        else:
+            row = [encodable(v) if isinstance(v, str) else v for v in row]
         if self.out_fmt == "jsonl":
             base = row if isinstance(row, dict) else {"address": row[0]} if len(row) == 1 else dict(zip(self.header, row))
             self.stream.write(json.dumps({**base, "jaden": rec}, ensure_ascii=False) + "\n")

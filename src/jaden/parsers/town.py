@@ -366,6 +366,8 @@ def resolve_town(
             everywhere = {lg for lg, m in gaz.municipalities_with_town(town_text) if m.exact}
             elsewhere = sorted(lg for lg in everywhere if lg[:2] == chosen.municipality.lg_code[:2])
             hint = f"; a town of that name exists in {len(elsewhere)} other municipality(ies) of this prefecture" if elsewhere else ""
+            if len(elsewhere) == 1:
+                hint += f" ({elsewhere[0]})"
             notes.append(f"town '{town_text}' is not registered in {chosen.municipality.name}{hint}")
             # '静岡県中央区日本橋兜町': the town belongs to a municipality of the same name elsewhere
             # (東京都中央区), so the written prefecture contradicts the rest of the address

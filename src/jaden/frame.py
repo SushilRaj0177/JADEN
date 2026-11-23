@@ -18,7 +18,7 @@ import sys
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TextIO
 
 from .batch import RESOLVE_FIELDS, RESULT_FIELDS, flat_record, resolve_record
-from .core.text import as_text
+from .core.text import as_text, encodable
 
 
 def records(addresses: Iterable[Any], strict: bool = False, fix: bool = False, resolve: bool = False,
@@ -101,7 +101,7 @@ def stream(stdin: TextIO = sys.stdin, stdout: TextIO = sys.stdout, column: str =
             if resolve:
                 side = item["input"].get(name_column) if name_column and isinstance(item["input"], dict) else ""
                 out["jaden"].update(resolve_record(text, as_text(side)))
-        stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        stdout.write(encodable(json.dumps(out, ensure_ascii=False)) + "\n")
         stdout.flush()
         count += 1
     return count

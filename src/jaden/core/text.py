@@ -1,7 +1,15 @@
 """Turning whatever a caller passes into text."""
 
 import math
+import re
 from typing import Any
+
+_SURROGATE = re.compile("[\ud800-\udfff]")
+
+
+def encodable(text: str) -> str:
+    """The text with lone surrogates (which no encoding can write) replaced by U+FFFD."""
+    return _SURROGATE.sub("\ufffd", text) if text else text
 
 
 def as_text(value: Any) -> str:
@@ -13,7 +21,7 @@ def as_text(value: Any) -> str:
     if value is None:
         return ""
     if isinstance(value, str):
-        return value
+        return encodable(value)
     if isinstance(value, float) and math.isnan(value):
         return ""
     if isinstance(value, (bytes, bytearray)):

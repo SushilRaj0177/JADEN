@@ -178,9 +178,18 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
                                      f"The city field says {given['city']}; the address is in {out['city']}.",
                                      f"市区町村欄は「{given['city']}」ですが、住所は{out['city']}です。",
                                      out["city"]))
+        moved = next((n for n in res.notes if n.startswith("did you mean ") and " is registered in " in n), None)
+        if moved and given["city"] and not any(i.field == "city" for i in issues):
+            # The town is not registered in the city written, but in one other city of the prefecture
+            suggested = re.match(r"did you mean (.+?)\? ", moved)
+            other = _split_fields(engine.normalize(suggested.group(1))) if suggested else None
+            if other and other["city"]:
+                issues.append(FieldIssue("city", "CITY_MISMATCH",
+                                         f"{c.town} is not in {given['city']}; it is in {other['city']}.",
+                                         f"{c.town}は{given['city']}ではなく{other['city']}にあります。", other["city"]))
         for name in (("prefecture", "city", "postal_code") if val.status == "ACCEPTED" else ()):
-            if name == "postal_code" and (out[name].endswith("-0000") or c.town_verified is not True):
-                continue    # a municipality-wide code is no answer for the town
+            if name == "postal_code" and any(i.code == "CITY_MISMATCH" for i in issues):
+                continue    # the city's code is no answer when the town is in another city
             if not given[name] and out[name]:
                 issues.append(FieldIssue(name, "FILLED_IN", f"{name} filled in from the address: {out[name]}.",
                                          f"{ {'prefecture': '都道府県', 'city': '市区町村', 'postal_code': '郵便番号'}[name]}"

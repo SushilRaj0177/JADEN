@@ -77,6 +77,14 @@ def municipality_outcome(res: Any, val: Any, truth_lg5: str) -> str:
         return "wrong"
     if val.status == "AMBIGUOUS":
         listed = any(f"({truth_lg5}" in cand for cand in val.ambiguous_candidates)
+        if not listed:
+            # The row has a designated city's code and the candidates are its wards
+            truth = _municipalities().get(truth_lg5)
+            if truth is not None and truth.entity_type == "designated_city":
+                known = _municipalities()
+                codes = [c.rsplit("(", 1)[-1][:5] for c in val.ambiguous_candidates]
+                listed = any((m := known.get(code)) is not None and m.city == truth.city
+                             and m.prefecture_code == truth.prefecture_code for code in codes)
         return "ambiguous, truth listed" if listed else "ambiguous, truth not listed"
     return "rejected: " + val.status
 

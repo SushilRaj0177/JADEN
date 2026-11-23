@@ -20,7 +20,7 @@ from .models.codes import TaxonomyTier, AddressRegime
 from .models.address import AddressComponents, NormalizedAddress
 from .models.validation import ValidationResult, ValidationStatus
 from .core.sanitizer import clean_characters, sanitize_address_text, _LEADING_LABEL
-from .core.kanji_numerals import normalize_kanji_numerals_in_blocks
+from .core.kanji_numerals import normalize_kanji_numerals_in_blocks, parse_kanji_number
 from .parsers.administrative import AdministrativeParser, fold_same_length as admin_fold
 from .parsers.kyoto import KyotoParser
 from .parsers.hokkaido import HokkaidoParser
@@ -38,11 +38,19 @@ from .romaji import looks_romanized, romaji_to_japanese
 from .kana_input import kana_to_japanese, looks_kana
 from .core.text import as_text
 
+# Words of a facility name: '横浜市立第3中学校', '札幌市立白石中学校'
+_FACILITY: Final[re.Pattern[str]] = re.compile(
+    r"第\d+(?!\d*(?:番|号|丁目|-))|学校|中学|小学|高校|大学|学園|保育|幼稚園|病院|医院|診療所|図書館|公民館|体育館|"
+    r"美術館|博物館|会館|センター|役所|役場|支所|出張所|公園|斎場|霊園|浄水場|清掃|消防|交番|駐在所")
+
 # Longer text is not read as an address (the longest real addresses with a building are around 150 characters)
 MAX_INPUT_CHARS = 500
 # No 丁目, block or lot is numbered 0. The upper bound only stops absurd numbers: a room number glued to
 # the lot ('小川町2丁目1987102' is lot 1987, room 102) still leaves the municipality right
 MAX_BLOCK_NUMBER = 10**12 - 1
+# No registered 丁目 anywhere is numbered above 84 (MLIT 2025); a 丁目 that cannot be checked against its
+# town and is above this is not one
+MAX_CHOME = 90
 
 # A sentence that goes on after the address: a particle starting a run that ends in a polite verb
 # ('に送って下さい', 'までお願いします'). Building names do not end that way.
@@ -165,7 +173,46 @@ class AddressNormalizer:
         """Typo corrections, then the text as written when nothing was settled."""
         if res.components.town_verified is False and res.components.lg_code and not res.components.is_ambiguous:
             res = self._with_corrections(res, self.autocorrect if autocorrect is None else autocorrect)
+            res = self._suggest_other_municipality(res)
         return _uninterpreted_if_unresolved(res)
+
+    @staticmethod
+    def _chou_number(name: str, base: str) -> Optional[int]:
+        """3 for '茶山台三丁' with base '茶山台'; None for any other name."""
+        if not name.startswith(base) or not name.endswith("丁") or name.endswith("丁目"):
+            return None
+        middle = name[len(base):-1]
+        return parse_kanji_number(middle) if middle and re.fullmatch(r"[一二三四五六七八九十]+", middle) else None
+
+    _ELSEWHERE_ONE = re.compile(r"exists in 1 other municipality\(ies\) of this prefecture \((\d{6})\)")
+
+    def _suggest_other_municipality(self, res: NormalizedAddress) -> NormalizedAddress:
+        """'東京都新宿区芝公園4-2-8': the town is registered in one other municipality of the prefecture
+        (港区). The address is kept as written (the registry may simply not list the town here), and
+        the same address in that municipality is offered in ``suggestions`` when it reads cleanly."""
+        found = next((m for m in (self._ELSEWHERE_ONE.search(n) for n in res.notes) if m), None)
+        c = res.components
+        other = self.registry.get_municipality_by_code(found.group(1)) if found else None
+        written = self.registry.get_municipality_by_code(c.lg_code) if c.lg_code else None
+        if other is None or written is None or not c.town or c.town not in res.input_sanitized:
+            return res
+        text = res.input_sanitized
+        start = text.find(c.town)
+        head = text[:start]
+        for name in ((written.county or "") + written.name, written.name, written.ward or ""):
+            if name and head.endswith(name):
+                head = head[: len(head) - len(name)]
+                break
+        else:
+            return res
+        if c.prefecture and not head.endswith(c.prefecture):
+            head = head + c.prefecture if not head else head
+        moved = self._normalize(f"{head}{other.county or ''}{other.name}{text[start:]}", allow_reread=True)
+        if moved.components.lg_code != other.lg_code or not moved.components.town_verified:
+            return res
+        note = f"did you mean {moved.canonical}? {c.town} is registered in {other.prefecture_name}{other.name}"
+        return dataclasses.replace(res, suggestions=tuple(dict.fromkeys(res.suggestions + (moved.canonical,))),
+                                   notes=res.notes + (note,))
 
     def _with_corrections(self, res: NormalizedAddress, apply: bool) -> NormalizedAddress:
         """Offers (or applies) the registered town a misspelt one most likely stands for."""
@@ -764,6 +811,18 @@ class AddressNormalizer:
                     tail_text = tail_text[1 + len(str(go_val)):].strip()
                 chome_verified = True
                 record = alt_entry.record_for(chome_val)
+        divided = match is not None and match.entry.has_chome and all(r.chome is not None for r in match.entry.records)
+        if not divided and gaz is not None and lg_code and town_text:
+            divided = any(self._chou_number(e.name, town_text) is not None for e in gaz.towns_in(lg_code).values())
+        if (chome_val is not None and chome_val > MAX_CHOME and not block_dict["chome_explicit"] and not divided
+                and ban_val is not None and go_val is not None and hokkaido_clause is None):
+            # '南箕輪村6744-7-2': no 丁目 is numbered 6744, so 'N-N-N' is a three-part lot number
+            lot_number = f"{chome_val}-{ban_val}-{go_val}"
+            notes.append(f"no 丁目 is numbered {chome_val}; kept {lot_number} as a lot number")
+            banchi_val, edaban_val = chome_val, ban_val
+            chome_val = ban_val = go_val = None
+            regime_val = AddressRegime.CHIBAN.value
+            chome_verified = None
         if match is not None and hokkaido_clause is None:
             entry = match.entry
             chome_town = entry.has_chome and all(r.chome is not None for r in entry.records)
@@ -968,9 +1027,15 @@ class AddressNormalizer:
         town_verified = town_res.town_verified if town_res else None
         if (town_res is not None and town_res.municipality is None and town_text and muni_rec is not None
                 and not is_ambiguous and gaz is not None and self.registry.wards_of(muni_rec)):
-            # A designated city whose wards were searched without success ('札幌市立白石中学校')
+            # A designated city whose wards were searched without success ('札幌市立白石中学校'): the
+            # address cannot be placed in a ward, so it is not settled
             town_verified = False
             notes.append(f"town '{town_text}' is not registered in any ward of {muni_rec.name}")
+            if not town_text.startswith("立"):         # '…市立…' is a facility name (validate says so)
+                wards = self.registry.wards_of(muni_rec)
+                is_ambiguous = True
+                ambiguous_candidates = tuple(f"{w.prefecture_name}{w.name} ({w.lg_code})" for w in wards)
+                lg_code = None
         if partial_tail and town_verified and not has_numbers:
             # '高岡市立野村小学校' starts with the town 立野 but the rest is not part of an address
             town_verified = False
@@ -1000,6 +1065,17 @@ class AddressNormalizer:
                 codes = gaz.postal_codes_for(lg_code, None)
             if len(codes) == 1:
                 postal_out = f"{codes[0][:3]}-{codes[0][3:]}"
+
+        if gaz is not None and lg_code and chome_val is not None and chome_verified is None and town_name \
+                and not is_ambiguous:
+            # 堺市 registers '茶山台一丁' … '茶山台三丁' as towns of their own: the numbers there are the 丁目
+            # that exist, so '茶山台4-5-1' or '茶山台99-5-1' names a 丁目 that does not
+            family = sorted(n for n in (self._chou_number(e.name, town_name) for e in gaz.towns_in(lg_code).values())
+                            if n is not None)
+            if family and chome_val not in family:
+                chome_verified = False
+                notes.append(f"{town_name}{chome_val}丁目 does not exist (registered: "
+                             f"{', '.join(f'{town_name}{n}丁' for n in family)})")
 
         components = AddressComponents(
             prefecture_code=pref_code,
@@ -1556,6 +1632,8 @@ class AddressNormalizer:
                           ja=f"郵便番号 {c.postal_code} はこの住所のものではありません。")
 
         impossible = [v for v in (c.chome, c.ban, c.go, c.banchi, c.edaban) if v is not None and not 0 < v <= MAX_BLOCK_NUMBER]
+        if c.chome is not None and c.chome > MAX_CHOME and c.chome_verified is not True:
+            impossible.insert(0, c.chome)
         if impossible:
             return result(ValidationStatus.MALFORMED,
                           f"No 丁目, block or lot is numbered {impossible[0]}.", lg=c.lg_code,
@@ -1567,7 +1645,10 @@ class AddressNormalizer:
                           lg=c.lg_code, reason="UNPARSED_TEXT", ja=f"読み取れない部分があります: 「{c.unparsed_tail}」")
 
         no_numbers = all(v is None for v in (c.chome, c.ban, c.go, c.banchi, c.edaban, c.lot_number))
-        if c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None:
+        # '横浜市立第3中学校': '…市立' then a school or other facility (its 第3 is no block number)
+        facility = bool(c.town and c.town_verified is not True and c.town.startswith("立")
+                        and _FACILITY.search(res.input_sanitized))
+        if (c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None) or facility:
             # '高崎市立国府小学校': a municipality followed by text that is neither a registered town
             # nor a block number is a name that mentions a place, not an address
             return result(ValidationStatus.UNSUPPORTED,

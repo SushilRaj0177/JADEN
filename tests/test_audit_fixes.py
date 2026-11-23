@@ -948,3 +948,69 @@ def test_different_rooms_are_not_reported_as_duplicates() -> None:
 def test_place_names_before_a_lot_are_not_wing_and_room(text: str, building: str) -> None:
     c = jaden.normalize(text).components
     assert (c.building, c.unit) == (building, None)
+
+
+# ---------------------------------------------------------------- final scan, round 1: acceptance and cleaning (M5-M8, M11)
+def test_lone_surrogates_and_invisible_marks_are_removed() -> None:
+    for text in ("港区芝公園4-2-8\ud800", "港区芝公️園4-2-8", "港区芝公͏園4-2-8", "港区芝公￼園4-2-8",
+                 "港区芝公ㅤ園4-2-8", "港区芝公\U000e0101園4-2-8"):
+        res = jaden.normalize(text)
+        assert res.canonical == "東京都港区芝公園4丁目2番8号", text
+        res.to_json().encode("utf-8")
+
+
+def test_surrogates_do_not_break_outputs(tmp_path) -> None:
+    import io
+    from jaden.batch import run_batch
+    from jaden.frame import stream
+    from jaden.server import JadenApi
+    src = tmp_path / "s.jsonl"
+    src.write_text(json.dumps({"address": "港区芝公園4-2-8 ビル\ud800"}) + "\n", encoding="utf-8")
+    run_batch(src, tmp_path / "out.csv", log=io.StringIO())
+    run_batch(src, tmp_path / "out.xlsx", log=io.StringIO())
+    out = io.StringIO()
+    assert stream(io.StringIO(json.dumps("港区芝公園4-2-8\ud800") + "\n" + "港区芝公園4-2-8\n"), out) == 2
+    assert JadenApi().handle("/v1/normalize", {"q": "港区芝公園4-2-8\ud800"})["status"] == "ACCEPTED"
+
+
+@pytest.mark.parametrize("text, canonical", [
+    ("港区芝公園4-2、8", "東京都港区芝公園4丁目2番8号"),
+    ("東京都港区芝公園4丁目2番、8号", "東京都港区芝公園4丁目2番8号"),
+    ("1050011東京都港区芝公園4-2-8", "東京都港区芝公園4丁目2番8号"),
+    ("岡山県岡山市北区大供10之1番地", "岡山県岡山市北区大供10番地の1"),
+    ("岡山県岡山市北区大供10ノ1番地", "岡山県岡山市北区大供10番地の1"),
+    ("東京都港区芝公園4-2-8 TEL/FAX 03-1234-5678", "東京都港区芝公園4丁目2番8号"),
+    ("東京都港区芝公園4-2-8 携帯 090-1234-5678", "東京都港区芝公園4丁目2番8号"),
+    ("広島市県広島市安佐南区伴東7丁目55番9号", "広島県広島市安佐南区伴東7丁目55番9号"),
+    ("群馬県吾妻郡中之条町中之条町1395-1", "群馬県吾妻郡中之条町中之条町1395番地の1"),
+])
+def test_separators_and_old_spellings_read_as_meant(text: str, canonical: str) -> None:
+    res = jaden.normalize(text)
+    assert res.canonical == canonical
+    assert jaden.match_key(text) == jaden.match_key(res.canonical)
+    assert jaden.normalize(res.canonical).canonical == canonical
+
+
+@pytest.mark.parametrize("text", ["横浜市立第3中学校", "向日市立第４向陽小学校", "札幌市立白石中学校"])
+def test_facility_names_with_numbers_are_not_addresses(text: str) -> None:
+    assert jaden.validate(text).reason == "NAME_NOT_ADDRESS"
+
+
+def test_a_town_of_another_ward_is_flagged_and_the_right_one_offered() -> None:
+    v = jaden.validate("東京都新宿区芝公園4-2-8")
+    assert v.suggestions == ("東京都港区芝公園4丁目2番8号",)
+    r = jaden.check_fields(prefecture="東京都", city="新宿区", line1="芝公園4-2-8")
+    assert not r.valid and r.reason == "CITY_MISMATCH" and r.issues[0].suggestion == "港区"
+    assert not any(i.field == "postal_code" for i in r.issues)
+
+
+def test_a_designated_city_without_its_ward_is_not_accepted_with_the_city_code() -> None:
+    v = jaden.validate("広島県広島市ほげ1-1")
+    assert v.status == "AMBIGUOUS" and len(v.ambiguous_candidates) == 8
+    assert jaden.validate("広島県広島市伴東7丁目55-9").lg_code == "341053"
+
+
+@pytest.mark.parametrize("text", ["大阪府堺市南区茶山台99-5-1", "大阪府堺市南区茶山台4-5-1", "大阪府堺市南区晴美台5-1-1"])
+def test_chome_beyond_a_numbered_town_family_does_not_exist(text: str) -> None:
+    assert jaden.validate(text).reason == "NONEXISTENT_CHOME"
+    assert jaden.validate("大阪府堺市南区茶山台2-5-1").status == "ACCEPTED"

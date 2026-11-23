@@ -322,7 +322,8 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
                 self.wfile.write(body)
 
         def _json(self, status: int, payload: Any) -> None:
-            self._send(status, json.dumps(payload, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+            self._send(status, json.dumps(payload, ensure_ascii=False).encode("utf-8", "replace"),
+                       "application/json; charset=utf-8")
 
         def _error(self, exc: ApiError) -> None:
             self._json(exc.status, {"error": {"code": exc.code, "message": exc.message}})

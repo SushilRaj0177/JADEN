@@ -275,11 +275,11 @@ A system **answers** when it commits to one municipality and **abstains** otherw
 | Invalid inputs (false accepts) | JADEN v0.2 | JADEN parser-only (v0.1) |
 | :--- | ---: | ---: |
 | wrong_pref | **0 / 4,700** | 0 / 4,700 |
-| chome_99 | **74 / 1,026** | 1,026 / 1,026 |
+| chome_99 | **70 / 1,026** | 1,026 / 1,026 |
 | non_address | **2 / 4,700** | 2,723 / 4,700 |
 
 * When JADEN abstains on `town_only`, it returns a candidate list for 2,156 of 2,277 inputs; the correct municipality is in it **98.6%** of the time (median 8 candidates).
-* All 74 `chome_99` acceptances are towns MLIT records as only partly divided into 丁目, where `99-x-y` is a valid lot-number reading (see [Limitations](#8-explicit-boundaries--limitations)).
+* None of the 70 `chome_99` acceptances is read as 99丁目 (none exists; the highest registered 丁目 is 84): all are read as lot numbers, 69 in towns MLIT records as only partly divided into 丁目 and 1 in a town the registry does not list (see [Limitations](#8-explicit-boundaries--limitations)).
 * **Former names:** the `former_name` variant contains all 411 schools whose published address still uses one of Hamamatsu's wards abolished on 2024-01-01; JADEN resolves all 411 to the ward their area became (parser-only mode: 8.3%).
 * **Real-world noise** (`build_reallife.py`, `evaluate_reallife.py`): each clean address with a room as a fourth number, a building with the room glued on, a building and floor, `号室`, `Apt`, spaces between components, form labels and country prefixes, and full-width text — 34,032 inputs. The address must stay the same and the building, floor and room must be extracted exactly: **34,032 / 34,032 pass**.
 * **Offline geocoding** against the surveyed school points (correctly resolved items): median error **360 m** with the bundled 丁目/town points (79% within 1 km), and **71 m** with block-level data installed (89% within 1 km; 94% within 1 km for romaji inputs). The school point is the school site, not the address point, so part of this error is the size of the site.
