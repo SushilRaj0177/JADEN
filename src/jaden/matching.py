@@ -365,7 +365,8 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
         if va != vb and name == "town" and va.split("@")[0] == vb.split("@")[0] and "@?" in (va[-2:], vb[-2:]):
             # One side names which of Kyoto's same-named towns, the other does not
             missing.append("town")
-            notes.append("the town has several places of this name; only one address says which")
+            notes.append("the town has several places of this name; one address gives no street clause JADEN could "
+                         "read to say which")
             break
         if va != vb:
             if name == "unit":

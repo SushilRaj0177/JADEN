@@ -59,6 +59,8 @@ def looks_romanized(text: str) -> bool:
     parts = re.split(r"[,、]", unicodedata.normalize("NFKC", text))
     while len(parts) > 1 and re.match(r"\s*" + _JA, parts[0]):
         parts = parts[1:]
+    while len(parts) > 1 and re.match(r"\s*" + _JA, parts[-1]):
+        parts = parts[:-1]                    # … and one written last ('…, Chiba, ソレイユの丘佐倉')
     text = ",".join(parts)
     # Also without commas: 'パシフィックスクエア代々木 3F 3-1-11 Yoyogi Shibuya-ku Tokyo'
     rest = re.sub(rf"^(?:\s*\S*{_JA}\S*)+", "", text)
@@ -118,6 +120,15 @@ class _RomajiIndex:
                     self.munis.setdefault(form, set()).add(lg)
         self.registry = reg
         self._towns: Dict[str, Dict[str, Tuple[str, ...]]] = {}
+        self._pref_lgs: Dict[str, List[str]] = {}
+
+    def registry_lgs(self, pref: str) -> List[str]:
+        """Every municipality code of a prefecture."""
+        cached = self._pref_lgs.get(pref)
+        if cached is None:
+            cached = sorted({lg for lgs in self.munis.values() for lg in lgs if lg[:2] == pref})
+            self._pref_lgs[pref] = cached
+        return cached
 
     def town_entries(self, lg: str) -> Dict[str, Tuple[str, ...]]:
         """Town names by romaji key. Two towns of one municipality can be spelled alike (大林 / 小林 are
@@ -189,8 +200,8 @@ _SERIES = "甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワ
 _END = r"(?=[\s,]|$)"
 # Pieces of the part below the municipality, tried in this order at each position
 _T_GRID: Final[re.Pattern[str]] = re.compile(
-    r"(KITA|MINAMI)\s*(\d+)\s*(?:-?\s*JO\s*-?\s*(HIGASHI|NISHI)(?:\s*(\d+)\s*-?\s*CHOME)?"
-    r"|(HIGASHI|NISHI)\s*(\d+)(?:\s*-?\s*CHOME)?)" + _END, re.IGNORECASE)   # also 'Kita 8 Nishi 5'
+    r"(KITA|MINAMI)\s*(\d+)\s*(?:-?\s*(?:JO|ZYO)\s*-?\s*(HIGASHI|HIGASI|NISHI|NISI)(?:\s*(\d+)\s*-?\s*(?:CHOME|TYOME))?"
+    r"|(HIGASHI|HIGASI|NISHI|NISI)\s*(\d+)(?:\s*-?\s*(?:CHOME|TYOME))?)" + _END, re.IGNORECASE)   # also 'Kita 8 Nishi 5'
 _T_ROOM: Final[re.Pattern[str]] = re.compile(
     r"(?:#|(?:Room|Rm\.?|Apt\.?|Apartment|Unit|Suite)\s*#?)\s*(\d{1,5}(?:-\d{1,4})*[A-Za-z]?|[A-Za-z](?:-?\d{1,4})?)" + _END,
     re.IGNORECASE)
@@ -245,20 +256,32 @@ def _tokens(seg: str) -> List[Tuple[str, Any]]:
     return out
 
 
+# A word in a building's name: long katakana, Latin letters, building words. Words of kanji alone are 字 and town
+# names ('日置荘北町', '二階堂', '岩館') unless they end like an office, shop or institution ('浦川整骨院')
 _BUILDING_LIKE: Final[re.Pattern[str]] = re.compile(
-    r"[ァ-ヺー]{4}|[ぁ-ゖ]ー|ビル|マンション|ハウス|ハイツ|コーポ|荘|館$|館\d|センター|ホーム|店舗|役所|行政局|支所|団地|棟|"
-    r"[A-Za-z]{3}|階|\d+F$")
+    r"[ァ-ヺー]{4}|[ぁ-ゖ]ー|ビル|マンション|ハウス|ハイツ|コーポ|アパート|センター|ホーム|[A-Za-z]{3}|\d+(?:F|階)$")
+_KANJI_BUILDING: Final[re.Pattern[str]] = re.compile(
+    r"(?:院|事務所|営業所|出張所|工場|店|店舗|会館|会社|支社|本社|局|塾|教室|署|学校|病院|薬局|寮|団地|役所|庁舎|支所|"
+    r"行政局|館|荘)$")
 
 
-def _split_building(japanese: str) -> Tuple[str, str]:
+def _is_building_word(word: str) -> bool:
+    if re.fullmatch(r"[\u3400-\u9fff々〆ヶ\d]+", word):
+        return bool(_KANJI_BUILDING.search(word))
+    return bool(_BUILDING_LIKE.search(word))
+
+
+def _split_building(japanese: str, first_is_town: bool = False) -> Tuple[str, str]:
     """('興戸御垣内 たけのこハウス') -> ('興戸御垣内', 'たけのこハウス'): Japanese written after the town is the 字 or
-    town name first, then possibly a building, which a reading of the town must not swallow."""
+    town name first, then possibly a building, which a reading of the town must not swallow. With
+    ``first_is_town`` the first word is the town itself ('日置荘北町三丁', a town with no romaji)."""
     words = japanese.split()
     keep: List[str] = []
-    for w in words:
-        if not w.startswith(("字", "大字")) and _BUILDING_LIKE.search(w):
-            break
-        keep.append(w)
+    for n, w in enumerate(words):
+        if (n == 0 and first_is_town) or w.startswith(("字", "大字")) or not _is_building_word(w):
+            keep.append(w)
+            continue
+        break
     return " ".join(keep), " ".join(words[len(keep):])
 
 
@@ -376,6 +399,8 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     work = re.sub(r"\b(\d{1,2}F)\s*-\s*(\d{1,4}[A-Za-z]?)\b", r"\1 #\2", work)        # '4F-18': floor, room
     work = re.sub(r"(?<=[A-Za-z]{3})(?=\d+(?:-\d+)+(?=[\s,]|$))|(?<=[a-z]{3})(?=\d{3,}(?=[\s,]|$))", " ", work)
     # ('Nagaoka340-1', 'seki126'; a name stays whole: 'Belle2', 'PLAT100')
+    work = re.sub(r"\bDAI\s*(\d+)\s*-?\s*GO\b", r"第\1号", work, flags=re.IGNORECASE)   # 'DAI 6GO 1-1': 第6号 then the lot
+    work = re.sub(r"(?<=\d)-(?=[A-Za-z]{3})(?!jo|zyo|sen|chome|tyome|ban|go\b)", " ", work, flags=re.IGNORECASE)   # '71-Saiwai cho'
     work = re.sub(r"\b(?:oo|oh|o|ō)?aza\b[\s\-]*", "", work, flags=re.IGNORECASE)   # 'Oaza', 'Aza-', 'Ōaza': 大字, 字
     # The comma of 'マンションNO,2' belongs to the name
     work = re.sub(r"(?<=N[Oo]),(?=\d)", "\x01", work)
@@ -431,6 +456,18 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         if same and any(romaji_key(seg.split()[-1]) in idx.town_entries(lg) for seg in locality if seg.split()
                         for lg in same):
             muni_lgs = same
+    if muni_lgs is None and pref is not None:
+        # '5-1 Nihonbashi Kabuto-cho, Tokyo': no municipality, but one municipality of the prefecture has the town
+        words = [w for seg in locality for w in seg.split() if re.fullmatch(r"[A-Za-z][A-Za-z.'\-]*", w)]
+        owners: Set[str] = set()
+        for size in range(min(3, len(words)), 0, -1):
+            for a in range(0, len(words) - size + 1):
+                keys = _segment_keys(" ".join(words[a:a + size]))
+                owners |= {lg for lg in idx.registry_lgs(pref) for k in keys if k in idx.town_entries(lg)}
+            if owners:
+                break
+        if len(owners) == 1:
+            muni_lgs = owners
     if muni_lgs is None:
         return None
 
@@ -454,7 +491,7 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     for pos, (i, kind, value) in enumerate(pieces):
         if kind == "grid":
             ns = "北" if value.group(1).upper() == "KITA" else "南"
-            ew = "東" if (value.group(3) or value.group(5)).upper() == "HIGASHI" else "西"
+            ew = "東" if (value.group(3) or value.group(5)).upper().startswith("HIGAS") else "西"
             grid_text = f"{ns}{value.group(2)}条{ew}"
             chome = value.group(4) or value.group(6) or chome
         elif kind == "room":
@@ -598,7 +635,7 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         later: List[int] = [at for at in in_home if main is None or at > main[0]]
         jp_home: Optional[int] = later[0] if later else (in_home[-1] if in_home else None)   # after the numbers first
         if jp_home is not None and (main is None or jp_home > main[0] or not unmatched_town):
-            jp, extra_building = _split_building(japanese.pop(jp_home)[1])
+            jp, extra_building = _split_building(japanese.pop(jp_home)[1], first_is_town=not unmatched_town)
             if extra_building:
                 building.append((jp_home + 0.5, extra_building))   # '54 興戸御垣内 たけのこハウス 2F'
             unmatched_town = f"{unmatched_town} {jp}" if unmatched_town else jp
@@ -684,6 +721,7 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     town_text = town_name or (unmatched_town + ("" if re.search(_JA, unmatched_town) else " ")
                               if unmatched_town else "")
     out = f"{'〒' + postal + ' ' if postal else ''}{admin}{town_text}{num}"
+    trailing = [re.sub(_T_ROOM.pattern, lambda r: _room_text(r.group(1)), t, flags=re.IGNORECASE) for t in trailing]
     tail = [t for _, t in sorted(building, key=lambda b: b[0])] + trailing + ([floor] if floor else []) + [_room_text(r) for r in rooms[:1]] + rooms[1:] + bracketed
     if tail:
         out += " " + " ".join(tail)

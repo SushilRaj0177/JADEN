@@ -138,7 +138,8 @@ class BuildingParser:
         # 2. Extract Room/Unit if present. Two rooms ('101号室、102号室', '411号・509号') are kept together as
         # written: neither alone is the address's room
         marks = re.findall(r"(\d+[A-Za-z]?)\s*(号室|号(?!棟|館|地))", working)
-        if len({n for n, _ in marks}) >= 2:
+        bare = re.findall(r"(?:^|\s)(\d{3,4})(?=\s|$)", working)      # 'トランキーロT 101 102'
+        if len({n for n, _ in marks}) >= 2 or len(set(bare)) >= 2:
             together = re.sub(r"\s+", " ", working).strip(" -,、") or None
             return together, floor, None
         if len(marks) >= 2:

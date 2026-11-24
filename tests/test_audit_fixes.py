@@ -1651,3 +1651,48 @@ def test_round_six_mixed_fields() -> None:                                      
                dict(prefecture="Tokyo", city="港区", line1="芝公園4-2-8")):
         result = jaden.check_fields(**kw)
         assert result.status == "ACCEPTED" and result.canonical == "東京都港区芝公園4丁目2番8号"
+
+
+# ---------------------------------------------------------------- audit round 7
+@pytest.mark.parametrize("raw, canonical", [
+    ("東京都港区芝公園4丁目2番8号 F201", "東京都港区芝公園4丁目2番8号 F201"),                              # R7-H1
+    ("大分県豊後大野市緒方町576番地 F201", "大分県豊後大野市緒方町576番地 F201"),
+    ("茨城県笠間市東平2-12-2　F/Kビル2階", "茨城県笠間市東平2丁目12番2号 F/Kビル 2階"),
+    ("東京都港区芝公園4丁目2番 8 号", "東京都港区芝公園4丁目2番8号"),                                        # R7-M1
+    ("東京都港区芝公園 4 丁目 2 番 8 号", "東京都港区芝公園4丁目2番8号"),                                     # R7-M6
+    ("北海道札幌市中央区南七条西７丁目４ラフィリア札幌７０６号", "北海道札幌市中央区南7条西7丁目4番 ラフィリア札幌 706号"),   # R7-M5
+    ("愛知県日進市蟹甲町中島", "愛知県日進市蟹甲町字中島"),                                                   # R7-L7
+])
+def test_round_seven_japanese(raw, canonical) -> None:
+    res = jaden.normalize(raw)
+    assert res.canonical == canonical and jaden.normalize(canonical).canonical == canonical
+    assert jaden.match_key(canonical) == jaden.match_key(raw)
+
+
+@pytest.mark.parametrize("english, japanese", [
+    ("1-2-3 本荘, Chuo-ku, Kumamoto-shi, Kumamoto", "熊本県熊本市中央区本荘1丁目2番3号"),                    # R7-H2
+    ("1-2 二階堂, Kamakura-shi, Kanagawa", "神奈川県鎌倉市二階堂1番2号"),
+    ("Hokkaido Kitami-shi 1-4-2 Minamimachi 浦川整骨院", "北海道北見市南町1丁目4番2号 浦川整骨院"),          # R7-M3
+    ("4-2-8 Shibakoen, Minato-ku, Tokyo, メゾン芝 #A-2", "東京都港区芝公園4丁目2番8号 メゾン芝 A-2号室"),      # R7-L1
+    ("SHIMOKOBATACHO DAI 6GO 1-1, SABAE SHI, Fukui", "福井県鯖江市下河端町第6号1番地の1"),                  # R7-L2
+    ("3-22-5 Miyamae, Sakura-shi, Chiba, ソレイユの丘佐倉", "千葉県佐倉市宮前3丁目22番5号 ソレイユの丘佐倉"),  # R7-L3
+    ("5-1 Nihonbashi Kabuto-cho, Tokyo", "東京都中央区日本橋兜町5番1号"),                                    # R7-L6
+    ("13-1-14 Nagayama 4-Zyo, Asahikawa-si, Hokkaido", "北海道旭川市永山四条13丁目1番14号"),
+])
+def test_round_seven_english(english, japanese) -> None:
+    assert jaden.normalize(english).canonical == japanese
+
+
+@pytest.mark.parametrize("raw", ["大阪府堺市東区日置荘北町三丁5-3", "秋田県山本郡八峰町八森字岩館８番地",       # R7-H2, M4
+                                 "北海道標津郡標津町北六条西１丁目１番２３号"])
+def test_round_seven_english_lines_read_back(raw) -> None:
+    res = jaden.normalize(raw)
+    assert jaden.match_key(res.romaji) == jaden.match_key(raw)
+
+
+def test_round_seven_fields_postal_and_rooms() -> None:
+    for kw in (dict(city="中央区", line1="4-6-1 Hatchobori"), dict(city="Chuo-ku", line1="八丁堀4-6-1")):   # R7-M2
+        assert jaden.check_fields(**kw).canonical == "東京都中央区八丁堀4丁目6番1号"
+    assert any("芝公園" in w for w in jaden.validate("〒105-0011 東京都港区芝4-2-8").warnings)                 # R7-M7
+    two = jaden.normalize("愛知県豊橋市中岩田5丁目8番地1 トランキーロT 101 102")                              # R7-L9
+    assert two.components.unit is None and jaden.normalize(two.canonical).canonical == two.canonical

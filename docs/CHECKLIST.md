@@ -219,3 +219,24 @@ Low
 - [x] R6-L4 `富山市山岸95 503 号` not a fixed point; municipality text left in the building
 - [x] R6-X1 (found while checking) A Japanese building written after a 字 or a Japanese town in English (`54 興戸御垣内 たけのこハウス 2F`) is split off; text after the prefecture (`…, Osaka, A`) is the building; Kunrei suffixes `-si`, `-tyo`, `tyome`
 - [x] R6-X2 (found while checking) A building and room typed twice (`アースビルディング 303 アースビルディング 303`) read as one
+
+## Audit round 7 (separate high-precision audit, 24 Nov 2026)
+- [x] R7-H1 A unit `F201` / `F-201` after 号 / 番地 / 番 takes the last digit of the number as a floor
+- [x] R7-H2 English reader drops a town written in Japanese whose name looks like a building (`日置荘北町`, `二階堂`) (regression)
+- [x] R7-M1 A 号 set apart by spaces (`2番 8 号`) read as a room (regression)
+- [x] R7-M2 `check_fields` with mixed languages, a ward name shared by several cities and no prefecture: MALFORMED with no issue
+- [x] R7-M3 English without commas: a Japanese building after the town glued onto the town
+- [x] R7-M4 JADEN's English line leaves out a town with no romanization (`北6条西`)
+- [x] R7-M5 Sapporo grid with a building glued after the block (`南七条西７丁目４ラフィリア札幌７０６号`)
+- [x] R7-M6 Spaces around every number (`芝公園 4 丁目 2 番 8 号`)
+- [x] R7-M7 A postal code of another town in the same municipality now gives a warning naming the town it belongs to
+- [x] R7-L1 A room after a Japanese building written after the prefecture stays in the building
+- [x] R7-L2 `DAI 6GO 1-1` (第6号1番地の1) read as 6番 (regression)
+- [x] R7-L3 A long building text after the prefecture rejects the address
+- [x] R7-L4 The compare note now says only that one address gives no street clause JADEN could read (reading romanized Kyoto clauses stays open)
+- [ ] R7-L5 English town in the wrong ward: Latin left in the canonical, no suggestion (open: the town is kept as written and reported as not in the registry)
+- [x] R7-L6 English with no ward (`5-1 Nihonbashi Kabuto-cho, Tokyo`, `71-Saiwai cho, Tottori, Tottori`) rejected
+- [x] R7-L7 `愛知県日進市蟹甲町中島` (字 not written) rejected
+- [ ] R7-L8 `加美町町裏八番70-1` not a fixed point (open: a town whose name ends in a kanji 番)
+- [x] R7-L9 Two rooms after a building (`トランキーロT 101 102`) split wrongly
+- [x] R7-X1 (found while checking) Kunrei `Zyo`, `Higasi`, `Nisi`, `tyome` in Hokkaido grids; a 字 already written is not doubled

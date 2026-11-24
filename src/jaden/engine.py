@@ -106,8 +106,8 @@ _SPACED_NUMBERS: Final[re.Pattern[str]] = re.compile(
 _BRACKETED: Final[re.Pattern[str]] = re.compile(r"\s*[(（][^)）]*[)）]")
 # Spaces between block markers and the next number ('4丁目 2番 8号'), but not before a room ('2番 301号室')
 _INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(
-    r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?![\d\-・、,]+\s*号室|[\d\-・]+\s*(?:階|[FfＦ](?![A-Za-z]))|\d+\s+号)")
-# (nor rooms '201・202号室', a floor, or a room whose 号 stands apart: '95番 503 号')
+    r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?![\d\-・、,]+\s*号室|[\d\-・]+\s*(?:階|[FfＦ](?![A-Za-z])))")
+# (nor rooms '201・202号室' or a floor)
 # Town text containing a number that is part of the name, not a block number:
 # '忠和1条', '芽室南2線', '五十嵐3の町', '古町通6番町', '五福1区'
 _NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(
@@ -480,6 +480,8 @@ class AddressNormalizer:
             post_admin_text = re.sub(r"\s+", " ", _BRACKETED.sub(" ", post_admin_text)).strip()
         post_admin_text = _KANA_NUMBER_MARK.sub(lambda m: _KANA_MARK_WORDS[m.group(0)], post_admin_text)
         post_admin_text = _SPACED_NUMBERS.sub(lambda m: "-".join(n for n in m.groups() if n), post_admin_text)
+        # '芝公園 4 丁目 2 番 8 号', '95 503 号': a mark set apart from its number belongs to it
+        post_admin_text = re.sub(r"(\d)\s+(丁目|番地|番(?!館)|号(?!室|館|棟))", r"\1\2", post_admin_text)
         post_admin_text = _INNER_BLOCK_SPACE.sub("", post_admin_text)
         # '南3西4 1-1', '北11条西7 2-3': after a grid's 丁目 written without its mark, a hyphenated pair is the block
         post_admin_text = re.sub(r"^((?:[^\s\d]*?)[北南]\d+条?[東西]\d+)\s+(?=\d+-\d+(?:-\d+)?(?:\s|$))", r"\1-",
@@ -495,6 +497,12 @@ class AddressNormalizer:
                 remainder = post_admin_text[hit.consumed:] if hit is not None else ""
                 if hit is not None and hit.consumed >= 2 and remainder and _BUILDING_WORD.search(remainder):
                     post_admin_text, extra_tail = post_admin_text[:hit.consumed], remainder
+                    break
+                if (hit is not None and post_admin_text[:hit.consumed] == hit.entry.name and hit.consumed >= 2 and remainder
+                        and re.fullmatch(r"[\u3400-\u9fff々ヶケ]{1,4}", remainder) and not remainder.startswith("字")
+                        and not re.search(r"[校院所館局署店社駅園場会]$", remainder)):    # not '石井小学校'
+                    # '蟹甲町中島': a registered town, then a short name with no number: its 字, written without 字
+                    post_admin_text = post_admin_text[:hit.consumed] + "字" + remainder
                     break
         if not split and not extra_tail:
             # '芝公園 Aビル 3階': a registered town, a space, then a name with no block number is the building
@@ -616,6 +624,11 @@ class AddressNormalizer:
             # room ('中央ビルディング 3F', '703号室'), never the block
             block_dict, town_name, _ = BlockFSM.parse("", has_chome_already=True)
             tail_text = grid_rest
+        elif hokkaido_clause is not None and (glued := re.match(
+                r"^(\d+(?:-\d+){0,2})(?![\d\-]|\s*(?:番|号|の\d|階|[FfＦ](?![A-Za-z])))(?=[^\s\d])(.+)$", grid_rest)):
+            # '南七条西7丁目4ラフィリア札幌706号': the block, then a building glued to it, then its room
+            block_dict, town_name, _ = BlockFSM.parse(glued.group(1), has_chome_already=True)
+            tail_text = glued.group(2)
         elif fixed_town:
             block_dict, _, tail_text = BlockFSM.parse(
                 text_after_conventions[len(fixed_town):], has_chome_already=has_chome_from_hokkaido)
@@ -1192,6 +1205,16 @@ class AddressNormalizer:
         # Postal code: keep the written one; otherwise fill it in when the town has exactly one
         postal_out = postal_code
         postal_consistent = town_res.postal_consistent if town_res else None
+        if (postal_code and postal_consistent is not False and gaz is not None and lg_code and match is not None
+                and not is_ambiguous):
+            # '〒105-0011 東京都港区芝4-2-8': the code is 港区's, but of another town (芝公園), not of 芝
+            own = gaz.postal_codes_of_town(lg_code, match.entry.name, chome_val)
+            digits = postal_code.replace("-", "")
+            if own and digits not in own:
+                towns = sorted({p.town for p in gaz.postal_records(postal_code) if p.lg_code == lg_code and p.town})
+                if towns:
+                    notes.append(f"postal code {postal_code} is {'/'.join(towns)}'s, not {match.entry.name}'s "
+                                 f"({', '.join(f'{c[:3]}-{c[3:]}' for c in own)})")
         if postal_out is None and gaz is not None and lg_code and not is_ambiguous:
             # Japan Post lists some 字 as towns of their own ('平良久貝'), so the town as written comes
             # first, then the registered town it belongs to, then the municipality-wide code

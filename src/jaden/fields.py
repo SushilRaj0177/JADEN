@@ -110,9 +110,11 @@ def _admin_in_english(prefecture: str, city: str) -> Tuple[str, str]:
         prefecture = pref.romaji
     if city and _JAPANESE.search(city):
         found = registry.find_municipalities(city, pref.code if pref else None)
-        romaji = _municipality_readings().get(found[0].lg_code, {}).get("romaji") if len(found) == 1 else None
-        if romaji:
-            city = " ".join(reversed(_words(romaji)))       # '港区' -> 'Minato-ku'
+        # '港区' -> 'Minato-ku'; a ward name several cities share ('中央区') is written alone ('Chuo-ku')
+        forms = {" ".join(reversed(_words(r))) if len(found) == 1 else _words(r)[-1]
+                 for r in (_municipality_readings().get(m.lg_code, {}).get("romaji") for m in found) if r}
+        if len(forms) == 1:
+            city = forms.pop()
     return prefecture, city
 
 
@@ -136,6 +138,10 @@ def _admin_in_japanese(prefecture: str, city: str) -> Tuple[str, str]:
             records = wards
         if len(records) == 1:
             city = (records[0].county or "") + records[0].name
+        else:
+            names = {r.ward or r.name for r in records}
+            if len(names) == 1:
+                city = names.pop()        # 'Chuo-ku' with no prefecture: 中央区, the town will say which
     return prefecture, city
 
 

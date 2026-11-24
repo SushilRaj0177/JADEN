@@ -139,6 +139,13 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
             first.append(f"{town_words} {c.hokkaido_grid.chome}-chome")
         else:
             first.append(f"{number_str} {town_words} {after_town}".strip())
+    elif c.hokkaido_grid is not None and c.hokkaido_grid.jo is not None:
+        # A grid town with no published reading ('北6条西' in 標津町) is written in Japanese where the town goes
+        g = c.hokkaido_grid
+        rest_numbers = "-".join(str(n) for n in (c.ban, c.go) if n is not None) or \
+            "-".join(str(n) for n in (c.banchi, c.edaban) if n is not None)
+        first.append(f"{rest_numbers} {g.cardinal_ns}{g.jo}条{g.cardinal_ew}"
+                     f"{f'{g.chome}丁目' if g.chome is not None else ''}{after_town}".strip())
     elif written and c.hokkaido_grid is None:
         first.append(f"{number_str} {written}{after_town}".strip())   # a town the registry does not hold, as written
     elif c.kyoto_direction is not None:
