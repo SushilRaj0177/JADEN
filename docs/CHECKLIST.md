@@ -254,7 +254,7 @@ Low
 - [x] R8-M8 JADEN's English line drops the part of a 字 that has no romanization
 - [x] R8-M9 `check_fields(city="Shinjuku-ku", line1="4-2-8 Shibakoen")` gives no CITY_MISMATCH
 - [x] R8-L1 English without commas: a building written first becomes the town (regression)
-- [x] R8-L2 `山岸95番 503 号` gives 号 503 while `山岸95 503 号` gives a room (regression)
+- [x] R8-L2 `山岸95番 503 号` vs `山岸95 503 号` (settled in round 9: with 番 written, `番 503号` is the 号; a bare `95 503号` keeps the round-4 reading as a room, `488 101号`)
 - [x] R8-L3 `21-242F/6F` read as 21番242号 (regression)
 - [x] R8-L4 `DAI 6GO` in other word orders
 - [x] R8-L5 Spaced numbers around 条 / 丁 / 地割
@@ -265,3 +265,21 @@ Low
 - [x] R8-L10 `1-1 Minami 3-jo Nishi 4-chome, Chuo-ku` rejected
 - [x] R8-L11 README limitation 11 does not match `あい渋谷区`
 - [x] R8-L12 `12th Fl.3-2-5 …` and `Minami-Ohi 6-Chome`
+
+## Audit round 9 (separate high-precision audit, 24 Nov 2026)
+- [x] R9-H1 Any text before `、` / `,` and a prefecture is moved after the address and accepted (second address, phone number, date, company) (regression)
+- [x] R9-M1 The postal-code warning is silenced when the written town starts with the code's town (`〒105-0014 …芝公園`) (regression)
+- [x] R9-M2 The 第N space rule splits building names anywhere (`森第2ビル`) (regression)
+- [x] R9-M3 A spaced `番 NNN号` read as a room (regression)
+- [x] R9-L1 A stray spaced `号室` takes the 号 (`4-2-8 号室`) (regression)
+- [x] R9-M4 `芝公園第2ビル101` still read as 2丁目
+- [x] R9-M5 English postal code followed by an English building or floor not read
+- [x] R9-M6 `香川町安原下第三号56` misread
+- [x] R9-L2 A lone `F` takes the 号 when the line has another `\dF` later
+- [x] R9-L3 Floor ranges with `・`, `～`, `-` (`21-242F・6F`)
+- [ ] R9-L4 丁 for 丁目 outside Sakai (`芝公園4丁3-4`, `忠和1条2丁3-4`) (open; the spaced-丁 joining that made `忠和1条2 丁 3-4` worse was taken back)
+- [x] R9-L5 JADEN's English line without the prefecture, town in Japanese, not read
+- [x] R9-L6 A katakana 字 written without 字 lost in the English round trip
+- [ ] R9-L7 Other English/key invariant failures (`鬼石町大字鬼石`, `尻内字尻内河原`, `ROOM1`) (open: a few odd source rows)
+- [ ] R9-L8 `4-2-8 Shiba 105-0014`: a town word that is a municipality's romaji overrides the postal code (open)
+- [x] R9-L9 `付近` after block numbers: accepted with a warning that the place is near the address, not at it

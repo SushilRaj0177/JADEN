@@ -135,8 +135,9 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
                 town_words += f" 字{koaza[overlap:]}"
         if plain.startswith(base) and plain[len(base):]:
             below = plain[len(base):]                   # a 字 below the town has no reading: kept as written
-            if below.startswith(base):
-                below = "字" + below                    # '身延身延': the 字 repeats the town's name, so say it is a 字
+            if below.startswith(base) or (c.koaza and below.endswith(c.koaza) and not below.startswith(("字", "大字"))
+                                          and re.match(r"[ァ-ヺー]", below)):
+                below = "字" + below                    # '身延身延', 'タカノス': marked as the 字 it is
             town_words += " " + below
         if c.kyoto_direction is not None and getattr(c, "town_homonyms", 0) > 1:
             town_words += " " + c.kyoto_direction.raw_clause   # which of Kyoto's same-named towns

@@ -31,7 +31,8 @@ _NUMBER_IN_NAME: Final[re.Pattern[str]] = re.compile(
 _HYPHEN_AFTER_MARKER: Final[re.Pattern[str]] = re.compile(r"(?<=\d)(丁目|番地|番)\s*-\s*(?=\d+(?:番|号))")
 # A floor or room mark standing right after the block numbers with no number of its own
 _BARE_MARK: Final[re.Pattern[str]] = re.compile(
-    r"^(?:階|[Ff](?![A-Za-z0-9\-\u3040-\u30ff\u3400-\u9fff])|号室|号(?!館|棟|地|線))")   # 'Fビル', 'F201' are names
+    r"^(?:階|[Ff](?![A-Za-z0-9\-\u3040-\u30ff\u3400-\u9fff]|-(?!\d+[Ff]))|[Ff](?=[・~～\-]\d+[Ff])|号室|号(?!館|棟|地|線))")
+# ('Fビル', 'F201' are names; '242F・6F' is a floor range)
 
 
 def _town_from(town_pattern: str, min_len: int) -> str:
@@ -116,7 +117,10 @@ class BlockFSM:
         """'2-4-13階' is 2-4-1 and 3階; '13-1105号' is 13-1 and 105号: a floor or room mark with no number of
         its own takes the digits it needs from the end of the last block number."""
         mark = _BARE_MARK.match(tail)
-        if not mark or (source is not None and not re.search(r"\d" + re.escape(mark.group(0)), source)):
+        key0 = next((k for k in ("go", "edaban", "ban", "banchi") if result[k] is not None), None)
+        glued = key0 is not None and source is not None and re.search(
+            rf"(?<!\d){result[key0]}(?:号)?{re.escape(mark.group(0))}" if mark else "$^", source)
+        if not mark or (source is not None and not glued):
             return result, town, tail          # 'F', '階' set apart from the number ('8号 F 201') are no floor of it
         key = next((k for k in ("go", "edaban", "ban", "banchi") if result[k] is not None), None)
         if key is None:
@@ -340,7 +344,8 @@ class BlockFSM:
             raw_num = single_marked.group("num")
             suffix = single_marked.group("suffix")
             is_pure_kanji = any(c in _KANJI_NUM_CHARS for c in raw_num) and not any(c.isdigit() for c in raw_num)
-            if suffix == "番" and is_pure_kanji:   # a name ('麻布十番'), also after 字 ('字三番')
+            if is_pure_kanji and (suffix == "番" or single_marked.group("town").endswith("第")):
+                # a name ('麻布十番', '字三番', '安原下第三号')
                 if town_pattern is not _TOWN_ANY:
                     break
                 min_town = single_marked.end("suffix")

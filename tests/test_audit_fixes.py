@@ -1722,7 +1722,7 @@ def test_round_eight_english(english, japanese) -> None:
     ("北海道札幌市中央区南1条西4丁目5-1-201A", "北海道札幌市中央区南1条西4丁目5番1号 201A"),                     # R8-M1
     ("東京都港区芝公園4丁目2番8号 F 201", "東京都港区芝公園4丁目2番8号 F 201"),                                # R8-M4
     ("大阪府大阪市西区九条1丁目21-242F/6F", "大阪府大阪市西区九条1丁目21番24号 2F/6F"),                         # R8-L3
-    ("富山県富山市山岸95番 503 号", "富山県富山市山岸95番 503号室"),                                           # R8-L2
+    ("富山県富山市山岸95番 503 号", "富山県富山市山岸95番503号"),                                              # R8-L2, R9-M3
     ("東京都港区芝公園4-2-8 サンハイツ 301 号室", "東京都港区芝公園4丁目2番8号 サンハイツ 301号室"),            # R8-L7
     ("北海道札幌市中央区南 1 条西 4 丁目 5 番 1 号", "北海道札幌市中央区南1条西4丁目5番1号"),                   # R8-L5, L6
     ("Room 301, 東京都港区芝公園4-2-8", "東京都港区芝公園4丁目2番8号 301"),                                     # R8-L8
@@ -1744,3 +1744,38 @@ def test_round_eight_validation() -> None:
     result = jaden.check_fields(city="Shinjuku-ku", line1="4-2-8 Shibakoen")                             # R8-M9
     assert any(i.code == "CITY_MISMATCH" for i in result.issues)
     assert jaden.normalize("東京都港区芝公園第2ビル").components.chome is None                              # R8-L9
+
+
+# ---------------------------------------------------------------- audit round 9
+def test_round_nine_leading_text_and_postal() -> None:
+    for text in ("大阪市北区梅田1-1-3、東京都港区芝公園4-2-8", "TEL 03-3433-5111, 東京都港区芝公園4-2-8",       # R9-H1
+                 "株式会社ABC、東京都港区芝公園4-2-8", "2024年1月1日、東京都港区芝公園4-2-8"):
+        assert "芝公園4丁目2番8号 " not in jaden.normalize(text).canonical
+    assert jaden.normalize("Room 301, 東京都港区芝公園4-2-8").canonical == "東京都港区芝公園4丁目2番8号 301"
+    for code, address in (("105-0014", "東京都港区芝公園4-2-8"), ("105-0011", "東京都港区芝4-2-8公園前ハイツ")):   # R9-M1
+        assert [w for w in jaden.validate(f"〒{code} {address}").warnings if w.startswith("postal code")]
+    for own in ("〒501-2526 岐阜県岐阜市門屋字野崎95", "〒380-0813 長野県長野市大字鶴賀緑町1107番地9"):
+        assert not [w for w in jaden.validate(own).warnings if w.startswith("postal code")]
+
+
+@pytest.mark.parametrize("raw, canonical", [
+    ("東京都港区芝5-1-1 森第2ビル", "東京都港区芝5丁目1番1号 森第2ビル"),                                    # R9-M2
+    ("奈良県橿原市中町200番 128号", "奈良県橿原市中町200番128号"),                                             # R9-M3
+    ("東京都港区芝公園4-2-8 号室", "東京都港区芝公園4丁目2番8号"),                                              # R9-L1
+    ("香川県高松市香川町安原下第三号56", "香川県高松市香川町安原下第三号56番地"),                               # R9-M6
+    ("東京都港区芝公園4丁目2番8号 F 2F", "東京都港区芝公園4丁目2番8号 F 2F"),                                   # R9-L2
+    ("大阪府大阪市西区九条1丁目21-242F・6F", "大阪府大阪市西区九条1丁目21番24号 2F・6F"),                       # R9-L3
+])
+def test_round_nine_japanese(raw, canonical) -> None:
+    res = jaden.normalize(raw)
+    assert res.canonical == canonical and jaden.normalize(canonical).canonical == canonical
+
+
+def test_round_nine_english_and_notes() -> None:
+    res = jaden.normalize("4-2-8 Shibakoen, Minato-ku, Tokyo 105-0011, Sun Heights 201")                  # R9-M5
+    assert res.components.postal_code == "105-0011" and res.canonical.startswith("東京都港区芝公園4丁目2番8号")
+    assert jaden.normalize("88-1 江刺区愛宕字前中野, Oshu-shi 023-0000").components.town                       # R9-L5
+    raw = "茨城県土浦市菅谷町タカノス1168-1"                                                                    # R9-L6
+    assert jaden.match_key(jaden.normalize(raw).romaji) == jaden.match_key(raw)
+    assert jaden.validate("東京都港区芝公園4-2-8付近").warnings                                                 # R9-L9
+    assert jaden.normalize("東京都港区芝公園第2ビル101").components.chome is None                               # R9-M4

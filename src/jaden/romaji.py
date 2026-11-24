@@ -73,6 +73,10 @@ def looks_romanized(text: str) -> bool:
     # A romanized municipality ('Saga-shi', 'Minato-ku') marks an English line even when a town the
     # registry cannot romanize is written in Japanese inside it ('1 本庄町, Saga-shi, Saga')
     if _LATIN_MUNICIPALITY.search(text):
+        # A part that is only a Latin municipality ('…, Oshu-shi 023-0000') settles it
+        if any(re.fullmatch(r"\s*[A-Za-z][A-Za-z\s\-]*-(?:shi|si|ku|machi|cho|tyo|mura|son|gun)(?:\s+\d{3}-?\d{4})?\s*",
+                            part, re.IGNORECASE) for part in text.split(",")[1:]):
+            return True
         return latin / len(letters) > 0.5
     return latin / len(letters) > 0.8
 
@@ -219,6 +223,12 @@ _T_NUMBERS: Final[re.Pattern[str]] = re.compile(rf"\d+(?:\s*-\s*\d+)*(?:-[{_SERI
 _T_WORD: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9\u00c0-\u024f][A-Za-z0-9\u00c0-\u024f.'&\-]*" + _END)
 _ROOM_LIKE: Final[re.Pattern[str]] = re.compile(r"\d{1,5}[A-Za-z]?|[A-Za-z]-?\d{1,4}|\d{1,2}-\d{2,4}|\d{1,2}-[A-Za-z]")
 _KYOTO_CLAUSE: Final[re.Pattern[str]] = re.compile(r"(?:上る|下る|上ル|下ル|東入る?|西入る?|東入ル|西入ル)(?:\d+丁目)?$")
+
+
+def _after_prefecture(text: str) -> bool:
+    """'…, Tokyo 105-0011, Sun Heights 201': a code straight after the prefecture is the postal code, whatever follows."""
+    words = re.split(r"[\s,]+", text.strip())
+    return bool(words) and any(k in _index().prefectures for k in _segment_keys(words[-1]))
 
 
 def _tokens(seg: str) -> List[Tuple[str, Any]]:
@@ -388,7 +398,8 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     m = found[-1] if found else None
     after_code = work[m.end():] if m else ""
     if m and after_code.strip(" ,") and not re.fullmatch(r"[\s,]*japan[\s,.]*", after_code, re.IGNORECASE) \
-            and not re.match(r"\s*,\s*" + _JA, after_code) and not re.search(r"〒\s*$", work[:m.start()]):
+            and not re.match(r"\s*,\s*" + _JA, after_code) and not re.search(r"〒\s*$", work[:m.start()]) \
+            and not _after_prefecture(work[:m.start()]):
         m = None                       # text after it: a lot ('Aikoku 191-5711, Kushiro-shi'), not the postal code
     if m:
         postal = f"{m.group(1)}-{m.group(2)}"
@@ -460,6 +471,11 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         if same and any(romaji_key(seg.split()[-1]) in idx.town_entries(lg) for seg in locality if seg.split()
                         for lg in same):
             muni_lgs = same
+    if muni_lgs is not None and len(muni_lgs) > 1 and postal:
+        # 'Minato-ku 105-0011': the postal code tells which 港区
+        coded_lgs = {p.lg_code for p in get_gazetteer().postal_records(postal) if p.lg_code}
+        if muni_lgs & coded_lgs:
+            muni_lgs = muni_lgs & coded_lgs
     if muni_lgs is None and postal:
         # '2031-1081 Tsuda, Ibaraki 312-0032': no municipality written, the postal code names it
         coded = {p.lg_code for p in get_gazetteer().postal_records(postal) if p.lg_code}
