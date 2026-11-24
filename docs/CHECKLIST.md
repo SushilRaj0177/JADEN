@@ -234,7 +234,7 @@ Low
 - [x] R7-L2 `DAI 6GO 1-1` (第6号1番地の1) read as 6番 (regression)
 - [x] R7-L3 A long building text after the prefecture rejects the address
 - [x] R7-L4 The compare note now says only that one address gives no street clause JADEN could read (reading romanized Kyoto clauses stays open)
-- [ ] R7-L5 English town in the wrong ward: Latin left in the canonical, no suggestion (open: the town is kept as written and reported as not in the registry)
+- [x] R7-L5 English town in the wrong ward: the town is kept as written and a note names the municipality that has it ("did you mean 東京都港区芝公園?")
 - [x] R7-L6 English with no ward (`5-1 Nihonbashi Kabuto-cho, Tokyo`, `71-Saiwai cho, Tottori, Tottori`) rejected
 - [x] R7-L7 `愛知県日進市蟹甲町中島` (字 not written) rejected
 - [ ] R7-L8 `加美町町裏八番70-1` not a fixed point (open: a town whose name ends in a kanji 番)

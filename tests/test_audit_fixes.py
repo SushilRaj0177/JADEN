@@ -1696,3 +1696,8 @@ def test_round_seven_fields_postal_and_rooms() -> None:
     assert any("芝公園" in w for w in jaden.validate("〒105-0011 東京都港区芝4-2-8").warnings)                 # R7-M7
     two = jaden.normalize("愛知県豊橋市中岩田5丁目8番地1 トランキーロT 101 102")                              # R7-L9
     assert two.components.unit is None and jaden.normalize(two.canonical).canonical == two.canonical
+
+
+def test_round_seven_english_town_in_another_ward_is_suggested() -> None:                     # R7-L5
+    notes = jaden.normalize("4-2-8 Shibakoen, Shinjuku-ku, Tokyo").notes
+    assert any("東京都港区芝公園" in n for n in notes)

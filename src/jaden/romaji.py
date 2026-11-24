@@ -641,6 +641,18 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
             unmatched_town = f"{unmatched_town} {jp}" if unmatched_town else jp
         if unmatched_town:
             notes.append(f"romaji town '{unmatched_town}' is not in the registry")
+            if pref is not None and not re.search(_JA, unmatched_town):
+                # '4-2-8 Shibakoen, Shinjuku-ku, Tokyo': the town is in another municipality of the prefecture
+                keys = _segment_keys(unmatched_town)
+                elsewhere = [lg for lg in idx.registry_lgs(pref) if lg not in muni_lgs
+                             and any(k in idx.town_entries(lg) for k in keys)]
+                if len(elsewhere) == 1:
+                    rec = idx.registry.get_municipality_by_code(elsewhere[0])
+                    towns_there = idx.town_entries(elsewhere[0])
+                    there = towns_there[next(k for k in keys if k in towns_there)][0]
+                    if rec is not None:
+                        notes.append(f"did you mean {rec.prefecture_name}{rec.county or ''}{rec.name}{there}? "
+                                     f"'{unmatched_town}' is registered in {rec.name}")
             if re.search(r"\d+(?:号|地割|街区)", unmatched_town):
                 lot_mark = "番地"
     alone = {i for i in range(len(locality)) if sum(1 for j, _, _ in pieces if j == i) == 1}
