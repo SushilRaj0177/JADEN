@@ -72,6 +72,14 @@ def _optional_text(params: Dict[str, Any], name: str) -> str:
     return value
 
 
+def _postal_param(params: Dict[str, Any], name: str) -> Dict[str, Any]:
+    """A postal code sent as a JSON number (1050011, or 600063 with its leading zero lost) as text."""
+    raw = params.get(name)
+    if isinstance(raw, int) and not isinstance(raw, bool):
+        return {**params, name: f"{raw:07d}" if 0 <= raw < 10_000_000 else str(raw)}
+    return params
+
+
 def _number(params: Dict[str, Any], name: str) -> float:
     """A required number, given as a JSON number or as text."""
     value = params.get(name)
@@ -215,7 +223,7 @@ class JadenApi:
 
     def postal(self, params: Dict[str, Any]) -> Any:
         from .lookup import lookup_postal
-        code = _required(params, "code")
+        code = _required(_postal_param(params, "code"), "code")
         if "/" in code:
             raise ApiError(404, "not_found", f"no such endpoint: /v1/postal/{code}")
         found = lookup_postal(code)
@@ -269,9 +277,7 @@ class JadenApi:
 
     def fields(self, params: Dict[str, Any]) -> Any:
         from .fields import FIELD_NAMES, check_fields
-        raw_postal = params.get("postal_code")
-        if isinstance(raw_postal, int) and not isinstance(raw_postal, bool):
-            params = {**params, "postal_code": f"{raw_postal:07d}" if 0 <= raw_postal < 10_000_000 else str(raw_postal)}
+        params = _postal_param(params, "postal_code")
         values = {k: _optional_text(params, k) for k in FIELD_NAMES}
         if not any(values.values()):
             raise ApiError(400, "missing_parameter", f"give at least one of: {', '.join(FIELD_NAMES)}")
@@ -318,11 +324,35 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
                 pass
 
         def handle_one_request(self) -> None:
+            reading = getattr(self.server, "reading", None)
+            if reading is not None:
+                reading[self.connection] = time.monotonic()   # until the whole request is in
             try:
                 super().handle_one_request()
-            except (ConnectionResetError, BrokenPipeError, TimeoutError):
-                # The client went away: nothing to answer, nothing to log as an error
+            except (ConnectionResetError, BrokenPipeError, TimeoutError, OSError):
+                # The client went away, or took too long to send its request: nothing to answer
                 self.close_connection = True
+            finally:
+                self._request_read()
+                self.server_cleanup()
+
+        def server_cleanup(self) -> None:
+            too_slow = getattr(self.server, "too_slow", None)
+            if too_slow is not None:
+                too_slow.discard(self.connection)
+
+        def _request_read(self) -> bool:
+            """Marks the request as fully read; False when it was cut off for taking too long."""
+            reading = getattr(self.server, "reading", None)
+            if reading is None:
+                return True
+            reading.pop(self.connection, None)
+            too_slow: set = getattr(self.server, "too_slow", set())
+            cut = self.connection in too_slow
+            if cut:
+                too_slow.discard(self.connection)
+                self.close_connection = True
+            return not cut
 
         def log_message(self, fmt: str, *args: Any) -> None:
             if not quiet:
@@ -366,6 +396,8 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
             self.do_GET()
 
         def do_GET(self) -> None:
+            if not self._request_read():
+                return
             path = urlsplit(self.path).path
             if path == "/favicon.ico":
                 self._send(204, b"", "image/x-icon")
@@ -402,13 +434,15 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
                 self._error(ApiError(415, "unsupported_media_type", "send the body as application/json"))
                 return
             raw = self.rfile.read(length) if length else b""
+            if not self._request_read():
+                return
             if len(raw) < length:
                 self.close_connection = True
                 self._error(ApiError(400, "bad_request", "the body is shorter than its Content-Length"))
                 return
             try:
                 body = json.loads(raw.decode("utf-8")) if raw else {}
-            except (UnicodeDecodeError, json.JSONDecodeError):
+            except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
                 self._error(ApiError(400, "bad_json", "the request body must be UTF-8 JSON"))
                 return
             if not isinstance(body, dict):
@@ -438,6 +472,26 @@ class _BoundedServer(ThreadingHTTPServer):
         import threading
         super().__init__(*args, **kwargs)
         self._slots = threading.BoundedSemaphore(MAX_CONNECTIONS)
+        # Connections still sending their request, and since when. The socket timeout only bounds the gap
+        # between two packets; a client sending a header line every few seconds would hold its slot for
+        # ever, so a request must arrive whole within SOCKET_TIMEOUT seconds.
+        self.reading: Dict[Any, float] = {}
+        self.too_slow: set = set()
+        threading.Thread(target=self._reap_slow, daemon=True, name="jaden-slow-clients").start()
+
+    def _reap_slow(self) -> None:
+        import socket
+        while True:
+            time.sleep(1)
+            now = time.monotonic()
+            for conn, since in list(self.reading.items()):
+                if now - since > SOCKET_TIMEOUT:
+                    self.reading.pop(conn, None)
+                    self.too_slow.add(conn)
+                    try:
+                        conn.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
 
     def process_request(self, request: Any, client_address: Any) -> None:
         if not self._slots.acquire(blocking=False):

@@ -301,8 +301,8 @@ def read_rows(text: str, fmt: str, column: Optional[str],
                     continue
                 try:
                     obj = json.loads(line)
-                except ValueError as exc:
-                    raise ValueError(f"line {number}: not valid JSON ({exc})") from None
+                except (ValueError, RecursionError) as exc:   # '[[[[…' nested beyond Python's limit
+                    raise ValueError(f"line {number}: not valid JSON ({type(exc).__name__})") from None
                 if not isinstance(obj, dict):
                     raise ValueError(f"line {number}: expected a JSON object with an '{key}' field")
                 yield obj, as_text(obj.get(key))

@@ -62,7 +62,7 @@ def _english_unit(unit: Optional[str]) -> Optional[str]:
     """'101号室' / '101号' / '101' -> '#101' for an English address line."""
     if not unit:
         return None
-    digits = re.match(r"^((?:\d{1,2}-)?\d+[A-Za-z]?)", unit)     # a wing stays with its room: '#1-201'
+    digits = re.match(r"^(\d+(?:-\d+)*[A-Za-z]?)", unit)     # a wing stays with its room: '#1-201', '#207-1'
     return f"#{digits.group(1)}" if digits else unit
 
 
@@ -70,7 +70,7 @@ def _english_floor(floor: Optional[str]) -> Optional[str]:
     """'5階' -> '5F', '地下1階' -> 'B1F'."""
     if not floor:
         return None
-    m = re.match(r"^(地下|B)?\s*(\d+)\s*(?:階|[Ff])$", floor)
+    m = re.match(r"^(地下|B)?\s*(\d+)\s*(?:階|[Ff])$", floor) or re.match(r"^(B)(\d+)$", floor)   # 'B2' is B2F
     if not m:
         return floor
     return f"{'B' if m.group(1) else ''}{m.group(2)}F"
@@ -99,9 +99,17 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
     house = (c.ban, c.go) if c.ban is not None or c.go is not None else (c.banchi, c.edaban)
     numbers = [n for n in (c.chome, *house) if n is not None]   # '5丁目13番地の1' keeps its 13-1
     number_str = "-".join(str(n) for n in numbers)
-    if c.chome is not None and len(numbers) == 2:
+    if c.chome is not None and c.chome_verified is not True and len(numbers) == 3:
+        number_str = f"{c.chome}-chome-{numbers[1]}-{numbers[2]}"   # a 丁目 the registry does not list
+    elif c.chome is not None and len(numbers) == 1:
+        number_str = f"{c.chome}-chome"           # a lone '8' would read back as a block number
+    elif c.chome is not None and len(numbers) == 2:
         number_str = f"{c.chome}-chome-{numbers[1]}"   # '2-17' alone would read back as a lot and its branch
     after_town = ""
+    if (c.chome is None and c.ban is None and c.banchi is not None and town is not None
+            and (getattr(town, "chomes", None) or getattr(town, "postal_has_chome", False))):
+        # '1-68' would read back as 1丁目68 in a town that has 丁目: the lot keeps its 番地
+        number_str = f"{c.banchi}番地" + (f"{c.edaban}" if c.edaban is not None else "")
     if c.lot_number:
         lead = f"{c.chome}-chome" if c.chome is not None else ""
         if re.match(r"\d", c.lot_number):
@@ -111,14 +119,19 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
 
     first = []
     written = re.sub(r"^大字", "", c.town or "")
+    if town is not None and not town.romaji:
+        town = None          # no published reading: the town is written in Japanese inside the English line
     if town is not None:
-        if not town.romaji:
-            return None
         town_words = " ".join(_words(town.romaji))
         base = re.sub(r"^字", "", town.name.replace("大字", ""))
         plain = re.sub(r"^字", "", written.replace("大字", ""))
+        from .romaji import _index, romaji_key
+        if len(_index().town_entries(muni.lg_code).get(romaji_key(town.romaji), ())) > 1:
+            town_words += " " + town.name        # 志水町 and 清水町 are both 'Shimizucho': the name says which
         if plain.startswith(base) and plain[len(base):]:
             town_words += " " + plain[len(base):]       # a 字 below the town has no reading: kept as written
+        if c.kyoto_direction is not None and getattr(c, "town_homonyms", 0) > 1:
+            town_words += " " + c.kyoto_direction.raw_clause   # which of Kyoto's same-named towns
         if c.hokkaido_grid is not None and c.hokkaido_grid.chome is not None and c.ban is None and c.banchi is None:
             first.append(f"{town_words} {c.hokkaido_grid.chome}-chome")
         else:

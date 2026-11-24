@@ -305,7 +305,8 @@ def resolve_town(
     postal_lgs = tuple(sorted({p.lg_code for p in postal}))
     notes: List[str] = []
     if postal_code and not postal:
-        notes.append(f"postal code {postal_code} is not in the Japan Post list")
+        notes.append(f"postal code {postal_code} is not one of Japan Post's area codes (a large-office code "
+                     f"for one company or building is possible; JADEN does not hold those)")
 
     # Respelling a town is safe within one place: one municipality, or the wards of one city
     one_place = len({(c.prefecture_code, c.city) for c in candidates}) == 1

@@ -84,7 +84,7 @@ def _address_of(line: str, column: str) -> Optional[Dict[str, Any]]:
     if line[0] in "{\"[":
         try:
             value = json.loads(line)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, RecursionError):   # nested beyond Python's limit: kept as text
             return {"input": line, "address": line}
         if isinstance(value, dict):
             return {"input": value, "address": as_text(value.get(column))}

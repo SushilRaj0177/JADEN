@@ -5,7 +5,7 @@ furigana Japanese Excel stores beside a string) and
 writes one worksheet of text cells, so postal codes such as 0600063 keep their leading zero. Enough
 for `jaden batch` and `jaden dedupe` to take a spreadsheet straight from Excel and give one back.
 Hostile files are refused before they cost memory: parts too large or compressed too well, DTDs,
-row and column numbers beyond Excel's limits, more than MAX_CELLS cells.
+row and column numbers beyond Excel's limits, more than MAX_CELLS cells or MAX_TEXT characters.
 """
 
 import re
@@ -22,6 +22,7 @@ _CELL_REF = re.compile(r"([A-Z]+)(\d+)$")
 _XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff\ud800-\udfff]")
 MAX_CELLS = 5_000_000
 MAX_MATERIALIZED = 20_000_000                      # cells after padding each row to its last cell
+MAX_TEXT = 50_000_000                               # characters across all cells: one shared string used by many cells multiplies
 MAX_ROWS, MAX_COLUMNS = 1_048_576, 16_384          # Excel's own limits
 MAX_PART_BYTES = 512 * 1024 * 1024                  # one uncompressed part (a sheet, the shared strings)
 # '<!DOCTYPE' and '<!ENTITY' in UTF-8 / ASCII and in UTF-16 (a part may declare either encoding)
@@ -140,7 +141,7 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
         part = target if target.startswith("xl/") else f"xl/{target}"
 
         out: List[List[str]] = []
-        cells = materialized = 0
+        cells = materialized = text_size = 0
         last_row = -1
         with _open_part(book, part, path) as fh:
             try:
@@ -177,6 +178,9 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
                             value = _number(raw)
                         else:                       # 'str' (formula result), 'e' (error)
                             value = raw
+                        text_size += len(value)
+                        if text_size > MAX_TEXT:
+                            raise ValueError(f"{path} holds more than {MAX_TEXT:,} characters of text")
                         values[col] = value
                     row.clear()
                     if values:

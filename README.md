@@ -75,7 +75,7 @@ Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_too
 
 ## What's new in v0.2
 
-v0.1 knew Japan's 1,918 municipalities. v0.2 also knows every registered **town and 丁目**, every **postal code**, and the official **readings and romanization** of all of them, from official open data that JADEN downloads, checksums and rebuilds itself (`jaden data update`).
+v0.1 knew Japan's 1,918 municipalities. v0.2 also knows every registered **town and 丁目**, every **postal code**, and the official **readings and romanization** Japan Post publishes for them (about 5% of towns have none; JADEN then writes the town in Japanese inside the English line and gives no kana), from official open data that JADEN downloads, checksums and rebuilds itself (`jaden data update`).
 
 | | v0.1 | v0.2 |
 | :--- | :--- | :--- |
@@ -231,7 +231,7 @@ Administrative reference data in JADEN is based on public government standards a
    * JADEN models ABR statutory taxonomy (Machi-aza, Gaiku, Chiban). Note: JADEN is an offline linguistic engine and intentionally does not bundle the multi-gigabyte spatial polygon GIS shapefiles of the full ABR.
 6. **Town Gazetteer (v0.2):**
    * **Towns:** 大字・町丁目レベル位置参照情報 19.0b (2025年版), MLIT (国土交通省). 191,100 towns and 丁目 with representative points. Free use under the 位置参照情報利用約款; derived works cite 「大字・町丁目レベル位置参照情報 国土交通省」 and the data year.
-   * **Postal codes, readings and romaji:** 郵便番号データ (UTF-8 and romaji editions), Japan Post. 124,527 records. 「郵便番号データに限っては日本郵便株式会社は著作権を主張しません。自由に配布していただいて結構です。」
+   * **Postal codes, readings and romaji:** 郵便番号データ (UTF-8 and romaji editions), Japan Post. 124,527 records (area codes; Japan Post's separate list of large-office codes for single companies is not included, so those codes are reported as unknown). 「郵便番号データに限っては日本郵便株式会社は著作権を主張しません。自由に配布していただいて結構です。」
    * **City blocks (optional):** 街区レベル位置参照情報 24.0a, MLIT, downloaded per prefecture by `jaden data fetch-blocks`.
    * **Reproducibility:** `src/jaden/data/build_gazetteer.py` downloads all sources, records each file's URL and SHA256 in `src/jaden/data/gazetteer_provenance.json`, and rebuilds the bundled files; `jaden data update` does the same into your user data directory.
 7. **Open Data Attribution & Terms Notice:**

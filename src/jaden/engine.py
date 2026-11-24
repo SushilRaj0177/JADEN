@@ -82,16 +82,31 @@ _SECOND_ADDRESS: Final[re.Pattern[str]] = re.compile(
     r"(?=[^\s　]{1,8}?[市区町村郡])")   # followed by a municipality: '東京都庁 第一本庁舎' is a building
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
 _POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})\s*-?\s*(\d{4})(?!\d)")
-# Unmarked: 'NNN-NNNN' at either end, or seven digits standing alone at either end ('1050011 東京都…')
+# Unmarked: 'NNN-NNNN' at either end, or seven digits standing alone at either end ('1050011 東京都…').
+# At the end it must stand apart: '東赤田321-1221' is a lot. At the start of English it is the house number.
 _POSTAL_BARE_EDGE: Final[re.Pattern[str]] = re.compile(
-    r"(?:^\s*(\d{3})\s?-\s?(\d{4})(?!\d)|(?<![\d-])(\d{3})-(\d{4})\s*$"
+    r"(?:^\s*(\d{3})\s?-\s?(\d{4})(?!\d)(?!\s*[A-Za-z])|(?<![^\s,、。])(\d{3})-(\d{4})\s*$"
     r"|^\s*(\d{3})(\d{4})(?=\s)|(?<=\s)(\d{3})(\d{4})\s*$)")
 # Whitespace right after a block number, unless a block marker follows ('4 丁目', '2 番')
 _AFTER_BLOCK_NUMBER: Final[re.Pattern[str]] = re.compile(
     r"(?:(?<=\d)|(?<=-[イロハニホヘト甲乙丙丁]))\s+(?!\d*\s*(?:丁目|番|号(?!室))|[の\-])")
+# Number marks typed in kana after a digit: '芝公園4ちょうめ2-8', '2ばん8ごう'
+_KANA_MARK_WORDS: Final[Dict[str, str]] = {"ちょうめ": "丁目", "ばんち": "番地", "ばん": "番", "ごうしつ": "号室", "ごう": "号"}
+_KANA_NUMBER_MARK: Final[re.Pattern[str]] = re.compile(r"(?<=\d)(?:ちょうめ|ばんち(?!ょう)|ばん(?!ち)|ごうしつ|ごう)")
+# Words that end a town name and start a building's
+_BUILDING_WORD: Final[re.Pattern[str]] = re.compile(
+    r"ビル|マンション|ハイツ|コーポ|アパート|レジデンス|メゾン|ハイム|タワー|プラザ|センター|会館|荘|寮|団地|住宅")
+# A number that is a block or lot, not a floor ('3階', '12F') or a room ('104号室'): '2723階' is lot 272 and 3階
+_BLOCK_NUMBER_IN: Final[re.Pattern[str]] = re.compile(
+    r"(?<!\d)(?!\d{1,2}\s*(?:階|[FfＦ](?![A-Za-z]))|\d+\s*(?:号室|室))\d")
+# Block numbers written with spaces for hyphens: '芝公園4 2 8', '芝公園4丁目 2 8' (two numbers after a name
+# are a number and a room: '潮見188 703')
+_SPACED_NUMBERS: Final[re.Pattern[str]] = re.compile(
+    r"(?:(?<=[^\d\s\-])(\d{1,3}) +(\d{1,4}) +(\d{1,4})|(?<=丁目) *(\d{1,4}) +(\d{1,4}))(?= +[^\d\s]|$)")
 _BRACKETED: Final[re.Pattern[str]] = re.compile(r"\s*[(（][^)）]*[)）]")
 # Spaces between block markers and the next number ('4丁目 2番 8号'), but not before a room ('2番 301号室')
-_INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?!\d+\s*号室)")
+_INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(
+    r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?!\d+\s*号室|[\d\-・]+\s*(?:階|[FfＦ](?![A-Za-z])))")   # nor a floor
 # Town text containing a number that is part of the name, not a block number:
 # '忠和1条', '芽室南2線', '五十嵐3の町', '古町通6番町', '五福1区'
 _NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(
@@ -101,8 +116,11 @@ _NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(
 _STRUCTURAL_TOWN: Final[re.Pattern[str]] = re.compile(
     r"^(?P<town>\D+?(?:第\d+号|\d+(?:地割|街区|部|区|番耕地|耕地|号(?=\d+番))))(?=\d)")
 # A lot-series lot after the 丁目 ('相生町1-乙394'): kept as written
+# Asahikawa's '1条通8丁目右2号' numbers each side of the street (右 / 左) the same way.
+# '乙222番地30' is lot 乙222-30.
 _SERIES_LOT: Final[re.Pattern[str]] = re.compile(
-    r"^-?(?P<lot>[甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラム]\d+(?:-\d+)?)(?P<rest>.*)$")
+    r"^-?(?P<lot>[甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラム右左]\d+)"
+    r"(?:(?:番地の?|番|-|の)(?P<branch>\d+)(?!\d|\s*(?:号室|室|階|[FfＦ](?![A-Za-z])))(?:号(?!室))?|番地|番|号(?!室))?(?P<rest>.*)$")
 
 # A place with no lot number of its own: the words stand where the number would ('支笏湖温泉番外地')
 _UNNUMBERED_LOT: Final[re.Pattern[str]] = re.compile(
@@ -455,10 +473,29 @@ class AddressNormalizer:
         notes_in_brackets = _BRACKETED.findall(post_admin_text)
         if notes_in_brackets:
             post_admin_text = re.sub(r"\s+", " ", _BRACKETED.sub(" ", post_admin_text)).strip()
+        post_admin_text = _KANA_NUMBER_MARK.sub(lambda m: _KANA_MARK_WORDS[m.group(0)], post_admin_text)
+        post_admin_text = _SPACED_NUMBERS.sub(lambda m: "-".join(n for n in m.groups() if n), post_admin_text)
         post_admin_text = _INNER_BLOCK_SPACE.sub("", post_admin_text)
         split = _AFTER_BLOCK_NUMBER.search(post_admin_text)
         if split:
             post_admin_text, extra_tail = post_admin_text[:split.start()], post_admin_text[split.end():]
+        elif muni_rec is not None and self.gazetteer is not None and not _BLOCK_NUMBER_IN.search(post_admin_text) \
+                and not re.search(r"[条通\s]", post_admin_text):
+            # '摩耶埠頭摩耶業務センタービル5階': a registered town, then a building, and no block number
+            for r in (self.registry.wards_of(muni_rec) or [muni_rec]):
+                hit = self.gazetteer.match_town(r.lg_code, post_admin_text)
+                remainder = post_admin_text[hit.consumed:] if hit is not None else ""
+                if hit is not None and remainder and _BUILDING_WORD.search(remainder):
+                    post_admin_text, extra_tail = post_admin_text[:hit.consumed], remainder
+                    break
+        if not split and not extra_tail:
+            # '芝公園 Aビル 3階': a registered town, a space, then a name with no block number is the building
+            word, _, after_word = post_admin_text.partition(" ")
+            if (after_word and muni_rec is not None and self.gazetteer is not None and not re.match(r"[\d字大]", after_word)
+                    and not _BLOCK_NUMBER_IN.search(after_word) and not re.search(r"[条通]", after_word)
+                    and any((hit := self.gazetteer.match_town(r.lg_code, word)) is not None and hit.consumed == len(word)
+                            for r in (self.registry.wards_of(muni_rec) or [muni_rec]))):
+                post_admin_text, extra_tail = word, after_word
 
         # Stage 4: Conventional Systems (Kyoto & Hokkaido)
         kyoto_clause = None
@@ -952,6 +989,8 @@ class AddressNormalizer:
             series = _SERIES_LOT.match(tail_text)
             if series:
                 lot_number, tail_text = series.group("lot"), series.group("rest").strip()
+                if series.group("branch"):
+                    lot_number += f"-{series.group('branch')}"
                 regime_val = AddressRegime.CHIBAN.value
 
         # Kyoto conventional navigation addresses strictly use cadastral lot numbers (地番)
@@ -1049,7 +1088,8 @@ class AddressNormalizer:
             canonical_parts.append(f"{chome_val}丁目")
 
         if lot_number is not None:
-            canonical_parts.append(lot_number)
+            # Asahikawa writes the side of the street and its number as 号: '右2号'
+            canonical_parts.append(lot_number + ("号" if re.fullmatch(r"[右左]\d+", lot_number) else ""))
         elif ban_val is not None and go_val is not None:
             canonical_parts.append(f"{ban_val}番{go_val}号")
         elif ban_val is not None:
@@ -1070,11 +1110,14 @@ class AddressNormalizer:
             # 号: it is written as a room
             after_open = bool(canonical_parts) and not canonical_parts[-1].endswith("号")
             wing_room = re.fullmatch(r"(\d{1,2})-(\d{2,4})", unit_val)
-            if after_open and re.fullmatch(r"\d+[A-Za-z]?", unit_val):
-                secondary_parts.append(f"{unit_val}号室")
+            if after_open and (re.fullmatch(r"\d+[A-Za-z]?", unit_val)
+                               or (not secondary_parts and re.fullmatch(r"\d+号", unit_val))):
+                secondary_parts.append(f"{unit_val.rstrip('号')}号室")   # '488番地 101号' would read as 488-101
             elif after_open and wing_room:
                 # '188番 1-201' would read back as 188番1号, room 201: the wing is written as one
                 secondary_parts.append(f"{wing_room.group(1)}棟 {wing_room.group(2)}号室")
+            elif not wing_room and re.fullmatch(r"\d+(?:-\d+)+[A-Za-z]?", unit_val):
+                secondary_parts.append(f"{unit_val}号室")      # '207-1号室' keeps its mark to read back whole
             else:
                 secondary_parts.append(unit_val)
 
@@ -1158,6 +1201,13 @@ class AddressNormalizer:
                 notes.append(f"{town_name}{chome_val}丁目 does not exist (registered: "
                              f"{', '.join(f'{town_name}{n}丁' for n in family)})")
 
+        # Kyoto has towns of one name in one ward (two 下丸屋町 in 中京区): separate places, not one town
+        homonyms = 0
+        if record is None and match is not None and not is_ambiguous:
+            bases = [r for r in match.entry.records if r.chome is None]
+            if len(bases) > 1 and (max(r.latitude for r in bases) - min(r.latitude for r in bases) > 0.002
+                                   or max(r.longitude for r in bases) - min(r.longitude for r in bases) > 0.002):
+                homonyms = len(bases)
         components = AddressComponents(
             prefecture_code=pref_code,
             prefecture=pref_name,
@@ -1196,6 +1246,7 @@ class AddressNormalizer:
             town_registered_elsewhere=registered_elsewhere,
             former_municipality=former_name,
             numbers_unplaced=numbers_unplaced,
+            town_homonyms=homonyms,
         )
 
         # Offline location: the 丁目 / town representative point
@@ -1207,7 +1258,7 @@ class AddressNormalizer:
         elif record is not None:
             latitude, longitude = record.latitude, record.longitude
             location_level = "chome" if record.chome is not None else "town"
-        elif match is not None and not is_ambiguous and match.entry.records:
+        elif match is not None and not is_ambiguous and match.entry.records and not homonyms:
             pts = match.entry.records
             lat_span = max(r.latitude for r in pts) - min(r.latitude for r in pts)
             lon_span = max(r.longitude for r in pts) - min(r.longitude for r in pts)
@@ -1731,7 +1782,8 @@ class AddressNormalizer:
         # '横浜市立第3中学校': '…市立' then a school or other facility (its 第3 is no block number)
         facility = bool(c.town and c.town_verified is not True and c.town.startswith("立")
                         and _FACILITY.search(res.input_sanitized))
-        if (c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None) or facility:
+        if (c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None
+                and not c.unit) or facility:    # a room ('コンフォート三佐104号室') makes it a home, not a name
             # '高崎市立国府小学校': a municipality followed by text that is neither a registered town
             # nor a block number is a name that mentions a place, not an address
             return result(ValidationStatus.UNSUPPORTED,

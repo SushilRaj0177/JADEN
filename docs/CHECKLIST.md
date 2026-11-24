@@ -147,3 +147,27 @@ Low
 - [x] R3-X1 (found while checking) `13番地1-2階` and `1番地19ビル1-1階` put `13番地` inside the town; Sakai's `3丁8番1-1311号` lost its 番
 - [x] R3-X2 (found while checking) The English line dropped the 番地 numbers after a 丁目, and the 丁目 before a 甲/乙 lot
 - [x] R3-X3 (found while checking) The English line `2-17 Town` read back as a lot; now `2-chome-17 Town`
+
+## Audit round 4 (separate high-precision audit, 23 Nov 2026)
+- [x] R4-H1 A trailing lot written `321-1221` is taken as a postal code and the numbers are lost
+- [x] R4-H2 A floor or room with no house number (`芝公園 2階`, `芝公園 101号室`) is read as the 丁目 / 番
+- [x] R4-H3 Different rooms share a key: `207-1号室`, `101A号室`, `3F-301`
+- [x] R4-H4 A tiny `.xlsx` whose cells share one huge string can use unbounded memory
+- [x] R4-H5 English in the NTA style (`Sakae ku Yokohama shi`, `1-1,Chuo, Konosu shi`, `Kita 1-jo Nishi 2-chome` after the numbers) is accepted at a wrong place
+- [x] R4-M1 Kyoto towns with the same name in one ward get one key and a midpoint location
+- [x] R4-M2 `compare` says 'same' when neither side has a block or house number
+- [x] R4-M3 Asahikawa `1条通8丁目右2号` (右 / 左 sides) misparsed
+- [x] R4-M4 `4丁目乙222番地30` leaves the branch in the building
+- [x] R4-M5 English line read-back: towns only in the Japan Post list, unlisted 丁目, floor B2, names ending in a digit, `Hongo 7-chome`
+- [x] R4-M6 Space-separated numbers (`芝公園4 2 8`): canonical not a fixed point
+- [x] R4-M7 Kana number marks after a kanji town (`芝公園4ちょうめ2-8`)
+- [x] R4-M8 A room or floor after a lot (`488 101号`, `488 1・2階`): canonical not a fixed point
+- [x] R4-M9 Deeply nested JSON crashes the server, MCP, stream and batch
+- [x] R4-L1 A stray 号 / 号室 / 階 kept as the building
+- [x] R4-L2 Towns without a reading drop the whole kana / English line
+- [x] R4-L3 Hyphen form of a lot with a digit wing and room is not lossless
+- [x] R4-L4 Slow clients can hold every server connection slot
+- [x] R4-L5 `/v1/postal` refuses a JSON number; OpenAPI misses its 404
+- [x] R4-L6 Large-office (事業所) postal codes are reported as not existing: the warning now says such a code may be a large-office code JADEN does not hold, and the README says so (Japan Post's large-office file could not be downloaded from the build machine; adding it stays open)
+- [x] R4-X1 (found while checking) English lines with a building holding digits (`5号棟101 #102`), a Kyoto clause, two towns spelled alike (志水町 / 清水町), a 番地 lot in a town with 丁目, or a note in brackets now read back to the same key (invariant failures on 14,817 real addresses: 142 → 1)
+- [x] R4-X2 (found while checking) A registered town glued to a building with no block number (`摩耶埠頭摩耶業務センタービル5階`) is split; an unregistered name with no number reports precision `municipality`, not `town`

@@ -98,6 +98,7 @@ class AddressComponents:
     town_registered_elsewhere: Tuple[str, ...] = field(default_factory=tuple)  # same-named municipalities that have the town
     former_municipality: Optional[str] = None # A merged / abolished municipality name the input used ('浦和市')
     town_corrected_from: Optional[str] = None # The misspelt town as written, when autocorrect replaced it
+    town_homonyms: int = 0                    # >1: this many separate places share the town's name in the municipality (Kyoto)
     numbers_unplaced: bool = False            # numbers written without the town they belong to ('新宿区1-1')
 
     @property
@@ -116,8 +117,8 @@ class AddressComponents:
             return "block"
         if self.chome is not None:
             return "chome"
-        if self.town or self.hokkaido_grid is not None:
-            return "town"
+        if (self.town and self.town_verified is not False) or self.hokkaido_grid is not None:
+            return "town"           # text the registry does not hold, with no number, places nothing finer
         return "municipality"
 
 

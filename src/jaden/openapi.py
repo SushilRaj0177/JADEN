@@ -54,11 +54,15 @@ _SCHEMAS: Dict[str, Any] = {
 }
 
 
-def _get(summary: str, params: List[Dict[str, Any]], schema: Dict[str, Any]) -> Dict[str, Any]:
-    return {"get": {"summary": summary, "parameters": params, "responses": {
+def _get(summary: str, params: List[Dict[str, Any]], schema: Dict[str, Any],
+         not_found: str = "") -> Dict[str, Any]:
+    error = {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+    responses: Dict[str, Any] = {
         "200": {"description": "OK", "content": {"application/json": {"schema": schema}}},
-        "400": {"description": "missing or bad parameter",
-                "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}}
+        "400": {"description": "missing or bad parameter", "content": error}}
+    if not_found:
+        responses["404"] = {"description": not_found, "content": error}
+    return {"get": {"summary": summary, "parameters": params, "responses": responses}}
 
 
 def _post(summary: str, body: Dict[str, Any], schema: Dict[str, Any]) -> Dict[str, Any]:
@@ -91,7 +95,9 @@ def openapi_spec(version: str, max_batch: int) -> Dict[str, Any]:
                 {"name": "code", "in": "path", "required": True, "schema": {"type": "string"}, "example": "105-0011"}],
                 "responses": {"200": {"description": "OK"}, "404": {"description": "unknown postal code"}}}},
             "/v1/postal": _get("Postal code to addresses (the code as a parameter)", [
-                _q("code", "the postal code", True, example="105-0011")], obj),
+                {"name": "code", "in": "query", "required": True, "example": "105-0011",
+                 "description": "the postal code (a JSON number is accepted in a POST body)",
+                 "schema": {"type": ["string", "integer"]}}], obj, not_found="unknown postal code"),
             "/v1/reverse": _get("Coordinate to the nearest towns", [
                 _q("lat", "latitude", True, "number", 35.6586), _q("lon", "longitude", True, "number", 139.7454),
                 _q("limit", "1-20, default 1", kind="integer")], obj),

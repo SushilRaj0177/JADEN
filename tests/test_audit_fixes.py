@@ -233,9 +233,11 @@ def test_romaji_under_threads() -> None:
 
 # B19: a romaji town the registry does not hold
 def test_unmatched_romaji_town_stays_in_place() -> None:
-    res = jaden.normalize("158-2 Arata Kamikomata, Hirakawa-shi, Aomori")
-    assert res.canonical == "青森県平川市Arata Kamikomata158番2号"
-    assert jaden.validate("158-2 Arata Kamikomata, Hirakawa-shi, Aomori").verification_level == "municipality"
+    res = jaden.normalize("158-2 Qwertyz, Hirakawa-shi, Aomori")
+    assert res.canonical == "青森県平川市Qwertyz158番2号"
+    assert jaden.validate("158-2 Qwertyz, Hirakawa-shi, Aomori").verification_level == "municipality"
+    # A town only Japan Post lists is found by its romaji too
+    assert jaden.normalize("158-2 Arata Kamikomata, Hirakawa-shi, Aomori").canonical == "青森県平川市荒田上駒田158番2号"
 
 
 # ---------------------------------------------------------------- B26: batch files
@@ -1443,3 +1445,88 @@ def test_english_line_keeps_every_number_and_reads_back(raw, english) -> None:
     line = jaden.normalize(raw).romaji
     assert line.startswith(english)
     assert jaden.match_key(line) == jaden.match_key(raw)
+
+
+# ---------------------------------------------------------------- audit round 4
+@pytest.mark.parametrize("raw, canonical, precision", [
+    ("栃木県那須塩原市東赤田321-1221", "栃木県那須塩原市東赤田321番1221号", "house"),           # R4-H1 not a postal code
+    ("東京都港区芝公園 2階", "東京都港区芝公園 2階", "town"),                                   # R4-H2
+    ("東京都港区芝公園 101号室", "東京都港区芝公園 101号室", "town"),
+    ("東京都港区芝公園 Aビル 3階", "東京都港区芝公園 Aビル 3階", "town"),
+    ("兵庫県神戸市灘区摩耶埠頭摩耶業務センタービル５階", "兵庫県神戸市灘区摩耶埠頭 摩耶業務センタービル 5階", "town"),
+    ("神奈川県茅ヶ崎市甘沼2723階", "神奈川県茅ヶ崎市甘沼272番 3階", "block"),
+    ("北海道旭川市1条通8丁目右2号", "北海道旭川市一条通8丁目右2号", "house"),                  # R4-M3
+    ("愛媛県松山市東野4丁目乙222番地30", "愛媛県松山市東野4丁目乙222-30", "house"),            # R4-M4
+    ("東京都港区芝公園4 2 8", "東京都港区芝公園4丁目2番8号", "house"),                         # R4-M6
+    ("東京都港区芝公園4ちょうめ2-8", "東京都港区芝公園4丁目2番8号", "house"),                   # R4-M7
+    ("京都府京都市中京区寺町通御池上る上本能寺前町488 101号", "京都府京都市中京区寺町通御池上る上本能寺前町488番地 101号室", "unit"),
+    ("京都府京都市中京区寺町通御池上る上本能寺前町488 1・2階", "京都府京都市中京区寺町通御池上る上本能寺前町488番地 1・2階", "house"),
+    ("東京都港区芝公園4-2-8号", "東京都港区芝公園4丁目2番8号", "house"),                       # R4-L1
+])
+def test_round_four_parsing(raw, canonical, precision) -> None:
+    res = jaden.normalize(raw)
+    assert (res.canonical, res.precision) == (canonical, precision)
+    assert jaden.normalize(res.canonical).canonical == res.canonical
+    assert jaden.match_key(res.canonical) == jaden.match_key(raw)
+
+
+def test_round_four_rooms_and_compare() -> None:
+    same = lambda a, b: jaden.compare(a, b).verdict   # noqa: E731
+    assert same("東京都港区芝公園4-2-8 207-1号室", "東京都港区芝公園4-2-8 307-1号室") == "same_building"   # R4-H3
+    assert same("東京都港区芝公園4丁目2番8号 101A号室", "東京都港区芝公園4丁目2番8号 101B号室") == "same_building"
+    assert same("東京都港区芝公園4-2-8 3F-301", "東京都港区芝公園4-2-8 3F-302") == "same_building"
+    assert same("東京都港区芝公園4丁目 東京タワービル 2階", "東京都港区芝公園4丁目 メルパルク 2階") == "possibly_same"   # R4-M2
+    assert same("北海道旭川市1条通8丁目右2号", "北海道旭川市1条通8丁目左2号") == "different"
+    a, b = "京都府京都市中京区河原町通三条上る下丸屋町390", "京都府京都市中京区丸太町通油小路東入下丸屋町390"   # R4-M1
+    assert same(a, b) == "different" and jaden.normalize(a).latitude is None
+    assert same(a, "京都府京都市中京区河原町通三条上ル下丸屋町390番地") == "same"
+
+
+@pytest.mark.parametrize("english, japanese", [                                               # R4-H5
+    ("668,Katsura-cho, Sakae ku Yokohama shi, Kanagawa", "神奈川県横浜市栄区桂町668番"),
+    ("1-1,Chuo, Konosu shi, Saitama", "埼玉県鴻巣市中央1番1号"),
+    ("1-1 Kita 1-jo Nishi 2-chome, Chuo-ku, Sapporo", "北海道札幌市中央区北1条西2丁目1番1号"),
+    ("1-22-5, Setagaya, Setagaya ku, Tokyo", "東京都世田谷区世田谷1丁目22番5号"),
+    ("1-1 Hongo 7-chome, Bunkyo-ku, Tokyo", "東京都文京区本郷7丁目1番1号"),
+])
+def test_round_four_english_input(english, japanese) -> None:
+    assert jaden.normalize(english).canonical == japanese
+
+
+@pytest.mark.parametrize("raw", [                                                            # R4-M5, L2, L3
+    "福井県敦賀市石ケ町2番地の1", "沖縄県宜野湾市宇地泊１丁目20番7号", "東京都中央区銀座4-6-16 銀座三越 B2",
+    "東京都目黒区自由が丘２丁目１６‐１２ＲＪ３", "京都府京都市中京区河原町通三条上る下丸屋町390", "宮崎県西都市聖陵町1番地68",
+    "大阪府堺市堺区楠町一丁5-3", "岩手県盛岡市仁王第3地割字新山小路65番地", "和歌山市友田町4丁目130番地A-tower２階207-1号室",
+])
+def test_round_four_english_and_hyphen_lines_read_back(raw) -> None:
+    res = jaden.normalize(raw)
+    assert res.romaji and jaden.match_key(res.romaji) == jaden.match_key(raw)
+    assert jaden.match_key(res.format("hyphen")) == jaden.match_key(raw)
+
+
+def test_round_four_files_and_json(tmp_path) -> None:
+    import io
+    import json as json_module
+    import zipfile
+    from jaden.batch import run_batch
+    from jaden.frame import _address_of
+    from jaden.xlsx import _NS, read_xlsx
+    deep = "[" * 100_000
+    assert _address_of(deep, "address")["address"] == deep                               # R4-M9
+    src = tmp_path / "deep.jsonl"
+    src.write_text('{"address": ' + deep + "}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not valid JSON"):
+        run_batch(src, tmp_path / "o.csv", log=io.StringIO())
+    path = tmp_path / "amp.xlsx"                                                              # R4-H4
+    ns = _NS["m"]
+    cells = "".join(f'<row r="{i}"><c r="A{i}" t="s"><v>0</v></c></row>' for i in range(1, 400))
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("xl/workbook.xml", f'<workbook xmlns="{ns}" xmlns:r="{_NS["r"]}"><sheets><sheet name="S" '
+                   'sheetId="1" r:id="rId1"/></sheets></workbook>')
+        z.writestr("xl/_rels/workbook.xml.rels", f'<Relationships xmlns="{_NS["rel"]}"><Relationship Id="rId1" '
+                   'Type="x" Target="worksheets/sheet1.xml"/></Relationships>')
+        z.writestr("xl/sharedStrings.xml", f'<sst xmlns="{ns}"><si><t>{"あ" * 300_000}</t></si></sst>')
+        z.writestr("xl/worksheets/sheet1.xml", f'<worksheet xmlns="{ns}"><sheetData>{cells}</sheetData></worksheet>')
+    with pytest.raises(ValueError, match="characters of text"):
+        read_xlsx(path)
+    assert json_module.dumps(jaden.normalize("〒100-8111 東京都千代田区千代田1-1").notes).count("large-office") == 1   # R4-L6

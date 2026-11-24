@@ -17,7 +17,7 @@ from typing import Optional, Tuple, Final
 # Floor patterns: e.g. '50F', '50階', 'B1F', '地下1階', '3f'
 # In Japanese, CJK characters (e.g. 'タワー') are \w, so \b before digits fails.
 _FLOOR_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"(?P<floor>(?:B\d+|\d+|地下\d+|地下[一二三四五六七八九十]+|[一二三四五六七八九十]+(?=階))[\s]*(?:階|[Ff](?![a-z])))",
+    r"(?P<floor>(?:B\d+|(?:\d+[・、~〜])*\d+|地下\d+|地下[一二三四五六七八九十]+|[一二三四五六七八九十]+(?=階))[\s]*(?:階|[Ff](?![a-z])))",
 )
 _KANJI_DIGIT = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
 
@@ -29,8 +29,11 @@ _BASEMENT_TOKEN: Final[re.Pattern[str]] = re.compile(r"(?:^|\s)(?P<floor>B\d{1,2
 
 # Room / Unit patterns: e.g. '301号室', '502号', '101号室'
 _ROOM_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"(?P<room>\d+[\s]*(?:号室|ごうしつ|室|号(?!棟|館|地))|(?:^|\s)\d{3,4}(?:\s|$))"
+    r"(?P<room>\d{1,4}(?:-\d{1,4})+[\s]*(?:号室|ごうしつ|室)|(?:(?<![A-Za-z])[A-Za-z]-?)?\d+[A-Za-z]?[\s]*(?:号室|ごうしつ|室)|\d+[\s]*号(?!棟|館|地)"
+    r"|(?:^|\s)\d{3,4}(?:\s|$))"
 )
+# A room numbered in two parts: '207-1号室'
+_SPLIT_ROOM: Final[re.Pattern[str]] = re.compile(r"^(?P<room>\d{1,4}(?:-\d{1,4})+[A-Za-z]?)\s*(?:号室|ごうしつ|室)$")
 # A wing then a room, with no building name: 'A-201号室', '1-201号室' ('B棟305' keeps B棟 as the building)
 _WING_THEN_ROOM: Final[re.Pattern[str]] = re.compile(
     r"^(?P<wing>[A-Za-z]|\d{1,2})\s*(?P<sep>-)\s*(?P<room>\d{2,4})\s*(?:号室|ごうしつ|室|号)?$")
@@ -81,18 +84,29 @@ class BuildingParser:
         floor: Optional[str] = None
         unit: Optional[str] = None
 
+        # A mark left over with no number of its own ('4-2-8号', '12番地') is no building
+        if re.fullmatch(r"(?:号室?|番地?|階|地)", working):
+            return None, None, None
+
         # 0. A room on its own: '4-2-8-101', '… 1', 'A-302', '2-302'; or a wing and room ('A-201号室')
         if _ROOM_ALONE.match(working):
             return None, None, working
         wing_room = _WING_THEN_ROOM.match(working)
         if wing_room:
             return None, None, f"{wing_room.group('wing').upper()}-{wing_room.group('room')}"
+        split_room = _SPLIT_ROOM.match(working)
+        if split_room:
+            return None, None, split_room.group("room")
 
         # 1. Extract Floor if present. Two floors ('2階・3階') stay in the building text: neither is the address's
+        floor_range = re.match(r"^(\d{1,2})-(\d{1,2})\s*(階|[Ff](?![A-Za-z]))(?=\s|$)", working)
+        if floor_range and int(floor_range.group(1)) < int(floor_range.group(2)):
+            # '1-2階' on its own (written '1・2階') is floors 1 and 2
+            working = f"{floor_range.group(1)}・{floor_range.group(2)}{floor_range.group(3)}{working[floor_range.end():]}"
         floors = list(_FLOOR_PATTERN.finditer(working))
         floor_match = (floors[0] if len(floors) == 1 else None) or (None if floors else _BASEMENT_TOKEN.search(working))
         if floor_match:
-            floor = floor_match.group("floor").strip()
+            floor = re.sub(r"(?<=\d)[、\-](?=\d)", "・", floor_match.group("floor").strip())   # '1-2階' is 1・2階
             kanji = re.match(r"(地下)?([一二三四五六七八九十]+)", floor)
             if kanji:
                 digits = kanji.group(2)
@@ -100,6 +114,10 @@ class BuildingParser:
                      else 10 + _KANJI_DIGIT.get(digits[1:2], 0) if digits.startswith("十") else _KANJI_DIGIT.get(digits, 0))
                 floor = f"{kanji.group(1) or ''}{n}{floor[kanji.end():]}"
             working = (working[:floor_match.start()] + " " + working[floor_match.end():]).strip()
+            rest = working.lstrip("-,、，・ ").strip()
+            if _ROOM_ALONE.match(rest):
+                return None, floor, rest          # '3F-301': floor 3, room 301
+            working = working.rstrip("-,、，・ ")   # 'Via701-3階' reads like 'Via701 3階'
 
         # 2. Extract Room/Unit if present
         labelled = _LABELLED_ROOM.search(working)

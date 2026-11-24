@@ -217,7 +217,7 @@ def serve_stdio(stdin: TextIO = sys.stdin, stdout: TextIO = sys.stdout) -> int:
             continue
         try:
             message = json.loads(line)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, RecursionError):
             reply: Optional[Dict[str, Any]] = {"jsonrpc": "2.0", "id": None,
                                                "error": {"code": -32700, "message": "parse error"}}
         else:

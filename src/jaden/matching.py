@@ -230,6 +230,11 @@ def match_parts(res: NormalizedAddress) -> MatchParts:
     if res.confidence_score <= 0:
         return MatchParts()
     town, koaza = _town_parts(res)
+    if town and c.town_homonyms > 1 and c.kyoto_direction is not None:
+        # Two Kyoto towns of one name in one ward: the street clause tells them apart
+        k = c.kyoto_direction
+        streets = "".join(re.sub(r"通り?$", "", x) for x in (k.street_1, k.street_2))
+        town = f"{town}@{streets}{k.cardinal}"
     grid = c.hokkaido_grid
     chome = c.chome if c.chome is not None else (grid.chome if grid is not None else None)
     block: Optional[str]
@@ -348,6 +353,8 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
             continue
         if name == "prefecture" and (va is None or vb is None):
             continue
+        if name in ("house", "unit") and pa.block is None and pb.block is None:
+            break   # a floor or room with no block or lot number ('4丁目 Aビル 2階') places nothing
         if va is None and vb is None:
             continue
         if va is None or vb is None:

@@ -127,6 +127,11 @@ class BlockFSM:
             take = 3 if len(digits) >= 4 else len(digits)
         else:  # 号
             take = 3 if len(digits) >= 4 else 0
+        if take >= len(digits) and only_number and mark.group(0) in ("階", "F", "f", "号室"):
+            # '芝公園 2階', '芝公園 101号室': the only number is the floor or the room, not a block
+            result[key] = None
+            result["address_regime"] = AddressRegime.UNSPECIFIED.value
+            return result, town, digits + tail
         if take == 0 or (take >= len(digits) and only_number):
             return result, town, tail
         kept = digits[:-take]
