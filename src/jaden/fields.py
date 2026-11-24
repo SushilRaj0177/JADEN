@@ -113,11 +113,18 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
                                  f"「{given['postal_code']}」は 7 桁の郵便番号ではありません。"))
 
     from .kana_input import admin_fields_to_kanji
+    from .romaji import looks_romanized
     pref_text, city_text = admin_fields_to_kanji(given["prefecture"], given["city"])
-    body = pref_text + city_text + given["line1"]
-    if given["line2"]:
-        body += " " + given["line2"]
-    text = (f"〒{postal[:3]}-{postal[3:]} " if postal_ok else "") + body
+    english = looks_romanized(" ".join(v for v in (given["line1"], given["city"], given["prefecture"]) if v))
+    if english:
+        # Fields filled in English ('4-2-8 Shibakoen' / 'Minato-ku' / 'Tokyo'): joined in English order
+        body = ", ".join(v for v in (given["line2"], given["line1"], given["city"], given["prefecture"]) if v)
+        text = body + (f" {postal[:3]}-{postal[3:]}" if postal_ok else "")
+    else:
+        body = pref_text + city_text + given["line1"]
+        if given["line2"]:
+            body += " " + given["line2"]
+        text = (f"〒{postal[:3]}-{postal[3:]} " if postal_ok else "") + body
 
     engine = get_engine()
     res = engine.normalize(text)
@@ -149,15 +156,24 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
             city = next(iter(registry.find_municipalities(muni.city, muni.prefecture_code)), None)
             if city is not None:
                 muni_readings.append(_muni_kana(city))
-        if given["prefecture"] and not (c.prefecture.startswith(given["prefecture"])
-                                        or given["prefecture"].startswith(c.prefecture)
-                                        or _reads_as(given["prefecture"], pref_kana)):
+        cmp = dict(given)
+        if english:
+            # 'Tokyo' / 'Minato-ku' agree with 東京都 / 港区 when they romanize the same way
+            from .romaji import _index, _segment_keys
+            idx = _index()
+            if any(idx.prefectures.get(k) == c.prefecture_code for k in _segment_keys(given["prefecture"])):
+                cmp["prefecture"] = c.prefecture
+            if c.lg_code and any(c.lg_code in idx.munis.get(k, ()) for k in _segment_keys(given["city"])):
+                cmp["city"] = out["city"] or given["city"]
+        if cmp["prefecture"] and not (c.prefecture.startswith(cmp["prefecture"])
+                                      or cmp["prefecture"].startswith(c.prefecture)
+                                      or _reads_as(cmp["prefecture"], pref_kana)):
             issues.append(FieldIssue("prefecture", "PREFECTURE_MISMATCH",
                                      f"The prefecture field says {given['prefecture']}; the address is in {c.prefecture}.",
                                      f"都道府県欄は「{given['prefecture']}」ですが、住所は{c.prefecture}です。",
                                      c.prefecture))
-        city_field = given["city"]
-        for pref_name in (c.prefecture, given["prefecture"]):
+        city_field = cmp["city"]
+        for pref_name in (c.prefecture, cmp["prefecture"]):
             if pref_name and city_field.startswith(pref_name):
                 city_field = city_field[len(pref_name):]
         names = [n for n in (c.city, c.ward, c.county) if n]

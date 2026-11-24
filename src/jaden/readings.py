@@ -62,7 +62,7 @@ def _english_unit(unit: Optional[str]) -> Optional[str]:
     """'101号室' / '101号' / '101' -> '#101' for an English address line."""
     if not unit:
         return None
-    digits = re.match(r"^(\d+(?:-\d+)*[A-Za-z]?)", unit)     # a wing stays with its room: '#1-201', '#207-1'
+    digits = re.match(r"^(\d+(?:-\d+)*[A-Za-z]?|[A-Za-z](?:-?\d+)?)(?:号室|室|号)?$", unit)     # a wing stays with its room: '#1-201', '#207-1'
     return f"#{digits.group(1)}" if digits else unit
 
 
@@ -129,7 +129,10 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
         if len(_index().town_entries(muni.lg_code).get(romaji_key(town.romaji), ())) > 1:
             town_words += " " + town.name        # 志水町 and 清水町 are both 'Shimizucho': the name says which
         if plain.startswith(base) and plain[len(base):]:
-            town_words += " " + plain[len(base):]       # a 字 below the town has no reading: kept as written
+            below = plain[len(base):]                   # a 字 below the town has no reading: kept as written
+            if below.startswith(base):
+                below = "字" + below                    # '身延身延': the 字 repeats the town's name, so say it is a 字
+            town_words += " " + below
         if c.kyoto_direction is not None and getattr(c, "town_homonyms", 0) > 1:
             town_words += " " + c.kyoto_direction.raw_clause   # which of Kyoto's same-named towns
         if c.hokkaido_grid is not None and c.hokkaido_grid.chome is not None and c.ban is None and c.banchi is None:
@@ -138,6 +141,9 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
             first.append(f"{number_str} {town_words} {after_town}".strip())
     elif written and c.hokkaido_grid is None:
         first.append(f"{number_str} {written}{after_town}".strip())   # a town the registry does not hold, as written
+    elif c.kyoto_direction is not None:
+        # No town, only the Kyoto clause: it is written in Japanese where the town would be
+        first.append(f"{number_str} {c.kyoto_direction.raw_clause}{after_town}".strip())
     elif number_str or after_town:
         first.append(f"{number_str} {after_town}".strip())
 

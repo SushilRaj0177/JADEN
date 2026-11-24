@@ -18,7 +18,7 @@ import sys
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TextIO
 
 from .batch import RESOLVE_FIELDS, RESULT_FIELDS, flat_record, resolve_record
-from .core.text import as_text, encodable
+from .core.text import as_text, encodable, load_json
 
 
 _ENGINES: Dict[bool, Any] = {}
@@ -77,14 +77,15 @@ def normalize_frame(df: Any, column: str = "address", prefix: str = "jaden_", st
 
 
 def _address_of(line: str, column: str) -> Optional[Dict[str, Any]]:
-    """(the input object, the address) for one stream line, or None for a blank line."""
+    """(the input object, the address) for one stream line; a blank line is an empty address, so the
+    output keeps one line per input line."""
     line = line.strip()
     if not line:
-        return None
+        return {"input": "", "address": ""}
     if line[0] in "{\"[":
         try:
-            value = json.loads(line)
-        except (json.JSONDecodeError, RecursionError):   # nested beyond Python's limit: kept as text
+            value = load_json(line)
+        except (ValueError, RecursionError):   # nested beyond Python's limit: kept as text
             return {"input": line, "address": line}
         if isinstance(value, dict):
             return {"input": value, "address": as_text(value.get(column))}

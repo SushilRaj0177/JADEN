@@ -16,40 +16,23 @@ gazetteer checks applies to romaji input too.
 
 import re
 import unicodedata
-from typing import Dict, List, Optional, Tuple, Set, Final
+from typing import Any, Dict, List, Optional, Tuple, Set, Final
 
 from .data.gazetteer import get_gazetteer
 from .data.loader import get_registry, MunicipalityRecord
 
 _SUFFIX_WORDS: Final[Dict[str, str]] = {
-    "CITY": "SHI", "SHI": "SHI", "WARD": "KU", "KU": "KU", "TOWN": "MACHI", "MACHI": "MACHI", "CHO": "CHO",
+    "CITY": "SHI", "SHI": "SHI", "WARD": "KU", "KU": "KU", "TOWN": "MACHI", "MACHI": "MACHI", "CHO": "CHO", "CHOU": "CHO",
     "VILLAGE": "MURA", "MURA": "MURA", "SON": "SON", "DISTRICT": "GUN", "COUNTY": "GUN", "GUN": "GUN",
     "PREFECTURE": "", "PREF": "", "KEN": "", "FU": "", "TO": "",
 }
 _TOWN_SUFFIX_EQUIV: Final[Dict[str, Set[str]]] = {"MACHI": {"MACHI", "CHO"}, "CHO": {"MACHI", "CHO"},
                                                   "MURA": {"MURA", "SON"}, "SON": {"MURA", "SON"}}
+# Japanese script (kana, kanji, full-width): Latin letters with macrons ('Chūō') are not Japanese
+_JA: Final[str] = "[\u3000-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef\U00020000-\U0003ffff]"
 _POSTAL: Final[re.Pattern[str]] = re.compile(r"(?<!\d)(\d{3})-?(\d{4})(?!\d)")
-_NUMBERS: Final[re.Pattern[str]] = re.compile(
-    r"(?<![A-Za-z\d])(\d+)(?:\s*-?\s*chome)?(?:\s*-\s*(\d+))?(?:\s*-\s*(\d+))?(?![A-Za-z\d])", re.IGNORECASE)
 _LATIN_MUNICIPALITY: Final[re.Pattern[str]] = re.compile(
-    r"(?:^|[,\s])[A-Za-z]+-(?:shi|ku|machi|cho|mura|son|gun)(?=\s*(?:,|$))", re.IGNORECASE)
-# The first part when the block numbers and town follow it ('Grand Maison 302, 4-2-8 Shibakoen, …')
-_LEADING_BUILDING: Final[re.Pattern[str]] = re.compile(
-    r"^\s*(?P<head>[^,]+?)\s*,\s*"
-    r"(?=(?:\d+(?:\s*-\s*(?:\d+|chome\b))*|(?:Kita|Minami)\s*\d+[^,]*?)(?:\s+[^,]*)?,\s*[A-Za-z])", re.IGNORECASE)
-_UNIT_PART: Final[re.Pattern[str]] = re.compile(
-    r"(?:^|(?<=[,\s]))(?:#\s*|(?:Room|Rm|Apt|Apartment|Unit|No)\.?\s*#?\s*)(?P<room>(?:\d{1,2}-)?\d{1,5}[A-Za-z]?)(?=\s*(?:,|$))",
-    re.IGNORECASE)
-_KANJI_LOT: Final[re.Pattern[str]] = re.compile(r"^[甲乙丙丁戊己庚辛壬癸右左]\d+(?:-\d+)*$")
-_CHOME_WORD: Final[re.Pattern[str]] = re.compile(r"(\d+)\s*-?\s*chome", re.IGNORECASE)
-_JO: Final[re.Pattern[str]] = re.compile(
-    r"\b(KITA|MINAMI)\s*(\d+)\s*-?\s*JO\s*(HIGASHI|NISHI)\b(?:\s*(\d+)\s*-?\s*CHOME\b)?", re.IGNORECASE)
-# '1-1 Hongo 7-chome': the 丁目 written after the town, the block numbers before it
-_CHOME_AFTER_TOWN: Final[re.Pattern[str]] = re.compile(r"(?<=[A-Za-z])\s+(\d+)\s*-?\s*chome\b", re.IGNORECASE)
-_LEAD_NUMBERS: Final[re.Pattern[str]] = re.compile(r"^\s*(\d+(?:\s*-\s*\d+)*)\s*,?\s*(?=[A-Za-z])")
-# Municipality words written in one part with no comma: 'Sakae ku Yokohama shi'
-_MUNI_GROUP: Final[re.Pattern[str]] = re.compile(
-    r"[A-Za-z][A-Za-z']*(?:[\s\-]+[A-Za-z][A-Za-z']*)*?[\s\-]+(?:shi|ku|gun|machi|cho|mura|son)\b", re.IGNORECASE)
+    r"(?:^|[,\s])[A-Za-z]+-(?:shi|ku|machi|cho|mura|son|gun)(?=[\s,]|$)", re.IGNORECASE)
 
 
 def romaji_key(text: str) -> str:
@@ -58,6 +41,9 @@ def romaji_key(text: str) -> str:
     s = "".join(c for c in s if not unicodedata.combining(c)).upper()
     s = re.sub(r"[^A-Z0-9]", "", s)
     s = re.sub(r"M(?=[BPM])", "N", s)
+    s = re.sub(r"OH(?=[^AEIOU]|$)", "O", s)          # 'Ohyama', 'Ohno': Hepburn's long o
+    for a, b in (("TSU", "TU"), ("SHI", "SI"), ("CHI", "TI"), ("FU", "HU")):   # Kunrei 'Hamamatu'
+        s = s.replace(a, b)
     for a, b in (("OU", "O"), ("OO", "O"), ("UU", "U"), ("AA", "A"), ("EE", "E"), ("II", "I")):
         s = s.replace(a, b)
     return s
@@ -66,9 +52,14 @@ def romaji_key(text: str) -> str:
 def looks_romanized(text: str) -> bool:
     # A building name in Japanese before the English address ('グランドメゾン芝公園 #302, 4-2-8 Shibakoen,
     # Minato-ku, Tokyo', JADEN's own English line) does not make it Japanese
-    lead = _LEADING_BUILDING.match(unicodedata.normalize("NFKC", text))
-    if lead:
-        text = text[lead.end():] if len(text) > lead.end() else text
+    parts = re.split(r"[,、]", unicodedata.normalize("NFKC", text))
+    while len(parts) > 1 and re.match(r"\s*" + _JA, parts[0]):
+        parts = parts[1:]
+    text = ",".join(parts)
+    # Also without commas: 'パシフィックスクエア代々木 3F 3-1-11 Yoyogi Shibuya-ku Tokyo'
+    rest = re.sub(rf"^(?:\s*\S*{_JA}\S*)+", "", text)
+    if re.search(r"[A-Za-z]", rest):
+        text = rest
     letters = [c for c in text if c.isalpha()]
     latin = sum(unicodedata.normalize("NFKD", c)[0].isascii() for c in letters)
     if not letters:
@@ -190,6 +181,122 @@ def _segment_keys(segment: str) -> List[str]:
     return keys
 
 
+_SERIES = "甲乙丙丁戊己庚辛壬癸イロハニホヘトチリヌルヲワカヨタレソツネナラム右左"
+_END = r"(?=[\s,]|$)"
+# Pieces of the part below the municipality, tried in this order at each position
+_T_GRID: Final[re.Pattern[str]] = re.compile(
+    r"(KITA|MINAMI)\s*(\d+)\s*-?\s*JO\s*-?\s*(HIGASHI|NISHI)(?:\s*(\d+)\s*-?\s*CHOME)?" + _END, re.IGNORECASE)
+_T_ROOM: Final[re.Pattern[str]] = re.compile(
+    r"(?:#|(?:Room|Rm\.?|Apt\.?|Apartment|Unit|Suite)\s*#?)\s*(\d{1,5}(?:-\d{1,4})*[A-Za-z]?|[A-Za-z](?:-?\d{1,4})?)" + _END,
+    re.IGNORECASE)
+_T_FLOOR: Final[re.Pattern[str]] = re.compile(
+    r"(?:(B)?(\d{1,2})\s*F|(\d{1,2})(?:st|nd|rd|th)\s*(?:Fl\.?|Floor)|(?:Floor|Fl\.?)\s*(\d{1,2}))" + _END,
+    re.IGNORECASE)
+_T_CHOME: Final[re.Pattern[str]] = re.compile(r"(\d+)\s*-?\s*chome(?:\s*-\s*(?=\d)|" + _END + ")", re.IGNORECASE)
+_T_BANGO: Final[re.Pattern[str]] = re.compile(r"(\d+)\s*-\s*(banchi|ban|go)" + _END, re.IGNORECASE)   # not '18 Go' (郷)
+_T_LOT: Final[re.Pattern[str]] = re.compile(r"\d+番地(?:の?\d+)?" + _END)
+_T_NUMBERS: Final[re.Pattern[str]] = re.compile(rf"\d+(?:\s*-\s*\d+)*(?:-[{_SERIES}])?" + _END)
+_T_WORD: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9\u00c0-\u024f][A-Za-z0-9\u00c0-\u024f.'&\-]*" + _END)
+_ROOM_LIKE: Final[re.Pattern[str]] = re.compile(r"\d{1,5}[A-Za-z]?|[A-Za-z]-?\d{1,4}|\d{1,2}-\d{2,4}|\d{1,2}-[A-Za-z]")
+_KYOTO_CLAUSE: Final[re.Pattern[str]] = re.compile(r"(?:上る|下る|上ル|下ル|東入る?|西入る?|東入ル|西入ル)(?:\d+丁目)?$")
+
+
+def _tokens(seg: str) -> List[Tuple[str, Any]]:
+    """The pieces of one part of the address below the municipality, in written order."""
+    out: List[Tuple[str, Any]] = []
+    i = 0
+    while i < len(seg):
+        if seg[i].isspace():
+            i += 1
+            continue
+        for kind, pattern in (("grid", _T_GRID), ("room", _T_ROOM), ("floor", _T_FLOOR), ("chome", _T_CHOME),
+                              ("bango", _T_BANGO), ("lot", _T_LOT), ("numbers", _T_NUMBERS), ("word", _T_WORD)):
+            m = pattern.match(seg, i)
+            if m:
+                out.append((kind, m))
+                i = m.end()
+                break
+        else:
+            # Japanese words (a 字, a Kyoto clause, a building) up to the next word written in Latin letters
+            m = re.match(rf"\S*{_JA}\S*(?:\s+\S*{_JA}\S*)*", seg[i:])
+            end = i + (m.end() if m else len(seg) - i)
+            if m is None or end == i:
+                end = len(seg)
+            out.append(("japanese", seg[i:end].strip()))
+            i = end
+    return out
+
+
+def _floor_text(m: "re.Match[str]") -> str:
+    if m.group(2):
+        return f"{'B' if m.group(1) else ''}{m.group(2)}F"
+    return f"{m.group(3) or m.group(4)}F"
+
+
+def _room_text(room: str) -> str:
+    wing = re.fullmatch(r"(\d{1,2})-(\d{2,4}[A-Za-z]?)", room)
+    return f"{wing.group(1)}棟 {wing.group(2)}号室" if wing else f"{room}号室"
+
+
+def _peel(units: List[str], idx: "_RomajiIndex", from_right: bool, pref: Optional[str]
+          ) -> Tuple[Optional[str], Optional[Set[str]], bool, List[str]]:
+    """Takes the prefecture and municipality words off one end of the parts. Returns the prefecture code,
+    the municipality codes, whether a municipality suffix was written, and the parts left (in order)."""
+    parts = list(units)
+    muni: Optional[Set[str]] = None
+    explicit = False
+    while parts:
+        seg = parts[-1] if from_right else parts[0]
+        words = seg.split()
+        taken = 0
+        while taken < len(words):
+            rest = words[:len(words) - taken] if from_right else words[taken:]
+            edge = rest[-1] if from_right else rest[0]
+            sizes = list(range(min(4, len(rest)), 0, -1))
+            if re.search(r"-(?:shi|ku|gun|machi|cho|mura|son)$", edge, re.IGNORECASE):
+                sizes = [1] + sizes[:-1]      # 'Izumi Kita Akita-shi': 秋田市 and the town 泉北, not 北秋田市
+            for n in sizes:
+                chunk_words = rest[-n:] if from_right else rest[:n]
+                chunk = " ".join(chunk_words)
+                if re.search(r"\d", chunk) or re.search(_JA, chunk):
+                    continue          # numbers and Japanese ('字千歳森') are never the municipality
+                keys = _segment_keys(chunk)
+                if pref is None and muni is None and any(k in idx.prefectures for k in keys):
+                    pref = next(idx.prefectures[k] for k in keys if k in idx.prefectures)
+                    break
+                found = set().union(*(idx.munis.get(k, set()) for k in keys))
+                if pref is not None:
+                    found = {lg for lg in found if lg[:2] == pref}
+                if not found:
+                    continue
+                last = re.split(r"[\s\-]+", chunk.upper())[-1]
+                suffix = bool(_SUFFIX_WORDS.get(last))
+                if muni is not None and not suffix and len(chunk_words) < len(words):
+                    continue   # 'Hiyoshicho Hioki, Hioki-shi': a bare name beside other words is the town's
+                if muni is not None:
+                    inside = muni & found
+                    town = any(k in idx.town_entries(lg) for lg in inside for k in keys)
+                    if not inside or (town and last not in ("SHI", "KU", "GUN", "CITY", "WARD", "COUNTY", "DISTRICT")):
+                        continue   # 'Kita' before 'Kawagoe-shi', 'Setagaya' before 'Setagaya-ku': the town
+                    found = inside
+                muni, explicit = found, explicit or suffix
+                break
+            else:
+                break
+            taken += n
+        if taken == len(words):
+            parts = parts[:-1] if from_right else parts[1:]
+            continue
+        if taken:
+            left = words[:len(words) - taken] if from_right else words[taken:]
+            if from_right:
+                parts[-1] = " ".join(left)
+            else:
+                parts[0] = " ".join(left)
+        break
+    return pref, muni, explicit, parts
+
+
 def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     """Rewrites a romanized address in Japanese; returns (japanese, notes) or None if unrecognized."""
     if not looks_romanized(text):
@@ -208,198 +315,263 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         postal = f"{m.group(1)}-{m.group(2)}"
         work = work[:m.start()] + " " + work[m.end():]
     work = re.sub(r"\bJAPAN\b", " ", work, flags=re.IGNORECASE)
-    # A room written as its own part ('#101, 4-2-8 Shibakoen, …', 'Apt 101', 'Room 101'): the English
-    # order puts it first; it is kept for the end, so its number is not read as the block
-    unit = None
-    head_building: Optional[str] = None
-    lead = _LEADING_BUILDING.match(work)
-    if lead:
-        # English order puts the building and room first: 'グランドメゾン芝公園 #302, 4-2-8 Shibakoen, …'
-        # The building, floor and room stay as written for the Japanese reading to split, so 'RJ3', 'ハイツ 2'
-        # and '5号棟101' read the same as in Japanese; only a labelled room ('#302', 'Room 302') is marked
-        head = lead.group("head").strip()
-
-        def _room(m: "re.Match[str]") -> str:
-            wing = re.fullmatch(r"(\d{1,2})-(\d{2,4}[A-Za-z]?)", m.group(1))
-            return f"{wing.group(1)}棟 {wing.group(2)}号室" if wing else f"{m.group(1)}号室"
-        head = re.sub(r"(?:#|\b(?:Room|Rm|Apt|Apartment|Unit)\.?\s*#?)\s*(\d{1,5}(?:-\d{1,4})*[A-Za-z]?)(?=\s|$)",
-                      _room, head, flags=re.IGNORECASE)
-        lone = re.fullmatch(r"(\d{1,5}[A-Za-z]?|\d{1,2}-\d{2,4})", head)   # as the Japanese reading takes a lone room
-        if lone:
-            head = _room(lone)                          # a room written alone: '302, 4-2-8 Shibakoen'
-        head_building = head or None
-        work = work[lead.end():]
-    labelled = None if unit else _UNIT_PART.search(work)
-    if labelled:
-        unit = labelled.group("room")
-        work = work[:labelled.start()] + " , " + work[labelled.end():]
-
     # A note in brackets ('(札幌区北三条西3丁目1番地), Chuo-ku, …': an old address) holds no numbers of this address
     bracketed = re.findall(r"\([^()]*\)", work)
     work = re.sub(r"\([^()]*\)", " ", work)
+    work = re.sub(r"(?<=\d)\.(?=[A-Za-z])", ", ", work)                          # '2-6-1.Tsukahara'
+    work = re.sub(r"(?:(?<=[A-Za-z][A-Za-z])|(?<=\.))(?=\d{1,2}F\b)", " ", work)    # 'Bldg.18F' (not 'B2F')
+    work = re.sub(r"\b(\d{1,2}F)\s*-\s*(\d{1,4}[A-Za-z]?)\b", r"\1 #\2", work)        # '4F-18': floor, room
+    work = re.sub(r"(?<=[A-Za-z]{3})(?=\d+(?:-\d+)+(?=[\s,]|$))|(?<=[a-z]{3})(?=\d{3,}(?=[\s,]|$))", " ", work)
+    # ('Nagaoka340-1', 'seki126'; a name stays whole: 'Belle2', 'PLAT100')
+    work = re.sub(r"\b(?:o?o?aza|ohaza)\b\s*", "", work, flags=re.IGNORECASE)      # 'Oaza', 'Aza': 大字, 字
+    # A comma glued between a letter and a digit belongs to a name ('マンションNO,2')
+    work = re.sub(r"(?<!\d[Ff])(?<=[A-Za-z]),(?=\d)", "\x01", work)
+    segments = [s.strip().replace("\x01", ",") for s in re.split(r"[,/、]", work) if s.strip()]
 
-    grid = _JO.search(work)
-    grid_text = None
-    if grid:
-        ns = "北" if grid.group(1).upper() == "KITA" else "南"
-        ew = "東" if grid.group(3).upper() == "HIGASHI" else "西"
-        grid_text = f"{ns}{grid.group(2)}条{ew}"
-        if grid.group(4):
-            grid_text += f"{grid.group(4)}丁目"     # 'Kita 1-jo Nishi 2-chome': the numbers left are 番-号
-        work = work[:grid.start()] + " " + work[grid.end():]
-    else:
-        after = _CHOME_AFTER_TOWN.search(work)
-        lead_numbers = _LEAD_NUMBERS.match(work)
-        if after and lead_numbers and lead_numbers.end() <= after.start():
-            lead_text = re.sub(r"\s+", "", lead_numbers.group(1))
-            work = (f"{after.group(1)}-chome-{lead_text} "
-                    f"{work[lead_numbers.end():after.start()]}{work[after.end():]}")
-
-    numbers: List[int] = []
-    explicit_chome = bool(_CHOME_WORD.search(work))
-    town_segment_marker = "\x00"
-    lot_written = re.search(r"(?<!\d)\d+番地(?:の?\d+)?", work)   # '1番地68 Seiryocho': a lot, not 1丁目68
-    if lot_written:
-        work = work[:lot_written.start()] + town_segment_marker + work[lot_written.end():]
-    nm = None if lot_written else _NUMBERS.search(work)
-    if nm:
-        numbers = [int(g) for g in nm.groups() if g]
-        # The segment holding the house numbers names the town ('4-17-3 Minami'), even when that
-        # town shares its name with a ward or city (南区, 中央区, 高知)
-        work = work[:nm.start()] + town_segment_marker + work[nm.end():]
-
-    segments = [s.strip() for s in re.split(r"[,/、]", work) if s.strip()]
-    if len(segments) == 1:
-        segments = _split_words(segments[0].replace(town_segment_marker, " "), idx)
-    split_segments: List[str] = []
-    for seg in segments:
-        groups = _MUNI_GROUP.findall(seg)
-        if len(groups) >= 2 and "".join(groups).replace(" ", "") == seg.replace(" ", "") \
-                and all(set().union(*(idx.munis.get(k, set()) for k in _segment_keys(g.strip()))) for g in groups):
-            split_segments.extend(g.strip() for g in groups)   # 'Sakae ku Yokohama shi' is two parts
-        else:
-            split_segments.append(seg)
-    segments = split_segments
-    town_segments = {i for i, s in enumerate(segments) if town_segment_marker in s}
-    deferred: Optional[int] = None
-    for i in sorted(town_segments):
-        if not segments[i].replace(town_segment_marker, "").strip() and i + 1 < len(segments):
-            deferred = i + 1          # '1-1, Chuo, Konosu shi': the part after the numbers is the town
-    segments = [s.replace(town_segment_marker, " ").strip() for s in segments]
-    pref_code: Optional[str] = None
-    muni_lgs: Optional[Set[str]] = None
-    explicit_muni = False
-    leftovers: List[str] = []
-    numbered_segments: Set[str] = set()
-    def _take(i: int, seg: str, deferred_pass: bool = False) -> None:
-        nonlocal pref_code, muni_lgs, explicit_muni
-        if i in town_segments and seg:
-            leftovers.append(seg)
-            numbered_segments.add(seg)
-            return
-        if not seg:
-            return
-        if i == deferred and not deferred_pass:
-            return
-        keys = _segment_keys(seg)
-        if pref_code is None and any(k in idx.prefectures for k in keys):
-            pref_code = next(idx.prefectures[k] for k in keys if k in idx.prefectures)
-            return
-        found = set().union(*(idx.munis.get(k, set()) for k in keys))
-        if found:
-            words = re.split(r"[\s\-]+", seg.upper())
-            if words and words[-1] in _SUFFIX_WORDS and _SUFFIX_WORDS[words[-1]]:
-                explicit_muni = True
-            muni_lgs = found if muni_lgs is None else (muni_lgs & found or muni_lgs | found)
-            return
-        leftovers.append(seg)
-
-    for i, seg in enumerate(segments):
-        _take(i, seg)
-    if deferred is not None:
-        seg = segments[deferred]
-        last = re.split(r"[\s\-]+", seg.upper())[-1]
-        names_place = (any(k in idx.prefectures for k in _segment_keys(seg))
-                       or last in {"SHI", "KU", "GUN", "MURA", "SON", "CITY", "WARD", "VILLAGE", "COUNTY", "DISTRICT"})
-        inside = set().union(*(idx.munis.get(k, set()) for k in _segment_keys(seg)))
-        both = inside & (muni_lgs or set())
-        is_town = any(k in idx.town_entries(lg) for lg in both for k in _segment_keys(seg))   # 'Setagaya, Setagaya ku'
-        if both and not is_town:
-            # A municipality within the ones already named: '2277-1, Hiji-machi, Hayami-gun', '1-1, Chuo-ku, Sapporo-shi'
-            muni_lgs = both
-            explicit_muni = True
-        elif muni_lgs is None or (names_place and not is_town):
-            _take(deferred, segments[deferred], deferred_pass=True)   # no other part names the municipality
-        elif segments[deferred]:
-            leftovers.insert(0, segments[deferred])
-            numbered_segments.add(segments[deferred])
+    # Prefecture and municipality: at the end in English order, at the start in Japanese order
+    pref, muni_lgs, explicit_muni, locality = _peel(segments, idx, True, None)
+    if muni_lgs is None:
+        pref2, muni2, explicit2, locality2 = _peel(segments if pref is None else locality, idx, False, pref)
+        if muni2 is not None:
+            pref, muni_lgs, explicit_muni, locality = pref2, muni2, explicit2, locality2
+    if muni_lgs is None:
+        # Written in the middle ('1-1, Tokyo, Minato-ku, Shibakoen')
+        rest: List[str] = []
+        for seg in locality:
+            p2, m2, e2, left = _peel([seg], idx, True, pref)
+            if m2 is None and muni_lgs is None:
+                p2, m2, e2, left = _peel([seg], idx, False, pref)   # 'Akita shi Minamidori Tsukiji'
+            if m2 is not None and muni_lgs is None:
+                pref, muni_lgs, explicit_muni = p2, m2, e2
+                rest.extend(left)
+            elif p2 is not None and pref is None and not left:
+                pref = p2
+            else:
+                rest.append(seg)
+        locality = rest
     if muni_lgs is None:
         return None
-    if pref_code:
-        muni_lgs = {lg for lg in muni_lgs if lg[:2] == pref_code} or muni_lgs
 
-    # Town: try each leftover segment within the remaining municipalities
-    town_name = grid_text
+    # The parts below the municipality: a building written first in Japanese stays as written for the
+    # Japanese reading to split ('グランドメゾン芝公園 #302', '5号棟101 #102', 'RJ3')
+    head: List[str] = []
+    while len(locality) > 1 and re.match(_JA, locality[0]):
+        head.append(re.sub(_T_ROOM.pattern, lambda r: _room_text(r.group(1)), locality[0], flags=re.IGNORECASE))
+        locality = locality[1:]
+    pieces = [(i, kind, value) for i, seg in enumerate(locality) for kind, value in _tokens(seg)]
+
+    grid_text: Optional[str] = None
+    chome: Optional[str] = None
+    bango: Dict[str, str] = {}
+    lots: List[Tuple[int, str]] = []
+    floor: Optional[str] = None
+    rooms: List[str] = []
+    number_pieces: List[Tuple[int, int, List[str]]] = []     # (position, part, numbers)
+    runs: List[Tuple[int, int, List[str]]] = []              # (position, part, Latin words)
+    japanese: Dict[int, Tuple[int, str]] = {}               # position -> (part, text)
+    for pos, (i, kind, value) in enumerate(pieces):
+        if kind == "grid":
+            ns = "北" if value.group(1).upper() == "KITA" else "南"
+            ew = "東" if value.group(3).upper() == "HIGASHI" else "西"
+            grid_text = f"{ns}{value.group(2)}条{ew}"
+            chome = value.group(4) or chome
+        elif kind == "room":
+            rooms.append(value.group(1))
+        elif kind == "floor":
+            floor = _floor_text(value)
+        elif kind == "chome":
+            chome = value.group(1)
+        elif kind == "bango":
+            bango[value.group(2).lower()] = value.group(1)
+        elif kind == "lot":
+            lots.append((i, value.group(0)))
+        elif kind == "numbers":
+            number_pieces.append((pos, i, [p for p in re.split(r"\s*-\s*", value.group(0)) if p]))
+        elif kind == "word":
+            if runs and runs[-1][1] == i and runs[-1][0] == pos - 1:
+                runs[-1] = (pos, i, runs[-1][2] + [value.group(0)])
+            else:
+                runs.append((pos, i, [value.group(0)]))
+        else:
+            japanese[pos] = (i, value)
+
+    # The town: the longest run of words (or two parts, 'Yoshida, Yoshida-cho') registered in the municipality
+    def town_hits(words: List[str]) -> Dict[str, Tuple[str, ...]]:
+        out: Dict[str, Tuple[str, ...]] = {}
+        keys = _segment_keys(" ".join(words))
+        for extra in ("", "CHO", "MACHI"):          # 'Shimokurata' for 下倉田町: the 町 left out
+            for lg in muni_lgs or ():
+                names = idx.town_entries(lg)
+                for k in keys:
+                    if k + extra in names:
+                        out[lg] = names[k + extra]
+            if out:
+                break
+        return out
+
+    number_parts = {i for _, i, n in number_pieces if len(n) > 1} | {i for i, k, _ in pieces if k in ("chome", "bango", "lot")}
+    best: Optional[Tuple[Tuple[int, int, int], int, Tuple[int, int], Dict[str, Tuple[str, ...]]]] = None
+    for r, (pos, i, words) in enumerate(runs):
+        windows = [(a, b) for size in range(len(words), 0, -1) for a in range(0, len(words) - size + 1)
+                   for b in (a + size,)]
+        for a, b in windows:
+            hits = town_hits(words[a:b])
+            if hits:
+                score = (1 if i in number_parts else 0, 1 if b - a == len(words) else 0, b - a)
+                if best is None or score > best[0]:
+                    best = (score, r, (a, b), hits)
+                break
+    # A town written over two parts: 'Yoshida, Yoshida-cho' (吉田町吉田), '88, Nishitanaka, Hakusan' (西田中白山)
+    joined: Optional[Tuple[int, int, Dict[str, Tuple[str, ...]]]] = None
+    for r in range(len(runs) - 1):
+        (_, i1, w1), (_, i2, w2) = runs[r], runs[r + 1]
+        if i2 == i1 + 1:
+            hits = town_hits(w2 + w1) or town_hits(w1 + w2)
+            if hits:
+                joined = (r, r + 1, hits)
+                break
+    if joined is not None and best is not None and best[0][2] >= len(runs[joined[0]][2]) + len(runs[joined[1]][2]):
+        joined = None
+
+    town_name: Optional[str] = grid_text
+    town_part: Optional[int] = None
     town_lgs = set(muni_lgs)
-    building: List[str] = []
-    unmatched_town: Optional[str] = None
+    building: List[Tuple[float, str]] = [(-1.0, h) for h in head]      # (position, text), kept in written order
+    used_runs: Set[int] = set()
+    hits = {}
+    if best is not None and joined is None:
+        _, r, (a, b), hits = best
+        town_part = runs[r][1]
+        used_runs.add(r)
+        words = runs[r][2]
+        extra = words[:a] + words[b:]
+        if extra:
+            building.append((runs[r][0], " ".join(extra)))   # 'Shibakoen Tokyo Tower': the town, then a building
+    if joined is not None:
+        r1, r2, hits = joined
+        used_runs |= {r1, r2}
+        town_part = runs[r2][1]
+    town_end = None
+    if best is not None and joined is None:
+        town_end = runs[best[1]][0]
+    elif joined is not None:
+        town_end = runs[joined[1]][0]
+    japanese_part = japanese.pop(town_end + 1, (0, ""))[1] if town_end is not None else ""
     lot_tail = ""
     lot_mark = ""
-    for seg in leftovers:
-        # A 字 or a town without a reading is written in Japanese inside the English line
-        # ('44-29 Samemachi 字大作平', '3-8-4 常磐町'): it is kept as written after the town
-        split = re.match(r"^(?P<latin>(?:\d+-)?[A-Za-z][A-Za-z.'\s\-]*?)\s*(?P<rest>[^\sA-Za-z]*[^\x00-\x7f].*)?$", seg)
-        latin_seg = split.group("latin").strip() if split else ("" if re.search(r"[^\x00-\x7f]", seg) else seg)
-        japanese_part = (split.group("rest") or "").strip() if split else ""
-        hits: Dict[str, Tuple[str, ...]] = {}
-        for lg in muni_lgs:
-            names = idx.town_entries(lg)
-            for k in (_segment_keys(latin_seg) if latin_seg else []):
-                if k in names:
-                    hits[lg] = names[k]
-        if hits and postal:
-            # Two towns spelled alike (大林 / 小林): the postal code tells which one is meant
-            from .data.gazetteer import get_gazetteer
-            gaz, digits = get_gazetteer(), postal.replace("-", "")
-            by_postal = {lg: tuple(n for n in names_ if digits in (gaz.postal_codes_of_town(lg, n) or ()))
-                         for lg, names_ in hits.items()}
-            if any(by_postal.values()):
-                hits = {lg: names_ for lg, names_ in by_postal.items() if names_}
-        if hits and town_name is None:
-            town_lgs = set(hits)
-            names_found = {n for names_ in hits.values() for n in names_}
-            written = next((n for n in sorted(names_found, key=len, reverse=True) if japanese_part.startswith(n)), None)
-            if written:
-                # 'Shimizucho 清水町': two towns spelled alike, the Japanese name written after says which
-                names_found, japanese_part = {written}, japanese_part[len(written):].strip()
-                town_lgs = {lg for lg, names_ in hits.items() if written in names_}
-            town_name = names_found.pop() if len(names_found) == 1 else None
-            if town_name is None:
-                notes.append(f"romaji town '{seg}' matches several spellings: "
-                             f"{', '.join(sorted({n for v in hits.values() for n in v}))}")
-            elif japanese_part and _KANJI_LOT.match(japanese_part) and numbers:
-                lot_tail = japanese_part     # '1-chome Aioicho 乙394': the lot comes after the 丁目
-            elif japanese_part and re.search(r"(?:上る|下る|上ル|下ル|東入る?|西入る?|東入ル|西入ル)(?:\d+丁目)?$", japanese_part):
-                town_name = japanese_part + town_name   # Kyoto's street clause goes before the town
-            elif japanese_part:
-                town_name += japanese_part   # '8地割', '字大作平', '上野' written after the town
-                if re.search(r"\d+(?:号|地割|街区)", japanese_part):
-                    lot_mark = "番地"           # '山泉73号 905', '仁王第3地割 65': the number after a locator is a lot
-        elif town_name is None and unmatched_town is None and seg in numbered_segments:
-            # The words written with the numbers name the town, even one the registry does not hold:
-            # it stays in the town's place, not after the numbers as if it were a building
-            unmatched_town = seg
-            notes.append(f"romaji town '{seg}' is not in the registry")
-            if re.search(r"\d+(?:号|地割|街区)", seg):
-                lot_mark = "番地"
+    if hits and postal:
+        # Two towns spelled alike (大林 / 小林): the postal code tells which one is meant
+        digits = postal.replace("-", "")
+        gaz = get_gazetteer()
+        by_postal = {lg: tuple(n for n in names_ if digits in (gaz.postal_codes_of_town(lg, n) or ()))
+                     for lg, names_ in hits.items()}
+        if any(by_postal.values()):
+            hits = {lg: names_ for lg, names_ in by_postal.items() if names_}
+    if hits and grid_text is None:
+        town_lgs = set(hits)
+        names_found = {n for names_ in hits.values() for n in names_}
+        written = next((n for n in sorted(names_found, key=len, reverse=True) if japanese_part.startswith(n)), None)
+        if written:
+            # 'Shimizucho 清水町': two towns spelled alike, the Japanese name written after says which
+            names_found, japanese_part = {written}, japanese_part[len(written):].strip()
+            town_lgs = {lg for lg, names_ in hits.items() if written in names_}
+        town_name = names_found.pop() if len(names_found) == 1 else None
+        if town_name is None:
+            notes.append(f"romaji town '{' '.join(runs[min(used_runs)][2])}' matches several spellings: "
+                         f"{', '.join(sorted({n for v in hits.values() for n in v}))}")
+    if town_name is not None and japanese_part:
+        if re.fullmatch(rf"[{_SERIES}]\d+(?:-\d+)*", japanese_part):
+            lot_tail = japanese_part           # '1-chome Aioicho 乙394': the lot comes after the 丁目
+        elif _KYOTO_CLAUSE.search(japanese_part):
+            town_name = japanese_part + town_name   # Kyoto's street clause goes before the town
         else:
-            building.append(seg)
+            town_name += japanese_part         # '8地割', '字大作平', '上野' written after the town
+            if re.search(r"\d+(?:号|地割|街区)", japanese_part):
+                lot_mark = "番地"               # '山泉73号 905', '仁王第3地割 65': the number after a locator is a lot
+        japanese_part = ""
+
+    # The block numbers: those written with the town, else the nearest to it
+    main: Optional[Tuple[int, int, List[str]]] = None
+    if number_pieces:
+        anchor = town_part if town_part is not None else max(
+            (i for _, i, _ in number_pieces), default=0)
+        pool = [p for p in number_pieces if len(p[2]) > 1] or number_pieces   # '1412-61 My Castle 102'
+        main = min(pool, key=lambda p: (abs(p[1] - anchor), p[1] > anchor, p[0]))
+    unmatched_town: Optional[str] = None
+    if town_name is None and town_part is None:
+        # The words written with the numbers name the town, even one the registry does not hold
+        home = main[1] if main is not None else None
+        own = [r for r, (_, i, _) in enumerate(runs) if i == home]
+        if own:
+            unmatched_town = " ".join(runs[own[0]][2])
+            used_runs.add(own[0])
+        jp_home = next((pos for pos, (i, _) in sorted(japanese.items()) if i == home), None)
+        if jp_home is not None and (main is None or jp_home > main[0] or not unmatched_town):
+            jp = japanese.pop(jp_home)[1]
+            unmatched_town = f"{unmatched_town} {jp}" if unmatched_town else jp
+        if unmatched_town:
+            notes.append(f"romaji town '{unmatched_town}' is not in the registry")
+            if re.search(r"\d+(?:号|地割|街区)", unmatched_town):
+                lot_mark = "番地"
+    alone = {i for i in range(len(locality)) if sum(1 for j, _, _ in pieces if j == i) == 1}
+    for r, (last, i, words) in enumerate(runs):
+        if r in used_runs:
+            continue
+        if len(words) == 1 and not rooms and _ROOM_LIKE.fullmatch(words[0]) and (i in alone or i == town_part):
+            rooms.append(words[0])            # '1B, 4-2-8 Shibakoen', '4-2-8 Shibakoen 3B'
+        else:
+            building.append((last - len(words) + 1, " ".join(words)))
+    for pos, (_, part) in sorted(japanese.items()):
+        building.append((pos, part))
+    if japanese_part:
+        building.append((town_end + 1 if town_end is not None else 999.0, japanese_part))
+
+    parts: List[str] = main[2] if main is not None else []
+    for p in number_pieces:
+        if p is main:
+            continue
+        text_ = "-".join(p[2])
+        if not rooms and p[1] in alone and _ROOM_LIKE.fullmatch(text_):
+            rooms.append(text_)               # '302, 4-2-8 Shibakoen': a room on its own
+        else:
+            building.append((p[0], text_))    # '12 メゾン阪南': a number with a name is part of the name
+    lot: Optional[str] = None
+    for i, text_ in lots:
+        if lot is None and (i == town_part or main is None or i == main[1]):
+            lot = text_
+        else:
+            building.append((min(pos for pos, (j, k, _) in enumerate(pieces) if j == i and k == "lot"), text_))
+    explicit_chome = chome is not None
+    if town_name is not None and chome is None and grid_text is None and len(parts) == 4 and len(town_lgs) == 1:
+        # '8-3-12-23, Kiyota': Sapporo's 清田8条 takes the first number as its 条
+        lg = next(iter(town_lgs))
+        jo = f"{town_name}{parts[0]}条"
+        hit = get_gazetteer().match_town(lg, jo)
+        if hit is not None and hit.consumed >= len(jo):
+            town_name, parts = jo, parts[1:]
+    if chome is None and grid_text is None and len(parts) == 4:
+        rooms.append(parts.pop())             # '4-2-8-101': the fourth number is the room
+    elif explicit_chome and len(parts) >= 3 and parts[2].isdigit():
+        rooms.append(parts.pop(2))            # '2-14-10-502' after a 丁目 written apart: 番, 号, room
+    if lot is not None:
+        num = lot
+    elif bango:
+        num = (f"{chome}丁目" if chome else "") + (f"{bango['banchi']}番地" if "banchi" in bango else "") \
+            + (f"{bango['ban']}番" if "ban" in bango else "") + (f"{bango['go']}号" if "go" in bango else "")
+        if parts:
+            num += "-".join(parts)
+    elif explicit_chome:
+        num = f"{chome}丁目" + "-".join(parts) + lot_tail
+    else:
+        num = "-".join(parts) + lot_tail
+    if num and lot_mark and not explicit_chome:
+        num += lot_mark
+
     if len(town_lgs) < len(muni_lgs):
         muni_lgs = town_lgs
     if town_name is None and not explicit_muni:
         # A bare word that happens to romanize like a city ('USA' -> 宇佐市) is not enough
         return None
-
     # Prefer the most specific municipality record when a city and its wards both matched
     records = [r for r in (idx.registry.get_municipality_by_code(lg) for lg in sorted(muni_lgs)) if r]
     if len(records) > 1:
@@ -411,61 +583,19 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
         name = _common_name(records)
         if name is None:
             return None
-        head = name
+        admin = name
     else:
-        r = records[0]
-        head = r.prefecture_name + (r.county or "") + r.name
+        rec = records[0]
+        admin = rec.prefecture_name + (rec.county or "") + rec.name
 
-    num = ""
-    if lot_written:
-        num = lot_written.group(0)
-    elif numbers and lot_tail:
-        num = f"{numbers[0]}丁目{lot_tail}" if explicit_chome else "-".join(str(n) for n in numbers) + lot_tail
-    elif lot_tail:
-        num = lot_tail
-    elif numbers:
-        rest = "-".join(str(n) for n in numbers[1:])
-        num = f"{numbers[0]}丁目{rest}" if explicit_chome else "-".join(str(n) for n in numbers)
-    if num and lot_mark and not explicit_chome:
-        num += lot_mark
-    town_text = town_name or (unmatched_town + ("" if re.search(r"[^\x00-\x7f]", unmatched_town) else " ")
+    town_text = town_name or (unmatched_town + ("" if re.search(_JA, unmatched_town) else " ")
                               if unmatched_town else "")
-    japanese = f"{'〒' + postal + ' ' if postal else ''}{head}{town_text}{num}"
-    if head_building:
-        building.insert(0, head_building)
-    if building:
-        japanese += " " + " ".join(building)
-    if bracketed:
-        japanese += " " + " ".join(bracketed)
-    if unit:
-        japanese += f" {unit}号室"
-    notes.insert(0, f"romaji input read as '{japanese}'")
-    return japanese, notes
-
-
-def _split_words(text: str, idx: "_RomajiIndex") -> List[str]:
-    """Splits a comma-less address ('Shibakoen Minato-ku Tokyo') into the longest known units."""
-    words = text.split()
-    out: List[str] = []
-    pending: List[str] = []
-    i = 0
-    while i < len(words):
-        for n in range(min(3, len(words) - i), 0, -1):
-            chunk = " ".join(words[i:i + n])
-            keys = _segment_keys(chunk)
-            if any(k in idx.prefectures or k in idx.munis for k in keys):
-                if pending:
-                    out.append(" ".join(pending))
-                    pending = []
-                out.append(chunk)
-                i += n
-                break
-        else:
-            pending.append(words[i])
-            i += 1
-    if pending:
-        out.append(" ".join(pending))
-    return out
+    out = f"{'〒' + postal + ' ' if postal else ''}{admin}{town_text}{num}"
+    tail = [t for _, t in sorted(building, key=lambda b: b[0])] + ([floor] if floor else []) + [_room_text(r) for r in rooms[:1]] + rooms[1:] + bracketed
+    if tail:
+        out += " " + " ".join(tail)
+    notes.insert(0, f"romaji input read as '{out}'")
+    return out, notes
 
 
 def _common_name(records: List[MunicipalityRecord]) -> Optional[str]:

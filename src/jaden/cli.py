@@ -767,7 +767,7 @@ def _add_lookup_parsers(subparsers: Any) -> None:
     rs_p = subparsers.add_parser(
         "resolve", help="Rank the candidate municipalities of an address with calibrated probabilities",
         description="For addresses that do not name their municipality: every candidate with a probability, "
-                    "the answer when it clears the 1%%-risk threshold, and a 95%% candidate set. "
+                    "the answer when it clears the 1%-risk threshold, and a 95% candidate set. "
                     "Exit code 0 when an answer is given, 3 when not.")
     rs_p.add_argument("address", help="Address, e.g. '錦町1番2号'; '-' reads one address per line from stdin.")
     rs_p.add_argument("--name", default="", help="Organisation or facility at the address (optional evidence).")

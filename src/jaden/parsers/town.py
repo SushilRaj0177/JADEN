@@ -63,7 +63,8 @@ def town_variants(town_text: str, first_number: Optional[int]) -> List[Tuple[str
     """
     if not town_text:
         return []
-    out = [(town_text + "町", "machi")]
+    # One character with no number ('仙台市長' is the mayor, not 長町) is too little to add 町 to
+    out = [(town_text + "町", "machi")] if len(town_text) >= 2 or first_number is not None else []
     if first_number is not None:
         # '北条町1-2-31' is 北条町一丁 2番31号 in Sakai, where towns are registered as 'N丁'
         out += [(f"{town_text}{first_number}番町", "banchou"), (f"{town_text}{first_number}の", "no"),

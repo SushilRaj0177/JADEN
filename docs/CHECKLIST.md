@@ -171,3 +171,26 @@ Low
 - [x] R4-L6 Large-office (事業所) postal codes are reported as not existing: the warning now says such a code may be a large-office code JADEN does not hold, and the README says so (Japan Post's large-office file could not be downloaded from the build machine; adding it stays open)
 - [x] R4-X1 (found while checking) English lines with a building holding digits (`5号棟101 #102`), a Kyoto clause, two towns spelled alike (志水町 / 清水町), a 番地 lot in a town with 丁目, or a note in brackets now read back to the same key (invariant failures on 14,817 real addresses: 142 → 1)
 - [x] R4-X2 (found while checking) A registered town glued to a building with no block number (`摩耶埠頭摩耶業務センタービル5階`) is split; an unregistered name with no number reports precision `municipality`, not `town`
+
+## Audit round 5 (separate high-precision audit, 24 Nov 2026)
+- [x] R5-H1 English with a room after the numbers (`4-2-8-101 Shibakoen`, `1-10-1-915, Higashishinbashi`) loses the room or wrecks the address
+- [x] R5-H2 English accepted in the wrong place: `791, Yoshida, Yoshida-cho, Akitakata-shi, Hiroshima`; comma-less towns ending in Kita / Higashi read as wards
+- [x] R5-H3 English numbers before a separate 丁目 / 条 part (`2-22, Minami 14-jo Nishi 1-chome`, `2-18, 4-chome, Shibakoen`) turn the house number into a room
+- [x] R5-M1 Short units after the house (`3B`, `10-1`, `B-3`, `B室`) left out of the key
+- [x] R5-M2 A branch letter after 番地 (`828番地ロ`, `1062番地乙`, `528番地ハ号`) moved into the building
+- [x] R5-M3 Two rooms listed together: canonical reverses them
+- [x] R5-M4 A floor written first in English (`5F, 4-2-8 Shibakoen`) gives a stray 号室
+- [x] R5-M5 English word orders `Shibakoen 4-chome 2-8`, `4-chome 2-8, Shibakoen`, `oomachi 1-chome 2-ban 15-go`, a building after the numbers, `2-5, 1-chome, Minamihonmachi`
+- [x] R5-M6 English without commas loses the town or is rejected
+- [x] R5-M7 Non-addresses accepted: `仙台市長`, `金沢市長`, `白浜町中央保健センター`, `東京都港区第5`
+- [x] R5-L1 English line of a lot with a kana / kanji branch (`5415-乙`, `860-イ`) does not read back
+- [x] R5-L2 A comma inside a building name breaks the English read-back
+- [x] R5-L3 English line drops a 字 that repeats the 大字 name
+- [x] R5-L4 Kana input with `ごうしつ` leaves `しつ` as the building
+- [x] R5-L5 Canonical not a fixed point: `4-2-8-105-0011`, Kyoto clause with numbers and no town
+- [x] R5-L6 JSONL output can hold Infinity / NaN; the server accepts NaN
+- [x] R5-L7 Blank rows are dropped, so output rows no longer line up with input
+- [x] R5-L8 `jaden resolve --help` prints `%%`
+- [x] R5-L9 `check_fields` refuses English fields
+- [x] R5-X1 (found while checking) The English reader was rewritten: the prefecture and municipality are taken from the end (or the start), and the rest is read as numbers, 丁目, town, building, floor and room in any order. JADEN's own English lines read back on 2,961 of 2,974 real addresses with the commas removed (was 2,644); invariant failures on 29,298 real addresses: 5
+- [x] R5-X2 (found while checking) A room written twice (`メゾン花池101号メゾン花池101号室`) is one room

@@ -144,7 +144,10 @@ def extract_postal_code(raw: str) -> Optional[str]:
     m = _POSTAL_MARKED.search(text)
     if m:
         return f"{m.group(1)}-{m.group(2)}"
-    m = _POSTAL_BARE_EDGE.search(text)
+    m = _POSTAL_BARE_EDGE.search(text) or re.search(r"(?<=\d-\d)(?:\d{0,3})-(\d{3})-(\d{4})\s*$", text)
+    if m and m.re is not _POSTAL_BARE_EDGE:
+        # '4-2-8-105-0011': a postal code glued to the house numbers with one more hyphen
+        return f"{m.group(1)}-{m.group(2)}" if re.search(r"\d+-\d+-\d+-\d{3}-\d{4}\s*$", text) else None
     if m:
         groups = [g for g in m.groups() if g is not None]
         return f"{groups[0]}-{groups[1]}"
@@ -318,6 +321,7 @@ class AddressNormalizer:
             sanitized = _POSTAL_MARKED.sub(" ", sanitized)
             digits3, digits4 = postal_code.split("-")
             sanitized = re.sub(rf"(?<![\d-]){digits3}\s?-?\s?{digits4}\s*$", "", sanitized)
+            sanitized = re.sub(rf"(?<=\d)-{digits3}-{digits4}\s*$", "", sanitized)
             sanitized = re.sub(r"\s+", " ", sanitized).strip()
 
         # Stage 2: Context-bounded Kanji numeral conversion
@@ -485,7 +489,7 @@ class AddressNormalizer:
             for r in (self.registry.wards_of(muni_rec) or [muni_rec]):
                 hit = self.gazetteer.match_town(r.lg_code, post_admin_text)
                 remainder = post_admin_text[hit.consumed:] if hit is not None else ""
-                if hit is not None and remainder and _BUILDING_WORD.search(remainder):
+                if hit is not None and hit.consumed >= 2 and remainder and _BUILDING_WORD.search(remainder):
                     post_admin_text, extra_tail = post_admin_text[:hit.consumed], remainder
                     break
         if not split and not extra_tail:
@@ -978,7 +982,9 @@ class AddressNormalizer:
                 koaza_val = remainder[1:] if remainder.startswith("字") else remainder
 
         # A lot with a kana suffix ('大栃1800-イ'): kept as written
-        suffix = re.match(r"^-([イロハニホヘトチリヌルヲ甲乙丙丁])(?![\d])", tail_text)
+        suffix = re.match(r"^-([イロハニホヘトチリヌルヲ甲乙丙丁])(?![\d])", tail_text) or (
+            re.match(r"^([イロハニホヘトチリヌルヲ甲乙丙丁])号?(?=\s|$)", tail_text) if banchi_val is not None else None)
+        # ('828番地ロ', '528番地ハ号': the letter is the lot's branch, not a building)
         if suffix and lot_number is None and go_val is None and edaban_val is None and (ban_val or banchi_val):
             lot_number = f"{ban_val or banchi_val}-{suffix.group(1)}"
             banchi_val, ban_val = ban_val or banchi_val, None
@@ -994,6 +1000,12 @@ class AddressNormalizer:
                 regime_val = AddressRegime.CHIBAN.value
 
         # Kyoto conventional navigation addresses strictly use cadastral lot numbers (地番)
+        if (kyoto_clause and lot_number is None and chome_val is not None and ban_val is not None
+                and go_val is not None and not block_dict["chome_explicit"] and record is None):
+            # '東堀川通出水上る3-13-1' with no town: three numbers, none written as a 丁目, kept as written
+            lot_number = f"{chome_val}-{ban_val}-{go_val}"
+            chome_val = ban_val = go_val = None
+            regime_val = AddressRegime.CHIBAN.value
         if kyoto_clause and (ban_val is not None and banchi_val is None):
             banchi_val = ban_val
             edaban_val = go_val
@@ -1116,6 +1128,8 @@ class AddressNormalizer:
             elif after_open and wing_room:
                 # '188番 1-201' would read back as 188番1号, room 201: the wing is written as one
                 secondary_parts.append(f"{wing_room.group(1)}棟 {wing_room.group(2)}号室")
+            elif re.fullmatch(r"[A-Za-z]", unit_val):
+                secondary_parts.append(f"{unit_val}室")         # 'B室': a lone letter needs its mark
             elif not wing_room and re.fullmatch(r"\d+(?:-\d+)+[A-Za-z]?", unit_val):
                 secondary_parts.append(f"{unit_val}号室")      # '207-1号室' keeps its mark to read back whole
             else:
@@ -1782,6 +1796,8 @@ class AddressNormalizer:
         # '横浜市立第3中学校': '…市立' then a school or other facility (its 第3 is no block number)
         facility = bool(c.town and c.town_verified is not True and c.town.startswith("立")
                         and _FACILITY.search(res.input_sanitized))
+        # '港区第5', '八代市第5地域包括支援センター': 第 makes the number an ordinal in a name
+        facility = facility or bool(c.town == "第" and c.town_verified is not True)   # ('相木第2土地区画…' is a place)
         if (c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None
                 and not c.unit) or facility:    # a room ('コンフォート三佐104号室') makes it a home, not a name
             # '高崎市立国府小学校': a municipality followed by text that is neither a registered town

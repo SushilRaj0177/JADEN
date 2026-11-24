@@ -56,8 +56,8 @@ def test_batch_text_input_with_workers(tmp_path):
     data = "東京都港区芝公園4-2-8\n浦和市高砂3-15-1\n\n福岡市中央区天神1-8-1\n".encode("utf-8")
     counts, text = _run(tmp_path, data, "in.txt", "out.csv", jobs=2)
     rows = list(csv.DictReader(io.StringIO(text)))
-    assert [r["jaden_lg_code"] for r in rows] == ["131032", "111074", "401331"]
-    assert counts["ACCEPTED"] == 3
+    assert [r["jaden_lg_code"] for r in rows] == ["131032", "111074", "", "401331"]   # the blank line stays
+    assert counts["ACCEPTED"] == 3 and counts["EMPTY"] == 1
 
 
 def test_batch_cli_unknown_column(tmp_path, capsys):

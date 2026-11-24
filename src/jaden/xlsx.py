@@ -141,7 +141,7 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
         part = target if target.startswith("xl/") else f"xl/{target}"
 
         out: List[List[str]] = []
-        cells = materialized = text_size = 0
+        cells = materialized = text_size = first_row = 0
         last_row = -1
         with _open_part(book, part, path) as fh:
             try:
@@ -191,6 +191,11 @@ def read_xlsx(path: Union[Path, IO[bytes]], sheet: int = 0) -> List[List[str]]:
                             # millions of empty cells
                             raise ValueError(f"{path}: the rows are too wide to read ({materialized:,} cells "
                                              f"counting the empty ones)")
+                        if out:
+                            # Rows with no cells between two that have some stay, so rows line up
+                            out.extend([] for _ in range(number - first_row - len(out)))
+                        else:
+                            first_row = number
                         out.append([values.get(i, "") for i in range(width)])
             except ET.ParseError as exc:
                 raise ValueError(f"{path}: the worksheet is not valid XML ({exc})") from None

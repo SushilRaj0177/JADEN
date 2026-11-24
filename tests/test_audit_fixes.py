@@ -677,11 +677,12 @@ def test_stream_writes_one_record_per_line() -> None:
     from jaden.frame import stream
     src = io.StringIO('港区芝公園4-2-8\n\n{"id": 7, "address": "府中市1-1"}\n[1]\nnot json {\n')
     out = io.StringIO()
-    assert stream(src, out) == 4
+    assert stream(src, out) == 5        # the blank line gets its own (EMPTY) record, so lines stay aligned
     lines = [json.loads(x) for x in out.getvalue().splitlines()]
     assert lines[0]["jaden"]["status"] == "ACCEPTED"
-    assert lines[1]["input"]["id"] == 7 and lines[1]["jaden"]["status"] == "AMBIGUOUS"
-    assert "error" in lines[2] and lines[3]["jaden"]["status"] == "MALFORMED"
+    assert lines[1]["input"] == "" and lines[1]["jaden"]["status"] == "EMPTY"
+    assert lines[2]["input"]["id"] == 7 and lines[2]["jaden"]["status"] == "AMBIGUOUS"
+    assert "error" in lines[3] and lines[4]["jaden"]["status"] == "MALFORMED"
 
 
 # ---------------------------------------------------------------- F5: label lines
@@ -1530,3 +1531,75 @@ def test_round_four_files_and_json(tmp_path) -> None:
     with pytest.raises(ValueError, match="characters of text"):
         read_xlsx(path)
     assert json_module.dumps(jaden.normalize("〒100-8111 東京都千代田区千代田1-1").notes).count("large-office") == 1   # R4-L6
+
+
+# ---------------------------------------------------------------- audit round 5
+@pytest.mark.parametrize("english, japanese", [
+    ("4-2-8-101 Shibakoen, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番8号 101号室"),                   # R5-H1
+    ("1-10-1-915, Higashishinbashi, Minato ku, Tokyo", "東京都港区東新橋1丁目10番1号 915号室"),
+    ("791, Yoshida, Yoshida-cho, Akitakata-shi, Hiroshima", "広島県安芸高田市吉田町吉田791番"),             # R5-H2
+    ("4-22-26 Kasumigaseki Kita Kawagoe-shi Saitama", "埼玉県川越市霞ケ関北4丁目22番26号"),
+    ("2-22, Minami 14-jo Nishi 1-chome, Chuo-ku, Sapporo", "北海道札幌市中央区南14条西1丁目2番22号"),      # R5-H3
+    ("2-18, 4-chome, Shibakoen, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番18号"),
+    ("5F, 4-2-8 Shibakoen, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番8号 5F"),                         # R5-M4
+    ("Shibakoen 4-chome 2-8, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番8号"),                          # R5-M5
+    ("oomachi 1-chome 2-ban 15-go, Takikawa shi, Hokkaido", "北海道滝川市大町1丁目2番15号"),
+    ("4-2-8, Tokyo Tower 2F, Shibakoen, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番8号 Tokyo Tower 2F"),
+    ("4-11-3 Asahicho Kashiwa-shi Chiba", "千葉県柏市旭町4丁目11番3号"),                                # R5-M6
+    ("2587 Ishikawa Uruma-shi Okinawa", "沖縄県うるま市石川2587番"),
+    ("1-6-1 Izumi Kita Akita-shi Akita", "秋田県秋田市泉北1丁目6番1号"),
+    ("4-6-16 Ginza, Chūō-ku, Tōkyō", "東京都中央区銀座4丁目6番16号"),
+    ("45-18, Ohyamacho, Shibuya ku, Tokyo", "東京都渋谷区大山町45番18号"),
+])
+def test_round_five_english(english, japanese) -> None:
+    assert jaden.normalize(english).canonical == japanese
+
+
+def test_round_five_units_lots_and_names() -> None:
+    same = lambda a, b: jaden.compare(a, b).verdict   # noqa: E731
+    base = "東京都港区芝公園4-2-8 "
+    for a, b in (("3B", "4B"), ("10-1", "10-2"), ("B-3", "B-4"), ("3F B室", "3F A室")):            # R5-M1
+        assert same(base + a, base + b) == "same_building"
+    assert same("鹿児島県指宿市東方828番地ロ", "鹿児島県指宿市東方828番地イ") == "different"           # R5-M2
+    two = jaden.normalize(base + "101号室、102号室")                                                 # R5-M3
+    assert two.components.unit is None and jaden.normalize(two.canonical).canonical == two.canonical
+    twice = jaden.normalize("愛知県一宮市花池2丁目16-12　メゾン花池101号メゾン花池101号室")
+    assert jaden.match_key(twice).endswith("|101")
+    for name in ("仙台市長", "金沢市長", "白浜町中央保健センター", "東京都港区第5"):                     # R5-M7
+        assert jaden.validate(name).status != "ACCEPTED"
+    assert jaden.validate("石川県白山市松任駅北相木第2土地区画整理事業施行地区内19街区1").status == "ACCEPTED"
+    kana = jaden.normalize("とうきょうとみなとくしばこうえん4-2-8 101ごうしつ")                       # R5-L4
+    assert kana.components.building is None and jaden.match_key(kana).endswith("|101")
+    for raw in ("東京都港区芝公園4-2-8-105-0011", "京都府京都市上京区東堀川通出水上る3-13-1"):          # R5-L5
+        res = jaden.normalize(raw)
+        assert jaden.normalize(res.canonical).canonical == res.canonical
+        assert jaden.match_key(res.canonical) == jaden.match_key(raw)
+
+
+@pytest.mark.parametrize("raw", [                                                            # R5-L1, L2, L3
+    "宮崎県延岡市野地町6-5415-乙", "長野県上高井郡小布施町大字小布施860-イ", "山梨県南巨摩郡身延町身延身延3552",
+    "京都府京都市右京区西院西田町1洛西マンションNO,2　102号室", "鹿児島県日置市日吉町日置３１０５",
+    "東京都新宿区百人町１丁目１１－２８ＰＬＡＴ１００－３０３号", "大阪市住吉区苅田8-11-30-12　メゾン阪南",
+])
+def test_round_five_english_lines_read_back(raw) -> None:
+    res = jaden.normalize(raw)
+    assert jaden.match_key(res.romaji) == jaden.match_key(raw)
+    assert jaden.match_key(res.romaji.replace(",", "")) == jaden.match_key(raw)
+
+
+def test_round_five_io(tmp_path) -> None:
+    import io
+    from jaden.batch import run_batch
+    from jaden.core.text import load_json
+    from jaden.fields import check_fields
+    with pytest.raises(ValueError):                                                           # R5-L6
+        load_json('{"x": 1e400}')
+    with pytest.raises(ValueError):
+        load_json('{"x": NaN}')
+    src = tmp_path / "in.txt"                                                                 # R5-L7
+    src.write_text("東京都港区芝公園4-2-8\n\n大阪府大阪市北区梅田1-1\n", encoding="utf-8")
+    out = tmp_path / "out.csv"
+    run_batch(src, out, log=io.StringIO())
+    assert len(out.read_text(encoding="utf-8-sig").splitlines()) == 4
+    result = check_fields(prefecture="Tokyo", city="Minato-ku", line1="4-2-8 Shibakoen")      # R5-L9
+    assert result.status == "ACCEPTED" and result.fields["line1"] == "芝公園4丁目2番8号"

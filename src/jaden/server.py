@@ -36,6 +36,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlsplit
 
+from .core.text import load_json
+
 MAX_BODY_BYTES = 2 * 1024 * 1024
 MAX_EXTRACT_CHARS = 100_000      # extraction time grows with the text; more than this is not one document
 SOCKET_TIMEOUT = 30              # seconds a client may take to send its request
@@ -441,8 +443,8 @@ def _make_handler(api: JadenApi, cors: Optional[str], quiet: bool) -> type:
                 self._error(ApiError(400, "bad_request", "the body is shorter than its Content-Length"))
                 return
             try:
-                body = json.loads(raw.decode("utf-8")) if raw else {}
-            except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+                body = load_json(raw.decode("utf-8")) if raw else {}
+            except (ValueError, RecursionError):
                 self._error(ApiError(400, "bad_json", "the request body must be UTF-8 JSON"))
                 return
             if not isinstance(body, dict):

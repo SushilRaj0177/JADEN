@@ -16,6 +16,8 @@ import json
 import sys
 from typing import Any, Callable, Dict, List, Optional, TextIO, Tuple
 
+from .core.text import load_json
+
 PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
 
 
@@ -216,8 +218,8 @@ def serve_stdio(stdin: TextIO = sys.stdin, stdout: TextIO = sys.stdout) -> int:
         if not line:
             continue
         try:
-            message = json.loads(line)
-        except (json.JSONDecodeError, RecursionError):
+            message = load_json(line)
+        except (ValueError, RecursionError):
             reply: Optional[Dict[str, Any]] = {"jsonrpc": "2.0", "id": None,
                                                "error": {"code": -32700, "message": "parse error"}}
         else:

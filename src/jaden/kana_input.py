@@ -53,7 +53,8 @@ def looks_kana(text: str) -> bool:
 _SMALL = str.maketrans("ァィゥェォッャュョヮヵヶ", "アイウエオツヤユヨワカケ")
 # Number words typed in kana after a number: 2ちょうめ -> 2丁目 (only after a digit, so names are untouched)
 _KANA_MARKERS = [(re.compile(r"(?<=\d)(?:ちょうめ|チョウメ)"), "丁目"), (re.compile(r"(?<=\d)(?:ばんち|バンチ)"), "番地"),
-                 (re.compile(r"(?<=\d)(?:ばん|バン)(?!ち|チ)"), "番"), (re.compile(r"(?<=\d)(?:ごう|ゴウ)"), "号"),
+                 (re.compile(r"(?<=\d)(?:ばん|バン)(?!ち|チ)"), "番"), (re.compile(r"(?<=\d)(?:ごうしつ|ゴウシツ)"), "号室"),
+                 (re.compile(r"(?<=\d)(?:ごう|ゴウ)"), "号"),
                  (re.compile(r"(?<=\d)(?:じょう|ジョウ)"), "条"), (re.compile(r"(?<=\d)(?:のう|ノウ)"), "の")]
 _HAS_KANA = re.compile(r"[ァ-ヺ]")
 

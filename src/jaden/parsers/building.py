@@ -23,7 +23,8 @@ _KANJI_DIGIT = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七
 
 # A room on its own: a bare number ('… 1', '… 302'), a lettered room ('A-302', '302A', 'B101'), or a
 # wing and room ('2-302')
-_ROOM_ALONE: Final[re.Pattern[str]] = re.compile(r"^(?:\d{1,5}|[A-Za-z]-?\d{2,4}|\d{2,4}-?[A-Za-z]|\d{1,2}-\d{2,4})$")
+_ROOM_ALONE: Final[re.Pattern[str]] = re.compile(
+    r"^(?:(?:\d{1,5}|[A-Za-z]-?\d{1,4}|\d{1,4}-?(?![Ff]$)[A-Za-z]|\d{1,2}-\d{1,4})(?:\s*(?:号室|室))?|[A-Za-z]\s*(?:号室|室))$")   # '3B', 'B-3', '10-1', 'B室'
 # A basement level written alone after the building name: 'サカエチカ B1'
 _BASEMENT_TOKEN: Final[re.Pattern[str]] = re.compile(r"(?:^|\s)(?P<floor>B\d{1,2})(?=\s|$)")
 
@@ -63,6 +64,11 @@ def _looks_like_building(name: str) -> bool:
     return len(letters) >= 2 or re.search(r"団地|ビル|荘|館|寮|住宅|棟|宿舎|社宅|会館", name) is not None
 
 
+def _room_alone(text: str) -> str:
+    """'B室' -> 'B', '10-1号室' -> '10-1'; a plain '101号室' keeps its mark."""
+    return re.sub(r"\s*(?:号室|室)$", "", text) if re.search(r"[A-Za-z-]", text) else text
+
+
 class BuildingParser:
     """Parses building name, floor, and unit numbers from tail strings."""
 
@@ -90,7 +96,7 @@ class BuildingParser:
 
         # 0. A room on its own: '4-2-8-101', '… 1', 'A-302', '2-302'; or a wing and room ('A-201号室')
         if _ROOM_ALONE.match(working):
-            return None, None, working
+            return None, None, _room_alone(working)
         wing_room = _WING_THEN_ROOM.match(working)
         if wing_room:
             return None, None, f"{wing_room.group('wing').upper()}-{wing_room.group('room')}"
@@ -116,10 +122,21 @@ class BuildingParser:
             working = (working[:floor_match.start()] + " " + working[floor_match.end():]).strip()
             rest = working.lstrip("-,、，・ ").strip()
             if _ROOM_ALONE.match(rest):
-                return None, floor, rest          # '3F-301': floor 3, room 301
+                return None, floor, _room_alone(rest)   # '3F-301': floor 3, room 301; '3F B室'
             working = working.rstrip("-,、，・ ")   # 'Via701-3階' reads like 'Via701 3階'
 
-        # 2. Extract Room/Unit if present
+        # 2. Extract Room/Unit if present. Two rooms ('101号室、102号室', '411号・509号') are kept together as
+        # written: neither alone is the address's room
+        marks = re.findall(r"(\d+[A-Za-z]?)\s*(号室|号(?!棟|館|地))", working)
+        if len({n for n, _ in marks}) >= 2:
+            together = re.sub(r"\s+", " ", working).strip(" -,、") or None
+            return together, floor, None
+        if len(marks) >= 2:
+            # The same room written twice ('メゾン花池101号メゾン花池101号室'): one room, each copy taken out
+            number = marks[0][0]
+            rest = re.sub(rf"(?<!\d){re.escape(number)}\s*(?:号室|号(?!棟|館|地))", " ", working)
+            together = re.sub(r"\s+", " ", rest).strip(" -,、・") or None
+            return together, floor, f"{number}{marks[0][1]}"
         labelled = _LABELLED_ROOM.search(working)
         room_match = _ROOM_PATTERN.search(working)
         trailing = _TRAILING_ROOM.match(working)

@@ -33,6 +33,8 @@ def _secondary(res: NormalizedAddress) -> str:
     if unit and re.fullmatch(r"\d+[A-Za-z]?", unit) and c.go is None and c.edaban is None \
             and not (c.lot_number and "-" in c.lot_number):
         unit = f"{unit}号室"      # after a number without 号 ('188', '4丁目') a bare number would read as the 号
+    if unit and re.fullmatch(r"[A-Za-z]", unit):
+        unit = f"{unit}室"
     wing_room = re.fullmatch(r"(\d{1,2})-(\d{2,4})", unit or "")
     if wing_room and c.go is None and c.edaban is None and not (c.lot_number and "-" in c.lot_number):
         unit = f"{wing_room.group(1)}棟 {wing_room.group(2)}号室"   # '488番地 2-101' would read as 488-2, room 101

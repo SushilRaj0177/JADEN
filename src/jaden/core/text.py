@@ -41,3 +41,20 @@ def postal_text(value: Any) -> str:
     if isinstance(value, int) and 0 <= value < 10_000_000:
         return f"{value:07d}"
     return as_text(value)
+
+
+def load_json(text: str) -> Any:
+    """json.loads that refuses what JSON does not allow: NaN, Infinity and numbers too large for a float
+    ('1e400'). Python would otherwise read them and write them back as invalid JSON."""
+    import json
+    import math
+
+    def constant(name: str) -> Any:
+        raise ValueError(f"{name} is not valid JSON")
+
+    def finite(literal: str) -> float:
+        value = float(literal)
+        if not math.isfinite(value):
+            raise ValueError(f"number {literal} is out of range")
+        return value
+    return json.loads(text, parse_constant=constant, parse_float=finite)

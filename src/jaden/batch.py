@@ -22,6 +22,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Text
 
 from .models.address import NormalizedAddress
 from .models.validation import ValidationResult
+from .core.text import load_json
 
 RESULT_FIELDS: Tuple[str, ...] = (
     "status", "valid", "canonical", "hyphenated", "precision", "lg_code", "prefecture", "county", "city", "ward", "town",
@@ -287,8 +288,7 @@ def read_rows(text: str, fmt: str, column: Optional[str],
             if not header_row:
                 yield list(first), (first[index] if index < len(first) else "")
             for values in reader:
-                if not any(v.strip() for v in values):
-                    continue
+                # A blank row stays (as EMPTY), so the output rows line up with the input's
                 yield list(values), (values[index] if index < len(values) else "")
         return header, gen_csv()
 
@@ -298,9 +298,10 @@ def read_rows(text: str, fmt: str, column: Optional[str],
         def gen_jsonl() -> Iterator[Tuple[Row, str]]:
             for number, line in enumerate(text.splitlines(), 1):
                 if not line.strip():
+                    yield {}, ""                 # kept, so the output lines up with the input
                     continue
                 try:
-                    obj = json.loads(line)
+                    obj = load_json(line)
                 except (ValueError, RecursionError) as exc:   # '[[[[…' nested beyond Python's limit
                     raise ValueError(f"line {number}: not valid JSON ({type(exc).__name__})") from None
                 if not isinstance(obj, dict):
@@ -310,8 +311,7 @@ def read_rows(text: str, fmt: str, column: Optional[str],
 
     def gen_txt() -> Iterator[Tuple[Row, str]]:
         for line in text.splitlines():
-            if line.strip():
-                yield [line.strip()], line.strip()
+            yield [line.strip()], line.strip()      # a blank line stays, as EMPTY
     return ["address"], gen_txt()
 
 
