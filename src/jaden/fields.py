@@ -14,7 +14,7 @@ one), and so on. ``fields`` gives the address back split into the same five fiel
 import re
 import unicodedata
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .core.text import as_text
 
@@ -97,6 +97,48 @@ def _split_fields(res: Any) -> Dict[str, str]:
     }
 
 
+_JAPANESE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff]")
+
+
+def _admin_in_english(prefecture: str, city: str) -> Tuple[str, str]:
+    """Prefecture and city fields written in Japanese, romanized to go with an English street line."""
+    from .data.loader import get_registry
+    from .readings import _municipality_readings, _words
+    registry = get_registry()
+    pref = registry.get_prefecture_by_name(prefecture) if _JAPANESE.search(prefecture or "") else None
+    if pref is not None:
+        prefecture = pref.romaji
+    if city and _JAPANESE.search(city):
+        found = registry.find_municipalities(city, pref.code if pref else None)
+        romaji = _municipality_readings().get(found[0].lg_code, {}).get("romaji") if len(found) == 1 else None
+        if romaji:
+            city = " ".join(reversed(_words(romaji)))       # '港区' -> 'Minato-ku'
+    return prefecture, city
+
+
+def _admin_in_japanese(prefecture: str, city: str) -> Tuple[str, str]:
+    """Prefecture and city fields written in English, in Japanese to go with a Japanese street line."""
+    from .romaji import _index, _segment_keys
+    idx = _index()
+    pref_code = None
+    if prefecture and not _JAPANESE.search(prefecture):
+        pref_code = next((idx.prefectures[k] for k in _segment_keys(prefecture) if k in idx.prefectures), None)
+        if pref_code is not None:
+            rec = idx.registry.get_prefecture_by_code(pref_code)
+            prefecture = rec.name if rec else prefecture
+    if city and not _JAPANESE.search(city):
+        lgs = set().union(*(idx.munis.get(k, set()) for k in _segment_keys(city)))
+        if pref_code is not None:
+            lgs = {lg for lg in lgs if lg[:2] == pref_code}
+        records = [r for r in (idx.registry.get_municipality_by_code(lg) for lg in sorted(lgs)) if r]
+        wards = [r for r in records if r.entity_type == "administrative_ward"]
+        if len(records) > 1 and len(wards) == 1:
+            records = wards
+        if len(records) == 1:
+            city = (records[0].county or "") + records[0].name
+    return prefecture, city
+
+
 def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: Any = "", postal_code: Any = "",
                  strict: bool = False) -> FieldResult:
     """Reads an address given as separate fields and checks each field against the others."""
@@ -115,10 +157,15 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
     from .kana_input import admin_fields_to_kanji
     from .romaji import looks_romanized
     pref_text, city_text = admin_fields_to_kanji(given["prefecture"], given["city"])
-    english = looks_romanized(" ".join(v for v in (given["line1"], given["city"], given["prefecture"]) if v))
+    # The street line decides the language; prefecture and city fields in the other one are converted
+    english = looks_romanized(given["line1"] or " ".join(v for v in (given["city"], given["prefecture"]) if v))
+    if english:
+        pref_en, city_en = _admin_in_english(given["prefecture"], given["city"])
+    else:
+        pref_text, city_text = _admin_in_japanese(pref_text, city_text)
     if english:
         # Fields filled in English ('4-2-8 Shibakoen' / 'Minato-ku' / 'Tokyo'): joined in English order
-        body = ", ".join(v for v in (given["line2"], given["line1"], given["city"], given["prefecture"]) if v)
+        body = ", ".join(v for v in (given["line2"], given["line1"], city_en, pref_en) if v)
         text = body + (f" {postal[:3]}-{postal[3:]}" if postal_ok else "")
     else:
         body = pref_text + city_text + given["line1"]
@@ -157,6 +204,10 @@ def check_fields(prefecture: Any = "", city: Any = "", line1: Any = "", line2: A
             if city is not None:
                 muni_readings.append(_muni_kana(city))
         cmp = dict(given)
+        if not english:
+            for name, text_ in (("prefecture", pref_text), ("city", city_text)):
+                if given[name] and not _JAPANESE.search(given[name]) and _JAPANESE.search(text_ or ""):
+                    cmp[name] = text_      # 'Tokyo' / 'Minato-ku' beside '芝公園4-2-8': compared as converted
         if english:
             # 'Tokyo' / 'Minato-ku' agree with 東京都 / 港区 when they romanize the same way
             from .romaji import _index, _segment_keys

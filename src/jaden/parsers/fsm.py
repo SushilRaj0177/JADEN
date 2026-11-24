@@ -30,7 +30,8 @@ _NUMBER_IN_NAME: Final[re.Pattern[str]] = re.compile(
     r"^\d+(?:条|線|区|組|班|部|地割|街区|工区|番町|番丁|番耕地|耕地|号地|号線|丁(?!目)|の町|ノ町|の割|ノ割|軒|号(?=\D*\d+線)|-\d+線)")
 _HYPHEN_AFTER_MARKER: Final[re.Pattern[str]] = re.compile(r"(?<=\d)(丁目|番地|番)\s*-\s*(?=\d+(?:番|号))")
 # A floor or room mark standing right after the block numbers with no number of its own
-_BARE_MARK: Final[re.Pattern[str]] = re.compile(r"^(?:階|[Ff](?![A-Za-z])|号室|号(?!館|棟|地|線))")
+_BARE_MARK: Final[re.Pattern[str]] = re.compile(
+    r"^(?:階|[Ff](?![A-Za-z\u3040-\u30ff\u3400-\u9fff])|号室|号(?!館|棟|地|線))")   # 'Fビル' is a name, not a floor
 
 
 def _town_from(town_pattern: str, min_len: int) -> str:

@@ -194,3 +194,28 @@ Low
 - [x] R5-L9 `check_fields` refuses English fields
 - [x] R5-X1 (found while checking) The English reader was rewritten: the prefecture and municipality are taken from the end (or the start), and the rest is read as numbers, 丁目, town, building, floor and room in any order. JADEN's own English lines read back on 2,961 of 2,974 real addresses with the commas removed (was 2,644); invariant failures on 29,298 real addresses: 5
 - [x] R5-X2 (found while checking) A room written twice (`メゾン花池101号メゾン花池101号室`) is one room
+
+## Audit round 6 (separate high-precision audit, 24 Nov 2026)
+- [x] R6-H1 English in Japanese order (`Chiba, Yachiyo-shi, 55-1 Shimada`) read at a wrong municipality (regression)
+- [x] R6-H2 A comma with no space after a name (`Shiba Park Bldg,4-2-8 Shibakoen,Minato-ku`) breaks the address (regression)
+- [x] R6-H3 A building starting with F or 階 after 号 / 番地 / 番 (`4丁目2番18号 Fビル`) takes the last digit as a floor
+- [x] R6-H4 Universities and landmarks (`千葉大学`, `熊本城`, `大阪港`) accepted at a town somewhere in the prefecture
+- [x] R6-H5 `3-1-1 Izumi Kita Akita shi Akita` read as 北秋田市
+- [x] R6-M1 A short unit after a building name (`メゾン芝 4A`, `コーポ田中 B-3`) left out of the key
+- [x] R6-M2 English 番 / 号 without hyphens (`4chome 2ban 8go`, `4 chome 2 ban 8 go`, `5200 banchi`)
+- [x] R6-M3 `Aza-X`, `Oaza-X`, `Ooaza-X`, `Ōaza` not stripped
+- [x] R6-M4 English lot written after the town (`Aikoku 191-5711, Kushiro-shi`) taken as a postal code
+- [x] R6-M5 Sapporo shorthand `Kita 8 Nishi 5`, `南3西4 1-1`
+- [x] R6-M6 A Japanese building after the town in English glued onto the town (regression)
+- [x] R6-M7 English read-back: repeated 字 with commas, island counties and Japanese buildings without commas, `／2316`
+- [x] R6-M8 `check_fields` with mixed Japanese and English fields
+- [x] R6-M9 Kyoto same-named town written without its clause: accepted (the ward is certain) with the existing warning, no point given, and `compare` against a version with the clause says possibly_same
+- [x] R6-M10 Tax-office style without commas where a 大字 has the municipality's name (`Takanabe cho`)
+- [x] R6-M11 Two rooms after a lot (`576番地 201・202号室`)
+- [x] R6-M12 `世田谷区役所 第2庁舎` accepted
+- [x] R6-L1 Kunrei / Nihon-shiki spellings beyond shi / chi / tsu / fu (`Tyuo`, `Sinzyuku`, `Kisaradu`)
+- [x] R6-L2 English with a Japanese town and `X City` / `X shi` rejected
+- [x] R6-L3 `1-2-9, Imojima, Gifu` rejected (city named like its prefecture)
+- [x] R6-L4 `富山市山岸95 503 号` not a fixed point; municipality text left in the building
+- [x] R6-X1 (found while checking) A Japanese building written after a 字 or a Japanese town in English (`54 興戸御垣内 たけのこハウス 2F`) is split off; text after the prefecture (`…, Osaka, A`) is the building; Kunrei suffixes `-si`, `-tyo`, `tyome`
+- [x] R6-X2 (found while checking) A building and room typed twice (`アースビルディング 303 アースビルディング 303`) read as one

@@ -50,6 +50,11 @@ _TRAILING_ROOM: Final[re.Pattern[str]] = re.compile(
 )
 
 
+# A short unit set apart after the name: 'メゾン芝 4A', 'コーポ田中 B-3', 'ハイツ 10-1' (a lone '2' stays in the name)
+_SHORT_UNIT_AFTER_NAME: Final[re.Pattern[str]] = re.compile(
+    r"^(?P<name>.*\S)\s+(?P<room>\d{1,4}[A-Za-z]|[A-Za-z]-?\d{1,4}|\d{1,2}-\d{1,4})$")
+
+
 # A wing number and room glued to the name: 'コーポ1-201', 'ハイツ山田 2-101' (wing 1, room 201)
 _TRAILING_WING_ROOM: Final[re.Pattern[str]] = re.compile(
     r"^(?P<name>.*[^\d\s\-#])\s*(?P<room>\d{1,2}\s*-\s*\d{2,4})$"
@@ -89,6 +94,11 @@ class BuildingParser:
         working = tail.strip().lstrip("-,、，・ ").strip()
         floor: Optional[str] = None
         unit: Optional[str] = None
+
+        # The same building text written twice ('アースビルディング 303 アースビルディング 303'): one copy
+        words = working.split()
+        if len(words) >= 2 and len(words) % 2 == 0 and words[:len(words) // 2] == words[len(words) // 2:]:
+            working = " ".join(words[:len(words) // 2])
 
         # A mark left over with no number of its own ('4-2-8号', '12番地') is no building
         if re.fullmatch(r"(?:号室?|番地?|階|地)", working):
@@ -141,6 +151,7 @@ class BuildingParser:
         room_match = _ROOM_PATTERN.search(working)
         trailing = _TRAILING_ROOM.match(working)
         wing_room = _TRAILING_WING_ROOM.match(working)
+        short_unit = _SHORT_UNIT_AFTER_NAME.match(working)
         if labelled:
             unit = labelled.group("room")
             working = (working[:labelled.start()] + " " + working[labelled.end():]).strip()
@@ -157,6 +168,9 @@ class BuildingParser:
         elif trailing and len(trailing.group("name").strip()) >= 2:
             unit = trailing.group("room")
             working = trailing.group("name").strip()
+        elif short_unit and len(short_unit.group("name").strip()) >= 2:
+            unit = short_unit.group("room")          # 'メゾン芝 4A', 'コーポ田中 B-3', 'ハイツ 10-1'
+            working = short_unit.group("name").strip()
 
         # 3. Clean remaining text as building name
         building: Optional[str] = re.sub(r"\s+", " ", working).strip(" -,、")

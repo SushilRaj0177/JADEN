@@ -1603,3 +1603,51 @@ def test_round_five_io(tmp_path) -> None:
     assert len(out.read_text(encoding="utf-8-sig").splitlines()) == 4
     result = check_fields(prefecture="Tokyo", city="Minato-ku", line1="4-2-8 Shibakoen")      # R5-L9
     assert result.status == "ACCEPTED" and result.fields["line1"] == "芝公園4丁目2番8号"
+
+
+# ---------------------------------------------------------------- audit round 6
+@pytest.mark.parametrize("english, japanese", [
+    ("Chiba, Yachiyo-shi, 55-1 Shimada", "千葉県八千代市島田55番1号"),                                     # R6-H1
+    ("Tokyo, Setagaya-ku, 9-1-35 Kitami", "東京都世田谷区喜多見9丁目1番35号"),
+    ("Shiba Park Bldg,4-2-8 Shibakoen,Minato-ku,Tokyo", "東京都港区芝公園4丁目2番8号 Shiba Park Bldg"),     # R6-H2
+    ("3-1-1 Izumi Kita Akita shi Akita", "秋田県秋田市泉北3丁目1番1号"),                                    # R6-H5
+    ("Shibakoen 4chome 2ban 8go, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番8号"),                         # R6-M2
+    ("Shibakoen 4 chome 2 ban 8 go, Minato-ku, Tokyo", "東京都港区芝公園4丁目2番8号"),
+    ("5200 banchi, Moseushi, Moseushi-cho, Uryu-gun, Hokkaido", "北海道雨竜郡妹背牛町5200番地"),
+    ("1642-26, Oaza-Kumagawa, Fussa-shi, Tokyo", "東京都福生市大字熊川1642番地の26"),                         # R6-M3
+    ("Aikoku 191-5711, Kushiro-shi, Hokkaido", "北海道釧路市愛国191番5711号"),                              # R6-M4
+    ("Kita 8 Nishi 5, Kita-ku, Sapporo", "北海道札幌市北区北8条西5丁目"),                                     # R6-M5
+    ("札幌市中央区南3西4 1-1", "北海道札幌市中央区南3条西4丁目1番1号"),
+    ("Hyogo, Itami-shi, 1-2-17 Minamihommachi, ベラカーザ 1F", "兵庫県伊丹市南本町1丁目2番17号 ベラカーザ 1F"),   # R6-M6
+    ("807-1 Ako Miyake-mura Miyakejima Tokyo", "東京都三宅村阿古807番1号"),                                  # R6-M7
+    ("6956-2 Uwae Takanabe cho Koyu gun Miyazaki", "宮崎県児湯郡高鍋町大字上江6956番地の2"),                  # R6-M10
+    ("3-1-1 Sinzyuku, Sinzyuku-ku, Tokyo", "東京都新宿区新宿3丁目1番1号"),                                   # R6-L1
+    ("3-3-5 三山木中央, Kyotanabe City, Kyoto", "京都府京田辺市三山木中央3丁目3番5号"),                         # R6-L2
+    ("1-2-9, Imojima, Gifu", "岐阜県岐阜市芋島1丁目2番9号"),                                                 # R6-L3
+])
+def test_round_six_english(english, japanese) -> None:
+    assert jaden.normalize(english).canonical == japanese
+
+
+def test_round_six_japanese() -> None:
+    for raw, canonical in (("東京都港区芝公園4丁目2番18号 Fビル", "東京都港区芝公園4丁目2番18号 Fビル"),          # R6-H3
+                           ("大分県豊後大野市緒方町576番地 201・202号室", "大分県豊後大野市緒方町576番地 201-202号室")):  # R6-M11
+        res = jaden.normalize(raw)
+        assert res.canonical == canonical and jaden.normalize(res.canonical).canonical == canonical
+    for name in ("千葉大学", "岡山大学", "熊本城", "大阪港", "世田谷区役所 第2庁舎"):                           # R6-H4, M12
+        assert jaden.validate(name).status != "ACCEPTED"
+    for real in ("千葉県大学町", "東京 芝公園", "石川県白山市松任駅北相木第2土地区画整理事業施行地区内19街区1"):
+        assert jaden.validate(real).status == "ACCEPTED"
+    same = lambda a, b: jaden.compare(a, b).verdict   # noqa: E731
+    assert same("東京都港区芝公園4-2-8 メゾン芝 4A", "東京都港区芝公園4-2-8 メゾン芝 4B") == "same_building"   # R6-M1
+    assert same("京都府京都市中京区笹屋町436", "京都府京都市中京区御池通東洞院東入笹屋町436") == "possibly_same"   # R6-M9
+    res = jaden.normalize("富山県富山市山岸95 503 号")                                                     # R6-L4
+    assert jaden.normalize(res.canonical).canonical == res.canonical
+
+
+def test_round_six_mixed_fields() -> None:                                                     # R6-M8
+    for kw in (dict(prefecture="東京都", city="Minato-ku", line1="4-2-8 Shibakoen"),
+               dict(prefecture="東京都", city="港区", line1="4-2-8 Shibakoen"),
+               dict(prefecture="Tokyo", city="港区", line1="芝公園4-2-8")):
+        result = jaden.check_fields(**kw)
+        assert result.status == "ACCEPTED" and result.canonical == "東京都港区芝公園4丁目2番8号"

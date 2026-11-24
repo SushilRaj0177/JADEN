@@ -230,7 +230,9 @@ def match_parts(res: NormalizedAddress) -> MatchParts:
     if res.confidence_score <= 0:
         return MatchParts()
     town, koaza = _town_parts(res)
-    if town and c.town_homonyms > 1 and c.kyoto_direction is not None:
+    if town and c.town_homonyms > 1 and c.kyoto_direction is None:
+        town = f"{town}@?"          # which of the towns of this name is not said: compared as possibly the same
+    elif town and c.town_homonyms > 1 and c.kyoto_direction is not None:
         # Two Kyoto towns of one name in one ward: the street clause tells them apart
         k = c.kyoto_direction
         streets = "".join(re.sub(r"通り?$", "", x) for x in (k.street_1, k.street_2))
@@ -359,6 +361,11 @@ def compare(a: Union[str, NormalizedAddress], b: Union[str, NormalizedAddress]) 
             continue
         if va is None or vb is None:
             missing.append(name)
+            break
+        if va != vb and name == "town" and va.split("@")[0] == vb.split("@")[0] and "@?" in (va[-2:], vb[-2:]):
+            # One side names which of Kyoto's same-named towns, the other does not
+            missing.append("town")
+            notes.append("the town has several places of this name; only one address says which")
             break
         if va != vb:
             if name == "unit":

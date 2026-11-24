@@ -106,7 +106,8 @@ _SPACED_NUMBERS: Final[re.Pattern[str]] = re.compile(
 _BRACKETED: Final[re.Pattern[str]] = re.compile(r"\s*[(（][^)）]*[)）]")
 # Spaces between block markers and the next number ('4丁目 2番 8号'), but not before a room ('2番 301号室')
 _INNER_BLOCK_SPACE: Final[re.Pattern[str]] = re.compile(
-    r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?!\d+\s*号室|[\d\-・]+\s*(?:階|[FfＦ](?![A-Za-z])))")   # nor a floor
+    r"(?:(?<=丁目)|(?<=番地)|(?<=[番の]))\s+(?=\d)(?![\d\-・、,]+\s*号室|[\d\-・]+\s*(?:階|[FfＦ](?![A-Za-z]))|\d+\s+号)")
+# (nor rooms '201・202号室', a floor, or a room whose 号 stands apart: '95番 503 号')
 # Town text containing a number that is part of the name, not a block number:
 # '忠和1条', '芽室南2線', '五十嵐3の町', '古町通6番町', '五福1区'
 _NUMBERED_TOWN: Final[re.Pattern[str]] = re.compile(
@@ -480,6 +481,9 @@ class AddressNormalizer:
         post_admin_text = _KANA_NUMBER_MARK.sub(lambda m: _KANA_MARK_WORDS[m.group(0)], post_admin_text)
         post_admin_text = _SPACED_NUMBERS.sub(lambda m: "-".join(n for n in m.groups() if n), post_admin_text)
         post_admin_text = _INNER_BLOCK_SPACE.sub("", post_admin_text)
+        # '南3西4 1-1', '北11条西7 2-3': after a grid's 丁目 written without its mark, a hyphenated pair is the block
+        post_admin_text = re.sub(r"^((?:[^\s\d]*?)[北南]\d+条?[東西]\d+)\s+(?=\d+-\d+(?:-\d+)?(?:\s|$))", r"\1-",
+                                 post_admin_text)
         split = _AFTER_BLOCK_NUMBER.search(post_admin_text)
         if split:
             post_admin_text, extra_tail = post_admin_text[:split.start()], post_admin_text[split.end():]
@@ -1796,8 +1800,14 @@ class AddressNormalizer:
         # '横浜市立第3中学校': '…市立' then a school or other facility (its 第3 is no block number)
         facility = bool(c.town and c.town_verified is not True and c.town.startswith("立")
                         and _FACILITY.search(res.input_sanitized))
+        # '千葉大学', '熊本城', '大阪港': no municipality written, no number, and a town of one character or one
+        # found only by adding 町 is a name that mentions a place, not an address
+        facility = facility or bool(c.municipality_inferred and no_numbers and c.town and c.hokkaido_grid is None
+                                    and (len(c.town) <= 1 or c.town not in res.input_sanitized))
         # '港区第5', '八代市第5地域包括支援センター': 第 makes the number an ordinal in a name
         facility = facility or bool(c.town == "第" and c.town_verified is not True)   # ('相木第2土地区画…' is a place)
+        # '世田谷区役所 第2庁舎': a municipal office, not a town
+        facility = facility or bool(c.town and c.town_verified is not True and re.match(r"役所|役場|庁舎", c.town))
         if (c.town_verified is False and no_numbers and c.hokkaido_grid is None and c.kyoto_direction is None
                 and not c.unit) or facility:    # a room ('コンフォート三佐104号室') makes it a home, not a name
             # '高崎市立国府小学校': a municipality followed by text that is neither a registered town
