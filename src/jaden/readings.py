@@ -128,6 +128,11 @@ def romaji_address(pref: Optional[PrefectureRecord], muni: Optional[Municipality
         from .romaji import _index, romaji_key
         if len(_index().town_entries(muni.lg_code).get(romaji_key(town.romaji), ())) > 1:
             town_words += " " + town.name        # 志水町 and 清水町 are both 'Shimizucho': the name says which
+        if not plain.startswith(base) and c.koaza and c.koaza not in town_words:
+            koaza = c.koaza                            # '羽入字東原' read as town 羽入東, 字 原: the 字 kept
+            overlap = next((i for i in range(len(koaza), 0, -1) if town.name.endswith(koaza[:i])), 0)
+            if koaza[overlap:]:
+                town_words += f" 字{koaza[overlap:]}"
         if plain.startswith(base) and plain[len(base):]:
             below = plain[len(base):]                   # a 字 below the town has no reading: kept as written
             if below.startswith(base):

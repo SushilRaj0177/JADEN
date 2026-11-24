@@ -236,7 +236,32 @@ Low
 - [x] R7-L4 The compare note now says only that one address gives no street clause JADEN could read (reading romanized Kyoto clauses stays open)
 - [x] R7-L5 English town in the wrong ward: the town is kept as written and a note names the municipality that has it ("did you mean 東京都港区芝公園?")
 - [x] R7-L6 English with no ward (`5-1 Nihonbashi Kabuto-cho, Tokyo`, `71-Saiwai cho, Tottori, Tottori`) rejected
-- [x] R7-L7 `愛知県日進市蟹甲町中島` (字 not written) rejected
+- [ ] R7-L7 `愛知県日進市蟹甲町中島` (字 not written) rejected (open: the fix tried in round 7 also accepted names such as `芝公園付近`, so it was taken back in round 8; with 字 or a number it is accepted)
 - [ ] R7-L8 `加美町町裏八番70-1` not a fixed point (open: a town whose name ends in a kanji 番)
 - [x] R7-L9 Two rooms after a building (`トランキーロT 101 102`) split wrongly
 - [x] R7-X1 (found while checking) Kunrei `Zyo`, `Higasi`, `Nisi`, `tyome` in Hokkaido grids; a 字 already written is not doubled
+
+## Audit round 8 (separate high-precision audit, 24 Nov 2026)
+- [x] R8-H1 English: a building after a romaji town (`3号棟`, `A棟`, `3階`, `みどり荘`) read as part of the town (regression)
+- [x] R8-H2 Any 1–4 kanji after a registered town (`芝公園付近`, `新宿御苑`, `六本木駅前`) accepted as a 字 (regression; the round-7 rule was taken back, R7-L7 reopened)
+- [x] R8-M1 A lettered room after a Sapporo grid block (`5-1-201A`) dropped (regression)
+- [x] R8-M2 English with no ward and reversed town words (`2-8 Kayabacho Nihonbashi, Tokyo`) read as another place (regression)
+- [x] R8-M3 The postal-code warning fires for the code JADEN itself fills in (regression)
+- [x] R8-M4 A lone `F` or `階` after 号 / 番地 takes the last digit as a floor
+- [x] R8-M5 English postal code followed by a building read as the lot
+- [x] R8-M6 English with a postal code and no municipality ignores the town
+- [x] R8-M7 Tax-office style with town words reversed (`Kitazaike Kakogawa cho`)
+- [x] R8-M8 JADEN's English line drops the part of a 字 that has no romanization
+- [x] R8-M9 `check_fields(city="Shinjuku-ku", line1="4-2-8 Shibakoen")` gives no CITY_MISMATCH
+- [x] R8-L1 English without commas: a building written first becomes the town (regression)
+- [x] R8-L2 `山岸95番 503 号` gives 号 503 while `山岸95 503 号` gives a room (regression)
+- [x] R8-L3 `21-242F/6F` read as 21番242号 (regression)
+- [x] R8-L4 `DAI 6GO` in other word orders
+- [x] R8-L5 Spaced numbers around 条 / 丁 / 地割
+- [x] R8-L6 `南1条 西4丁目 5-1` canonical not a fixed point
+- [x] R8-L7 A room written `301 号室` with a space
+- [x] R8-L8 A building or room written before a Japanese address rejects it
+- [x] R8-L9 `第N` after a 丁目 town read as N丁目 (`芝公園第2ビル`)
+- [x] R8-L10 `1-1 Minami 3-jo Nishi 4-chome, Chuo-ku` rejected
+- [x] R8-L11 README limitation 11 does not match `あい渋谷区`
+- [x] R8-L12 `12th Fl.3-2-5 …` and `Minami-Ohi 6-Chome`

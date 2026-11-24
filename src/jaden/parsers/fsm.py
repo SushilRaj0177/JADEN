@@ -31,7 +31,7 @@ _NUMBER_IN_NAME: Final[re.Pattern[str]] = re.compile(
 _HYPHEN_AFTER_MARKER: Final[re.Pattern[str]] = re.compile(r"(?<=\d)(丁目|番地|番)\s*-\s*(?=\d+(?:番|号))")
 # A floor or room mark standing right after the block numbers with no number of its own
 _BARE_MARK: Final[re.Pattern[str]] = re.compile(
-    r"^(?:階|[Ff](?=\s|$|[、,]|号室)|号室|号(?!館|棟|地|線))")   # 'Fビル', 'F201', 'F/Kビル' are not floors
+    r"^(?:階|[Ff](?![A-Za-z0-9\-\u3040-\u30ff\u3400-\u9fff])|号室|号(?!館|棟|地|線))")   # 'Fビル', 'F201' are names
 
 
 def _town_from(town_pattern: str, min_len: int) -> str:
@@ -108,15 +108,16 @@ class BlockFSM:
                     found.update(banchi=found["ban"], edaban=found["go"], ban=None, go=None,
                                  address_regime=AddressRegime.CHIBAN.value)
                 result, town, tail = found, head, anchored[2]
-        return BlockFSM._floor_or_room_glued(result, town, tail)
+        return BlockFSM._floor_or_room_glued(result, town, tail, text)
 
     @staticmethod
-    def _floor_or_room_glued(result: Dict[str, Any], town: str, tail: str) -> Tuple[Dict[str, Any], str, str]:
+    def _floor_or_room_glued(result: Dict[str, Any], town: str, tail: str,
+                             source: Optional[str] = None) -> Tuple[Dict[str, Any], str, str]:
         """'2-4-13階' is 2-4-1 and 3階; '13-1105号' is 13-1 and 105号: a floor or room mark with no number of
         its own takes the digits it needs from the end of the last block number."""
         mark = _BARE_MARK.match(tail)
-        if not mark:
-            return result, town, tail
+        if not mark or (source is not None and not re.search(r"\d" + re.escape(mark.group(0)), source)):
+            return result, town, tail          # 'F', '階' set apart from the number ('8号 F 201') are no floor of it
         key = next((k for k in ("go", "edaban", "ban", "banchi") if result[k] is not None), None)
         if key is None:
             return result, town, tail
