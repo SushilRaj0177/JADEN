@@ -13,10 +13,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4651,
-        "geo_median_km": 0.3600988033032585,
-        "geo_p90_km": 1.6539790634312133,
-        "geo_within_1km": 0.792947753171361
+        "geo_n": 4647,
+        "geo_median_km": 0.35972113842785736,
+        "geo_p90_km": 1.6536179091731573,
+        "geo_within_1km": 0.7931999139229611
       },
       "no_pref": {
         "n": 4700,
@@ -30,10 +30,10 @@
         "coverage": 0.9997872340425532,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4650,
-        "geo_median_km": 0.36020101145405503,
-        "geo_p90_km": 1.6539790634312133,
-        "geo_within_1km": 0.7929032258064516
+        "geo_n": 4646,
+        "geo_median_km": 0.35975884291296356,
+        "geo_p90_km": 1.6536179091731573,
+        "geo_within_1km": 0.7931554024967714
       },
       "town_only": {
         "n": 4700,
@@ -64,10 +64,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4651,
-        "geo_median_km": 0.3600988033032585,
-        "geo_p90_km": 1.6539790634312133,
-        "geo_within_1km": 0.792947753171361
+        "geo_n": 4647,
+        "geo_median_km": 0.35972113842785736,
+        "geo_p90_km": 1.6536179091731573,
+        "geo_within_1km": 0.7931999139229611
       },
       "romaji": {
         "n": 3657,
@@ -81,10 +81,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 3619,
-        "geo_median_km": 0.2977508890267179,
-        "geo_p90_km": 1.3309878611297132,
-        "geo_within_1km": 0.8355899419729207
+        "geo_n": 3640,
+        "geo_median_km": 0.2982433791017748,
+        "geo_p90_km": 1.3392054371756479,
+        "geo_within_1km": 0.8348901098901099
       },
       "former_name": {
         "n": 411,
@@ -251,10 +251,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4651,
-        "geo_median_km": 0.0708629733478991,
-        "geo_p90_km": 1.1060440353756213,
-        "geo_within_1km": 0.8890561169640937
+        "geo_n": 4650,
+        "geo_median_km": 0.07072310282700603,
+        "geo_p90_km": 1.0964692035677301,
+        "geo_within_1km": 0.8894623655913978
       },
       "no_pref": {
         "n": 4700,
@@ -268,10 +268,10 @@
         "coverage": 0.9997872340425532,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4650,
-        "geo_median_km": 0.07088430469399137,
-        "geo_p90_km": 1.1060440353756213,
-        "geo_within_1km": 0.8890322580645161
+        "geo_n": 4649,
+        "geo_median_km": 0.07075539897001905,
+        "geo_p90_km": 1.0964692035677301,
+        "geo_within_1km": 0.8894385889438589
       },
       "town_only": {
         "n": 4700,
@@ -285,10 +285,10 @@
         "coverage": 0.5157446808510638,
         "precision": 0.9995874587458746,
         "wrong_answer_rate": 0.0002127659574468085,
-        "geo_n": 2416,
-        "geo_median_km": 0.07938455980602246,
+        "geo_n": 2417,
+        "geo_median_km": 0.0793601684297996,
         "geo_p90_km": 1.2075054367528868,
-        "geo_within_1km": 0.8737582781456954
+        "geo_within_1km": 0.8738105088953247
       },
       "noisy": {
         "n": 4700,
@@ -302,10 +302,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 4651,
-        "geo_median_km": 0.0708629733478991,
-        "geo_p90_km": 1.1060440353756213,
-        "geo_within_1km": 0.8890561169640937
+        "geo_n": 4650,
+        "geo_median_km": 0.07072310282700603,
+        "geo_p90_km": 1.0964692035677301,
+        "geo_within_1km": 0.8894623655913978
       },
       "romaji": {
         "n": 3657,
@@ -319,10 +319,10 @@
         "coverage": 1.0,
         "precision": 1.0,
         "wrong_answer_rate": 0.0,
-        "geo_n": 3619,
-        "geo_median_km": 0.059544216618323306,
-        "geo_p90_km": 0.6435956173324578,
-        "geo_within_1km": 0.9356175739154463
+        "geo_n": 3640,
+        "geo_median_km": 0.05972694870541236,
+        "geo_p90_km": 0.6536453576454605,
+        "geo_within_1km": 0.9335164835164835
       },
       "former_name": {
         "n": 411,
@@ -338,7 +338,7 @@
         "wrong_answer_rate": 0.0,
         "geo_n": 411,
         "geo_median_km": 0.05103438806018297,
-        "geo_p90_km": 0.31713949911062206,
+        "geo_p90_km": 0.31943195358004584,
         "geo_within_1km": 0.9318734793187348
       },
       "wrong_pref": {
@@ -597,8 +597,8 @@
     }
   },
   "items_per_second": {
-    "jaden": 1703.7471154678635,
-    "jaden-parser-only": 6107.998606531071,
-    "jaden+blocks": 456.0508617363355
+    "jaden": 1330.5376727209084,
+    "jaden-parser-only": 4633.003262640975,
+    "jaden+blocks": 391.96370664153017
   }
 }

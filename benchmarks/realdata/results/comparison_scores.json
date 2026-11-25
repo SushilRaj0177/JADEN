@@ -2,9 +2,9 @@
  "sets": {
   "care: as typed": {
    "JADEN": {
-    "right": 218427,
-    "no answer": 4583,
-    "no answer: candidate list holds the truth": 4126,
+    "right": 218429,
+    "no answer": 4581,
+    "no answer: candidate list holds the truth": 4127,
     "wrong": 136,
     "wrong: every tool gives the same answer": 119
    },
@@ -25,10 +25,10 @@
   },
   "care: with columns": {
    "JADEN": {
-    "right": 222877,
+    "right": 222878,
     "wrong": 123,
     "wrong: every tool gives the same answer": 107,
-    "no answer": 146,
+    "no answer": 145,
     "no answer: candidate list holds the truth": 23
    },
    "geolonia": {
@@ -48,8 +48,8 @@
   },
   "companies: full": {
    "JADEN": {
-    "right": 100980,
-    "no answer": 12
+    "right": 100979,
+    "no answer": 13
    },
    "geolonia": {
     "right": 100980,
@@ -61,8 +61,8 @@
   },
   "companies: no prefecture": {
    "JADEN": {
-    "right": 100725,
-    "no answer": 266,
+    "right": 100724,
+    "no answer": 267,
     "no answer: candidate list holds the truth": 254,
     "wrong": 1
    },

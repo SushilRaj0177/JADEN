@@ -4,16 +4,16 @@ Every tool gets the same text and is scored by the same rule (see `compare_tools
 
 | Input | Tool | Addresses | Right | Wrong | Wrong, tools disagree | City, not ward | No answer | Precision |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Care offices, as typed | JADEN | 223,146 | **97.89%** | 136 (0.06%) | **17** | 0 | 4,583 (2.05%) | 99.94% |
+| Care offices, as typed | JADEN | 223,146 | **97.89%** | 136 (0.06%) | **17** | 0 | 4,581 (2.05%) | 99.94% |
 |  | geolonia | 223,146 | **94.76%** | 345 (0.15%) | **226** | 0 | 11,338 (5.08%) | 99.84% |
 |  | jageocoder | 223,146 | **98.53%** | 2,039 (0.91%) | **1,920** | 133 | 1,106 (0.50%) | 99.02% |
-| Care offices, with the row's prefecture and municipality | JADEN | 223,146 | **99.88%** | 123 (0.06%) | **16** | 0 | 146 (0.07%) | 99.94% |
+| Care offices, with the row's prefecture and municipality | JADEN | 223,146 | **99.88%** | 123 (0.06%) | **16** | 0 | 145 (0.06%) | 99.94% |
 |  | geolonia | 223,146 | **99.40%** | 109 (0.05%) | **2** | 0 | 1,234 (0.55%) | 99.95% |
 |  | jageocoder | 223,146 | **99.48%** | 188 (0.08%) | **81** | 118 | 861 (0.39%) | 99.86% |
-| Companies, registered address | JADEN | 100,992 | **99.99%** | 0 (0.00%) | **0** | 0 | 12 (0.01%) | 100.00% |
+| Companies, registered address | JADEN | 100,992 | **99.99%** | 0 (0.00%) | **0** | 0 | 13 (0.01%) | 100.00% |
 |  | geolonia | 100,992 | **99.99%** | 0 (0.00%) | **0** | 0 | 12 (0.01%) | 100.00% |
 |  | jageocoder | 100,992 | **100.00%** | 0 (0.00%) | **0** | 0 | 0 (0.00%) | 100.00% |
-| Companies, without the prefecture | JADEN | 100,992 | **99.74%** | 1 (0.00%) | **1** | 0 | 266 (0.26%) | 100.00% |
+| Companies, without the prefecture | JADEN | 100,992 | **99.73%** | 1 (0.00%) | **1** | 0 | 267 (0.26%) | 100.00% |
 |  | geolonia | 100,992 | **99.96%** | 24 (0.02%) | **24** | 0 | 14 (0.01%) | 99.98% |
 |  | jageocoder | 100,992 | **99.92%** | 78 (0.08%) | **78** | 0 | 1 (0.00%) | 99.92% |
 | Companies, postal code in front | JADEN | 100,938 | **99.99%** | 0 (0.00%) | **0** | 0 | 9 (0.01%) | 100.00% |
@@ -22,7 +22,7 @@ Every tool gets the same text and is scored by the same rule (see `compare_tools
 
 **Wrong, tools disagree** leaves out the wrong answers that every tool shares: when all of them read the text as the same other municipality, the row's own code is most likely what is wrong (for example `北海道網走郡美幌町…` filed under 網走市). The examples below leave them out too.
 
-JADEN's "no answer" includes its ambiguous results, where it returns the possible municipalities instead of one; the row's municipality is in that list for 4,126 (care offices, as typed), 23 (care offices, with the row's prefecture and municipality), 254 (companies, without the prefecture).
+JADEN's "no answer" includes its ambiguous results, where it returns the possible municipalities instead of one; the row's municipality is in that list for 4,127 (care offices, as typed), 23 (care offices, with the row's prefecture and municipality), 254 (companies, without the prefecture).
 
 102 of jageocoder's wrong answers name a municipality that no longer exists (for example 浜松市中区, abolished in 2024): it read an old address under its old name.
 

@@ -282,7 +282,7 @@ A system **answers** when it commits to one municipality and **abstains** otherw
 * None of the 70 `chome_99` acceptances is read as 99丁目 (none exists; the highest registered 丁目 is 84): all are read as lot numbers, 69 in towns MLIT records as only partly divided into 丁目 and 1 in a town the registry does not list (see [Limitations](#8-explicit-boundaries--limitations)).
 * **Former names:** the `former_name` variant contains all 411 schools whose published address still uses one of Hamamatsu's wards abolished on 2024-01-01; JADEN resolves all 411 to the ward their area became (parser-only mode: 8.3%).
 * **Real-world noise** (`build_reallife.py`, `evaluate_reallife.py`): each clean address with a room as a fourth number, a building with the room glued on, a building and floor, `号室`, `Apt`, spaces between components, form labels and country prefixes, and full-width text — 34,032 inputs. The address must stay the same and the building, floor and room must be extracted exactly: **34,032 / 34,032 pass**.
-* **Offline geocoding** against the surveyed school points (correctly resolved items): median error **360 m** with the bundled 丁目/town points (79% within 1 km), and **71 m** with block-level data installed (89% within 1 km; 94% within 1 km for romaji inputs). The school point is the school site, not the address point, so part of this error is the size of the site.
+* **Offline geocoding** against the surveyed school points (correctly resolved items): median error **360 m** with the bundled 丁目/town points (79% within 1 km), and **71 m** with block-level data installed (89% within 1 km; 93% within 1 km for romaji inputs). The school point is the school site, not the address point, so part of this error is the size of the site.
 
 Reproduce:
 
@@ -379,10 +379,10 @@ The same inputs were given to two other open-source tools: [Geolonia normalize-j
 | Input | JADEN right / wrong ¹ / no answer | Geolonia | jageocoder |
 | :--- | :--- | :--- | :--- |
 | Companies, registered address | 99.99% / **0** / 0.01% | 99.99% / **0** / 0.01% | 100.00% / **0** / 0.00% |
-| Companies, without the prefecture | 99.74% / **1** / 0.26% | 99.96% / **24** / 0.01% | 99.92% / **78** / 0.00% |
+| Companies, without the prefecture | 99.73% / **1** / 0.26% | 99.96% / **24** / 0.01% | 99.92% / **78** / 0.00% |
 | Companies, postal code in front ² | 99.99% / **0** / 0.01% | 0.00% / **0** / 100% | 0.00% / **107** / 99.89% |
-| Care offices, as typed | 97.88% / **22** / 2.05% | 94.76% / **226** / 5.08% | 98.53% / **1,920** / 0.50% |
-| Care offices, with the row's prefecture and municipality | 99.88% / **18** / 0.06% | 99.40% / **2** / 0.55% | 99.48% / **81** / 0.39% |
+| Care offices, as typed | 97.89% / **17** / 2.05% | 94.76% / **226** / 5.08% | 98.53% / **1,920** / 0.50% |
+| Care offices, with the row's prefecture and municipality | 99.88% / **16** / 0.06% | 99.40% / **2** / 0.55% | 99.48% / **81** / 0.39% |
 
 ¹ Wrong answers that the other two tools do not share. When all three read an address as the same other municipality, the row's own code is most likely what is wrong (`北海道網走郡美幌町…` filed under 網走市); there are 119 such rows as typed and 107 with the columns, counted against every tool in the full report. ² Neither other tool skips a postal code in front of the address; without it they score as on the registered address.
 
@@ -401,10 +401,10 @@ On JA-AddrBench (4,700 school addresses and their variants):
 What this shows:
 
 - **Complete addresses:** all three name the right municipality for practically every address. The differences are in addresses that are incomplete, old, or not addresses at all.
-- **Missing information:** jageocoder always picks a place. When the text fits several, that choice is often wrong: 1,920 wrong municipalities on the hand-typed care addresses and 19.6% of town-only inputs, against 22 and 0 for JADEN. JADEN instead returns the candidates; the right one is among them for 4,092 of its 4,568 care no-answers. Geolonia answers less often than JADEN and is wrong more often.
-- **Where the others are ahead:** jageocoder answers more town-only inputs correctly (76.9% vs 51.6%) and has the most precise points (65 m; JADEN 71 m with block data). With the columns added, Geolonia makes the fewest disputed errors (2); JADEN's 18 are rows that name two municipalities (`茨城県阿見町` + `水戸市河和田町58`), where JADEN follows the typed address and Geolonia the first name.
+- **Missing information:** jageocoder always picks a place. When the text fits several, that choice is often wrong: 1,920 wrong municipalities on the hand-typed care addresses and 19.6% of town-only inputs, against 17 and 0 for JADEN. JADEN instead returns the candidates; the right one is among them for 4,127 of its 4,581 care no-answers. Geolonia answers less often than JADEN and is wrong more often.
+- **Where the others are ahead:** jageocoder answers more town-only inputs correctly (76.9% vs 51.6%) and has the most precise points (65 m; JADEN 71 m with block data). With the columns added, Geolonia makes the fewest disputed errors (2); JADEN's 16 are rows that name two municipalities (`茨城県阿見町` + `水戸市河和田町58`), where JADEN follows the typed address and Geolonia the first name.
 - **Invalid input:** for a 丁目 that does not exist or a school name, Geolonia and jageocoder return the municipality they found without saying that the text is not a complete, real address. That is a design choice, not a wrong municipality; JADEN reports it.
-- **Speed:** JADEN read all 749,259 real-data inputs in 63 s on 4 processes. jageocoder runs about 600 per second on 3 processes; Geolonia about 390 per second at town level and 56 per second at its default house level, fetching its data from Geolonia's servers while it runs. With block data loaded, JADEN runs about 440 per second per process.
+- **Speed:** JADEN read all 749,259 real-data inputs in 97 s on 4 processes. jageocoder runs about 600 per second on 3 processes; Geolonia about 390 per second at town level and 56 per second at its default house level, fetching its data from Geolonia's servers while it runs. With block data loaded, JADEN runs about 390 per second per process.
 
 How the other tools' output was read, so each is scored on what it decided (details in `benchmarks/jabench/baselines/README.md`): jageocoder's fallback node for text it does not match is not counted as an answer; names and codes that changed only in spelling or numbering (檮原/梼原, 浜松市天竜区's pre-2024 code) are mapped to the current municipality; Geolonia runs at town level for the real data, which gives the same municipality as its default on all 33,294 benchmark inputs.
 

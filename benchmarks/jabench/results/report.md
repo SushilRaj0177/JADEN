@@ -6,7 +6,7 @@
 | jaden | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 360 m | 79.3% |
 | jaden | town_only | 51.6% | 51.6% | 100.0% | 0.0% | 391 m | 77.9% |
 | jaden | noisy | 100.0% | 100.0% | 100.0% | 0.0% | 360 m | 79.3% |
-| jaden | romaji | 100.0% | 100.0% | 100.0% | 0.0% | 298 m | 83.6% |
+| jaden | romaji | 100.0% | 100.0% | 100.0% | 0.0% | 298 m | 83.5% |
 | jaden | former_name | 100.0% | 100.0% | 100.0% | 0.0% | 415 m | 83.2% |
 | jaden-parser-only | original | 100.0% | 100.0% | 100.0% | 0.0% | – | – |
 | jaden-parser-only | no_pref | 99.7% | 99.7% | 100.0% | 0.0% | – | – |
@@ -18,7 +18,7 @@
 | jaden+blocks | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.9% |
 | jaden+blocks | town_only | 51.6% | 51.6% | 100.0% | 0.0% | 79 m | 87.4% |
 | jaden+blocks | noisy | 100.0% | 100.0% | 100.0% | 0.0% | 71 m | 88.9% |
-| jaden+blocks | romaji | 100.0% | 100.0% | 100.0% | 0.0% | 60 m | 93.6% |
+| jaden+blocks | romaji | 100.0% | 100.0% | 100.0% | 0.0% | 60 m | 93.4% |
 | jaden+blocks | former_name | 100.0% | 100.0% | 100.0% | 0.0% | 51 m | 93.2% |
 | geolonia | original | 100.0% | 100.0% | 100.0% | 0.0% | 128 m | 85.0% |
 | geolonia | no_pref | 100.0% | 100.0% | 100.0% | 0.0% | 128 m | 85.0% |
@@ -58,6 +58,6 @@
 
 | System | Items/s |
 |---|---:|
-| jaden | 1,704 |
-| jaden-parser-only | 6,108 |
-| jaden+blocks | 456 |
+| jaden | 1,331 |
+| jaden-parser-only | 4,633 |
+| jaden+blocks | 392 |
