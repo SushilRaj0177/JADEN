@@ -283,3 +283,16 @@ Low
 - [ ] R9-L7 Other English/key invariant failures (`鬼石町大字鬼石`, `尻内字尻内河原`, `ROOM1`) (open: a few odd source rows)
 - [ ] R9-L8 `4-2-8 Shiba 105-0014`: a town word that is a municipality's romaji overrides the postal code (open)
 - [x] R9-L9 `付近` after block numbers: accepted with a warning that the place is near the address, not at it
+
+## Audit round 10 (separate high-precision audit, 25 Nov 2026)
+Agreed finish line: fix high-severity problems and regressions from the previous round; record the rest as known limitations.
+- [x] R10-H1 `芝公園4丁目2番8号F`: a 号 with F or 階 straight after it became a floor (regression)
+- [x] R10-M1 Building names written before a Japanese address rejected when they hold 町 / 市 / a number, or use タワー / プラザ (regression)
+- [x] R10-M2 A wrong postal code moved an English address into another city's same-named ward (regression)
+- [x] R10-M3 A town MLIT writes with 字 in front (`字栄`) and the same town without it got different keys
+- [ ] R10-L1 Canonical not a fixed point for two lots listed together (`森3491番地・3492番地`) and a few odd rows (known limitation)
+- [ ] R10-L2 `盛岡市玉山区渋民字渋民8地割10番地` read as town 玉山 (known limitation)
+- [ ] R10-L3 English floors written `Level 18` or `first floor` not read (known limitation)
+- [ ] R10-L4 An English municipality written after a Japanese address stays in the building (known limitation)
+- [ ] R10-L5 A facility name starting with a katakana word plus a number (`プラザ２１おおの…`) accepted (known limitation)
+

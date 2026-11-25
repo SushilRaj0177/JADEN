@@ -119,7 +119,7 @@ class BlockFSM:
         mark = _BARE_MARK.match(tail)
         key0 = next((k for k in ("go", "edaban", "ban", "banchi") if result[k] is not None), None)
         glued = key0 is not None and source is not None and re.search(
-            rf"(?<!\d){result[key0]}(?:号)?{re.escape(mark.group(0))}" if mark else "$^", source)
+            rf"(?<!\d){result[key0]}{re.escape(mark.group(0))}" if mark else "$^", source)
         if not mark or (source is not None and not glued):
             return result, town, tail          # 'F', '階' set apart from the number ('8号 F 201') are no floor of it
         key = next((k for k in ("go", "edaban", "ban", "banchi") if result[k] is not None), None)

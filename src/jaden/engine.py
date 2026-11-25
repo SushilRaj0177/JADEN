@@ -87,7 +87,8 @@ _PREFECTURE_FIRST: Final[str] = (
 # name with a building word, possibly with its room and floor
 _LEADING_UNIT: Final[re.Pattern[str]] = re.compile(
     r"(?:(?:Room|Rm\.?|Apt\.?|Unit|Suite|#)\s*[\w\-]+|\d{1,5}\s*号室"
-    r"|.*(?:ビル|マンション|ハイツ|コーポ|アパート|レジデンス|メゾン|ハイム|荘|Building|Bldg\.?|Heights|Mansion|Tower|Plaza)"
+    r"|.*(?:ビル|マンション|ハイツ|コーポ|アパート|レジデンス|メゾン|ハイム|タワー|プラザ|ハウス|ヒルズ|コート|テラス|パレス|"
+    r"センター|会館|荘|館|棟|Building|Bldg\.?|Heights|Mansion|Tower|Plaza|House|Hills|Court)"
     r".*)", re.IGNORECASE)
 # A postal code written with 〒 anywhere, or bare NNN-NNNN at either end of the input
 _POSTAL_MARKED: Final[re.Pattern[str]] = re.compile(r"(?:〒|郵便番号)\s*[:：]?\s*(\d{3})\s*-?\s*(\d{4})(?!\d)")
@@ -336,8 +337,10 @@ class AddressNormalizer:
             sanitized = re.sub(r"\s+", " ", sanitized).strip()
         # 'Room 301, 東京都港区…', 'サンハイツ201、東京都…': a room or building written first goes after the address
         lead = re.match(r"^\s*(?P<head>[^,、，]{1,40}?)\s*[,、，]\s*(?P<rest>" + _PREFECTURE_FIRST + r".*)$", sanitized)
+        # Never a second address ('大阪市北区梅田1-1-3', '西新宿2-8-1'), a phone number, a date or a sentence
         if lead and _LEADING_UNIT.fullmatch(lead.group("head")) and not re.search(
-                r"\d+\s*-\s*\d+|[市区町村郡都道府県]|TEL|電話|株式会社|有限会社|年|月|日|です|ます", lead.group("head")):
+                r"\d+\s*-\s*\d+\s*-\s*\d+|\d+\s*(?:丁目|番地?)|[\u4e00-\u9fff][市区郡](?=[\u4e00-\u9fff])|TEL|電話|"
+                r"株式会社|有限会社|\d+年|\d+月\d+日|です|ます", lead.group("head")):
             sanitized = f"{lead.group('rest')} {lead.group('head')}"
 
         # Stage 2: Context-bounded Kanji numeral conversion

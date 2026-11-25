@@ -1779,3 +1779,14 @@ def test_round_nine_english_and_notes() -> None:
     assert jaden.match_key(jaden.normalize(raw).romaji) == jaden.match_key(raw)
     assert jaden.validate("東京都港区芝公園4-2-8付近").warnings                                                 # R9-L9
     assert jaden.normalize("東京都港区芝公園第2ビル101").components.chome is None                               # R9-M4
+
+
+# ---------------------------------------------------------------- audit round 10
+def test_round_ten_regressions() -> None:
+    assert jaden.normalize("東京都港区芝公園4丁目2番8号F").canonical == "東京都港区芝公園4丁目2番8号 F"         # R10-H1
+    for text in ("本町ビル、大阪府大阪市中央区本町1-1-1", "グランドタワー、東京都港区芝公園4-2-8",              # R10-M1
+                 "サンハイツ1-201、東京都港区芝公園4-2-8", "大手町タワー 12階、東京都千代田区大手町1-5-1"):
+        assert jaden.validate(text).status == "ACCEPTED"
+    assert jaden.validate("TEL 03-3433-5111, 東京都港区芝公園4-2-8").status != "ACCEPTED"
+    assert "名古屋市中区丸の内" in jaden.normalize("3-1 Marunouchi, Naka-ku 730-0035").canonical               # R10-M2
+    assert jaden.compare("北海道網走市字栄12-3", "北海道網走市栄12-3").verdict == "same"                       # R10-M3

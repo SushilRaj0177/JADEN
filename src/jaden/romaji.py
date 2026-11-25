@@ -474,8 +474,13 @@ def romaji_to_japanese(text: str) -> Optional[Tuple[str, List[str]]]:
     if muni_lgs is not None and len(muni_lgs) > 1 and postal:
         # 'Minato-ku 105-0011': the postal code tells which 港区
         coded_lgs = {p.lg_code for p in get_gazetteer().postal_records(postal) if p.lg_code}
-        if muni_lgs & coded_lgs:
-            muni_lgs = muni_lgs & coded_lgs
+        narrowed = muni_lgs & coded_lgs
+        latin_words = [" ".join(w for w in seg.split() if re.fullmatch(r"[A-Za-z][A-Za-z.'\-]*", w)) for seg in locality]
+        town_keys = [k for words in latin_words if words for k in _segment_keys(words)]
+        has_town = lambda lgs: any(k in idx.town_entries(lg) for lg in lgs for k in town_keys)   # noqa: E731
+        # Only when the town is there too: a wrong code must not move '3-1 Marunouchi, Naka-ku' to another 中区
+        if narrowed and (not town_keys or has_town(narrowed) or not has_town(muni_lgs)):
+            muni_lgs = narrowed
     if muni_lgs is None and postal:
         # '2031-1081 Tsuda, Ibaraki 312-0032': no municipality written, the postal code names it
         coded = {p.lg_code for p in get_gazetteer().postal_records(postal) if p.lg_code}

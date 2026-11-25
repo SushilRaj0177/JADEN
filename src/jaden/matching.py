@@ -214,7 +214,8 @@ def _town_parts(res: NormalizedAddress) -> Tuple[Optional[str], Optional[str]]:
     match = gaz.match_town(c.lg_code, town) if (c.lg_code and gaz.available) else None
     if match is None:
         return town_key(town), None
-    base = town_key(match.entry.name)
+    # MLIT writes some towns with 字 in front ('字栄') that Japan Post and people write without it: one town
+    base = town_key(re.sub(r"^字(?=.)", "", match.entry.name))
     rest = town[match.consumed:]
     if not rest or rest == "町":
         return base, None          # '若草町' written for the registered 若草 is the same town
