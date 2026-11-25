@@ -67,7 +67,7 @@ v0.2 made JADEN able to verify one address. v0.3 builds the tools that systems n
 | Check a form with separate fields | `jaden.check_fields(postal_code=, prefecture=, city=, line1=, line2=)` | each field checked against the others; wrong postal code or city reported with the right value; corrected fields back |
 | Use from an AI assistant | `jaden mcp` | MCP tools: normalize, validate, resolve, form fields, extract, postal, compare, suggest |
 
-Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,641 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
+Measured on the 4,700 real benchmark addresses (`benchmarks/jabench/evaluate_toolkit.py`, see [Benchmarks](#5-empirical-benchmarks)): all 33,976 noisy spellings get the match key of their clean address; a one-character typo gets the right suggestion 93.9% of the time and autocorrect made **0 wrong corrections** in 2,640 trials; extraction returns the exact span in 99.9% of 23,409 embedded addresses with **0 false positives** in 4,700 texts that only mention a place.
 
 **Tested on real data.** JADEN was run on the registered address of every active corporation in Japan (5,049,462, National Tax Agency) and on the hand-typed address of every long-term-care office (223,161, Ministry of Health, Labour and Welfare). It names the right municipality for **99.98%** of the company addresses and **99.87%** of the care offices. It committed to a wrong municipality for 6 company rows, each one a row whose own municipality column is wrong, and 4 care rows. The failure patterns it exposed are fixed and pinned by tests, apart from those listed under [Real data](#real-data-every-company-and-every-care-office-in-japan-v03).
 
@@ -303,17 +303,17 @@ For Geolonia and jageocoder on the same benchmark, see [Comparison with other to
 | Matching | every noisy spelling must get the house-level `match_key` of its clean address | **33,976 / 33,976** |
 | | rooms written four ways (`-305`, `メゾン桜305`, `305号室`, `Apt 305`) must share a key | 0 inconsistent |
 | | distinct published addresses sharing a key | 5 pairs of 4,692, each the same place written two ways |
-| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.9%** (2,479 / 2,641) |
-| | with autocorrect | applied and right 71.5%, **applied and wrong 0**, left alone 28.5% |
-| Kana | the town rewritten in hiragana | same result **99.9%** (3,927 / 3,929), wrong town 0 |
+| Typos | one character of the town replaced by another kanji | right address in `suggestions`: **93.9%** (2,478 / 2,640) |
+| | with autocorrect | applied and right 71.6%, **applied and wrong 0**, left alone 28.4% |
+| Kana | the town rewritten in hiragana | same result **99.9%** (3,925 / 3,927), wrong town 0 |
 | Hyphen form | `format("hyphen")` normalized again | same result **4,700 / 4,700** |
 | Extraction | the address inside a sentence, a labelled block, parentheses, after a postal code, with building and room | found 100%, exact span **99.9%** in each context |
 | | a school name with a date, phone number and price but no address | **0 false positives** in 4,700 |
-| Autocomplete | municipality plus the first 2 characters of the town | real town in the first 10: 90.9% |
+| Autocomplete | municipality plus the first 2 characters of the town | real town in the first 10: 90.8% |
 | Postal lookup | the postal code JADEN fills in, looked up again | same municipality 4,609 / 4,609 |
 | Reverse geocoding | the surveyed school point | municipality 98.5%, town 67.6% (bundled town points); **99.2% / 87.3%** with block data |
 
-Notes on reading these numbers: autocorrect leaves 28.5% alone because two registered towns are one character away, or none is; that is the intended behaviour. Autocomplete drops to 76.8% after 3 characters only where a municipality has more than 10 towns sharing those characters (e.g. Hokkaido's `春光一条` … `春光台五条`); raise `limit` to see them all. Reverse geocoding returns the nearest registered point, not the containing boundary, so the town is wrong near borders; block data narrows that.
+Notes on reading these numbers: autocorrect leaves 28.4% alone because two registered towns are one character away, or none is; that is the intended behaviour. Autocomplete drops to 76.7% after 3 characters only where a municipality has more than 10 towns sharing those characters (e.g. Hokkaido's `春光一条` … `春光台五条`); raise `limit` to see them all. Reverse geocoding returns the nearest registered point, not the containing boundary, so the town is wrong near borders; block data narrows that.
 
 ```bash
 python benchmarks/jabench/evaluate_toolkit.py                 # writes results/toolkit_report.md
