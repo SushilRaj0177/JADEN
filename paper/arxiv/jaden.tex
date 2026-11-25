@@ -2,13 +2,13 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{CJKutf8}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{microtype}
 \usepackage[unicode,hidelinks]{hyperref}
 \usepackage{url}
 
-\newcommand{\tbd}[1]{\textbf{[#1]}}
 
 \title{Knowing When You Do Not Know Where:\\Calibrated, Verified Resolution of Japanese Addresses}
 \author{Sushil Raj}
@@ -29,11 +29,15 @@ open-source rule engine that checks every decision against official registries, 
 conditional-logit scorer with a ``none of these'' option, a town-frequency prior from 5 million
 registered companies, temperature calibration, a risk-controlled answer threshold and split-conformal
 candidate sets. We evaluate it in two pre-registered held-out tests on data from publishers it was
-never developed on: 321,859 welfare-facility addresses (MLIT) and \tbd{206,041} medical-facility
+never developed on: 321,859 welfare-facility addresses (MLIT) and 206,041 medical-facility
 addresses typed by the facilities themselves (MHLW). On town-only input in the first test, the rules
 are wrong on 0.38\% of their answers and the calibrated resolver answers 61.2\% of addresses at
 1.14\% wrong, while jageocoder, a widely used open-source geocoder, is wrong on 21.4\% of its
-answers (66,164 wrong answers against 639). \tbd{Test 2 headline.} We also measure two ways of
+answers (66,164 wrong answers against 639). In the second test, run after ten rounds of fixes to
+the rules, the rules make no wrong call on 412,082 full or prefecture-less inputs, are wrong on 0.28\%
+of their town-only answers (279, against 774 before the fixes and 45,343 for jageocoder), and the
+calibrated resolver meets its 1\% target (0.72\%). Both tests also expose where the guarantees break:
+conformal sets cover about 93.8\% for a 95\% target when the publisher changes. We also measure two ways of
 letting a large language model resolve what remains: choosing from JADEN's candidates is wrong on
 31.6\% of its answers, while proposing freely and keeping only answers that JADEN verifies removes
 391 of 399 wrong answers. The engine, data pipeline, benchmarks and every reported number are
@@ -167,7 +171,7 @@ Role & Data & Size \\
 Prior and training & National Tax Agency corporate register (2026-10-30) & 5,049,462 companies \\
 Calibration / check & MHLW care-office register (June 2026), split by office number & 304,137 / 305,913 inputs \\
 \textbf{Test 1} & \textbf{MLIT 国土数値情報 welfare facilities P14 (2023)} & \textbf{321,859 facilities} \\
-\textbf{Test 2} & \textbf{MHLW 医療情報ネット medical facilities (2026-06-01)} & \textbf{\tbd{206,041} facilities} \\
+\textbf{Test 2} & \textbf{MHLW 医療情報ネット medical facilities (2026-06-01)} & \textbf{206,041 facilities} \\
 \bottomrule
 \end{tabular}
 \caption{Data. Each test file was frozen by SHA-256 in a protocol committed before the run.}
@@ -202,7 +206,7 @@ prefecture, and the town part alone. No language model is run.
 
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}llrrlrl@{}}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrlrl@{}}
 \toprule
 Input & System & Right & Wrong & Wrong among answers (95\% CI) & ECE & Conformal cov.\ / size \\
 \midrule
@@ -221,7 +225,7 @@ full & JADEN rules & 99.98\% & 0 & 0.00\% & -- & -- \\
  & jageocoder & 100.00\% & 0 & 0.00\% & -- & -- \\
  & Geolonia & 100.00\% & 0 & 0.00\% & -- & -- \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{Test 1 (318,578 inputs per row group with a current municipality code).}
 \label{tab:test1}
 \end{table}
@@ -235,11 +239,11 @@ that risk (Figure~\ref{fig:curves}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.48\linewidth]{risk_coverage.png}\hfill
-\includegraphics[width=0.48\linewidth]{reliability.png}
-\caption{Test 1, town-only input. Left: wrong-answer rate against the share of inputs answered as
-the threshold varies; single points for the tools that always answer. Right: reliability of the
-calibrated resolver's top probability.}
+\includegraphics[width=\linewidth]{risk_coverage.png}\\[4pt]
+\includegraphics[width=0.42\linewidth]{reliability.png}
+\caption{Test 1. Top: wrong-answer rate among answers against the share of inputs answered, as the
+threshold varies, for town-only, prefecture plus town and full input; single points for the tools
+that always answer. Bottom: reliability of the calibrated resolver's top probability (town only).}
 \label{fig:curves}
 \end{figure}
 
@@ -275,13 +279,67 @@ gives 71.8\% right at 1.37\% wrong among answers.
 
 \subsection{Test 2: medical facilities}
 
-\tbd{Test 2 table and text.}
+\begin{table}[t]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrlrl@{}}
+\toprule
+Input & System & Right & Wrong & Wrong among answers (95\% CI) & ECE & Conformal cov.\ / size \\
+\midrule
+full & JADEN rules (final) & 99.95\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & JADEN rules (before the audits) & 99.95\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & jageocoder & 99.97\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & Geolonia & 99.99\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+\midrule
+no prefecture & JADEN rules (final) & 99.87\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & JADEN rules (before the audits) & 99.88\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & jageocoder & 99.97\% & 2 & 0.001\% (0.000--0.004) & -- & -- \\
+ & Geolonia & 99.97\% & 50 & 0.024\% (0.018--0.032) & -- & -- \\
+\midrule
+town only & JADEN rules (final) & 48.80\% & 279 & 0.28\% (0.25--0.31) & -- & -- \\
+ & JADEN rules (before the audits) & 48.85\% & 774 & 0.76\% (0.71--0.82) & -- & -- \\
+ & JADEN calibrated & 58.59\% & 880 & 0.72\% (0.68--0.77) & 0.006 & 93.77\% / 2.33 \\
+ & JADEN calibrated + name & 59.80\% & 1,075 & 0.87\% (0.82--0.92) & 0.005 & 93.72\% / 2.12 \\
+ & jageocoder & 75.80\% & 45,343 & 22.52\% (22.34--22.70) & -- & -- \\
+ & Geolonia & 0.06\% & 4,385 & 97.47\% (96.97--97.89) & -- & -- \\
+\bottomrule
+\end{tabular}}
+\caption{Test 2 (206,041 inputs per group; 205,830 town-only). On the 180,655 facilities whose address
+matches no development address the picture is the same: the final rules are wrong on 0\% of full and
+prefecture-less answers and 0.30\% (0.26--0.33) of town-only answers.}
+\label{tab:test2}
+\end{table}
+
+Table~\ref{tab:test2}. With the prefecture or the full address, every tool is right on nearly every
+input, and the differences are in the few hard cases. JADEN declines 0.13\% of the prefecture-less
+inputs and is wrong on none; Geolonia's 50 wrong answers are all municipality names that exist in two
+prefectures (府中市 in Tokyo or Hiroshima, 伊達市 in Hokkaido or Fukushima), where it silently picks
+one. On town-only input the pattern of test~1 repeats on a different publisher's hand-typed text:
+jageocoder answers three quarters of the inputs and is wrong on 22.5\% of its answers; JADEN's rules
+answer half and are wrong on 0.28\%. The calibrated resolver's threshold, chosen on care-office data,
+now holds its 1\% target (0.72\%), and its calibration error is 0.006. Its conformal sets again fall
+short of 95\%, by the same margin as in test~1. JADEN's offline points lie a median 165\,m (丁目
+level) and 380\,m (town level) from the publisher's own coordinates.
+
+\paragraph{Did the audits overfit?} Between the two tests the rules went through ten rounds of fixes
+found on development data. On the same test inputs, the fixes cut town-only wrong answers from 774 to
+279 (484 became no answer, 11 became right), at a cost of 138 right answers that became no answer. On
+full and prefecture-less input both engines make no wrong call, but the final engine answers 17 fewer
+(28 lost, 11 gained, of 206,041), so the pre-registered hypothesis that it would answer at least as
+many fails. All 28 losses have one form: a registered town followed directly by a building name and
+floor, with no house number (名駅ミッドランドスクエア8階). A check added in the audits, which reads text
+after the municipality that is neither a registered town nor numbered as a name rather than an
+address, now rejects them. The test therefore found both what the fixes gained and one specific thing
+they broke.
 
 \subsection{Hypotheses}
 
+Table~\ref{tab:hyp} lists every pre-registered hypothesis of both tests with its outcome. Of the 13,
+seven held, one held for one model and failed narrowly for the other, two failed narrowly, and
+three failed (one of them in its first part only).
+
 \begin{table}[t]
 \centering\small
-\begin{tabular}{@{}lp{0.52\linewidth}p{0.33\linewidth}@{}}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.52\linewidth}>{\raggedright\arraybackslash}p{0.33\linewidth}@{}}
 \toprule
 & Pre-registered statement & Result \\
 \midrule
@@ -293,7 +351,12 @@ gives 71.8\% right at 1.37\% wrong among answers.
 1-H6 & A model choosing from JADEN's list is wrong on $<5\%$; alone it is wrong more often and invents places & \textbf{First part failed}: 31.6\%; second held \\
 1-H7 & Propose-and-verify: upper bound $\le 10\%$; most free errors removed & \textbf{Held} for Sonnet (2.6\%); \textbf{failed narrowly} for Haiku (5.8\%, bound 10.4\%) \\
 \midrule
-\multicolumn{3}{@{}l}{\tbd{Test 2 hypotheses H1--H6.}} \\
+2-H1 & Full addresses: rules answer $\ge 99.5\%$; wrong-rate upper bound $\le 0.05\%$ & \textbf{Held}: 99.95\%, 0 wrong (bound 0.002\%) \\
+2-H2 & No prefecture: bound $\le 0.1\%$; fewer wrong than both other tools & \textbf{Held}: 0 vs 50 (Geolonia) and 2 (jageocoder) \\
+2-H3 & Town only: bound $\le 0.5\%$; fewer wrong than both other tools & \textbf{Held}: 0.28\% (0.25--0.31); 279 vs 45,343 and 4,385 \\
+2-H4 & The 1\% threshold's interval includes or lies below 1\% & \textbf{Held}: 0.72\% (0.68--0.77) \\
+2-H5 & Conformal 95\% sets cover $\ge 95\%$ & \textbf{Failed}: 93.8\% \\
+2-H6 & The audits generalise: on full and prefecture-less input, no more wrong and no fewer right answers & \textbf{Failed narrowly}: 0 wrong in both, but 17 fewer right of 206,041 \\
 \bottomrule
 \end{tabular}
 \caption{Pre-registered hypotheses and outcomes.}
@@ -317,14 +380,20 @@ rules' 639 wrong town-only answers. Both were fixed after the test and are not r
 (+1.09), and the name halves the test calibration error. The feature is crude: 東神楽町立東神楽小学校
 \emph{is run by} 東神楽町, a stronger statement than a mention.
 
-\tbd{Test 2 analysis: audits, error examples.}
+\paragraph{Where the guarantees break.} In both tests the coverage of the conformal sets fell short by
+about 1.2 points, while the error-rate threshold held in test~2 and missed narrowly in test~1. Coverage
+is the guarantee that relies most directly on exchangeability between calibration and test data, and
+both test files come from publishers other than the one used for calibration. The practical reading
+is simple: the probabilities transfer well (ECE 0.005--0.015), but a deployment that needs a coverage
+guarantee should recalibrate on a small labelled sample of its own data.
 
 % ------------------------------------------------------------------------------------------
 \section{Limitations}
 \begin{itemize}
-\item Calibration was fitted on care-office data. Under a change of publisher, the two guarantees
-that rely on exchangeability fell short by about one point; a deployment on different data should
-recalibrate on a labelled sample of it.
+\item Calibration was fitted on care-office data. Under a change of publisher the conformal sets
+covered about 93.8\% for a 95\% target in both tests, and the 1\% error threshold missed narrowly in
+test~1 (1.10\%) though it held in test~2 (0.72\%); a deployment on different data should recalibrate
+on a labelled sample of it.
 \item Only the municipality is scored. JADEN checks that a town and 丁目 exist, not that a house
 number does; its offline points are town or 丁目 centroids (median 360\,m from surveyed school
 points; 71\,m with optional block-level data).
@@ -340,7 +409,8 @@ A Japanese address resolver can know when it does not know. Grounding every deci
 registries keeps the rules' wrong answers to a fraction of a percent on data from other publishers,
 a calibrated scorer turns the remaining ambiguity into probabilities that transfer, and the registry
 is also the right check on a language model: not a list to choose from, but a test its free answers
-must pass. \tbd{One line from test 2.}
+must pass. On a second publisher's hand-typed addresses, after ten rounds of changes to the rules, it
+made no wrong municipality call on 412,082 full or prefecture-less inputs.
 
 \paragraph{Reproducibility.} Code, protocols, scripts and results:
 \url{https://github.com/SushilRaj0177/JADEN}. Each result file records the commit it was produced at.

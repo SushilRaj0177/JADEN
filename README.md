@@ -46,7 +46,17 @@ jaden resolve "南3条東1-2-1"            # 6 candidates ranked, none above the
 - **Language models:** choosing from JADEN's candidates, a model was wrong on 31.6% of its answers. Alone, Claude Sonnet answered 85% of the hardest leftovers and was wrong on 47% of those answers. When JADEN kept only proposals that are among its verified candidates (and the model was at least 80% sure), **391 of its 399 wrong answers were removed**: 303 answers, 8 wrong. Alone, the models also named municipalities that no longer exist (茶屋町, merged in 2005; 浜松市中区, abolished in 2024).
 - The test's error analysis found **two rule defects** behind 486 of the rules' 639 wrong answers; they are fixed after the test, and the numbers above are from the engine before the fix.
 
-The paper: [`paper/jaden-v0.3.md`](paper/jaden-v0.3.md). All tables and figures: [`benchmarks/heldout/results/`](benchmarks/heldout/results/).
+**A second pre-registered test** ([`benchmarks/heldout2/PROTOCOL.md`](benchmarks/heldout2/PROTOCOL.md)), run after ten rounds of fixes to the rules, used the 206,041 medical facilities in MHLW's 医療情報ネット open data (June 2026), whose addresses the facilities type themselves; 88% of them match no address JADEN was developed on:
+
+| Input (206,041) | JADEN rules: right / wrong | Before the fixes | jageocoder | Geolonia |
+| :--- | :--- | :--- | :--- | :--- |
+| full address | 99.95% / **0** | 99.95% / 0 | 99.97% / 0 | 99.99% / 0 |
+| without the prefecture | 99.87% / **0** | 99.88% / 0 | 99.97% / 2 | 99.97% / 50 |
+| town only (205,830) | 48.8% / **279** (0.28% of answers) | 48.9% / 774 | 75.8% / 45,343 | 0.06% / 4,385 |
+
+The calibrated resolver met its 1% target this time (0.72% wrong among answers); the 95% candidate sets again covered 93.8%. The fixes cut town-only wrong answers by 64%, and the test also caught one thing they broke: 28 addresses written as town + building + floor with no house number are now refused. Report and run notes: [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/).
+
+The paper: [`paper/arxiv/jaden.pdf`](paper/arxiv/jaden.pdf) (LaTeX source alongside; the earlier draft is [`paper/jaden-v0.3.md`](paper/jaden-v0.3.md)). All tables and figures: [`benchmarks/heldout/results/`](benchmarks/heldout/results/), [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/).
 
 ## What's new in v0.3
 
