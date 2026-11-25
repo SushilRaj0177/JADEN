@@ -1790,3 +1790,8 @@ def test_round_ten_regressions() -> None:
     assert jaden.validate("TEL 03-3433-5111, 東京都港区芝公園4-2-8").status != "ACCEPTED"
     assert "名古屋市中区丸の内" in jaden.normalize("3-1 Marunouchi, Naka-ku 730-0035").canonical               # R10-M2
     assert jaden.compare("北海道網走市字栄12-3", "北海道網走市栄12-3").verdict == "same"                       # R10-M3
+
+
+def test_extract_numbers_without_town() -> None:
+    found = jaden.extract_addresses("会場は岐阜県美濃市1765-4にあります。お問い合わせは03-1234-5678まで。")
+    assert [e.text for e in found] == ["岐阜県美濃市1765-4"]

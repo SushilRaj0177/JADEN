@@ -170,7 +170,8 @@ def extract_addresses(text: str, include_ambiguous: bool = True) -> List[Extract
         c = res.components
         if res.confidence_score <= 0 or val is None:
             continue
-        has_numbers = c.precision in ("block", "house", "unit")
+        # Numbers written with no town ('美濃市1765-4') still make the text an address.
+        has_numbers = c.precision in ("block", "house", "unit") or c.numbers_unplaced
         if val.status == "ACCEPTED":
             # A municipality name alone starts many ordinary words; it needs a block number after it.
             # After a prefecture or postal code, a registered town is enough.
