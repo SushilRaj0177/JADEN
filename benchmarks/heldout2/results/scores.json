@@ -1,0 +1,316 @@
+{
+ "commit": "c7a22d21c5c1c5b363299b48f7fdebf676a9b42c",
+ "commit_before": "01a23ba0b8f2daad3c7c504cc5c00e2402f3986c",
+ "table": {
+  "all rows": {
+   "full": {
+    "JADEN rules (final)": {
+     "n": 206041,
+     "right": 205931,
+     "wrong": 0,
+     "answered": 205931
+    },
+    "JADEN rules (before the audits)": {
+     "n": 206041,
+     "right": 205948,
+     "wrong": 0,
+     "answered": 205948
+    },
+    "JADEN calibrated": {
+     "n": 206041,
+     "right": 205927,
+     "wrong": 0,
+     "answered": 205927,
+     "ece": 0.0016658858187573388,
+     "coverage": 0.9985197120961362,
+     "size": 0.9985197120961362
+    },
+    "JADEN calibrated + name": {
+     "n": 206041,
+     "right": 205930,
+     "wrong": 0,
+     "answered": 205930,
+     "ece": 0.001288012459827009,
+     "coverage": 0.9984711780665013,
+     "size": 0.9984711780665013
+    },
+    "geolonia": {
+     "n": 206041,
+     "right": 206029,
+     "wrong": 0,
+     "answered": 206029
+    },
+    "jageocoder": {
+     "n": 206041,
+     "right": 205989,
+     "wrong": 0,
+     "answered": 205989
+    }
+   },
+   "no prefecture": {
+    "JADEN rules (final)": {
+     "n": 206041,
+     "right": 205783,
+     "wrong": 0,
+     "answered": 205783
+    },
+    "JADEN rules (before the audits)": {
+     "n": 206041,
+     "right": 205800,
+     "wrong": 0,
+     "answered": 205800
+    },
+    "JADEN calibrated": {
+     "n": 206041,
+     "right": 205779,
+     "wrong": 0,
+     "answered": 205779,
+     "ece": 0.0030776125423013743,
+     "coverage": 0.9992816963614038,
+     "size": 0.9992914031673308
+    },
+    "JADEN calibrated + name": {
+     "n": 206041,
+     "right": 205782,
+     "wrong": 0,
+     "answered": 205782,
+     "ece": 0.0025884752368921125,
+     "coverage": 0.9992816963614038,
+     "size": 0.9992816963614038
+    },
+    "geolonia": {
+     "n": 206041,
+     "right": 205978,
+     "wrong": 50,
+     "answered": 206028
+    },
+    "jageocoder": {
+     "n": 206041,
+     "right": 205983,
+     "wrong": 2,
+     "answered": 205985
+    }
+   },
+   "town only": {
+    "JADEN rules (final)": {
+     "n": 205830,
+     "right": 100436,
+     "wrong": 279,
+     "answered": 100715
+    },
+    "JADEN rules (before the audits)": {
+     "n": 205830,
+     "right": 100542,
+     "wrong": 774,
+     "answered": 101316
+    },
+    "JADEN calibrated": {
+     "n": 205830,
+     "right": 120587,
+     "wrong": 880,
+     "answered": 121467,
+     "ece": 0.006232761993313104,
+     "coverage": 0.9377301656706991,
+     "size": 2.3264781615896615
+    },
+    "JADEN calibrated + name": {
+     "n": 205830,
+     "right": 123087,
+     "wrong": 1075,
+     "answered": 124162,
+     "ece": 0.004858163904344574,
+     "coverage": 0.9372346110868193,
+     "size": 2.119744449302823
+    },
+    "geolonia": {
+     "n": 205830,
+     "right": 114,
+     "wrong": 4385,
+     "answered": 4499
+    },
+    "jageocoder": {
+     "n": 205830,
+     "right": 156019,
+     "wrong": 45343,
+     "answered": 201362
+    }
+   }
+  },
+  "unseen rows": {
+   "full": {
+    "JADEN rules (final)": {
+     "n": 180655,
+     "right": 180547,
+     "wrong": 0,
+     "answered": 180547
+    },
+    "JADEN rules (before the audits)": {
+     "n": 180655,
+     "right": 180564,
+     "wrong": 0,
+     "answered": 180564
+    },
+    "JADEN calibrated": {
+     "n": 180655,
+     "right": 180543,
+     "wrong": 0,
+     "answered": 180543,
+     "ece": 0.0016189342502078749,
+     "coverage": 0.9984168719382248,
+     "size": 0.9984168719382248
+    },
+    "JADEN calibrated + name": {
+     "n": 180655,
+     "right": 180546,
+     "wrong": 0,
+     "answered": 180546,
+     "ece": 0.0012576911272990726,
+     "coverage": 0.998339376158977,
+     "size": 0.998339376158977
+    },
+    "geolonia": {
+     "n": 180655,
+     "right": 180643,
+     "wrong": 0,
+     "answered": 180643
+    },
+    "jageocoder": {
+     "n": 180655,
+     "right": 180609,
+     "wrong": 0,
+     "answered": 180609
+    }
+   },
+   "no prefecture": {
+    "JADEN rules (final)": {
+     "n": 180655,
+     "right": 180401,
+     "wrong": 0,
+     "answered": 180401
+    },
+    "JADEN rules (before the audits)": {
+     "n": 180655,
+     "right": 180418,
+     "wrong": 0,
+     "answered": 180418
+    },
+    "JADEN calibrated": {
+     "n": 180655,
+     "right": 180397,
+     "wrong": 0,
+     "answered": 180397,
+     "ece": 0.0031799251539520613,
+     "coverage": 0.9991918297307022,
+     "size": 0.999202900556309
+    },
+    "JADEN calibrated + name": {
+     "n": 180655,
+     "right": 180400,
+     "wrong": 0,
+     "answered": 180400,
+     "ece": 0.0027012407992716455,
+     "coverage": 0.9991918297307022,
+     "size": 0.9991918297307022
+    },
+    "geolonia": {
+     "n": 180655,
+     "right": 180596,
+     "wrong": 46,
+     "answered": 180642
+    },
+    "jageocoder": {
+     "n": 180655,
+     "right": 180603,
+     "wrong": 2,
+     "answered": 180605
+    }
+   },
+   "town only": {
+    "JADEN rules (final)": {
+     "n": 180450,
+     "right": 87666,
+     "wrong": 260,
+     "answered": 87926
+    },
+    "JADEN rules (before the audits)": {
+     "n": 180450,
+     "right": 87757,
+     "wrong": 741,
+     "answered": 88498
+    },
+    "JADEN calibrated": {
+     "n": 180450,
+     "right": 106145,
+     "wrong": 767,
+     "answered": 106912,
+     "ece": 0.006295729331486966,
+     "coverage": 0.9414075921307842,
+     "size": 2.2889055139927956
+    },
+    "JADEN calibrated + name": {
+     "n": 180450,
+     "right": 108386,
+     "wrong": 948,
+     "answered": 109334,
+     "ece": 0.006853667755696284,
+     "coverage": 0.9408423385979495,
+     "size": 2.0871598780825713
+    },
+    "geolonia": {
+     "n": 180450,
+     "right": 111,
+     "wrong": 3712,
+     "answered": 3823
+    },
+    "jageocoder": {
+     "n": 180450,
+     "right": 137136,
+     "wrong": 39422,
+     "answered": 176558
+    }
+   }
+  }
+ },
+ "hypotheses": {
+  "H1": true,
+  "H2": true,
+  "H3": true,
+  "H4": true,
+  "H5": false,
+  "H6": false
+ },
+ "inputs": {
+  "rows": 206043,
+  "rows: hospital": 7715,
+  "unseen": 180655,
+  "inputs: full": 206041,
+  "inputs: no prefecture": 206041,
+  "inputs: town only": 205830,
+  "no town only input": 211,
+  "rows: clinic": 80155,
+  "rows: dental": 54637,
+  "rows: maternity": 2138,
+  "rows: pharmacy": 61398,
+  "excluded: municipality code not current or missing": 2
+ },
+ "audit_flips": {
+  "full": {
+   "before right → final no answer": 28,
+   "before no answer → final right": 11
+  },
+  "no prefecture": {
+   "before right → final no answer": 28,
+   "before no answer → final right": 11
+  },
+  "town only": {
+   "before no answer → final right": 21,
+   "before right → final no answer": 138,
+   "before wrong → final no answer": 484,
+   "before wrong → final right": 11
+  }
+ },
+ "distance_km_median": {
+  "chome": 0.1649071348525155,
+  "town": 0.3795101818545895
+ }
+}
