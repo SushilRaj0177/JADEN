@@ -1,7 +1,7 @@
 {
  "rows": 5049462,
  "every": 1,
- "seconds": 1214.9,
+ "seconds": 1939.3,
  "provenance": {
   "source": "https://www.houjin-bangou.nta.go.jp/download/zenken/",
   "publisher": "国税庁 法人番号公表サイト",
@@ -11,51 +11,52 @@
   "rows_bytes": 1271085906,
   "bytes": 268401975,
   "sha256": "cf5f969ddc3619165a1b6f2438500c21b6f7e553895d092fbf36e1bcf1dcaebd",
-  "downloaded": "2026-11-17"
+  "downloaded": "2026-11-18"
  },
  "outcomes": {
   "full": {
-   "correct": 5048534,
-   "rejected: UNSUPPORTED": 456,
-   "row carries a municipality code that no longer exists": 207,
-   "rejected: MALFORMED": 192,
-   "correct (ward found; the row has only the city code)": 67,
+   "correct": 5048365,
+   "rejected: UNSUPPORTED": 470,
+   "row carries a municipality code that no longer exists": 211,
+   "rejected: MALFORMED": 202,
+   "ambiguous, truth listed": 142,
+   "correct (ward found; the row has only the city code)": 66,
    "wrong": 6
   },
   "no prefecture": {
-   "correct": 5036231,
-   "ambiguous, truth listed": 12284,
-   "rejected: UNSUPPORTED": 480,
-   "row carries a municipality code that no longer exists": 182,
-   "rejected: MALFORMED": 178,
-   "correct (ward found; the row has only the city code)": 67,
+   "correct": 5036060,
+   "ambiguous, truth listed": 12428,
+   "rejected: UNSUPPORTED": 469,
+   "row carries a municipality code that no longer exists": 211,
+   "rejected: MALFORMED": 188,
+   "correct (ward found; the row has only the city code)": 66,
    "wrong": 40
   },
   "with postal code": {
-   "correct": 5045484,
-   "rejected: UNSUPPORTED": 449,
-   "rejected: MALFORMED": 174,
-   "row carries a municipality code that no longer exists": 170
+   "correct": 5045455,
+   "rejected: UNSUPPORTED": 462,
+   "rejected: MALFORMED": 186,
+   "row carries a municipality code that no longer exists": 174
   },
   "town": {
-   "town verified": 4994100,
-   "no town written": 32406,
-   "town not in the registry": 22095
+   "town verified": 4994324,
+   "no town written": 32320,
+   "town not in the registry": 21787
   },
   "postal": {
-   "filled in, same as registered": 4961147,
-   "not filled in": 48844,
-   "filled in the town's code; the row has the municipality-wide one": 23023,
-   "filled in, different from registered": 9204,
-   "registered code is not an area code (business code or retired)": 3264
+   "filled in, same as registered": 4961396,
+   "not filled in": 48848,
+   "filled in the town's code; the row has the municipality-wide one": 23038,
+   "filled in, different from registered": 8910,
+   "registered code is not an area code (business code or retired)": 3263
   },
   "precision": {
-   "house": 4348080,
-   "unit": 612330,
-   "block": 58339,
-   "municipality": 24754,
-   "chome": 3181,
-   "town": 1917
+   "house": 4333178,
+   "unit": 634565,
+   "block": 45994,
+   "municipality": 30699,
+   "chome": 2185,
+   "town": 1810
   }
  }
 }

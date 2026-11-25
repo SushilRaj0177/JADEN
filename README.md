@@ -333,24 +333,24 @@ JA-AddrBench uses clean, published addresses. To see how JADEN copes with addres
 
 | Input | Addresses | Right municipality | Wrong | City found, ward not | Ambiguous, truth in the list | Rejected |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Companies: registered address | 5,049,462 | **99.98%** | 6 | 0 | 0.00% | 648 |
-| Companies: without the prefecture | 5,049,462 | **99.74%** | 40 | 0 | 0.24% | 658 |
-| Companies: postal code in front | 5,046,277 | **99.98%** | 0 | 0 | 0.00% | 623 |
-| Care offices: as typed (prefecture or municipality often missing) | 223,161 | 97.24% → **97.88%** | 20 → 13 | 225 → 11 | 1.78% → 1.83% | 1,729 → 420 |
-| Care offices: with the row's prefecture and municipality | 223,161 | 99.34% → **99.87%** | 10 → 4 | 225 → 11 | 0.00% → 0.01% | 1,123 → 120 |
+| Companies: registered address | 5,049,462 | **99.98%** | 6 | 0 | 0.00% | 672 |
+| Companies: without the prefecture | 5,049,462 | **99.73%** | 40 | 0 | 0.25% | 657 |
+| Companies: postal code in front | 5,046,277 | **99.98%** | 0 | 0 | 0.00% | 648 |
+| Care offices: as typed (prefecture or municipality often missing) | 223,161 | 97.24% → **97.88%** | 20 → 13 | 225 → 0 | 1.78% → 1.85% | 1,729 → 416 |
+| Care offices: with the row's prefecture and municipality | 223,161 | 99.34% → **99.87%** | 10 → 4 | 225 → 0 | 0.00% → 0.01% | 1,123 → 120 |
 
-On a 1-in-50 sample of the company data, the engine before this testing named the right municipality for 99.81% of full addresses (0 wrong, 183 rejected); it now does for 99.99% (0 wrong, 10 rejected).
+On a 1-in-50 sample of the company data, the engine before this testing named the right municipality for 99.81% of full addresses (0 wrong, 183 rejected); it now does for 99.98% (0 wrong, 10 rejected).
 
 | Check | Before | Now |
 | :--- | ---: | ---: |
 | Care: town verified against the registry | 99.09% | **99.28%** |
-| Companies: town verified against the registry | 98.79% ¹ | **98.94% ¹** |
-| Care: building, floor and room cut where the 方書 column cuts them | 98.82% | **99.73%** |
-| Care: one office typed differently but with the same numbers gets one match key | 92.70% | **94.98%** |
-| Companies: postal code JADEN fills in equals the registered one (both name a town's code) | 98.62% ¹ | **99.82% ¹** |
-| Care: distance from JADEN's offline point to the published one, median (丁目 / town level) | 157 m / 535 m | 157 m / 533 m |
+| Companies: town verified against the registry | 98.79% ¹ | **98.95% ¹** |
+| Care: building, floor and room cut where the 方書 column cuts them | 98.82% | **99.72%** |
+| Care: one office typed differently but with the same numbers gets one match key | 92.70% | **95.92%** |
+| Companies: postal code JADEN fills in equals the registered one (both name a town's code) | 98.62% ¹ | **99.83% ¹** |
+| Care: distance from JADEN's offline point to the published one, median (丁目 / town level) | 157 m / 535 m | 157 m / 532 m |
 
-¹ On the 1-in-50 sample of the company data (100,997 addresses), where both engines were run. On all 5,049,462 company addresses, the postal code JADEN fills in equals the registered one in 99.81% of the cases where both name a town's code.
+¹ On the 1-in-50 sample of the company data (100,997 addresses), where both engines were run. On all 5,049,462 company addresses, the postal code JADEN fills in equals the registered one in 99.82% of the cases where both name a town's code.
 
 **What the real data taught JADEN** (every case is now a test in `tests/test_real_data_cases.py`):
 

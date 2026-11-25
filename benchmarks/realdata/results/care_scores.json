@@ -1,7 +1,7 @@
 {
  "rows": 223161,
  "every": 1,
- "seconds": 95.0,
+ "seconds": 60.8,
  "provenance": {
   "source": "https://www.mhlw.go.jp/stf/kaigo-kouhyou_opendata.html",
   "publisher": "厚生労働省 介護サービス情報公表システム",
@@ -188,19 +188,19 @@
  },
  "outcomes": {
   "as typed": {
-   "correct": 218428,
-   "ambiguous, truth listed": 4125,
-   "rejected: MALFORMED": 292,
-   "rejected: UNSUPPORTED": 127,
+   "correct": 218430,
+   "ambiguous, truth listed": 4126,
+   "rejected: MALFORMED": 290,
+   "rejected: UNSUPPORTED": 126,
    "not scored: the typed address and the row's columns name different municipalities": 123,
-   "ambiguous, truth not listed": 41,
-   "wrong": 13,
-   "row carries a municipality code that no longer exists": 12
+   "ambiguous, truth not listed": 38,
+   "row carries a municipality code that no longer exists": 15,
+   "wrong": 13
   },
   "with the prefecture and municipality columns": {
-   "correct": 222878,
+   "correct": 222879,
    "not scored: the typed address and the row's columns name different municipalities": 118,
-   "rejected: UNSUPPORTED": 95,
+   "rejected: UNSUPPORTED": 94,
    "rejected: MALFORMED": 26,
    "ambiguous, truth listed": 23,
    "row carries a municipality code that no longer exists": 15,
@@ -208,38 +208,38 @@
    "ambiguous, truth not listed": 2
   },
   "town": {
-   "town verified": 221284,
-   "town not in the registry": 1036,
-   "no town written": 558
+   "town verified": 221285,
+   "town not in the registry": 1035,
+   "no town written": 559
   },
   "building": {
-   "same address, building separated": 47720,
-   "not scored: the 方書 column holds only part of the building text": 1209,
-   "not decidable: the publisher glued a number to the house number": 631,
-   "address changes when the building is attached": 104,
-   "not scored: the 方書 column holds the house number too": 66,
-   "same address, building text dropped": 63
+   "same address, building separated": 47779,
+   "not scored: the 方書 column holds only part of the building text": 1173,
+   "not decidable: the publisher glued a number to the house number": 646,
+   "address changes when the building is attached": 73,
+   "same address, building text dropped": 62,
+   "not scored: the 方書 column holds the house number too": 60
   },
   "same office": {
-   "all spellings share one key": 9900,
+   "all spellings share one key": 9902,
    "not scored: the spellings carry different numbers (a move, or a typo in the data)": 1315,
-   "spellings get different keys": 366,
-   "a spelling could not be keyed": 57
+   "spellings get different keys": 370,
+   "a spelling could not be keyed": 51
   },
   "precision": {
-   "house": 190379,
-   "unit": 17448,
-   "block": 14877,
-   "chome": 108,
-   "town": 65,
-   "municipality": 1
+   "house": 189878,
+   "unit": 17634,
+   "block": 14814,
+   "municipality": 420,
+   "chome": 98,
+   "town": 35
   },
   "location": {
-   "more than 20 km from the published point": 901
+   "more than 20 km from the published point": 900
   }
  },
  "distance_km_median": {
   "chome": 0.1574,
-  "town": 0.5327
+  "town": 0.5324
  }
 }

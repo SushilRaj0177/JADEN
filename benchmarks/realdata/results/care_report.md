@@ -1,6 +1,6 @@
 # Real data: long-term-care office addresses (Ministry of Health, Labour and Welfare)
 
-Source: 介護サービス情報公表システム オープンデータ (data as of 2026年６月末時点, CC BY). Rows used: every office row with an address: **223,161**. Processed in 95 s on 4 processes.
+Source: 介護サービス情報公表システム オープンデータ (data as of 2026年６月末時点, CC BY). Rows used: every office row with an address: **223,161**. Processed in 61 s on 4 processes.
 
 Every row is a real office, so the right municipality outcome is always `correct`.
 
@@ -8,23 +8,23 @@ Every row is a real office, so the right municipality outcome is always `correct
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| correct | 218,428 | 97.88% |
-| ambiguous, truth listed | 4,125 | 1.85% |
-| rejected: MALFORMED | 292 | 0.13% |
-| rejected: UNSUPPORTED | 127 | 0.06% |
+| correct | 218,430 | 97.88% |
+| ambiguous, truth listed | 4,126 | 1.85% |
+| rejected: MALFORMED | 290 | 0.13% |
+| rejected: UNSUPPORTED | 126 | 0.06% |
 | not scored: the typed address and the row's columns name different municipalities | 123 | 0.06% |
-| ambiguous, truth not listed | 41 | 0.02% |
+| ambiguous, truth not listed | 38 | 0.02% |
+| row carries a municipality code that no longer exists | 15 | 0.01% |
 | wrong | 13 | 0.01% |
-| row carries a municipality code that no longer exists | 12 | 0.01% |
 | **all** | 223,161 |  |
 
 ## With the row's prefecture and municipality columns put in front where the text lacks them
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| correct | 222,878 | 99.87% |
+| correct | 222,879 | 99.87% |
 | not scored: the typed address and the row's columns name different municipalities | 118 | 0.05% |
-| rejected: UNSUPPORTED | 95 | 0.04% |
+| rejected: UNSUPPORTED | 94 | 0.04% |
 | rejected: MALFORMED | 26 | 0.01% |
 | ambiguous, truth listed | 23 | 0.01% |
 | row carries a municipality code that no longer exists | 15 | 0.01% |
@@ -36,10 +36,10 @@ Every row is a real office, so the right municipality outcome is always `correct
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| town verified | 221,284 | 99.28% |
-| town not in the registry | 1,036 | 0.46% |
-| no town written | 558 | 0.25% |
-| **all** | 222,878 |  |
+| town verified | 221,285 | 99.28% |
+| town not in the registry | 1,035 | 0.46% |
+| no town written | 559 | 0.25% |
+| **all** | 222,879 |  |
 
 ## Building, floor and room against the 方書 column
 
@@ -47,12 +47,12 @@ Rows whose typed address ends with the text of the 方書 column. The address is
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| same address, building separated | 47,720 | 95.84% |
-| not scored: the 方書 column holds only part of the building text | 1,209 | 2.43% |
-| not decidable: the publisher glued a number to the house number | 631 | 1.27% |
-| address changes when the building is attached | 104 | 0.21% |
-| not scored: the 方書 column holds the house number too | 66 | 0.13% |
-| same address, building text dropped | 63 | 0.13% |
+| same address, building separated | 47,779 | 95.96% |
+| not scored: the 方書 column holds only part of the building text | 1,173 | 2.36% |
+| not decidable: the publisher glued a number to the house number | 646 | 1.30% |
+| address changes when the building is attached | 73 | 0.15% |
+| same address, building text dropped | 62 | 0.12% |
+| not scored: the 方書 column holds the house number too | 60 | 0.12% |
 | **all** | 49,793 |  |
 
 ## The same office listed several times with different spellings
@@ -61,13 +61,13 @@ Offices (by 事業所番号) whose rows carry two or more different address stri
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| all spellings share one key | 9,900 | 85.07% |
+| all spellings share one key | 9,902 | 85.08% |
 | not scored: the spellings carry different numbers (a move, or a typo in the data) | 1,315 | 11.30% |
-| spellings get different keys | 366 | 3.14% |
-| a spelling could not be keyed | 57 | 0.49% |
+| spellings get different keys | 370 | 3.18% |
+| a spelling could not be keyed | 51 | 0.44% |
 | **all** | 11,638 |  |
 
-Of the offices whose spellings carry the same numbers, **95.90%** get one key (9,900 of 10,323).
+Of the offices whose spellings carry the same numbers, **95.92%** get one key (9,902 of 10,323).
 
 ## Distance from JADEN's offline point to the published coordinates
 
@@ -75,24 +75,24 @@ The published coordinates come from the publishing system's own geocoding, so th
 
 | JADEN point level | Addresses | Median distance | Within 1 km | Over 20 km |
 | :--- | ---: | ---: | ---: | ---: |
-| town | 124,200 | 533 m | 73.9% | 0.33% |
+| town | 124,042 | 532 m | 73.9% | 0.33% |
 | chome | 96,315 | 157 m | 98.5% | 0.51% |
 
 ## Precision reached
 
 | Outcome | Addresses | Share |
 | :--- | ---: | ---: |
-| house | 190,379 | 85.42% |
-| unit | 17,448 | 7.83% |
-| block | 14,877 | 6.67% |
-| chome | 108 | 0.05% |
-| town | 65 | 0.03% |
-| municipality | 1 | 0.00% |
-| **all** | 222,878 |  |
+| house | 189,878 | 85.19% |
+| unit | 17,634 | 7.91% |
+| block | 14,814 | 6.65% |
+| municipality | 420 | 0.19% |
+| chome | 98 | 0.04% |
+| town | 35 | 0.02% |
+| **all** | 222,879 |  |
 
 ## Examples of what is not `correct`
 
-**as typed: ambiguous, truth listed** (4,125)
+**as typed: ambiguous, truth listed** (4,126)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -103,7 +103,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 玉沢９０番地 | AMBIGUOUS: 玉沢90番地 | Omitted prefecture matches 2 statutory municipalities. |
 | 若宮二丁目41番22号 | AMBIGUOUS: 若宮二丁目41番22号 | the municipality is ambiguous: the text is returned as written, not interpreted |
 
-**as typed: rejected: MALFORMED** (292)
+**as typed: rejected: MALFORMED** (290)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -114,7 +114,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 中泉御殿703 | MALFORMED: 中泉御殿703 | Input rejected: no recognized Japanese administrative jurisdiction or structure. |
 | 奥海印寺多貝垣外17-1 | MALFORMED: 奥海印寺多貝垣外17-1 | Input rejected: no recognized Japanese administrative jurisdiction or structure. |
 
-**as typed: rejected: UNSUPPORTED** (127)
+**as typed: rejected: UNSUPPORTED** (126)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -136,16 +136,27 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 福岡県小郡市大崎７３８－１ | ACCEPTED: 福岡県小郡市大崎738番1号 | Municipality and town verified against official registries. |
 | 茨城県水戸市平須町１８２２番地の２２７　原口アパート２号 | ACCEPTED: 茨城県水戸市平須町1822番地の227 原口アパート 2号 | Municipality and town verified against official registries. |
 
-**as typed: ambiguous, truth not listed** (41)
+**as typed: ambiguous, truth not listed** (38)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
-| 佐藤１－２６－３２ | AMBIGUOUS: 佐藤1-26-32 | the municipality is ambiguous: the text is returned as written, not interpreted |
 | 吉野3丁目5番8号 | AMBIGUOUS: 吉野3丁目5番8号 | Omitted prefecture matches 15 statutory municipalities. |
 | 静岡県静岡市岡部町岡部437番地の3 | AMBIGUOUS: 静岡県静岡市岡部町岡部437番地の3 | town '岡部町岡部' is not registered in any ward of 静岡市 |
 | 甲5229番地13 | AMBIGUOUS: 甲5229番地13 | the municipality is ambiguous: the text is returned as written, not interpreted |
 | 一宮町1566－1 | AMBIGUOUS: 一宮町1566-1 | '一宮町' is a municipality and also a town name in 4 other place(s) |
 | 南山３丁目２３番地２７ | AMBIGUOUS: 南山3丁目23番地27 | the municipality is ambiguous: the text is returned as written, not interpreted |
+| 大字恒久寺ノ前５９９６番地１ | AMBIGUOUS: 大字恒久寺ノ前5996番地1 | the municipality is ambiguous: the text is returned as written, not interpreted |
+
+**as typed: row carries a municipality code that no longer exists** (15)
+
+| Input | JADEN | Message |
+| :--- | :--- | :--- |
+| 佐藤１－２６－３２ | AMBIGUOUS: 佐藤1-26-32 | the municipality is ambiguous: the text is returned as written, not interpreted |
+| 静岡県浜松市中区小豆餅2-9-13 | ACCEPTED: 静岡県浜松市中央区小豆餅2丁目9番13号 | 浜松市中区 no longer exists; its area is now part of 静岡県浜松市中央区 |
+| 浜松市中区上島1-8-53オンリーワン | ACCEPTED: 静岡県浜松市中央区上島1丁目8番53号 オンリーワン | 浜松市中区 no longer exists; its area is now part of 静岡県浜松市中央区 |
+| 静岡県浜松市東区植松町88-10マンション植松101号室 | ACCEPTED: 静岡県浜松市中央区植松町88番10号 マンション植松 101号室 | 浜松市東区 no longer exists; its area is now part of 静岡県浜松市中央区 |
+| 横山町746-8 | AMBIGUOUS: 横山町746-8 | the municipality is ambiguous: the text is returned as written, not interpreted |
+| 静岡県浜松市浜名区横須賀63－5 | ACCEPTED: 静岡県浜松市浜名区横須賀63番5号 | Municipality and town verified against official registries. |
 
 **as typed: wrong** (13)
 
@@ -158,17 +169,6 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 追分町6丁目18-23 | ACCEPTED: 愛知県大府市追分町6丁目18番23号 | municipality deduced from the town name: 愛知県大府市 is the only match in Japan |
 | 下立売通黒門西入橋西二丁目648 | ACCEPTED: 京都府京都市中京区下立売通黒門西入橋西町2丁目648番地 | resolved 11 candidate municipalities to 京都府京都市中京区 by town '橋西町' |
 
-**as typed: row carries a municipality code that no longer exists** (12)
-
-| Input | JADEN | Message |
-| :--- | :--- | :--- |
-| 静岡県浜松市中区小豆餅2-9-13 | ACCEPTED: 静岡県浜松市中央区小豆餅2丁目9番13号 | 浜松市中区 no longer exists; its area is now part of 静岡県浜松市中央区 |
-| 浜松市中区上島1-8-53オンリーワン | ACCEPTED: 静岡県浜松市中央区上島1丁目8番53号 オンリーワン | 浜松市中区 no longer exists; its area is now part of 静岡県浜松市中央区 |
-| 静岡県浜松市東区植松町88-10マンション植松101号室 | ACCEPTED: 静岡県浜松市中央区植松町88番10号 マンション植松 101号室 | 浜松市東区 no longer exists; its area is now part of 静岡県浜松市中央区 |
-| 静岡県浜松市浜名区横須賀63－5 | ACCEPTED: 静岡県浜松市浜名区横須賀63番5号 | Municipality and town verified against official registries. |
-| 静岡県浜松市中区高丘東4丁目5-4Sコープ　S-1号室 | ACCEPTED: 静岡県浜松市中央区高丘東4丁目5番4号 Sコープ S 1号室 | 浜松市中区 no longer exists; its area is now part of 静岡県浜松市中央区 |
-| 静岡県浜松市西区村櫛町4218番地の1 | ACCEPTED: 静岡県浜松市中央区村櫛町4218番地の1 | 浜松市西区 no longer exists; its area is now part of 静岡県浜松市中央区 |
-
 **with the prefecture and municipality columns: not scored: the typed address and the row's columns name different municipalities** (118)
 
 | Input | JADEN | Message |
@@ -180,7 +180,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 福岡県小郡市大崎７３８－１ | ACCEPTED: 福岡県小郡市大崎738番1号 | Municipality and town verified against official registries. |
 | 茨城県水戸市平須町１８２２番地の２２７　原口アパート２号 | ACCEPTED: 茨城県水戸市平須町1822番地の227 原口アパート 2号 | Municipality and town verified against official registries. |
 
-**with the prefecture and municipality columns: rejected: UNSUPPORTED** (95)
+**with the prefecture and municipality columns: rejected: UNSUPPORTED** (94)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -240,7 +240,7 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 静岡県静岡市岡部町岡部437番地の3 | AMBIGUOUS: 静岡県静岡市岡部町岡部437番地の3 | town '岡部町岡部' is not registered in any ward of 静岡市 |
 | 大阪府大阪市六万寺町1丁目14番20号 | AMBIGUOUS: 大阪府大阪市六万寺町1丁目14番20号 | town '六万寺町' is not registered in any ward of 大阪市 |
 
-**town: town not in the registry** (1,036)
+**town: town not in the registry** (1,035)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -251,20 +251,20 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 福岡県久留米市三瀦町高三潴147-1 | ACCEPTED: 福岡県久留米市三瀦町高三潴147番1号 | town '三瀦町高三潴' is not registered in 久留米市 |
 | 釧路郡釧路町陸2丁目1番地１０ | ACCEPTED: 北海道釧路郡釧路町陸2丁目1番地の10 | town '陸' is not registered in 釧路町 |
 
-**town: no town written** (558)
+**town: no town written** (559)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
-| 長野県諏訪郡下諏訪町6174-1 | ACCEPTED: 長野県諏訪郡下諏訪町6174番1号 | Local government entity verified against official statutory registry. |
+| 長野県諏訪郡下諏訪町6174-1 | ACCEPTED: 長野県諏訪郡下諏訪町6174番1号 | no town is written: the numbers cannot be placed in 下諏訪町 |
 | 長野県上伊那郡南箕輪村8987-1漆戸テナント1階1号室 | ACCEPTED: 長野県上伊那郡南箕輪村8987番1号 漆戸テナント 1階 1号室 | Local government entity verified against official statutory registry. |
 | 長野県上伊那郡宮田村4804-1 | ACCEPTED: 長野県上伊那郡宮田村4804番1号 | Local government entity verified against official statutory registry. |
-| 大分県日田市３丁目1479-3 | ACCEPTED: 大分県日田市3丁目1479番3号 | Local government entity verified against official statutory registry. |
-| 長野県諏訪郡原村13220番地1 | ACCEPTED: 長野県諏訪郡原村13220番地の1 | Local government entity verified against official statutory registry. |
-| 香川県綾歌郡宇多津町１７０番地１ | ACCEPTED: 香川県綾歌郡宇多津町170番地の1 | Local government entity verified against official statutory registry. |
+| 大分県日田市３丁目1479-3 | ACCEPTED: 大分県日田市3丁目1479番3号 | no town is written: the numbers cannot be placed in 日田市 |
+| 長野県諏訪郡原村13220番地1 | ACCEPTED: 長野県諏訪郡原村13220番地の1 | no town is written: the numbers cannot be placed in 原村 |
+| 香川県綾歌郡宇多津町１７０番地１ | ACCEPTED: 香川県綾歌郡宇多津町170番地の1 | no town is written: the numbers cannot be placed in 宇多津町 |
 
 `not decidable` rows are shown for completeness; nothing in the text says where the number ends.
 
-**building: not decidable: the publisher glued a number to the house number** (631)
+**building: not decidable: the publisher glued a number to the house number** (646)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
@@ -275,18 +275,18 @@ The published coordinates come from the publishing system's own geocoding, so th
 | 兵庫県西宮市大屋町5-17-103103 | ACCEPTED: 兵庫県西宮市大屋町5-17-103103 | without the building: 兵庫県西宮市大屋町5-17-103 |
 | 東京都町田市成瀬が丘2-22-8101 | ACCEPTED: 東京都町田市成瀬が丘2丁目22番8101号 | without the building: 東京都町田市成瀬が丘2丁目22番8号 |
 
-**building: address changes when the building is attached** (104)
+**building: address changes when the building is attached** (73)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
 | 兵庫県丹波市青垣町東芦田1303番地1303 | ACCEPTED: 兵庫県丹波市青垣町東芦田1303番地の1303 | without the building: 兵庫県丹波市青垣町東芦田1303番地 |
 | 大阪府寝屋川市萱島南町8丁目23番201号 | ACCEPTED: 大阪府寝屋川市萱島南町8丁目23番201号 | without the building: 大阪府寝屋川市萱島南町8丁目23番 |
-| 富山県高岡市二塚1316番地1316番地 | ACCEPTED: 富山県高岡市二塚1316番地の1316 番地 | without the building: 富山県高岡市二塚1316番地 |
-| 福岡県福岡市中央区長浜2丁目5-22Fビル3階 | ACCEPTED: 福岡県福岡市中央区長浜2丁目5番2号 2Fビル3階 | without the building: 福岡県福岡市中央区長浜2丁目5番22号 |
+| 富山県高岡市二塚1316番地1316番地 | ACCEPTED: 富山県高岡市二塚1316番地の1316 | without the building: 富山県高岡市二塚1316番地 |
 | 京都府城陽市寺田垣内後29番地17 | ACCEPTED: 京都府城陽市寺田垣内後29番地の17 | without the building: 京都府城陽市寺田垣内後29番地 |
-| 福島県福島市永井川字檀ノ腰2-2Fフェアリー105 | ACCEPTED: 福島県福島市永井川字檀ノ腰2番地 フェアリー 2F 105 | without the building: 福島県福島市永井川字檀ノ腰2番地の2 |
+| 愛知県名古屋市緑区文久山459番地10santaW3 | ACCEPTED: 愛知県名古屋市緑区文久山459番地の10 santaW3 | without the building: 愛知県名古屋市緑区文久山459番地 |
+| 山梨県都留市夏狩1719-201 | ACCEPTED: 山梨県都留市夏狩1719番201号 | without the building: 山梨県都留市夏狩1719番 |
 
-**location: more than 20 km from the published point** (901)
+**location: more than 20 km from the published point** (900)
 
 | Input | JADEN | Message |
 | :--- | :--- | :--- |
