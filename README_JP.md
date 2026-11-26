@@ -56,6 +56,11 @@ jaden.resolve("芝公園4-2-8").name      # '東京都港区' (p > 0.99)
 
 **同じ条件での比較（両テストの後に行った分析、[`benchmarks/posthoc/`](benchmarks/posthoc/)）:** 同等に良い一致が複数の市区町村にまたがるときに回答しない jageocoder は、町名のみの入力の 72〜76% に答え、誤答は 3〜4% でした。同じ割合だけ答えさせた JADEN のリゾルバ（誤答 5〜8%）より正確です。JADEN の強みは順位付けの精度ではなく、誤答約 1% で回答を止められることと較正済みの確率です。jageocoder の辞書のように街区番号で候補を絞ることが、最も明確な次の改善点です。修正で町名のみの誤答は 64% 減り、修正が壊したものも一つ見つかりました: 番地のない「町名＋建物名＋階」の住所 28 件が拒否されるようになりました。レポートと実行記録: [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/)。
 
+**さらに二つの事前登録研究**（論文 7 章）:
+
+- **公開台帳のコードは自らの住所と合っているか**（[`benchmarks/registers/`](benchmarks/registers/)）: 国税庁法人番号（5,049,462 件）、介護事業所（223,161 件）、医療機関（206,043 件）、国土数値情報 福祉施設 2023 年（321,859 件）の全記録を `jaden audit` で照合しました。住所に市区町村が書かれている記録では、コードと住所の一致は 99.93〜99.99%。介護事業所の不一致 100 件を位置情報で一件ずつ確認すると、85 件はコードの誤り（施設は住所どおりの場所にある）で、茨城県内各地の 15 事業所が阿見町のコード（084433）を持つという系統的な誤りも見つかりました。一方、市区町村を書かない福祉施設データでは、検出はほぼすべて誤検出でした（市区町村名と同じ町名で始まる住所: 一宮市の「北方町北方」など）。仮説 4 件中 2 件が成立。
+- **合併前の市区町村名で書かれた住所**（[`benchmarks/history/`](benchmarks/history/)）: 国土数値情報 公共施設（2006 年）と福祉施設（2011 年）の住所を当時の市区町村名で書き、現在の市区町村を答えさせました。今は存在しない市区町村で書かれた住所で、JADEN は 91.0%（2006 年、誤答は回答の 1.02%）と 99.2%（2011 年、0.07%）を正解、jageocoder は 82.8%（10.2%）と 86.5%（9.5%）でした。JADEN の弱点は、後に政令指定都市になった市（新潟市・熊本市など）の住所で、区を決める必要があります。仮説 5 件中 1 件が成立。`jaden.history` で、現在の住所が 2000 年にどの市町村にあったかも調べられます。
+
 論文: [`paper/arxiv/jaden.pdf`](paper/arxiv/jaden.pdf)（LaTeX ソースも同じ場所。以前の草稿は [`paper/jaden-v0.3.md`](paper/jaden-v0.3.md)）。すべての表と図: [`benchmarks/heldout/results/`](benchmarks/heldout/results/)、[`benchmarks/heldout2/results/`](benchmarks/heldout2/results/)。
 
 ## v0.3 の新機能
@@ -499,7 +504,20 @@ print(hit.address, hit.level, hit.distance_m)                     # 京都府京
 found = jaden.extract_addresses("会場は東京都港区芝公園4-2-8の東京タワーです。")[0]
 print(found.start, found.end, found.text, found.canonical)        # 3 16 東京都港区芝公園4-2-8 東京都港区芝公園4丁目2番8号
 
-# 10. オプショナル地理空間座標解決（国土地理院API / JGD2011・WGS 84互換）
+# 10. 市区町村の沿革（v0.4）: 廃止されたコードと、住所の合併前の市区町村
+from jaden.history import code_change, current_codes, former_municipality
+print(current_codes("112267"))                                    # ('112038',): 鳩ヶ谷市は現在の川口市
+print(code_change("221350").successors, code_change("221350").date)  # ('221384', '221392') 2024-01-01（浜松市北区、分割）
+f = former_municipality("岐阜県多治見市笠原町2950")
+print(f.name, f.code, f.abolished)                                # 笠原町 215414 2006-01-23
+
+# 11. 記録の市区町村コードを住所と照合（v0.4）
+from jaden.audit import check_record
+r = check_record("茨城県阿見町牛久市柏田町1589-3", "084433")
+print(r.verdict, r.suggested_code, r.claimed_name_in_address)    # conflict 082198 True
+print(check_record("埼玉県鳩ヶ谷市里1650", "112267").verdict)       # code_retired
+
+# 12. オプショナル地理空間座標解決（国土地理院API / JGD2011・WGS 84互換）
 geo = jaden.geocode("東京都港区六本木6-10-1")
 print(geo.status)                 # 'SUCCESS'
 print(geo.coordinates.latitude)  # 35.660206
@@ -509,7 +527,7 @@ print(geo.matched_address)       # '東京都港区六本木六丁目１０番'
 
 ### コマンドラインインターフェース (CLI)
 
-JADENのCLIは、1件の住所（`normalize`, `parse`, `validate`, `geocode`）、ファイル（`batch`, `dedupe`, `extract`）、検索（`postal`, `suggest`, `reverse`, `compare`）、APIサーバー（`serve`）、データ管理（`data`）を扱います。
+JADENのCLIは、1件の住所（`normalize`, `parse`, `validate`, `geocode`）、ファイル（`batch`, `dedupe`, `extract`）、検索（`postal`, `suggest`, `reverse`, `compare`）、台帳の照合（`audit`）、APIサーバー（`serve`）、データ管理（`data`）を扱います。
 
 #### 1. `normalize`: 正規化表記の生成
 ```bash
@@ -794,6 +812,18 @@ curl -H 'X-API-Key: change-me' 'http://127.0.0.1:8080/v1/normalize?q=港区芝�
 ```
 
 ほかの機能と同じく、同梱データだけでオフラインに動きます。`resolve_address` は市区町村を確実に特定できないとき `answered` を false にするので、アシスタントは推測せずに利用者へ確認できます。
+
+#### 13. `audit`: 台帳のコードは自らの住所と合っているか（v0.4）
+```bash
+# 各行の住所をそれだけで読み、その行の市区町村コードと比べます
+$ jaden audit facilities.csv --code-column 市区町村コード -o checked.csv
+4 rows: consistent 1, conflict 1, code_retired 1, district_not_in_claimed 1
+```
+追加される列: `jaden_audit`（consistent、consistent_former_name、code_retired、conflict、district_not_in_claimed、
+undetermined、unreadable、code_invalid）、`jaden_code_status`、`jaden_resolved_code`、`jaden_suggested_code`、
+`jaden_candidates`、`jaden_former_name`、`jaden_municipality_written`、`jaden_audit_detail`。conflict は確認すべき
+不一致であって、コードが誤っている証明ではありません。各判定が実際の誤りをどれだけ反映するかは、四つの公開台帳で
+測定しました（[`benchmarks/registers/`](benchmarks/registers/)）。
 
 #### シェル自動化向け終了コード仕様
 | 終了コード | 判定種別 | 状態説明 |
