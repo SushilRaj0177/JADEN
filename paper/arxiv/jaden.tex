@@ -384,7 +384,20 @@ critical review, from the stored outputs of the tests or by rerunning a system o
 @@FAIR_TEXT@@
 
 \subsection{A corrected calibration procedure}\label{sec:recal}
-@@RECAL_TEXT@@
+The pre-registered calibration had two flaws. Its threshold search scanned thresholds from low to high and
+kept the first whose bound passed, with no control for testing many thresholds; and the temperature, the
+threshold and the conformal quantiles were all fitted on the same half of the care data, while split
+conformal coverage assumes the quantile is computed on data not used to fit the scores. We redid the
+calibration step with the model's weights unchanged: the temperature on one half of the calibration data
+(split by facility), and on the other half the conformal quantiles and the threshold, found by
+fixed-sequence testing from the strictest threshold down (Learn-then-Test \cite{ltt}), stopping at the first
+threshold whose 95\% bound exceeds 1\% for any input type. The sequence starts where every input type has
+1,000 answers, a choice made from the scores alone. The corrected thresholds are close to the
+pre-registered ones (0.873 against 0.882; 0.877 against 0.878 with the name), and so are the results: on
+the care development check the town-only wrong-answer rate is 1.02\% (0.94--1.09), on test~1 1.20\%
+(1.15--1.24) and on test~2 0.89\% (0.84--0.94), with conformal coverage of 93.6--93.7\% on both tests. The
+error control holds on data like its calibration data and does not carry over exactly to other
+publishers; the corrected procedure does not change that.
 
 \subsection{Leakage through the prior}
 The prior counts every corporation in the National Tax Agency register, including operators registered
