@@ -19,21 +19,25 @@
 
 \begin{abstract}
 About one in twenty hand-typed Japanese addresses leaves out its municipality, and the district name
-that remains often exists in many municipalities. Tools that always answer turn this ambiguity into
-silent errors. We treat municipality resolution as selective prediction: JADEN, an offline open-source
+that remains often exists in many municipalities. Tools that always answer turn this into silent
+errors. We treat municipality resolution as selective prediction: JADEN, an offline open-source
 engine, checks each reading against official gazetteers and declines when several municipalities
 remain, and a calibrated scorer adds probabilities, a risk-controlled answer threshold and conformal
 candidate sets. In two pre-registered tests on data never used in development (321,859 welfare and
 206,041 medical facilities), JADEN's rules answered about half of the district-only inputs and were
 wrong on 0.38\% and 0.28\% of their answers; jageocoder answered about three quarters correctly but
-was wrong on 21--23\% of its answers. In a comparison made after the tests, a jageocoder that declines whenever its best matches span
-several municipalities answered 73--76\% at 3--4\% wrong, more accurately than JADEN's resolver at the
-same coverage (5--8\%): JADEN's advantage is a controllable operating point near 1\% wrong with calibrated
+was wrong on 21--23\% of its answers. After the tests, a jageocoder that declines when its best matches
+span several municipalities answered 73--76\% at 3--4\% wrong, beating JADEN's resolver at equal coverage
+(5--8\%): JADEN's advantage is a controllable operating point near 1\% wrong with calibrated
 probabilities, not better ranking. The calibrated resolver answered 59--61\% at
 0.72--1.14\% wrong; its 1\% target held in one test and failed in the other (1.10\%), and conformal
 coverage fell about 1.2 points short of 95\% in both. A language model choosing from JADEN's
-candidates was wrong on 31.6\% of its answers. Of 13 pre-registered hypotheses, 7 held. Code,
-protocols, run logs and results are public.
+candidates was wrong on 31.6\% of its answers. Of 13 pre-registered hypotheses, 7 held. In two further
+pre-registered studies, the municipality codes of four public registers (5.8 million records) contradicted
+an address that writes its municipality in under 0.07\% of records, mostly through a wrong code
+where locations could tell; and on 9,878 addresses written with municipalities that no longer
+exist, JADEN named today's municipality for 91--99\% at 0.07--1.0\% wrong, jageocoder for 83--86\% at
+9.5--10\% wrong. Code, protocols, logs and results are public.
 \end{abstract}
 
 % ------------------------------------------------------------------------------------------
@@ -73,6 +77,10 @@ that respect repeated addresses.
 \item \textbf{Language models in the loop} (Section~\ref{sec:llmres}): choosing from a verified candidate
 list does not make a model reliable; checking its free answers against the registry removes most of its
 errors, though part of that effect comes from a confidence filter.
+\item \textbf{Two applications, each pre-registered} (Section~\ref{sec:studies}): an audit of 5.8 million
+records of four public registers for codes that contradict their own addresses, and the resolution of
+addresses written with municipalities that have since been merged or renamed, both scored against
+surveyed locations rather than text.
 \end{enumerate}
 JADEN (MIT licence) has no runtime dependencies and needs no network access. All code, protocols, run
 logs and result files are in the repository (Section~\ref{sec:repro}).
@@ -488,6 +496,103 @@ In the care-office register, 30,219 of 223,161 typed addresses (13.5\%) leave ou
 (5.1\%) the municipality, and 10,434 (4.7\%) both (a text check, so approximate).
 
 % ------------------------------------------------------------------------------------------
+\section{Two applications, each pre-registered}\label{sec:studies}
+
+The engine was then applied to two problems where a verified reading is directly useful. Each study had
+its own protocol, committed with the SHA-256 of its data before any system ran on that data
+(\texttt{benchmarks/registers}, \texttt{benchmarks/history}); results are reported as they came out, and
+the run notes list every deviation. In both, the answer key does not come from reading text: a facility's
+published coordinates are placed in MLIT's municipal boundaries of 2026-01-01 (国土数値情報 行政区域 N03).
+
+\subsection{Do public registers' codes match their own addresses?}\label{sec:registers}
+Public registers store a municipality code next to the address. \texttt{jaden.audit} reads the address,
+compares the municipality it names with the code, and gives a verdict: consistent; consistent under a
+former name; code retired; conflict (the address names another municipality); district not found in the
+code's municipality; undetermined (the address leaves the municipality open); or unreadable. Retired codes
+are mapped to today's codes from MIC's list of code changes (974 codes since 2005) and MLIT's boundaries
+of 2000-10-01. We audited every record of four registers: the corporation register of the National Tax
+Agency (5,049,462 records, no coordinates), MHLW's care offices (223,161) and medical facilities (206,043),
+and MLIT's welfare facilities of 2023 (321,859), whose addresses never write the municipality.
+
+\begin{table}[t]\centering\small
+\caption{Register audit. ``Writes'' counts records whose address writes its municipality; ``consistent''
+includes former names and retired codes; intervals are Wilson 95\%.}\label{tab:registers}
+\begin{tabular}{lrrrrr}\toprule
+Register & Records & Writes & Consistent (95\% CI) & Conflicts & Retired codes \\ \midrule
+NTA corporations & 5,049,462 & 5,049,151 & 99.987\% (99.985--99.988) & 6 & 144 \\
+MHLW care offices & 223,161 & 212,382 & 99.931\% (99.919--99.942) & 136 & 12 \\
+MHLW medical facilities & 206,043 & 206,043 & 99.946\% (99.935--99.955) & 0 & 0 \\
+MLIT welfare (2023) & 321,859 & 169 & 61.5\% (54.0--68.5) & 208 & 1,908 \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.} Table~\ref{tab:registers}. Where the address writes its municipality, the code agreed
+with it on 99.93--99.99\% of records. Of the four pre-registered hypotheses, two held: retired codes are
+most frequent in the oldest file (1.0\% of the 2023 welfare file), and the published points of sampled
+consistent records lie in the code's municipality (99.5--99.8\%). Two failed, both in the welfare file:
+its 169 records that appear to write their municipality are 61.5\% consistent, and every inspected
+conflict there is a misreading.
+
+\paragraph{What the flags mean.} 294 flagged records were inspected one by one against categories fixed in
+the protocol (code wrong, text wrong, reading wrong, gazetteer gap, cannot tell), using the location as
+evidence; every judgment and its reason is in \texttt{inspection.csv}. Among care offices, 85 of 100
+inspected conflicts were wrong codes (the point lies where the address says), 9 were addresses naming a
+neighbouring municipality, and 5 were misreadings, each a district sharing a municipality's name. A
+second reader (jageocoder) sided with JADEN's reading on 119 of these 124 conflicts and with the code on 3, and 15
+offices across Ibaraki carried one town's code (阿見町, 084433), a systematic error. In the welfare
+file the flags were almost all false: every one of the 150 inspected points lies in the coded
+municipality, and the addresses begin with a district that is also a municipality's name
+(北方町北方 in 一宮市). For the six NTA conflicts nothing in the record says which field is right.
+The audit is a useful check for registers whose addresses write the municipality, and should not be read
+as evidence against the code in registers whose addresses leave it out.
+
+\subsection{Addresses written before the mergers}\label{sec:history}
+An address copied into a record years ago names the municipality of its time. We took MLIT's public
+facility file of 2006 (P02-06, 197,031 facilities, address and 2006 code) and welfare file of 2011 (P14-11,
+90,762), wrote each address with its municipality of that time, and asked each tool for today's
+municipality. Inputs whose municipality no longer exists (merged, renamed, made a ward, or split) form the
+``changed'' sets (8,511 and 1,367 inputs); the others are controls. JADEN resolves a former name through
+its table of 1,829 former municipalities, and \texttt{jaden.history} also answers the reverse question,
+which municipality of 2000 a current address belonged to, by overlaying the 2000 boundaries on today's
+district points.
+
+\begin{table}[t]\centering\small
+\caption{Addresses written with a municipality that no longer exists. Wrong among answers with Wilson 95\%
+intervals.}\label{tab:history}
+\begin{tabular}{llrrr}\toprule
+Set & System & Right & Wrong among answers & No answer \\ \midrule
+2006, changed (8,511) & JADEN & 91.00\% & 1.02\% (0.82--1.27) & 8.06\% \\
+ & jageocoder & 82.76\% & 10.22\% (9.57--10.91) & 7.81\% \\
+ & Geolonia & 0.46\% & 0.00\% & 99.54\% \\
+2011, changed (1,367) & JADEN & 99.20\% & 0.07\% (0.01--0.42) & 0.73\% \\
+ & jageocoder & 86.47\% & 9.49\% (8.02--11.21) & 4.46\% \\
+ & Geolonia & 18.00\% & 0.00\% & 82.00\% \\
+2006, unchanged (188,502) & JADEN & 99.70\% & 0.12\% (0.11--0.14) & 0.18\% \\
+2011, unchanged (89,395) & JADEN & 99.80\% & 0.09\% (0.07--0.11) & 0.11\% \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.} Table~\ref{tab:history}. One of five hypotheses held (the 2011 changed set: at least
+95\% right, at most 1\% wrong). On the 2006 changed set JADEN was wrong on 1.02\% of its answers, just
+above the 1\% bound; it was right more often and wrong at least ten times less often than jageocoder on both changed
+sets, but Geolonia, which declines almost every such input, had no wrong answers, so the pre-registered
+comparison (H3) fails. On mergers, the commonest change, JADEN was right on 96.1\% (2006) and 99.5\% (2011),
+jageocoder on 63.3\% and 79.5\%. JADEN's weak point is the city that later became a designated city:
+新潟市向陽2-6-1, written before 新潟市 had wards, must be placed in a ward, and 76 of its 80 wrong
+answers in 2006 are of this kind (熊本市, 新潟市, 浜松市, 岡山市); there jageocoder was right more often
+(95.4\% against 88.5\%). The controls missed the 0.1\% bound in 2006 (0.12\%), but on the 5,000-input
+samples every wrong control answer was shared by all three tools (10 of 10 in 2006, 3 of 3 in 2011):
+three independent readings agreeing against the key point to facilities whose published point lies in
+another municipality, so the bound is likely below the key's own error rate.
+
+\paragraph{The reverse lookup.} For 3,794 facilities whose 2006 code was also their code of 2000 and has
+since been retired, the municipality of 2000 that \texttt{jaden.history} reports agreed with that code for
+2,322 (61.2\%; pre-registered target 97\%) and was never wrong; the rest received no answer. After the
+study, a defect was found: addresses read down to a 小字 were looked up at that level while the table is
+keyed at 大字 level. Falling back from a marked 小字 to its 大字 raises agreement to 2,699 (71.1\%), still
+with no wrong answer; this is a development figure, reported separately (\texttt{POSTHOC.md}).
+
+% ------------------------------------------------------------------------------------------
 \section{Analysis}
 
 \paragraph{Where the calibrated resolver is wrong.} Of the calibrated resolver's wrong town-only answers, 1,082 of 2,115 in test~1 (51\%) and
@@ -531,6 +636,12 @@ environment.
 repeats of development addresses.
 \item The language-model results come from one model family, one prompt and 1,000-input samples.
 \item The rule engine is a large hand-written system maintained by one author.
+\item The register audit misreads addresses that omit the municipality and begin with a district that is
+also a municipality's name; its flags are evidence only where the address writes its municipality. The
+categories of the 294 inspected records were assigned by one reader, with the location as the main
+evidence; no second rater checked them.
+\item In the pre-merger study the answer key is the publisher's point, which is itself wrong for some
+facilities; the reverse lookup answers only for districts with a gazetteer point and a 大字-level entry.
 \end{itemize}
 
 \section{Conclusion}
@@ -541,18 +652,24 @@ fifth. A comparison made after the tests qualifies this: a jageocoder that decli
 matches is more accurate than JADEN at the coverage it reaches, likely because its dictionary resolves
 block numbers. JADEN's contribution is the calibrated, controllable operating point, and eliminating
 candidates by block existence is its clearest next improvement. The registry is also the right check on a language model: not a list to choose
-from, but a test its free answers must pass. Next steps are an independent evaluation of the national
-geocoder on the same frozen tests, an audit of how often public registers' codes contradict their own
-addresses, and time-aware resolution of addresses written before municipal mergers.
+from, but a test its free answers must pass. Two applications follow from a verified reading.
+Public registers' codes rarely contradict addresses that write their municipality, and when they do, the
+code is usually what is wrong; and addresses written before the mergers can be brought to today's
+municipalities with about one wrong answer in a hundred or fewer, except in cities that have since gained
+wards. Next steps are an independent evaluation of the national geocoder on the same frozen tests,
+ward selection for addresses written before a city was designated, and a second rater for the register
+inspection.
 
 \paragraph{Reproducibility.}\label{sec:repro} Code, protocols, run logs, timelines and results:
 \url{https://github.com/SushilRaj0177/JADEN} (\texttt{benchmarks/heldout}, \texttt{heldout2},
-\texttt{posthoc}). Each result file records the commit it was produced at.
+\texttt{posthoc}, \texttt{registers}, \texttt{history}). Each result file records the commit it was produced at.
 
 \paragraph{Data.} 「大字・町丁目レベル位置参照情報」国土交通省 (2025年, 19.0b); 「国土数値情報（福祉施設データ）」
 国土交通省 (令和5年度, CC BY 4.0); 「国土数値情報（学校データ）」国土交通省 (CC BY 4.0); 国税庁法人番号公表サイト
 全件データ (2026-10-30); 厚生労働省 介護サービス情報公表システム オープンデータ (2026年6月末); 厚生労働省
-医療情報ネット オープンデータ (2026-06-01); 郵便番号データ（日本郵便）; 全国地方公共団体コード（総務省）. All
+医療情報ネット オープンデータ (2026-06-01); 「国土数値情報（公共施設データ）」国土交通省 (平成18年度, P02-06);
+「国土数値情報（福祉施設データ）」国土交通省 (平成23年度, P14-11); 「国土数値情報（行政区域データ）」国土交通省
+(2000年, 2026年); 郵便番号データ（日本郵便）; 全国地方公共団体コード及び改正一覧表（総務省）. All
 were processed by the author.
 
 \appendix
