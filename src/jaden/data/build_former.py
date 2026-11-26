@@ -13,7 +13,11 @@ Sources:
    for municipalities created after 2000 and abolished again, renames, and the
    2024 Hamamatsu ward reorganization.
 
-Output: former_municipalities.json, bundled with the package.
+Output, bundled with the package:
+    former_municipalities.json   former names with their successors and abolition dates, and every retired
+                                 code with its current successors (code_changes)
+    former_districts.tsv.gz      every current district point inside a former municipality, with that
+                                 municipality's 2000 code
 
 Usage:
     python -m jaden.data.build_former [--out DIR] [--cache DIR]
@@ -117,10 +121,14 @@ def _check_digit(d5: str) -> str:
 
 
 # ------------------------------------------------------------- N03 overlay
-def former_from_boundaries(town_points: Dict[str, List[Tuple[str, float, float]]], registry, cache: Path,
-                           log: Callable[[str], None]) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]]]:
+def former_from_boundaries(town_points: Dict[str, List[Tuple[str, float, float, str, str]]], registry, cache: Path,
+                           log: Callable[[str], None]
+                           ) -> Tuple[List[Dict[str, Any]], List[Dict[str, str]], Dict[Tuple[str, str, str], str]]:
+    """Former municipalities (2000-10-01) with their current successors, the sources, and for every current
+    district point (lg_code, town key, 丁目) the 2000 municipality code it lies in."""
     entries: List[Dict[str, Any]] = []
     sources = []
+    districts: Dict[Tuple[str, str, str], str] = {}
     current = {m.lg_code: m for m in registry.list_municipalities()}
     for pref in range(1, 48):
         url = N03_URL.format(pref=pref)
@@ -140,11 +148,12 @@ def former_from_boundaries(town_points: Dict[str, List[Tuple[str, float, float]]
             item = by_code.setdefault(code, {"row": row, "shapes": []})
             item["shapes"].append((bbox, rings))
         counts: Dict[str, Dict[str, int]] = {code: {} for code in by_code}
-        for lg, lon, lat in town_points.get(f"{pref:02d}", []):
+        for lg, lon, lat, key, chome in town_points.get(f"{pref:02d}", []):
             for code, item in by_code.items():
                 if any(b[0] <= lon <= b[2] and b[1] <= lat <= b[3] and inside(lon, lat, rings)
                        for b, rings in item["shapes"]):
                     counts[code][lg] = counts[code].get(lg, 0) + 1
+                    districts[(lg, key, chome)] = code + _check_digit(code)
                     break
         for code, item in by_code.items():
             row = item["row"]
@@ -164,7 +173,7 @@ def former_from_boundaries(town_points: Dict[str, List[Tuple[str, float, float]]
                 "former_code": lg_2000, "successors": successors, "as_of": "2000-10-01",
             })
         log(f"N03-2000 {pref:02d}: {len(by_code)} municipalities, {sum(1 for e in entries if e['pref'] == f'{pref:02d}')} changed")
-    return entries, sources
+    return entries, sources, districts
 
 
 # ---------------------------------------------------------------- MIC list
@@ -226,6 +235,70 @@ def former_from_mic_changes(data: bytes, registry) -> List[Dict[str, Any]]:
     return entries
 
 
+_ERAS = {"H": 1988, "R": 2018}
+
+
+def _mic_date(value: str) -> str:
+    """'39173' (an Excel day number), 'H23.10.11' or 'R6.1.1' as an ISO date; '' when not a date."""
+    value = value.strip()
+    if re.fullmatch(r"\d{5}", value):
+        return date.fromordinal(date(1899, 12, 30).toordinal() + int(value)).isoformat()
+    m = re.fullmatch(r"([HR])(\d+)\.(\d+)\.(\d+)", value)
+    if m:
+        return date(_ERAS[m.group(1)] + int(m.group(2)), int(m.group(3)), int(m.group(4))).isoformat()
+    return ""
+
+
+def deleted_codes_from_mic(data: bytes, registry) -> List[Dict[str, str]]:
+    """Every code the MIC 改正一覧表 deletes: prefecture, old code, old name, date and reason.
+
+    The codes one change deletes stand in consecutive rows (the first says 欠番, the others 〃), and the
+    reason is written across those rows in pieces ('合併後は' / '石狩市'); each code gets the whole text.
+    A row continues the previous one's prefecture and date when it says 〃 or leaves them empty.
+    """
+    from .build_municipalities import parse_xlsx_shared_strings, parse_sheet_rows
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        rows = parse_sheet_rows(zf, "xl/worksheets/sheet1.xml", parse_xlsx_shared_strings(zf))
+    pref_codes = {p.name: p.code for p in registry.list_all_prefectures()}
+    pref, when, last_kind = "", "", ""
+    out: List[Dict[str, str]] = []
+    group: List[Dict[str, str]] = []
+    pieces: List[str] = []
+
+    def close() -> None:
+        # a piece cut mid-sentence ('合併後は' / '石狩市') continues directly; whole pieces are separated
+        text = ""
+        for piece in pieces:
+            text += piece if not text or text[-1] in "はのをにと、及" else "; " + piece
+        for item in group:
+            item["reason"] = text
+        group.clear()
+        pieces.clear()
+
+    for r in rows[4:]:
+        e, code, name, kind = (r.get(c, "").strip() for c in ("E", "F", "G", "I"))
+        reason, raw_date = r.get("M", "").strip(), r.get("N", "").strip()
+        if e in pref_codes:
+            pref = e
+        if raw_date and raw_date != "〃":
+            when = _mic_date(raw_date)
+        deleted = kind == "欠番" or (kind == "〃" and last_kind == "deleted")
+        if kind == "欠番" or (kind and not deleted):
+            close()
+        if kind:
+            last_kind = "deleted" if deleted else ("new" if kind == "新設" or (kind == "〃" and last_kind == "new") else "")
+        if deleted:
+            if reason and reason != "〃":
+                pieces.append(reason)
+            if re.fullmatch(r"\d{6}", code) and pref in pref_codes:
+                item = {"pref": pref_codes[pref], "code": code, "name": name.replace(" ", "").replace("　", ""),
+                        "date": when, "reason": ""}
+                group.append(item)
+                out.append(item)
+    close()
+    return out
+
+
 def _hamamatsu_wards(registry) -> List[Dict[str, Any]]:
     """The 2024-01-01 reorganization lists its successors only as prose; the old wards map to the new ones."""
     by_name = {m.name: m.lg_code for m in registry.list_municipalities("22")}
@@ -241,15 +314,15 @@ def build(out_dir: Path, cache: Path, log: Callable[[str], None] = print) -> Dic
     from .loader import get_registry
     registry = get_registry()
 
-    town_points: Dict[str, List[Tuple[str, float, float]]] = {}
+    town_points: Dict[str, List[Tuple[str, float, float, str, str]]] = {}
     with gzip.open(out_dir / "towns.tsv.gz", "rt", encoding="utf-8") as f:
         next(f)
         for line in f:
             parts = line.rstrip("\n").split("\t")
             lg, lat, lon = parts[0], float(parts[6]), float(parts[7])
-            town_points.setdefault(lg[:2], []).append((lg, lon, lat))
+            town_points.setdefault(lg[:2], []).append((lg, lon, lat, parts[1], parts[4]))
 
-    entries, sources = former_from_boundaries(town_points, registry, cache, log)
+    entries, sources, districts = former_from_boundaries(town_points, registry, cache, log)
 
     mic_data, mic_digest = _download(MIC_CHANGES_URL, cache / "mic", log)
     sources.append({"url": MIC_CHANGES_URL, "sha256": mic_digest})
@@ -288,11 +361,64 @@ def build(out_dir: Path, cache: Path, log: Callable[[str], None] = print) -> Dic
     # Names that are still current are handled by the municipality registry itself
     entries = [e for e in entries if (e["pref"], e["name"]) not in current_by_name]
     entries.sort(key=lambda e: (e["pref"], e["name"]))
+
+    # Retired codes: every code the MIC list deletes, with its current successors and the date
+    deleted = deleted_codes_from_mic(mic_data, registry)
+    by_former_code = {e["former_code"]: e for e in entries if e.get("former_code")}
+    by_former_name = {(e["pref"], e["name"]): e for e in entries}
+    current_codes = {m.lg_code for m in registry.list_municipalities()}
+    # 浜松市, 2024-01-01: the old ward codes; 天竜区 kept its name but got a new code
+    hama_new = {m.name: m.lg_code for m in registry.list_municipalities("22") if m.city == "浜松市"}
+    hama_plan = {"中区": ["中央区"], "東区": ["中央区"], "西区": ["中央区"], "南区": ["中央区"],
+                 "北区": ["中央区", "浜名区"], "浜北区": ["浜名区"], "天竜区": ["天竜区"]}
+    code_changes: List[Dict[str, Any]] = []
+    unresolved = []
+    for d in deleted:
+        if d["code"] in current_codes:
+            continue
+        merged = re.search(r"合併後は(.+?)(?:$|[（(、。])", d["reason"])
+        if d["pref"] == "22" and d["code"].startswith("2213") and d["name"] in hama_plan:
+            successors = sorted(hama_new[f"浜松市{w}"] for w in hama_plan[d["name"]] if f"浜松市{w}" in hama_new)
+            d = dict(d, date=d["date"] or "2024-01-01")
+        elif d["code"] in by_former_code:
+            successors = sorted(by_former_code[d["code"]]["successors"])
+        elif (d["pref"], d["name"]) in by_former_name:
+            successors = sorted(by_former_name[(d["pref"], d["name"])]["successors"])
+        else:
+            successors = resolve(d["pref"], d["name"])
+        if not successors and merged:
+            successors = resolve(d["pref"], merged.group(1).strip())
+        if not successors:
+            unresolved.append(d)
+            continue
+        code_changes.append({"code": d["code"], "name": d["name"], "pref": d["pref"], "successors": successors,
+                             "date": d["date"], "reason": d["reason"]})
+    dates = {c["code"]: c["date"] for c in code_changes}
+    dates_by_name = {(c["pref"], c["name"]): c["date"] for c in code_changes}
+    for e in entries:
+        if e.get("former_code"):
+            # in the MIC list (changes since 2005-04-01) or changed between the 2000 boundaries and then
+            e["abolished"] = (dates.get(e["former_code"]) or dates_by_name.get((e["pref"], e["name"]))
+                              or "2000-10-01/2005-03-31")
+    for d in unresolved:
+        log(f"  no current successor found for {d['code']} {d['name']} ({d['reason']})")
+    code_changes.sort(key=lambda c: c["code"])
+    log(f"retired codes: {len(code_changes)} mapped, {len(unresolved)} without a current successor")
+
+    # Every current district inside a former municipality, with that municipality's 2000 code
+    changed = {e["former_code"]: e["name"] for e in entries if e.get("former_code")}
+    with gzip.open(out_dir / "former_districts.tsv.gz", "wt", encoding="utf-8") as f:
+        f.write("lg_code\tkey\tchome\tformer_code\tformer_name\n")
+        for (d_lg, d_key, d_chome), former in sorted(districts.items()):
+            if former in changed:
+                f.write(f"{d_lg}\t{d_key}\t{d_chome}\t{former}\t{changed[former]}\n")
+
     result = {
         "built": date.today().isoformat(),
         "attribution": [N03_ATTRIBUTION, "「都道府県コード及び市区町村コード」改正一覧表（総務省）を加工して作成"],
         "sources": sources,
         "entries": entries,
+        "code_changes": code_changes,
     }
     with open(out_dir / "former_municipalities.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, separators=(",", ":"))

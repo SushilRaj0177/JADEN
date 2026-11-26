@@ -626,6 +626,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     _add_toolkit_parsers(subparsers)
     _add_lookup_parsers(subparsers)
+    _add_audit_parser(subparsers)
 
     # data
     data_p = subparsers.add_parser(
@@ -686,6 +687,22 @@ def _add_toolkit_parsers(subparsers: Any) -> None:
                            "row_b count data rows from 1 (a header row is not counted).")
     dd_p.add_argument("--min-score", type=_score, default=0.5,
                       help="Lowest pair score written with --pairs, from 0 to 1 (default: 0.5).")
+
+
+def _add_audit_parser(subparsers: Any) -> None:
+    au_p = subparsers.add_parser(
+        "audit",
+        help="Check that each row's address agrees with its municipality code",
+        description="Reads each row's address on its own and compares it with the row's municipality code. "
+                    "Appends jaden_audit (consistent, consistent_former_name, code_retired, conflict, "
+                    "district_not_in_claimed, undetermined, unreadable, code_invalid), the code's status, the "
+                    "municipality the address names, a suggested code and a short explanation. "
+                    "A conflict is a disagreement to look at, not proof that the code is wrong.",
+    )
+    _file_arguments(au_p)
+    au_p.add_argument("--code-column", required=True,
+                      help="Column (name or 1-based number; for JSONL, the key) holding the municipality code "
+                           "(5 or 6 digits).")
 
 
 def _label_size(value: str) -> Tuple[int, int]:
@@ -915,6 +932,15 @@ def _handle_compare(args: argparse.Namespace) -> int:
     return {"same": 0, "different": 1, "undetermined": 3}.get(result.verdict, 2)
 
 
+def _handle_audit(args: argparse.Namespace) -> int:
+    from pathlib import Path
+    from .batch import run_audit
+    run_audit(Path(args.input), Path(args.output) if args.output else None, code_column=args.code_column,
+              fmt=args.format, column=args.column, encoding=args.encoding, out_encoding=args.output_encoding,
+              header_row=False if args.no_header else None)
+    return 0
+
+
 def _handle_dedupe(args: argparse.Namespace) -> int:
     from pathlib import Path
     from .batch import run_dedupe
@@ -928,6 +954,7 @@ def _handle_dedupe(args: argparse.Namespace) -> int:
 _TOOLKIT_HANDLERS = {
     "compare": _handle_compare,
     "dedupe": _handle_dedupe,
+    "audit": _handle_audit,
     "postal": _handle_postal,
     "suggest": _handle_suggest,
     "reverse": _handle_reverse,

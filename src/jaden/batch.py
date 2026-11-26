@@ -451,6 +451,41 @@ def run_batch(input_path: Path, output: Optional[Path], fmt: Optional[str] = Non
     return counts
 
 
+AUDIT_FIELDS = ("audit", "code_status", "resolved_code", "suggested_code", "candidates", "former_name",
+                "municipality_written", "audit_detail")
+
+
+def run_audit(input_path: Path, output: Optional[Path], code_column: str, fmt: Optional[str] = None,
+              column: Optional[str] = None, encoding: Optional[str] = None, out_encoding: str = "utf-8",
+              prefix: str = "jaden_", log: TextIO = sys.stderr, header_row: Optional[bool] = None) -> Counter:
+    """Checks every row's address against the municipality code in ``code_column`` (see jaden.audit) and
+    writes the rows back with the verdict columns appended; returns counts by verdict."""
+    from .audit import check_record
+    in_fmt, out_fmt, to_stdout = _formats(input_path, output, fmt)
+    header, rows, in_fmt = _load(input_path, in_fmt, encoding, column, header_row)
+    materialized = list(rows)
+    if in_fmt == "jsonl":
+        header = _union_header(materialized)
+    else:
+        header = _widened(header, materialized)
+    code_of = _side_reader(header, in_fmt, code_column)
+    counts: Counter = Counter()
+    out_stream, out_fmt, finish = _open_output(output, out_fmt, to_stdout, out_encoding)
+    try:
+        writer = _Writer(out_stream, out_fmt, header, [prefix + k for k in AUDIT_FIELDS], log)
+        for row, address in materialized:
+            r = check_record((address or "").strip(), str(code_of(row) or "").strip() or None)
+            counts[r.verdict] += 1
+            writer.write(row, {"audit": r.verdict, "code_status": r.code_status, "resolved_code": r.resolved_code,
+                               "suggested_code": r.suggested_code, "candidates": " ".join(r.candidates[:20]),
+                               "former_name": r.former_name, "municipality_written": r.municipality_written,
+                               "audit_detail": r.detail})
+    finally:
+        finish()
+    log.write(f"{sum(counts.values())} rows: " + ", ".join(f"{k} {v}" for k, v in counts.most_common()) + "\n")
+    return counts
+
+
 def run_dedupe(input_path: Path, output: Optional[Path], fmt: Optional[str] = None, column: Optional[str] = None,
                encoding: Optional[str] = None, out_encoding: str = "utf-8", level: str = "unit",
                prefix: str = "jaden_", log: TextIO = sys.stderr, header_row: Optional[bool] = None,
