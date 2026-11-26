@@ -1,0 +1,58 @@
+{
+ "facilities": 524408,
+ "keys": 395384,
+ "corporations_removed": 196451,
+ "facilities_affected": 189019,
+ "test 1": {
+  "calibrated": {
+   "full": {
+    "n": 318578,
+    "right": 190516,
+    "wrong": 1460
+   },
+   "reduced": {
+    "n": 318578,
+    "right": 190238,
+    "wrong": 1505
+   }
+  },
+  "calibrated + name": {
+   "full": {
+    "n": 318578,
+    "right": 195062,
+    "wrong": 1555
+   },
+   "reduced": {
+    "n": 318578,
+    "right": 194824,
+    "wrong": 1567
+   }
+  }
+ },
+ "test 2": {
+  "calibrated": {
+   "full": {
+    "n": 205830,
+    "right": 120587,
+    "wrong": 880
+   },
+   "reduced": {
+    "n": 205830,
+    "right": 120417,
+    "wrong": 906
+   }
+  },
+  "calibrated + name": {
+   "full": {
+    "n": 205830,
+    "right": 123087,
+    "wrong": 1075
+   },
+   "reduced": {
+    "n": 205830,
+    "right": 122936,
+    "wrong": 1079
+   }
+  }
+ }
+}

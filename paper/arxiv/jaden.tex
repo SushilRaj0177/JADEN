@@ -371,7 +371,15 @@ critical review, from the stored outputs of the tests or by rerunning a system o
 @@RECAL_TEXT@@
 
 \subsection{Leakage through the prior}
-@@LEAK_TEXT@@
+The prior counts every corporation in the National Tax Agency register, including operators registered
+at a test facility's own address (a medical corporation at its clinic), whose count favours exactly the
+right municipality. Matching corporations to test facilities by municipality, district and the full
+number sequence (a strict match that also catches other tenants of the same building) found 196,451
+corporations sharing a key with 189,019 of the 524,408 test facilities. Removing them from the prior and
+rebuilding every town-only input changed little: in test~2 the calibrated resolver's wrong-answer rate went
+from 0.72\% to 0.75\% and its right answers from 58.59\% to 58.50\% (with the name, 0.87\% and 59.80\% to
+0.87\% and 59.73\%); in test~1, rebuilt with the current engine, from 0.76\% to 0.78\%. The prior's value
+does not come from the facilities' own operators.
 
 \subsection{Repeated addresses}
 Several facilities can share one address (clinics in one building), so the inputs are not independent.

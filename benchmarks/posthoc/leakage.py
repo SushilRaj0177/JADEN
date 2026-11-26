@@ -208,6 +208,7 @@ def run_scoring(args: argparse.Namespace, src: Path, red: Path, stats: Dict[str,
              f"with the same key: **{stats['corporations_removed']:,}**, sharing a key with "
              f"**{stats['facilities_affected']:,}** test facilities. They are removed from the prior, and every "
              "town-only test input is rebuilt with each prior and scored with the same model and threshold.", "",
+             "Both priors are used with the current engine. For test 2 that is the engine the test ran (the full-prior rows reproduce its reported numbers exactly); for test 1 it is not: the engine has changed since test 1, partly through fixes found on test 1's own errors, so test 1's absolute numbers here are not test results. Only the difference between the two priors is the measurement.", "",
              "| Test | Model | Prior | Right | Wrong | Wrong among answers (95% CI) |", "| :--- | :--- | :--- | ---: | ---: | :--- |"]
     result: Dict[str, Any] = dict(stats)
     ctx = get_context("spawn")                     # fresh workers: nothing large is copied into them
