@@ -10,9 +10,12 @@ What happened during the run, in order, as `PROTOCOL.md` requires.
   municipality code were excluded; 211 rows got no town-only input because their address does not start
   with the prefecture and municipality names exactly. 180,655 of 206,041 facilities are "unseen".
 - **Geolonia, speed.** Geolonia was first started with 8 concurrent requests, as in
-  `benchmarks/jabench/baselines/README.md`. At that rate it would have needed about a day, so it was
-  stopped and restarted from the beginning with 48. Concurrency changes only the speed, not the answers;
-  the partial first output was discarded.
+  `benchmarks/jabench/baselines/README.md`. In its first minutes, while JADEN's runs used the other
+  processors, it managed about 40 inputs per second, so it was stopped and restarted from the beginning
+  with 48. (An earlier version of these notes said the first rate "would have needed about a day"; that
+  extrapolated from those first minutes and was wrong.) The restarted run took 23 minutes, 444 inputs per
+  second on average (`logs/geolonia.log`). Concurrency changes only the speed, not the answers; the
+  partial first output was discarded. The full timeline is in `TIMELINE.md`.
 - **Geolonia, network errors.** In the full run, 50 inputs (24 full, 21 without prefecture, 5 town only)
   failed with a network error while Geolonia fetched its town data (`fetch failed`, or an HTML page
   where JSON was expected). They were retried once, alone, and all 50 got an answer. `report.md` and

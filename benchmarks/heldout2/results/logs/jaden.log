@@ -1,0 +1,49 @@
+01-1_hospital_facility_info_20260601.csv.zip: ok
+02-1_clinic_facility_info_20260601.csv.zip: ok
+03-1_dental_facility_info_20260601.csv.zip: ok
+04_maternity_home_20260601.csv.zip: ok
+05_pharmacy_20260601.csv.zip: ok
+  care: 346,757 keys
+  + companies: 4,310,659 keys
+  + welfare: 4,510,353 keys
+{
+ "rows": 206043,
+ "rows: hospital": 7715,
+ "unseen": 180655,
+ "inputs: full": 206041,
+ "inputs: no prefecture": 206041,
+ "inputs: town only": 205830,
+ "no town only input": 211,
+ "rows: clinic": 80155,
+ "rows: dental": 54637,
+ "rows: maternity": 2138,
+ "rows: pharmacy": 61398,
+ "excluded: municipality code not current or missing": 2
+}
+617,912 inputs
+  50,000 / 617,912
+  100,000 / 617,912
+  150,000 / 617,912
+  200,000 / 617,912
+  250,000 / 617,912
+  300,000 / 617,912
+  350,000 / 617,912
+  400,000 / 617,912
+  450,000 / 617,912
+  500,000 / 617,912
+  550,000 / 617,912
+  600,000 / 617,912
+617,912 items at c7a22d21c5c1c5b363299b48f7fdebf676a9b42c
+  50,000 / 617,912
+  100,000 / 617,912
+  150,000 / 617,912
+  200,000 / 617,912
+  250,000 / 617,912
+  300,000 / 617,912
+  350,000 / 617,912
+  400,000 / 617,912
+  450,000 / 617,912
+  500,000 / 617,912
+  550,000 / 617,912
+  600,000 / 617,912
+617,912 items at 01a23ba0b8f2daad3c7c504cc5c00e2402f3986c

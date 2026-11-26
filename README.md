@@ -7,7 +7,7 @@
 
 **JADEN** is a deterministic Python toolkit for Japanese addresses: it verifies and normalizes them, corrects typos, matches and deduplicates records, completes partial input, looks up postal codes, finds addresses inside text, and geocodes in both directions. It runs as a library, a CLI, and a JSON API server.
 
-It checks every address down to the town and 丁目 against the national town list (MLIT, 191,100 towns) and Japan Post's postal-code list, both bundled and fully offline. It never guesses: when an address could be in more than one place, JADEN says so and lists the candidates.
+It checks every address down to the town and 丁目 against the national town list (MLIT, 191,100 towns) and Japan Post's postal-code list, both bundled and fully offline. When an address could be in more than one place, JADEN says so and lists the candidates instead of picking one. One known exception: a bare name that is both a municipality and a town elsewhere (`栄町` or `錦町` on its own) is read as the municipality.
 
 [Quickstart](#6-installation--usage) • [What's new in v0.3](#whats-new-in-v03) • [What's new in v0.2](#whats-new-in-v02) • [Overview](#1-overview--the-core-engineering-challenge) • [Taxonomy](#2-four-tier-taxonomy-of-truth) • [Architecture](#3-architecture--processing-pipeline) • [Benchmarks](#5-empirical-benchmarks) • [CLI](#command-line-interface-cli) • [Limitations](#8-explicit-boundaries--limitations)
 
