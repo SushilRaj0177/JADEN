@@ -6,11 +6,10 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{microtype}
-\usepackage[unicode,hidelinks]{hyperref}
+\usepackage[unicode,hidelinks,pdftitle={Knowing When You Do Not Know Where: Selective, Registry-Verified Municipality Resolution for Japanese Addresses},pdfauthor={Sushil Raj}]{hyperref}
 \usepackage{url}
 
-
-\title{Knowing When You Do Not Know Where:\\Calibrated, Verified Resolution of Japanese Addresses}
+\title{Knowing When You Do Not Know Where:\\Selective, Registry-Verified Municipality Resolution\\for Japanese Addresses}
 \author{Sushil Raj}
 \date{November 2026}
 
@@ -19,145 +18,161 @@
 \maketitle
 
 \begin{abstract}
-When a Japanese address does not name its municipality, the town name that remains often exists in
-many places: 錦町 is a registered town in 93 municipalities. Address tools either always answer,
-turning this ambiguity into silent errors, or refuse, leaving the address unresolved. We ask whether
-a resolver can \emph{know when it does not know}: attach probabilities to candidate municipalities
-that stay calibrated on data it has never seen, answer as many addresses as possible at a chosen
-error rate, and return candidate sets with a coverage guarantee. We build this on JADEN, an offline,
-open-source rule engine that checks every decision against official registries, by adding a
-conditional-logit scorer with a ``none of these'' option, a town-frequency prior from 5 million
-registered companies, temperature calibration, a risk-controlled answer threshold and split-conformal
-candidate sets. We evaluate it in two pre-registered held-out tests on data from publishers it was
-never developed on: 321,859 welfare-facility addresses (MLIT) and 206,041 medical-facility
-addresses typed by the facilities themselves (MHLW). On town-only input in the first test, the rules
-are wrong on 0.38\% of their answers and the calibrated resolver answers 61.2\% of addresses at
-1.14\% wrong, while jageocoder, a widely used open-source geocoder, is wrong on 21.4\% of its
-answers (66,164 wrong answers against 639). In the second test, run after ten rounds of fixes to
-the rules, the rules make no wrong call on 412,082 full or prefecture-less inputs, are wrong on 0.28\%
-of their town-only answers (279, against 774 before the fixes and 45,343 for jageocoder), and the
-calibrated resolver meets its 1\% target (0.72\%). Both tests also expose where the guarantees break:
-conformal sets cover about 93.8\% for a 95\% target when the publisher changes. We also measure two ways of
-letting a large language model resolve what remains: choosing from JADEN's candidates is wrong on
-31.6\% of its answers, while proposing freely and keeping only answers that JADEN verifies removes
-391 of 399 wrong answers. The engine, data pipeline, benchmarks and every reported number are
-reproducible from the public repository.
+About one in twenty hand-typed Japanese addresses leaves out its municipality, and the district name
+that remains often exists in many municipalities. Tools that always answer turn this ambiguity into
+silent errors. We treat municipality resolution as selective prediction: JADEN, an offline open-source
+engine, checks each reading against official gazetteers and declines when several municipalities
+remain, and a calibrated scorer adds probabilities, a risk-controlled answer threshold and conformal
+candidate sets. In two pre-registered tests on data never used in development (321,859 welfare and
+206,041 medical facilities), JADEN's rules answered about half of the district-only inputs and were
+wrong on 0.38\% and 0.28\% of their answers; jageocoder answered about three quarters correctly but
+was wrong on 21--23\% of its answers. @@ABSTRACT_FAIR@@ The calibrated resolver answered 59--61\% at
+0.72--1.14\% wrong; its 1\% target held in one test and failed in the other (1.10\%), and conformal
+coverage fell about 1.2 points short of 95\% in both. A language model choosing from JADEN's
+candidates was wrong on 31.6\% of its answers. Of 13 pre-registered hypotheses, 7 held. Code,
+protocols, run logs and results are public.
 \end{abstract}
 
 % ------------------------------------------------------------------------------------------
 \section{Introduction}
 
-Address resolution is usually scored by how often a system returns the right answer. For Japanese
-addresses this hides the failure that matters in practice: an answer that is confidently wrong.
-Municipality names repeat (eleven wards are called 中央区), municipality names are also town names
-elsewhere (栄町 is a town in Chiba and a town name in 224 other places), and real records often drop
-the municipality altogether. Between 1999 and 2010 the number of municipalities fell from about 3,200
-to about 1,700, so many records still carry names that no longer exist. A tool that silently picks one
-reading sends a tax notice, an insurance claim or a delivery to the wrong local government, and nobody
-notices.
+A Japanese address names, from the largest unit down, a prefecture (都道府県), a municipality (市区町村;
+in the 20 designated cities, a ward), a district (町字, \emph{machiaza}, such as 錦町 or 栄町 or 芝公園)
+with an optional 丁目 subdivision, and block and building numbers. In practice the upper levels are often
+left out. In the register of long-term-care offices published by the Ministry of Health, Labour and
+Welfare, 13.5\% of the addresses typed by the offices themselves leave out the prefecture and 5.1\% the
+municipality (Section~\ref{sec:prevalence}); MLIT publishes every welfare-facility address without it.
+District names repeat across the country: 錦町 is a district in 93 municipalities, and 栄町 is both a
+municipality in Chiba and a district in 224 other municipalities. Between 1999 and 2010, mergers cut the
+number of municipalities from about 3,200 to about 1,700, so older records also carry names that no
+longer exist.
 
-The information needed to do better is public. MLIT lists every registered town and 丁目; Japan Post
-lists every postal code; the National Tax Agency publishes the registered address of every company. A
-resolver that consults them can often prove that only one municipality fits. When several fit, the
-remaining question is statistical: which one, and how sure can the resolver be?
+For an address without its municipality, a resolver must either pick one of the places the district
+name could mean or say that it cannot tell. Most tools pick. When records are linked to municipalities
+in bulk (for subsidies, inspections or statistics), a wrong pick is silent. We study the other
+option: \emph{selective} resolution, which answers only when the evidence settles the municipality, says
+how sure it is, and returns the remaining candidates otherwise.
 
-This paper makes four contributions.
+\paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{A calibrated resolver on top of registry-grounded rules} (Section~\ref{sec:method}).
-Each candidate municipality, and the possibility that the right one is none of them, gets a
-probability from a conditional logit; an answer threshold is chosen for a 1\% wrong-answer rate with
-a Clopper--Pearson bound, and split-conformal sets target 95\% coverage.
-\item \textbf{Two pre-registered held-out tests} (Sections~\ref{sec:protocol}--\ref{sec:results}).
-For each, the question, data, systems, measures and hypotheses were committed to the public
-repository before anything ran on the test data, and results are reported as they came out,
-including the hypotheses that failed. The second test also measures whether ten rounds of fixes made
-to the rule engine on development data generalised or overfitted.
-\item \textbf{Language models in the loop, measured} (Sections~\ref{sec:llm} and~\ref{sec:llmres}).
-Choosing from a verified candidate list does not make a model's answers reliable; letting it
-propose freely and keeping only answers the registry confirms removes 98\% of its errors.
-\item \textbf{An open, offline system and benchmarks.} JADEN (MIT licence) has no runtime
-dependencies and needs no network access; it also normalises, de-duplicates and romanises addresses.
-JA-AddrBench (4,700 surveyed school addresses and their variants) and the real-data evaluations
-(5,049,462 company and 223,161 care-office addresses) are released with it.
+\item \textbf{Registry-verified selective resolution} (Section~\ref{sec:method}). A rule engine that keeps
+every municipality where the written district exists and removes candidates only by registry facts,
+and a conditional-logit scorer with a ``none of these'' option on top of it, with a risk-controlled
+answer threshold and split-conformal candidate sets.
+\item \textbf{Two pre-registered held-out tests} (Sections~\ref{sec:protocol}--\ref{sec:results}). For each,
+the question, frozen test files, systems, measures and directional hypotheses were committed to the
+public repository before any system ran on the test data, and results are reported as they came out.
+The second test also measures whether ten rounds of rule fixes made between the tests generalised.
+\item \textbf{Analyses made after the tests, reported as such} (Section~\ref{sec:posthoc}): a comparison
+with jageocoder on equal terms (abstaining, and at matched coverage), a corrected calibration procedure,
+a check for leakage through the prior, and intervals that respect repeated addresses.
+\item \textbf{Language models in the loop} (Section~\ref{sec:llmres}): choosing from a verified candidate
+list does not make a model reliable; checking its free answers against the registry removes most of its
+errors, though part of that effect comes from a confidence filter.
 \end{enumerate}
+JADEN (MIT licence) has no runtime dependencies and needs no network access. All code, protocols, run
+logs and result files are in the repository (Section~\ref{sec:repro}).
 
 % ------------------------------------------------------------------------------------------
 \section{Related work}
 
-\paragraph{Japanese address tools.} Geolonia's normalize-japanese-addresses and jageocoder
-\cite{jageocoder} normalise and geocode Japanese addresses against MLIT and Digital Agency data; both
-return their best match without a measure of ambiguity.
+\paragraph{Japanese address infrastructure and tools.} The Digital Agency maintains the Address Base
+Registry (アドレス・ベース・レジストリ, ABR) with a master of districts (町字マスター) and publishes an
+open-source geocoder for it, \texttt{abr-geocoder} \cite{abr}. The Center for Spatial Information Science
+at the University of Tokyo has long offered CSV address matching against MLIT's location reference data
+\cite{csis}; its output includes a confidence level (iConf) that marks addresses whose place names are
+unique at two or more levels. jageocoder \cite{jageocoder}, by the same developer, returns every node whose
+match is equally good, so ambiguity is visible to the caller; Geolonia's normalize-japanese-addresses
+\cite{geolonia} returns one normalised reading. The GeoNLP project \cite{geonlp} provides place-name
+dictionaries and geotagging for Japanese text. Hisamoto et al.\ \cite{hisamoto} survey geocoding as the
+disambiguation of place references, and historical address geocoding has been built for Meiji-era Tokyo
+\cite{ishikawa}. What these tools do not provide is a probability with a stated error rate for the
+municipality when the address does not name it; that is the gap this paper addresses.
 
-\paragraph{Geocoding and language models.} End-to-end systems generate coordinates directly: ReaGeo
-\cite{reageo} decodes geohashes with chain-of-thought and a distance reward. Masis and O'Connor
-\cite{masis} ground compositional location references by combining LLM reasoning with geoparser
-knowledge bases. MESSY STREETS \cite{messy} shows that the gap between commercial and open-source
-geocoders on messy real addresses comes mostly from returning no candidate at all, and GeoHaluBench
-\cite{geohalu} shows that LLMs hallucinate geographic facts. Closest to our design, AddrKG-LLM
-\cite{addrkg} retrieves candidate communities with a knowledge graph and lets an on-premise LLM choose
-only among them. We add calibrated probabilities with guarantees, compare choosing with verified
-proposing, and test on pre-registered held-out data.
+\paragraph{Toponym resolution and record linkage.} Resolving an ambiguous place name to one referent is
+toponym resolution \cite{leidner}; population or frequency priors are a standard signal, and evaluation
+practice has been surveyed critically \cite{gritta}. For Japanese, ATD-MCL annotates geo-entity
+mentions, coreference and database links in travelogues \cite{atdmcl}. Our town-frequency prior is such a
+signal, counted from registered corporations. Deciding whether two records refer to the same place is
+record linkage \cite{fellegi}, the setting in which address resolution is usually deployed.
 
-\paragraph{Selective prediction and calibration.} Reject options go back to Chow \cite{chow};
-selective classification with guaranteed risk \cite{geifman} chooses a confidence threshold whose
-risk upper bound meets a target. Temperature scaling \cite{guo} calibrates a scorer with one
+\paragraph{Geocoding and language models.} End-to-end systems generate coordinates directly
+\cite{reageo} or ground compositional location references with an LLM and a geoparser's knowledge base
+\cite{masis}. MESSY STREETS \cite{messy} finds that the gap between commercial and open-source geocoders
+on messy real addresses comes mostly from returning no candidate at all, and GeoHaluBench \cite{geohalu}
+shows that LLMs hallucinate geographic facts. AddrKG-LLM \cite{addrkg} retrieves candidate communities
+with a knowledge graph and lets an on-premise LLM choose only among them.
+
+\paragraph{Selective prediction and calibration.} Reject options go back to Chow \cite{chow}; selective
+classification with guaranteed risk \cite{geifman} and Learn-then-Test \cite{ltt} choose thresholds whose
+risk is controlled with high probability. Temperature scaling \cite{guo} calibrates a scorer with one
 parameter. Split conformal prediction \cite{vovk,angelopoulos} gives prediction sets with marginal
 coverage under exchangeability, and pipeline versions extend it to multi-stage language systems
-\cite{pasc}. Exchangeability is exactly what breaks when development and test data come from
-different publishers, which our tests measure.
+\cite{pasc}. Exchangeability is exactly what breaks when calibration and test data come from different
+publishers, which our tests measure.
 
 % ------------------------------------------------------------------------------------------
 \section{Method}\label{sec:method}
 
 \subsection{The rule engine}
-JADEN parses an address into prefecture, municipality, town, 丁目 and block numbers, and checks each
-against official data: the MIC municipality list (1,918 entries including designated-city wards),
-MLIT's 191,100 registered towns and 丁目, Japan Post's postal codes and 1,829 former municipality
-names. When the municipality is missing, every municipality where the written town is registered
-becomes a candidate; candidates are removed only by registry facts (the 丁目 does not exist there,
-the postal code belongs elsewhere). One survivor is \textsc{accepted}; several are
-\textsc{ambiguous}, with the list. On every active company in Japan (5,049,462 registered addresses)
-the rules name the row's municipality for 99.98\% of full addresses, with 6 wrong answers, each a row
-whose own municipality code contradicts its address; on 223,161 hand-typed care-office addresses with
-the prefecture and municipality columns added, 99.87\% with 4 wrong.
+JADEN parses an address into prefecture, municipality, district, 丁目 and block numbers and checks each
+against official data: the MIC list of municipality codes (1,918 entries including designated-city
+wards), MLIT's 大字・町丁目レベル位置参照情報 (a gazetteer of 191,100 districts and 丁目 with
+representative points), Japan Post's postal-code list and 1,829 former municipality names. The gazetteer
+is not complete: some local names in use are missing from it. When the municipality is missing, every
+municipality where the written district exists becomes a candidate; candidates are removed only by
+registry facts (the written 丁目 does not exist there, the postal code belongs elsewhere). One survivor
+is \textsc{accepted}; several are \textsc{ambiguous}, with the list.
+
+The rules were developed on two registers, which are therefore \emph{development} results, not
+evaluations: on the 5,049,462 active corporations of the National Tax Agency register, the rules name
+the row's municipality for 99.98\% of full addresses (6 wrong, each a row whose own code contradicts its
+address); on the 223,161 care-office addresses as typed, 97.88\% (13 wrong), and 99.87\% (4 wrong) once
+the row's prefecture and municipality columns are put in front.
 
 \subsection{Calibrated resolution}
-\paragraph{Candidates and evidence.} For an input, the candidates are JADEN's accepted municipality or
-its ambiguous list (at most 60). Each candidate $c$ gets a feature vector $x_c$: the number of
-companies registered in the matched town there (log) and its share among the candidates; the number
-of companies in the municipality (log); whether the town and the written 丁目 exist there; whether
-the rules accepted it or the municipality was written; whether its name is used in the input as a
-town name; and, when given, whether the organisation's name mentions the municipality or the
-prefecture. The input also gets a vector $g$ describing the evidence that the answer is none of the
-candidates.
+\paragraph{Candidates and evidence.} The candidates of an input are JADEN's accepted municipality or its
+ambiguous list; very long lists are cut to 60, keeping municipalities whose own name is written and then
+the districts with the most corporations. Each candidate $c$ gets a feature vector $x_c$: the number of
+corporations registered in the matched district there (log) and its share among the candidates; the
+number in the municipality (log); whether the district and the written 丁目 exist there; whether the
+rules accepted it or the municipality was written; whether its name is used in the input as a district
+name; and, when given, whether the organisation's name mentions the municipality or the prefecture. A
+vector $g$ describes the evidence that the answer is none of the candidates.
 
 \paragraph{Model.} A conditional logit with an outside option:
 \begin{equation}
 P(c) = \frac{e^{w\cdot x_c}}{Z},\qquad P(\text{none}) = \frac{e^{v\cdot g}}{Z},\qquad
 Z = \sum_{c} e^{w\cdot x_c} + e^{v\cdot g}.
 \end{equation}
-The outside option matters: the registry does not hold every local name, so a single candidate is
-not certain. Parameters are fitted by maximum likelihood (L-BFGS, L2 penalty $10^{-3}$) on 359,994
-inputs built from 120,000 sampled company addresses (the town part alone, prefecture plus town part,
-and the full address, each with the company's name). The town prior counts the 4,977,458 companies
-registered in each of 107,653 towns, leaving each training row's own company out.
+The outside option matters because the gazetteer is incomplete: a single candidate is not certain.
+Parameters are fitted by maximum likelihood (L-BFGS, L2 penalty $10^{-3}$) on @@TRAIN_N@@ inputs built
+from 120,000 sampled corporation addresses (the district part alone, prefecture plus district part, and
+the full address, each with the corporation's name). The prior counts the 4,977,458 corporations
+registered in each of 107,653 districts, leaving each training row's own corporation out.
 
-\paragraph{Calibration and guarantees.} On half of the care offices (304,137 inputs, split by office
-number) a single temperature is fitted. The answer threshold $\tau$ is the lowest probability for
-which, for each input type, the 95\% Clopper--Pearson upper bound of the wrong-answer rate among
-answers with $p \ge \tau$ is at most 1\% ($\tau = 0.882$; 0.878 with the name). Conformal quantiles
-$\hat q$ per input type give sets $\{c : 1 - P(c) \le \hat q\}$ that should hold the right option,
-possibly ``none'', 95\% of the time. The other half of the care offices (305,913 inputs) checks
-everything chosen.
+\paragraph{Calibration.} The care offices are split in half by office number. On the calibration half
+(304,137 inputs) a single temperature is fitted; the answer threshold $\tau$ is the lowest probability
+for which, for each input type, the 95\% Clopper--Pearson upper bound of the wrong-answer rate among
+answers with $p \ge \tau$ is at most 1\% ($\tau = 0.882$; 0.878 with the name); conformal quantiles
+$\hat q$ per input type give sets $\{c : 1 - P(c) \le \hat q\}$ meant to hold the right option, possibly
+``none'', 95\% of the time. The other half (305,913 inputs) is a development check. Two weaknesses of
+this procedure, found after the tests, are analysed in Section~\ref{sec:recal}.
+
+\paragraph{A change between the tests.} After test~1, a defect in the name feature was fixed: the
+prefecture-mention check matched 京都 inside 東京都. The model's weights were not refitted, so test~2 ran
+the corrected feature with the weights fitted on the defective one.
 
 \subsection{Language models in the loop}\label{sec:llm}
-For inputs the calibrated resolver does not answer, a language model receives the address and the
-organisation's name. \emph{Choose}: JADEN's candidates are listed and the model returns one or
-declines. \emph{Propose and verify}: the model names the municipality freely; the answer is kept only
-if it is one of JADEN's candidates and the model states at least 80\% confidence. \emph{Alone}: the
-free answer, unverified. A development trial on 400 ambiguous care addresses, run before any test
-call, motivated the propose-and-verify system; it was added to the first protocol as a dated
-amendment.
+For town-only inputs the calibrated resolver with the name does not answer, a language model
+(\texttt{claude-haiku-5-5}, and \texttt{claude-sonnet-5-5} in the amendment, called through the Claude
+Code command line in November 2026 with default settings, 20 addresses per call) receives the address
+and the facility's name. \emph{Choose}: JADEN's candidates are listed and the model returns one or
+declines, with a confidence. \emph{Propose and verify}: the model names the municipality freely; the
+answer is kept only if it is one of JADEN's candidates and the model states a confidence of at least 80.
+\emph{Alone}: the free answer, unverified. A development trial on 400 ambiguous care addresses, run before
+any test call, motivated propose-and-verify; it was added to the first protocol as a dated amendment.
+Prompts and raw answers are in the repository.
 
 % ------------------------------------------------------------------------------------------
 \section{Evaluation protocol}\label{sec:protocol}
@@ -168,284 +183,335 @@ amendment.
 \toprule
 Role & Data & Size \\
 \midrule
-Prior and training & National Tax Agency corporate register (2026-10-30) & 5,049,462 companies \\
+Prior and training & National Tax Agency corporation register (2026-10-30) & 5,049,462 corporations \\
 Calibration / check & MHLW care-office register (June 2026), split by office number & 304,137 / 305,913 inputs \\
+Rule development & both of the above, and JA-AddrBench (4,700 school addresses) & \\
 \textbf{Test 1} & \textbf{MLIT 国土数値情報 welfare facilities P14 (2023)} & \textbf{321,859 facilities} \\
-\textbf{Test 2} & \textbf{MHLW 医療情報ネット medical facilities (2026-06-01)} & \textbf{206,041 facilities} \\
+\textbf{Test 2} & \textbf{MHLW 医療情報ネット medical facilities (2026-06-01)} & \textbf{206,043 facilities} \\
 \bottomrule
 \end{tabular}
-\caption{Data. Each test file was frozen by SHA-256 in a protocol committed before the run.}
+\caption{Data. For test 2, the development data also include test 1's file. Both test files are frozen by
+their full SHA-256 in the protocols.}
 \label{tab:data}
 \end{table}
 
-Both tests follow the same rules (Table~\ref{tab:data}). A protocol stating the question, the frozen
-test file, the systems, the measures and directional hypotheses is committed to the public
-repository before any system runs on the test data; the commit is the timestamp. No test row is used
-for training, calibration, thresholds or code changes; the test is run once, and any rerun is
-reported. An answer is right when it names the row's municipality or a ward of the row's designated
-city; we report right, wrong and no-answer counts and the Wilson 95\% interval of the wrong-answer
-rate among answers.
+Both tests follow the same rules (Table~\ref{tab:data}). A protocol stating the question, the frozen test
+files, the systems, the measures and directional hypotheses is committed to the public repository before
+any system runs on the test data; commit times, the times each run started and ended, and the run logs
+are published with the results. No test row is used for training, calibration, thresholds or code
+changes before the results are written; each test is run once, and every deviation (tool concurrency, a
+retry of 50 network failures of one tool) is listed with the results. An answer is right when it names
+the row's municipality or a ward of the row's designated city.
 
 \paragraph{Test 1} (protocol of 19 November 2026). MLIT publishes welfare-facility addresses
-\emph{without} the municipality, with the municipality code alongside. Each facility gives a
-town-only input (the address as published), a prefecture plus address input and a full input; the
-facility name is side information. The language-model systems run on random samples of 1,000 inputs.
+\emph{without} the municipality, with the municipality code alongside. Each facility gives a town-only
+input (the address as published), a prefecture-plus-address input and a full input; the facility name
+is side information. 318,578 facilities carry a code that is still current and are scored. Because the
+welfare file's largest category includes care facilities that may also be in the development data,
+results are also reported for the categories that cannot be care offices (59,503 facilities). The
+language-model systems run on random samples of 1,000 inputs.
 
-\paragraph{Test 2} (protocol of 25 November 2026). After test~1, the rule engine went through ten
-rounds of fixes found by audits on development data. Test~2 asks whether the final engine keeps its
-error rate on addresses typed by the facilities themselves, a different publisher and kind of
-facility, and whether those fixes generalised. It compares the final engine with the engine at the
-test~1 commit on the same inputs, and reports results on the 180,655 facilities whose address matches
-no development address. Inputs are the full address as published, the address without the
-prefecture, and the town part alone. No language model is run.
+\paragraph{Test 2} (protocol of 25 November 2026). The medical-facility tables give addresses typed by the
+facilities themselves, with the municipality. Inputs are the full address as published, the address
+without the prefecture, and the address with prefecture, county and municipality stripped (so the
+town-only inputs of this test are derived, not observed). The engine at the test~1 commit runs on the same
+inputs. Results are also reported for the 180,655 facilities whose full address, after Unicode
+normalisation and removal of spaces, matches no development address; this catches only exact repeats.
+No language model is run.
 
 % ------------------------------------------------------------------------------------------
 \section{Results}\label{sec:results}
 
-\subsection{Test 1: welfare facilities}
-
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{4pt}
-\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrlrl@{}}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrrlrl@{}}
 \toprule
-Input & System & Right & Wrong & Wrong among answers (95\% CI) & ECE & Conformal cov.\ / size \\
+Input & System & Answered & Right & Wrong & Wrong among answers (95\% CI) & ECE & Conformal cov.\ / size \\
 \midrule
-town only & JADEN rules & 52.16\% & 639 & 0.38\% (0.35--0.41) & -- & -- \\
- & JADEN calibrated & 59.78\% & 2,115 & 1.10\% (1.05--1.15) & 0.015 & 93.72\% / 2.39 \\
- & JADEN calibrated + name & 61.20\% & 2,255 & 1.14\% (1.10--1.19) & 0.007 & 93.83\% / 2.16 \\
- & jageocoder & 76.46\% & 66,164 & 21.36\% (21.22--21.50) & -- & -- \\
- & Geolonia & 0.03\% & 6,256 & 98.40\% (98.06--98.68) & -- & -- \\
+town only & JADEN rules & 52.36\% & 52.16\% & 639 & 0.38\% (0.35--0.41) & -- & -- \\
+ & JADEN calibrated & 60.44\% & 59.78\% & 2,115 & 1.10\% (1.05--1.15) & 0.015 & 93.72\% / 2.39 \\
+ & JADEN calibrated + name & 61.91\% & 61.20\% & 2,255 & 1.14\% (1.10--1.19) & 0.007 & 93.83\% / 2.16 \\
+ & jageocoder & 97.23\% & 76.46\% & 66,164 & 21.36\% (21.22--21.50) & -- & -- \\
+ & Geolonia & 2.00\% & 0.03\% & 6,256 & 98.40\% (98.06--98.68) & -- & -- \\
 \midrule
-with prefecture & JADEN rules & 81.33\% & 374 & 0.14\% (0.13--0.16) & -- & -- \\
- & JADEN calibrated + name & 86.93\% & 799 & 0.29\% (0.27--0.31) & 0.004 & 94.11\% / 0.96 \\
- & jageocoder & 2.51\% & 4,758 & 37.28\% (36.44--38.12) & -- & -- \\
- & Geolonia & 0.03\% & 194 & 64.67\% (59.10--69.86) & -- & -- \\
+with prefecture & JADEN rules & 81.45\% & 81.33\% & 374 & 0.14\% (0.13--0.16) & -- & -- \\
+ & JADEN calibrated + name & 87.18\% & 86.93\% & 799 & 0.29\% (0.27--0.31) & 0.004 & 94.11\% / 0.96 \\
+ & jageocoder & 4.01\% & 2.51\% & 4,758 & 37.28\% (36.44--38.12) & -- & -- \\
+ & Geolonia & 0.09\% & 0.03\% & 194 & 64.67\% (59.10--69.86) & -- & -- \\
 \midrule
-full & JADEN rules & 99.98\% & 0 & 0.00\% & -- & -- \\
- & jageocoder & 100.00\% & 0 & 0.00\% & -- & -- \\
- & Geolonia & 100.00\% & 0 & 0.00\% & -- & -- \\
+full & JADEN rules & 99.98\% & 99.98\% & 0 & 0.00\% & -- & -- \\
+ & jageocoder & 100.00\% & 100.00\% & 0 & 0.00\% & -- & -- \\
+ & Geolonia & 100.00\% & 100.00\% & 0 & 0.00\% & -- & -- \\
 \bottomrule
 \end{tabular}}
-\caption{Test 1 (318,578 inputs per row group with a current municipality code).}
+\caption{Test 1 (318,578 facilities per input type). Answered and right are shares of all inputs; wrong is
+a count.}
 \label{tab:test1}
 \end{table}
 
-Table~\ref{tab:test1} shows the trade-off the tools make. With the full address, all three are
-right on essentially every input. Without the municipality, jageocoder answers almost everything and
-Geolonia almost nothing; with the prefecture written before the town, both stop at the prefecture.
-Forced to answer every town-only input, JADEN's top candidate would be about as often wrong as
-jageocoder's answer (about 20\%); the difference is that JADEN's probability says which answers carry
-that risk (Figure~\ref{fig:curves}).
+\begin{table}[t]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrrlrl@{}}
+\toprule
+Input & System & Answered & Right & Wrong & Wrong among answers (95\% CI) & ECE & Conformal cov.\ / size \\
+\midrule
+full & JADEN rules (final) & 99.95\% & 99.95\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & JADEN rules (test 1 engine) & 99.95\% & 99.95\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & jageocoder & 99.97\% & 99.97\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & Geolonia & 99.99\% & 99.99\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+\midrule
+no prefecture & JADEN rules (final) & 99.87\% & 99.87\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & JADEN rules (test 1 engine) & 99.88\% & 99.88\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
+ & jageocoder & 99.97\% & 99.97\% & 2 & 0.001\% (0.000--0.004) & -- & -- \\
+ & Geolonia & 99.99\% & 99.97\% & 50 & 0.024\% (0.018--0.032) & -- & -- \\
+\midrule
+town only & JADEN rules (final) & 48.93\% & 48.80\% & 279 & 0.28\% (0.25--0.31) & -- & -- \\
+ & JADEN rules (test 1 engine) & 49.22\% & 48.85\% & 774 & 0.76\% (0.71--0.82) & -- & -- \\
+ & JADEN calibrated & 59.01\% & 58.59\% & 880 & 0.72\% (0.68--0.77) & 0.006 & 93.77\% / 2.33 \\
+ & JADEN calibrated + name & 60.32\% & 59.80\% & 1,075 & 0.87\% (0.82--0.92) & 0.005 & 93.72\% / 2.12 \\
+ & jageocoder & 97.83\% & 75.80\% & 45,343 & 22.52\% (22.34--22.70) & -- & -- \\
+ & Geolonia & 2.19\% & 0.06\% & 4,385 & 97.47\% (96.97--97.89) & -- & -- \\
+\bottomrule
+\end{tabular}}
+\caption{Test 2 (206,041 facilities; 205,830 town-only inputs). On the 180,655 unseen facilities the final
+rules are wrong on 0\% of full and prefecture-less answers and on 0.30\% (0.26--0.33) of town-only
+answers.}
+\label{tab:test2}
+\end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{risk_coverage.png}\\[4pt]
-\includegraphics[width=0.42\linewidth]{reliability.png}
-\caption{Test 1. Top: wrong-answer rate among answers against the share of inputs answered, as the
-threshold varies, for town-only, prefecture plus town and full input; single points for the tools
-that always answer. Bottom: reliability of the calibrated resolver's top probability (town only).}
-\label{fig:curves}
-\end{figure}
+\subsection{Both tests}
+Tables~\ref{tab:test1} and~\ref{tab:test2} show the same pattern on two publishers' data. With the full
+address, every tool is right on essentially every input; JADEN declines slightly more often (0.05\% in
+test~2) and is never wrong. Without the prefecture (test~2), Geolonia's 50 wrong answers are all
+municipality names that exist in two prefectures (府中市: Tokyo or Hiroshima; 伊達市: Hokkaido or
+Fukushima). With only the district, the tools separate. jageocoder answers almost every input and is
+right on about three quarters of all inputs, far more than JADEN's 49--62\%; it is also wrong on 21--23\%
+of the inputs it answers. JADEN's rules answer about half and are wrong on 0.28--0.38\% of those. These
+are different operating points, and comparing wrong-answer counts alone flatters the tool that declines;
+Section~\ref{sec:fair} compares them on equal terms. Geolonia is not designed for district-only input and
+answers almost none of it.
+
+The calibrated resolver answers 8--11 points more than the rules. Its threshold, chosen on care-office
+data for a 1\% wrong-answer rate, gave 1.10\% (1.05--1.15) in test~1 and 0.72\% (0.68--0.77) in test~2.
+Its probabilities stay well calibrated (ECE 0.005--0.015), but conformal sets meant to cover 95\% covered
+93.7--93.8\% in both tests. JADEN's offline points lie a median 165\,m (丁目 level) and 380\,m
+(district level) from the medical publisher's own coordinates.
 
 \subsection{Language models (test 1)}\label{sec:llmres}
 
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lrrrl@{}}
+\begin{tabular}{@{}llrll@{}}
 \toprule
-System (1,000-input sample) & Answered & Wrong (95\% CI) & Non-existent & Kept by verifier: answered / wrong \\
+System & Filter on the model's answers & Kept & Wrong among kept (95\% CI) & Right answers discarded \\
 \midrule
-Haiku chooses from JADEN's list & 526 & 166 (27.7--35.7\%) & 0 & -- \\
-Haiku proposes, JADEN verifies & 478 & 184 (34.2--42.9\%) & 4 & 172 / 10 (3.2--10.4\%) \\
-Sonnet proposes, JADEN verifies & 851 & 399 (43.6--50.3\%) & 2 & 303 / 8 (1.3--5.1\%) \\
-Haiku alone (random town-only) & 624 & 166 (23.3--30.2\%) & 6 & -- \\
-Sonnet alone (random town-only) & 957 & 340 (32.6--38.6\%) & 2 & -- \\
+@@LLM_ROWS@@
 \bottomrule
 \end{tabular}
-\caption{Language models on the town-only inputs the calibrated resolver leaves unanswered
-(first three rows) and on random town-only inputs. ``Non-existent'': answers naming a municipality
-that does not exist.}
+\caption{Language models on the 1,000-input samples of test 1. ``Remainder'': town-only inputs the
+calibrated resolver with the name leaves unanswered; ``random'': random town-only inputs. Rows with a
+filter other than ``none'' and the pre-registered system rows (choose; propose with both filters) are
+separated here to show what each filter does; only the latter were pre-registered.}
 \label{tab:llm}
 \end{table}
 
-Table~\ref{tab:llm}: choosing from JADEN's list anchors the model without making it reliable; it
-answers more often and is wrong as often as when it answers freely. Verification works the other
-way: a wrong free answer is usually a municipality where the town does not exist, which the registry
-rejects. The larger model is wrong more often on its own (47\% vs 38\% of its answers on the same
-inputs) and less often once verified (2.6\% vs 5.8\%). The non-existent answers are outdated or
-mismatched places: 茶屋町 (merged into 倉敷市 in 2005), 浜松市中区 (abolished in 2024), 伊丹市 placed
-in 大阪府. Projected from the sample, adding Sonnet's verified proposals to the calibrated resolver
-gives 71.8\% right at 1.37\% wrong among answers.
-
-\subsection{Test 2: medical facilities}
-
-\begin{table}[t]
-\centering\footnotesize\setlength{\tabcolsep}{4pt}
-\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrlrl@{}}
-\toprule
-Input & System & Right & Wrong & Wrong among answers (95\% CI) & ECE & Conformal cov.\ / size \\
-\midrule
-full & JADEN rules (final) & 99.95\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
- & JADEN rules (before the audits) & 99.95\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
- & jageocoder & 99.97\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
- & Geolonia & 99.99\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
-\midrule
-no prefecture & JADEN rules (final) & 99.87\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
- & JADEN rules (before the audits) & 99.88\% & 0 & 0.000\% (0.000--0.002) & -- & -- \\
- & jageocoder & 99.97\% & 2 & 0.001\% (0.000--0.004) & -- & -- \\
- & Geolonia & 99.97\% & 50 & 0.024\% (0.018--0.032) & -- & -- \\
-\midrule
-town only & JADEN rules (final) & 48.80\% & 279 & 0.28\% (0.25--0.31) & -- & -- \\
- & JADEN rules (before the audits) & 48.85\% & 774 & 0.76\% (0.71--0.82) & -- & -- \\
- & JADEN calibrated & 58.59\% & 880 & 0.72\% (0.68--0.77) & 0.006 & 93.77\% / 2.33 \\
- & JADEN calibrated + name & 59.80\% & 1,075 & 0.87\% (0.82--0.92) & 0.005 & 93.72\% / 2.12 \\
- & jageocoder & 75.80\% & 45,343 & 22.52\% (22.34--22.70) & -- & -- \\
- & Geolonia & 0.06\% & 4,385 & 97.47\% (96.97--97.89) & -- & -- \\
-\bottomrule
-\end{tabular}}
-\caption{Test 2 (206,041 inputs per group; 205,830 town-only). On the 180,655 facilities whose address
-matches no development address the picture is the same: the final rules are wrong on 0\% of full and
-prefecture-less answers and 0.30\% (0.26--0.33) of town-only answers.}
-\label{tab:test2}
-\end{table}
-
-Table~\ref{tab:test2}. With the prefecture or the full address, every tool is right on nearly every
-input, and the differences are in the few hard cases. JADEN declines 0.13\% of the prefecture-less
-inputs and is wrong on none; Geolonia's 50 wrong answers are all municipality names that exist in two
-prefectures (府中市 in Tokyo or Hiroshima, 伊達市 in Hokkaido or Fukushima), where it silently picks
-one. On town-only input the pattern of test~1 repeats on a different publisher's hand-typed text:
-jageocoder answers three quarters of the inputs and is wrong on 22.5\% of its answers; JADEN's rules
-answer half and are wrong on 0.28\%. The calibrated resolver's threshold, chosen on care-office data,
-now holds its 1\% target (0.72\%), and its calibration error is 0.006. Its conformal sets again fall
-short of 95\%, by the same margin as in test~1. JADEN's offline points lie a median 165\,m (丁目
-level) and 380\,m (town level) from the publisher's own coordinates.
-
-\paragraph{Did the audits overfit?} Between the two tests the rules went through ten rounds of fixes
-found on development data. On the same test inputs, the fixes cut town-only wrong answers from 774 to
-279 (484 became no answer, 11 became right), at a cost of 138 right answers that became no answer. On
-full and prefecture-less input both engines make no wrong call, but the final engine answers 17 fewer
-(28 lost, 11 gained, of 206,041), so the pre-registered hypothesis that it would answer at least as
-many fails. All 28 losses have one form: a registered town followed directly by a building name and
-floor, with no house number (名駅ミッドランドスクエア8階). A check added in the audits, which reads text
-after the municipality that is neither a registered town nor numbered as a name rather than an
-address, now rejects them. The test therefore found both what the fixes gained and one specific thing
-they broke.
+Table~\ref{tab:llm}. Given JADEN's list, Haiku answered 526 of the 1,000 remainder inputs and was wrong on
+166 (31.6\%); answering freely on random inputs, it was wrong on 26.6\%, so the list did not make it more
+reliable. Keeping only free answers that are among JADEN's candidates removes most wrong answers; adding
+the confidence filter, which the choose system did not get, removes more but also discards many right
+answers. The comparison that isolates verification is the row ``in JADEN's candidates'': @@LLM_VERIFY_SENTENCE@@
+Free answers also named municipalities that no longer exist (茶屋町, merged into 倉敷市 in 2005;
+浜松市中区, abolished in 2024): 2 to 6 in each 1,000-input sample.
 
 \subsection{Hypotheses}
 
-Table~\ref{tab:hyp} lists every pre-registered hypothesis of both tests with its outcome. Of the 13,
-seven held, one held for one model and failed narrowly for the other, two failed narrowly, and
-three failed (one of them in its first part only).
-
 \begin{table}[t]
 \centering\small
-\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.52\linewidth}>{\raggedright\arraybackslash}p{0.33\linewidth}@{}}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.5\linewidth}>{\raggedright\arraybackslash}p{0.35\linewidth}@{}}
 \toprule
 & Pre-registered statement & Result \\
 \midrule
 1-H1 & Rules give fewer wrong town-only answers than jageocoder and Geolonia & \textbf{Held}: 639 vs 66,164 and 6,256 \\
 1-H2 & Calibration transfers: ECE $\le 0.03$ & \textbf{Held}: 0.015 (0.007 with name) \\
-1-H3 & The 1\% threshold's test wrong-answer rate has a 95\% interval including or below 1\% & \textbf{Failed narrowly}: 1.10\% (1.05--1.15) \\
+1-H3 & The 1\% threshold's wrong-answer rate has a 95\% interval including or below 1\% & \textbf{Failed}: 1.10\% (1.05--1.15). On the categories that cannot be care offices: 1.02\% (0.92--1.13) \\
 1-H4 & Calibrated answers more than rules; the name adds more & \textbf{Held}: +7.6 points, +1.4 with name \\
 1-H5 & Conformal 95\% sets cover $\ge 95\%$ & \textbf{Failed}: 93.7\% \\
-1-H6 & A model choosing from JADEN's list is wrong on $<5\%$; alone it is wrong more often and invents places & \textbf{First part failed}: 31.6\%; second held \\
-1-H7 & Propose-and-verify: upper bound $\le 10\%$; most free errors removed & \textbf{Held} for Sonnet (2.6\%); \textbf{failed narrowly} for Haiku (5.8\%, bound 10.4\%) \\
+1-H6 & Choosing from JADEN's list: wrong on $<5\%$ of answers; alone, the model is wrong more often and names municipalities that do not exist & \textbf{Failed}: 31.6\% wrong when choosing; alone, Haiku was wrong less often (26.6\%), though it named 6 non-existent municipalities \\
+1-H7 & (amendment) Propose and verify: upper bound $\le 10\%$; most free errors removed & \textbf{Held for Sonnet} (2.6\%, bound 5.1\%); \textbf{failed for Haiku} (5.8\%, bound 10.4\%) \\
 \midrule
-2-H1 & Full addresses: rules answer $\ge 99.5\%$; wrong-rate upper bound $\le 0.05\%$ & \textbf{Held}: 99.95\%, 0 wrong (bound 0.002\%) \\
-2-H2 & No prefecture: bound $\le 0.1\%$; fewer wrong than both other tools & \textbf{Held}: 0 vs 50 (Geolonia) and 2 (jageocoder) \\
+2-H1 & Full addresses: rules answer $\ge 99.5\%$; wrong-rate bound $\le 0.05\%$ & \textbf{Held}: 99.95\%, 0 wrong (bound 0.002\%) \\
+2-H2 & No prefecture: bound $\le 0.1\%$; fewer wrong than both other tools & \textbf{Held}: 0 vs 50 and 2 \\
 2-H3 & Town only: bound $\le 0.5\%$; fewer wrong than both other tools & \textbf{Held}: 0.28\% (0.25--0.31); 279 vs 45,343 and 4,385 \\
 2-H4 & The 1\% threshold's interval includes or lies below 1\% & \textbf{Held}: 0.72\% (0.68--0.77) \\
 2-H5 & Conformal 95\% sets cover $\ge 95\%$ & \textbf{Failed}: 93.8\% \\
-2-H6 & The audits generalise: on full and prefecture-less input, no more wrong and no fewer right answers & \textbf{Failed narrowly}: 0 wrong in both, but 17 fewer right of 206,041 \\
+2-H6 & The rule fixes generalise: on full and prefecture-less input, no more wrong and no fewer right answers & \textbf{Failed}: 0 wrong in both, but 17 fewer right of 206,041 \\
 \bottomrule
 \end{tabular}
-\caption{Pre-registered hypotheses and outcomes.}
+\caption{Pre-registered hypotheses and outcomes: 7 held, 1 held for one model and failed for the other,
+5 failed. 1-H1, 2-H2 and 2-H3 compare wrong-answer counts between a tool that declines and tools that
+answer almost everything; Section~\ref{sec:fair} compares them on equal terms.}
 \label{tab:hyp}
 \end{table}
+
+Table~\ref{tab:hyp} lists every pre-registered hypothesis. Hypotheses that compare wrong-answer counts with
+tools that rarely decline (1-H1, 2-H2, 2-H3) were close to guaranteed by design; the informative ones are
+those about calibration, error control and coverage (1-H2, 1-H3, 1-H5, 2-H4, 2-H5), and three of those five
+failed.
+
+% ------------------------------------------------------------------------------------------
+\section{Analyses after the tests}\label{sec:posthoc}
+
+The analyses in this section were not pre-registered. They were made after both tests, in response to a
+critical review, from the stored outputs of the tests or by rerunning a system on the same frozen inputs.
+
+\subsection{JADEN and jageocoder on equal terms}\label{sec:fair}
+@@FAIR_TEXT@@
+
+\subsection{A corrected calibration procedure}\label{sec:recal}
+@@RECAL_TEXT@@
+
+\subsection{Leakage through the prior}
+@@LEAK_TEXT@@
+
+\subsection{Repeated addresses}
+Several facilities can share one address (clinics in one building), so the inputs are not independent.
+A bootstrap over clusters of identical input texts @@CLUSTER_TEXT@@
+
+\subsection{Did the rule fixes overfit?}
+Between the tests the rules went through ten rounds of fixes found by reviewing failures on development
+data. On test~2's inputs, the fixes cut town-only wrong answers from 774 to 279 (484 became no answer, 11
+became right), at a cost of 138 right answers that became no answer. On full and prefecture-less input
+both engines make no wrong call, but the final engine answers 17 fewer (28 lost, 11 gained, of 206,041).
+All 28 losses have one form: a registered district followed directly by a building name and floor, with no
+house number (名駅ミッドランドスクエア8階), which a check added in the fixes now reads as a name rather
+than an address. Test~1's error analysis had found two rule defects; rerunning its 639 wrong town-only
+answers with them fixed removes 431 (410 become no answer, 21 right).
+
+\subsection{How often is the municipality missing?}\label{sec:prevalence}
+In the care-office register, 30,219 of 223,161 typed addresses (13.5\%) leave out the prefecture, 11,380
+(5.1\%) the municipality, and 10,434 (4.7\%) both (a text check, so approximate).
 
 % ------------------------------------------------------------------------------------------
 \section{Analysis}
 
-\paragraph{Where the calibrated resolver is wrong (test 1).} Of its 2,115 wrong town-only answers,
-1,082 (51\%) are inputs whose right municipality is not among the candidates at all, and 1,033 are
-ranking errors among candidates (築地4-2-19 read as Tokyo's 築地 for a facility in Amagasaki). Within
-the first group one pattern dominates: an address that \emph{starts with a municipality name}
-(富岡町1-56-26-2). In the care data such inputs nearly always do name their municipality (9,491
-answered, 1.0\% wrong); in the welfare file the municipality is never written, so they are towns that
-share a municipality's name (590 answered, 82\% wrong). This is the distribution shift behind the
-failed coverage guarantees, and it pointed to two rule defects that together caused 486 of the
-rules' 639 wrong town-only answers. Both were fixed after the test and are not re-measured on it.
+\paragraph{Where the calibrated resolver is wrong.} @@ERRORS_TEXT@@ One pattern dominates the
+first group: an address that \emph{starts with a municipality name} (富岡町1-56-26-2). @@STARTS_TEXT@@
+In the welfare file the municipality is never written, so such inputs are districts that share a
+municipality's name; in the care data they usually do name the municipality. This shift between
+publishers is behind the coverage shortfall.
 
-\paragraph{What the name adds.} Mentions of the municipality carry the largest learned weight
-(+1.09), and the name halves the test calibration error. The feature is crude: 東神楽町立東神楽小学校
-\emph{is run by} 東神楽町, a stronger statement than a mention.
+\paragraph{A known failure mode.} A bare name that is both a municipality and a district elsewhere is read
+as the municipality: 栄町 alone is accepted as 千葉県栄町, and 錦町 alone as 熊本県錦町. It is the first
+entry in test~2's list of wrong town-only answers.
 
-\paragraph{Where the guarantees break.} In both tests the coverage of the conformal sets fell short by
-about 1.2 points, while the error-rate threshold held in test~2 and missed narrowly in test~1. Coverage
-is the guarantee that relies most directly on exchangeability between calibration and test data, and
-both test files come from publishers other than the one used for calibration. The practical reading
-is simple: the probabilities transfer well (ECE 0.005--0.015), but a deployment that needs a coverage
+\paragraph{What the name adds.} Mentions of the municipality in the facility name carry the largest
+weight among the binary features, and the name halves the calibration error in test~1. The feature is
+crude: 東神楽町立東神楽小学校 \emph{is run by} 東神楽町, a stronger statement than a mention.
+
+\paragraph{Where the guarantees break.} The error-rate threshold held in one test and narrowly failed in
+the other; conformal coverage fell about 1.2 points short in both. Coverage is the guarantee that relies
+most directly on exchangeability between calibration and test data, and both test files come from other
+publishers than the calibration data. The probabilities transfer well; a deployment that needs a coverage
 guarantee should recalibrate on a small labelled sample of its own data.
 
 % ------------------------------------------------------------------------------------------
 \section{Limitations}
 \begin{itemize}
-\item Calibration was fitted on care-office data. Under a change of publisher the conformal sets
-covered about 93.8\% for a 95\% target in both tests, and the 1\% error threshold missed narrowly in
-test~1 (1.10\%) though it held in test~2 (0.72\%); a deployment on different data should recalibrate
-on a labelled sample of it.
-\item Only the municipality is scored. JADEN checks that a town and 丁目 exist, not that a house
-number does; its offline points are town or 丁目 centroids (median 360\,m from surveyed school
-points; 71\,m with optional block-level data).
-\item The language-model results come from one model family, one prompt and 1,000-input samples;
-they cost money and change as models change.
-\item The town prior counts companies, not residents.
-\item The rule engine is a large hand-written system maintained by one author; the second test
-measures whether its fixes generalise, but rules for rare forms will keep needing care.
+\item Only the municipality is scored. JADEN checks that a district and 丁目 exist, not that a house number
+does; its points are gazetteer representative points (median 360\,m from surveyed school points in
+JA-AddrBench; 71\,m with optional block-level data).
+\item The comparison tools were run with their published dictionaries and defaults; jageocoder that
+abstains uses the simplest rule its output allows, not a tuned one. The Digital Agency's
+\texttt{abr-geocoder} was not compared because its data server could not be reached from the evaluation
+environment.
+\item Test~2's town-only inputs are derived by stripping names, and its ``unseen'' subset catches only exact
+repeats of development addresses.
+\item The language-model results come from one model family, one prompt and 1,000-input samples.
+\item The rule engine is a large hand-written system maintained by one author.
 \end{itemize}
 
 \section{Conclusion}
-A Japanese address resolver can know when it does not know. Grounding every decision in public
-registries keeps the rules' wrong answers to a fraction of a percent on data from other publishers,
-a calibrated scorer turns the remaining ambiguity into probabilities that transfer, and the registry
-is also the right check on a language model: not a list to choose from, but a test its free answers
-must pass. On a second publisher's hand-typed addresses, after ten rounds of changes to the rules, it
-made no wrong municipality call on 412,082 full or prefecture-less inputs.
+When an address does not settle its municipality, a resolver can say so, and on two publishers'
+data the cost of saying so was clear: JADEN declined about half the district-only inputs that jageocoder
+answered, and in exchange its answers were wrong a fraction of a percent of the time instead of about a
+fifth. @@CONCLUSION_FAIR@@ The registry is also the right check on a language model: not a list to choose
+from, but a test its free answers must pass. Next steps are an independent evaluation of the national
+geocoder on the same frozen tests, an audit of how often public registers' codes contradict their own
+addresses, and time-aware resolution of addresses written before municipal mergers.
 
-\paragraph{Reproducibility.} Code, protocols, scripts and results:
-\url{https://github.com/SushilRaj0177/JADEN}. Each result file records the commit it was produced at.
+\paragraph{Reproducibility.}\label{sec:repro} Code, protocols, run logs, timelines and results:
+\url{https://github.com/SushilRaj0177/JADEN} (\texttt{benchmarks/heldout}, \texttt{heldout2},
+\texttt{posthoc}). Each result file records the commit it was produced at.
 
-\paragraph{Data.} 「大字・町丁目レベル位置参照情報」国土交通省; 「国土数値情報（福祉施設データ）」
-国土交通省 (CC BY 4.0); 国税庁法人番号公表サイト 全件データ; 厚生労働省 介護サービス情報公表システム
-オープンデータ; 厚生労働省 医療情報ネット オープンデータ; 郵便番号データ（日本郵便）; 全国地方公共団体コード（総務省）.
-All were processed by the author.
+\paragraph{Data.} 「大字・町丁目レベル位置参照情報」国土交通省 (2025年, 19.0b); 「国土数値情報（福祉施設データ）」
+国土交通省 (令和5年度, CC BY 4.0); 「国土数値情報（学校データ）」国土交通省 (CC BY 4.0); 国税庁法人番号公表サイト
+全件データ (2026-10-30); 厚生労働省 介護サービス情報公表システム オープンデータ (2026年6月末); 厚生労働省
+医療情報ネット オープンデータ (2026-06-01); 郵便番号データ（日本郵便）; 全国地方公共団体コード（総務省）. All
+were processed by the author.
+
+\appendix
+\section{All pre-registered measures}
+
+\paragraph{Area under the risk--coverage curve (test 1).} Calibrated: 0.0401 (town only), 0.0023 (with
+prefecture), 0.0000 (full); with the name: 0.0352, 0.0018, 0.0000.
+
+\paragraph{Test 1, categories that cannot be care offices (59,503 per input type).} Town only: rules
+51.70\% right, 92 wrong (0.30\% of answers); calibrated 60.11\%, 369 wrong (1.02\%, 0.92--1.13);
+calibrated + name 61.76\%, 401 wrong (1.08\%); jageocoder 77.59\%, 11,907 wrong (20.50\%); Geolonia 0.03\%,
+1,091 wrong. With prefecture: rules 81.46\%, 83 wrong; calibrated + name 87.48\%, 157 wrong. Full: rules
+99.98\%, 0 wrong. Conformal coverage (town only): 93.92\% (94.05\% with the name).
+
+\paragraph{Test 2, distances.} Of full addresses with a JADEN point, 102,869 are at 丁目 level (median 165\,m
+from the publisher's point, 99.57\% within 1\,km) and 85,783 at district level (380\,m, 82.43\%).
 
 \begin{thebibliography}{99}\small
+\bibitem{abr} Digital Agency. アドレス・ベース・レジストリ (Address Base Registry) and abr-geocoder.
+\url{https://www.digital.go.jp/policies/base_registry_address}, \url{https://github.com/digital-go-jp/abr-geocoder}.
 \bibitem{angelopoulos} A.~N. Angelopoulos and S.~Bates. A gentle introduction to conformal prediction
 and distribution-free uncertainty quantification. arXiv:2107.07511, 2021.
+\bibitem{ltt} A.~N. Angelopoulos, S.~Bates, E.~J. Cand\`es, M.~I. Jordan and L.~Lei. Learn then Test:
+Calibrating predictive algorithms to achieve risk control. arXiv:2110.01052, 2021.
 \bibitem{chow} C.~K. Chow. On optimum recognition error and reject tradeoff. \emph{IEEE Transactions
 on Information Theory}, 16(1):41--46, 1970.
-\bibitem{messy} E.~Gaere. MESSY STREETS: A benchmark for geocoding real-world addresses.
-arXiv:2609.01612, 2026.
+\bibitem{csis} Center for Spatial Information Science, The University of Tokyo. CSV address matching
+service. \url{https://geocode.csis.u-tokyo.ac.jp/}.
+\bibitem{reageo} J.~Cui, Z.~Ren et al. ReaGeo: Reasoning-enhanced end-to-end geocoding with LLMs. In
+\emph{Findings of ACL}, 2026.
+\bibitem{fellegi} I.~P. Fellegi and A.~B. Sunter. A theory for record linkage. \emph{Journal of the
+American Statistical Association}, 64(328):1183--1210, 1969.
+\bibitem{messy} E.~Gaere and F.~von Wangenheim. MESSY STREETS: A benchmark for geocoding real-world
+addresses. arXiv:2609.01612, 2026.
 \bibitem{geifman} Y.~Geifman and R.~El-Yaniv. Selective classification for deep neural networks.
 In \emph{NeurIPS}, 2017.
+\bibitem{geolonia} Geolonia. normalize-japanese-addresses (version 3.1.3).
+\url{https://github.com/geolonia/normalize-japanese-addresses}.
+\bibitem{gritta} M.~Gritta, M.~T. Pilehvar, N.~Limsopatham and N.~Collier. What's missing in geographical
+parsing? \emph{Language Resources and Evaluation}, 52(2):603--623, 2018.
 \bibitem{guo} C.~Guo, G.~Pleiss, Y.~Sun and K.~Q. Weinberger. On calibration of modern neural
 networks. In \emph{ICML}, 2017.
-\bibitem{masis} T.~Masis and B.~O'Connor. Coordinates from context: Using LLMs to ground complex
-location references. In \emph{EACL}, 2026.
-\bibitem{reageo} J.~Cui, Z.~Ren et al. ReaGeo: Reasoning-enhanced end-to-end geocoding with LLMs. In
-\emph{Findings of ACL}, 2026. arXiv:2604.21357.
+\bibitem{atdmcl} S.~Higashiyama et al. Arukikata Travelogue Dataset with geographic entity mention,
+coreference, and link annotation. In \emph{Findings of EACL}, 2024.
+\bibitem{hisamoto} 久本空海, 西尾悟, 井口奏大, 古川泰人. 場所参照表現と位置情報を紐付けるジオコーディングの概観と
+発展に向けての考察. 言語処理学会第29回年次大会, 2023.
+\bibitem{ishikawa} 石川和樹, 中山大地. 明治期東京におけるアドレスジオコーディングシステムの構築. 地理学評論
+Series A, 90(2):125--136, 2017.
+\bibitem{geonlp} 北本朝展, 相良毅. GeoNLP: 地名情報処理のためのオープンなソフトウェア・データ・サービス.
+\url{https://agora.ex.nii.ac.jp/GeoNLP/}.
 \bibitem{pasc} V.~Kotte. PASC: Pipeline-aware conformal prediction with joint coverage guarantees for
 multi-stage NLP and LLM pipelines. arXiv:2605.18812, 2026.
-\bibitem{addrkg} Patient address parsing via KG-aware contrastive learning and constrained on-prem LLM
-inference. \emph{Scientific Reports}, 16:8003, 2026.
+\bibitem{leidner} J.~L. Leidner. \emph{Toponym Resolution in Text: Annotation, Evaluation and Applications
+of Spatial Grounding of Place Names}. PhD thesis, University of Edinburgh, 2007.
+\bibitem{addrkg} J.~Li, X.~Pan and Y.~Jia. Patient address parsing via KG-aware contrastive learning and
+constrained on-prem LLM inference. \emph{Scientific Reports}, 16:8003, 2026.
+\bibitem{masis} T.~Masis and B.~O'Connor. Coordinates from context: Using LLMs to ground complex
+location references. In \emph{EACL}, 2026.
+\bibitem{jageocoder} T.~Sagara. jageocoder: a Japanese address geocoder (version 2.2.1.1).
+\url{https://github.com/t-sagara/jageocoder}.
+\bibitem{vovk} V.~Vovk, A.~Gammerman and G.~Shafer. \emph{Algorithmic Learning in a Random World}.
+Springer, 2005.
 \bibitem{geohalu} S.~Wang, J.~Feng, T.~Liu, D.~Pei and Y.~Li. Mitigating geospatial knowledge
 hallucination in large language models: Benchmarking and dynamic factuality aligning. In
 \emph{Findings of EMNLP}, 2025.
-\bibitem{vovk} V.~Vovk, A.~Gammerman and G.~Shafer. \emph{Algorithmic Learning in a Random World}.
-Springer, 2005.
-\bibitem{jageocoder} T.~Sagara. jageocoder: a Japanese address geocoder.
-\url{https://github.com/t-sagara/jageocoder}.
 \end{thebibliography}
 
 \end{CJK}
