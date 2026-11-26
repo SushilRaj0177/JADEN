@@ -1,0 +1,60 @@
+{
+ "name": "test 2",
+ "n": 40000,
+ "rows": [
+  {
+   "system": "jageocoder, first answer",
+   "answered": 39117,
+   "right": 30370,
+   "wrong": 8747
+  },
+  {
+   "system": "jageocoder that abstains (one municipality among its best matches)",
+   "answered": 29013,
+   "right": 28143,
+   "wrong": 870
+  },
+  {
+   "system": "JADEN rules",
+   "answered": 19551,
+   "right": 19498,
+   "wrong": 53
+  },
+  {
+   "system": "JADEN calibrated, at its threshold",
+   "answered": 23512,
+   "right": 23360,
+   "wrong": 152
+  },
+  {
+   "system": "JADEN calibrated, answering as many as the abstaining jageocoder",
+   "answered": 29013,
+   "right": 27191,
+   "wrong": 1822
+  },
+  {
+   "system": "JADEN calibrated, answering as many as jageocoder's first answer",
+   "answered": 37891,
+   "right": 29620,
+   "wrong": 8271
+  },
+  {
+   "system": "JADEN calibrated + name, at its threshold",
+   "answered": 23997,
+   "right": 23806,
+   "wrong": 191
+  },
+  {
+   "system": "JADEN calibrated + name, answering as many as the abstaining jageocoder",
+   "answered": 29013,
+   "right": 27454,
+   "wrong": 1559
+  },
+  {
+   "system": "JADEN calibrated + name, answering as many as jageocoder's first answer",
+   "answered": 37891,
+   "right": 30146,
+   "wrong": 7745
+  }
+ ]
+}

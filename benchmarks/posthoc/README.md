@@ -13,6 +13,7 @@ of the tests (or reruns a system on the same frozen inputs) and writes its own r
 | `analysis.py` | The numbers behind the paper's analysis sections: forced answers, error types, inputs that start with a municipality name, the language-model filters separated, the projection, clustered intervals | `analysis.md` |
 | `defects.py` | How many of test 1's wrong rule answers the two defects found there explain | `defects.md` |
 | `prevalence.py` | How often hand-typed addresses leave out the prefecture or municipality | `prevalence.md` |
+| `figure.py` | The paper's figure: wrong-answer rate against share answered, both tests | `paper/arxiv/fair_curves.pdf` |
 
 jageocoder with all candidates (`benchmarks/jabench/baselines/jageocoder_candidates_run.py`) is slow,
 so the fair comparison uses a random sample of 40,000 town-only inputs per test (seed 2026), drawn by

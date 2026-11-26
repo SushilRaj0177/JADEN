@@ -26,7 +26,10 @@ remain, and a calibrated scorer adds probabilities, a risk-controlled answer thr
 candidate sets. In two pre-registered tests on data never used in development (321,859 welfare and
 206,041 medical facilities), JADEN's rules answered about half of the district-only inputs and were
 wrong on 0.38\% and 0.28\% of their answers; jageocoder answered about three quarters correctly but
-was wrong on 21--23\% of its answers. @@ABSTRACT_FAIR@@ The calibrated resolver answered 59--61\% at
+was wrong on 21--23\% of its answers. In a comparison made after the tests, a jageocoder that declines whenever its best matches span
+several municipalities answered 73--76\% at 3--4\% wrong, more accurately than JADEN's resolver at the
+same coverage (5--8\%): JADEN's advantage is a controllable operating point near 1\% wrong with calibrated
+probabilities, not better ranking. The calibrated resolver answered 59--61\% at
 0.72--1.14\% wrong; its 1\% target held in one test and failed in the other (1.10\%), and conformal
 coverage fell about 1.2 points short of 95\% in both. A language model choosing from JADEN's
 candidates was wrong on 31.6\% of its answers. Of 13 pre-registered hypotheses, 7 held. Code,
@@ -64,8 +67,9 @@ the question, frozen test files, systems, measures and directional hypotheses we
 public repository before any system ran on the test data, and results are reported as they came out.
 The second test also measures whether ten rounds of rule fixes made between the tests generalised.
 \item \textbf{Analyses made after the tests, reported as such} (Section~\ref{sec:posthoc}): a comparison
-with jageocoder on equal terms (abstaining, and at matched coverage), a corrected calibration procedure,
-a check for leakage through the prior, and intervals that respect repeated addresses.
+with jageocoder on equal terms, which shows that JADEN's advantage lies in calibrated selectivity rather
+than in ranking; a corrected calibration procedure; a check for leakage through the prior; and intervals
+that respect repeated addresses.
 \item \textbf{Language models in the loop} (Section~\ref{sec:llmres}): choosing from a verified candidate
 list does not make a model reliable; checking its free answers against the registry removes most of its
 errors, though part of that effect comes from a confidence filter.
@@ -164,8 +168,10 @@ prefecture-mention check matched 京都 inside 東京都. The model's weights we
 the corrected feature with the weights fitted on the defective one.
 
 \subsection{Language models in the loop}\label{sec:llm}
+\begin{sloppypar}
 For town-only inputs the calibrated resolver with the name does not answer, a language model
-(\texttt{claude-haiku-5-5}, and \texttt{claude-sonnet-5-5} in the amendment, called through the Claude
+(\texttt{claude-haiku-5-5}, and \texttt{claude-sonnet-5-5} in the
+amendment, called through the Claude
 Code command line in November 2026 with default settings, 20 addresses per call) receives the address
 and the facility's name. \emph{Choose}: JADEN's candidates are listed and the model returns one or
 declines, with a confidence. \emph{Propose and verify}: the model names the municipality freely; the
@@ -173,6 +179,7 @@ answer is kept only if it is one of JADEN's candidates and the model states a co
 \emph{Alone}: the free answer, unverified. A development trial on 400 ambiguous care addresses, run before
 any test call, motivated propose-and-verify; it was added to the first protocol as a dated amendment.
 Prompts and raw answers are in the repository.
+\end{sloppypar}
 
 % ------------------------------------------------------------------------------------------
 \section{Evaluation protocol}\label{sec:protocol}
@@ -201,7 +208,8 @@ any system runs on the test data; commit times, the times each run started and e
 are published with the results. No test row is used for training, calibration, thresholds or code
 changes before the results are written; each test is run once, and every deviation (tool concurrency, a
 retry of 50 network failures of one tool) is listed with the results. An answer is right when it names
-the row's municipality or a ward of the row's designated city.
+the row's municipality or a ward of the row's designated city. The input that holds only the district
+and what follows it is called ``town only'', as in the protocols.
 
 \paragraph{Test 1} (protocol of 19 November 2026). MLIT publishes welfare-facility addresses
 \emph{without} the municipality, with the municipality code alongside. Each facility gives a town-only
@@ -301,7 +309,7 @@ Its probabilities stay well calibrated (ECE 0.005--0.015), but conformal sets me
 
 \begin{table}[t]
 \centering\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}llrll@{}}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrll@{}}
 \toprule
 System & Filter on the model's answers & Kept & Wrong among kept (95\% CI) & Right answers discarded \\
 \midrule
@@ -318,7 +326,7 @@ Sonnet proposes (remainder) & none & 851 & 399 (43.6--50.2\%) & -- \\
 Haiku alone (random) & none (system 5) & 624 & 166 (23.3--30.2\%) & -- \\
 Sonnet alone (random) & none (system 5) & 957 & 340 (32.6--38.6\%) & -- \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{Language models on the 1,000-input samples of test 1. ``Remainder'': town-only inputs the
 calibrated resolver with the name leaves unanswered; ``random'': random town-only inputs. Rows with a
 filter other than ``none'' and the pre-registered system rows (choose; propose with both filters) are
@@ -381,7 +389,56 @@ The analyses in this section were not pre-registered. They were made after both 
 critical review, from the stored outputs of the tests or by rerunning a system on the same frozen inputs.
 
 \subsection{JADEN and jageocoder on equal terms}\label{sec:fair}
-@@FAIR_TEXT@@
+The pre-registered comparison scored jageocoder's first answer for every input, so it mixes two
+differences: how well a tool ranks the candidates, and whether it may decline. jageocoder returns every
+equally good match; a jageocoder that answers only when all of them lie in one municipality is the
+simplest abstaining version its own output allows. We ran it, and JADEN's calibrated resolver made to
+answer the same share of inputs (highest probabilities first), on random samples of 40,000 town-only
+inputs per test (seed 2026; Table~\ref{tab:fair}, Figure~\ref{fig:fair}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fair_curves.pdf}
+\caption{Wrong-answer rate among answers against the share of town-only inputs answered (post hoc, same
+samples as Table~\ref{tab:fair}). Curves: JADEN's calibrated resolver answering the most probable inputs
+first, with its threshold marked by a dot. Points: JADEN's rules and the two jageocoder variants.}
+\label{fig:fair}
+\end{figure}
+
+\begin{table}[t]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+& \multicolumn{3}{c}{Test 1 (39,577 inputs)} & \multicolumn{3}{c}{Test 2 (40,000 inputs)} \\
+System & Answered & Right & Wrong/ans. & Answered & Right & Wrong/ans. \\
+\midrule
+jageocoder, first answer & 97.3\% & 76.8\% & 21.1\% & 97.8\% & 75.9\% & 22.4\% \\
+jageocoder that abstains & 76.1\% & 73.0\% & \textbf{4.1\%} & 72.5\% & 70.4\% & \textbf{3.0\%} \\
+JADEN rules & 52.6\% & 52.4\% & 0.34\% & 48.9\% & 48.7\% & 0.27\% \\
+JADEN calibrated, at its threshold & 60.7\% & 60.1\% & 1.0\% & 58.8\% & 58.4\% & 0.65\% \\
+\quad answering as many as the abstaining jageocoder & 76.1\% & 70.1\% & 7.9\% & 72.5\% & 68.0\% & 6.3\% \\
+\quad answering as many as jageocoder's first answer & 97.3\% & 75.8\% & 22.1\% & 94.7\% & 74.0\% & 21.8\% \\
+JADEN calibrated + name, at its threshold & 62.3\% & 61.6\% & 1.1\% & 60.0\% & 59.5\% & 0.80\% \\
+\quad answering as many as the abstaining jageocoder & 76.1\% & 71.1\% & 6.6\% & 72.5\% & 68.6\% & 5.4\% \\
+\quad answering as many as jageocoder's first answer & 97.3\% & 77.5\% & 20.3\% & 94.7\% & 75.4\% & 20.4\% \\
+\bottomrule
+\end{tabular}
+\caption{Town-only input on equal terms (post hoc). ``Answering as many as'' lets JADEN answer the same
+share of inputs, most probable first; in test 2 JADEN has candidates for only 94.7\% of the sample.}
+\label{tab:fair}
+\end{table}
+
+The result is not in JADEN's favour. The abstaining jageocoder answers 76.1\% (test~1) and 72.5\% (test~2)
+of the inputs with 4.1\% and 3.0\% wrong; JADEN's calibrated resolver made to answer as many is wrong on
+7.9\% and 6.3\% (6.6\% and 5.4\% with the name). Answering everything, the two are about equal. What JADEN
+adds is an operating point near 1\% wrong (about 60\% answered) and a probability for every answer, which
+lets a user choose that point; at the coverage where jageocoder's own abstention rule operates,
+jageocoder is more accurate. A likely reason is the data. jageocoder's dictionary goes down to blocks
+(街区), so a district name followed by block numbers matches only where that block exists; JADEN's bundled
+gazetteer stops at 丁目, and its optional block data is consulted only after a single municipality has been
+chosen, never to eliminate candidates. Eliminating candidates whose block does not exist is the clearest
+improvement this comparison points to. We do not tune it on these tests; it needs a new pre-registered
+test.
 
 \subsection{A corrected calibration procedure}\label{sec:recal}
 The pre-registered calibration had two flaws. Its threshold search scanned thresholds from low to high and
@@ -480,7 +537,10 @@ repeats of development addresses.
 When an address does not settle its municipality, a resolver can say so, and on two publishers'
 data the cost of saying so was clear: JADEN declined about half the district-only inputs that jageocoder
 answered, and in exchange its answers were wrong a fraction of a percent of the time instead of about a
-fifth. @@CONCLUSION_FAIR@@ The registry is also the right check on a language model: not a list to choose
+fifth. A comparison made after the tests qualifies this: a jageocoder that declines on its own ambiguous
+matches is more accurate than JADEN at the coverage it reaches, likely because its dictionary resolves
+block numbers. JADEN's contribution is the calibrated, controllable operating point, and eliminating
+candidates by block existence is its clearest next improvement. The registry is also the right check on a language model: not a list to choose
 from, but a test its free answers must pass. Next steps are an independent evaluation of the national
 geocoder on the same frozen tests, an audit of how often public registers' codes contradict their own
 addresses, and time-aware resolution of addresses written before municipal mergers.

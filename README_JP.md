@@ -52,7 +52,9 @@ jaden.resolve("芝公園4-2-8").name      # '東京都港区' (p > 0.99)
 | 都道府県なし | 99.87% / **0** | 99.88% / 0 | 99.97% / 2 | 99.97% / 50 |
 | 町名のみ（205,830 件） | 48.8% / **279**（回答の 0.28%） | 48.9% / 774 | 75.8% / 45,343 | 0.06% / 4,385 |
 
-較正済みリゾルバは今回は目標 1% を満たし（回答中の誤答 0.72%）、95% の候補集合の被覆率は再び 93.8% でした。修正で町名のみの誤答は 64% 減り、修正が壊したものも一つ見つかりました: 番地のない「町名＋建物名＋階」の住所 28 件が拒否されるようになりました。レポートと実行記録: [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/)。
+較正済みリゾルバは今回は目標 1% を満たし（回答中の誤答 0.72%）、95% の候補集合の被覆率は再び 93.8% でした。
+
+**同じ条件での比較（両テストの後に行った分析、[`benchmarks/posthoc/`](benchmarks/posthoc/)）:** 同等に良い一致が複数の市区町村にまたがるときに回答しない jageocoder は、町名のみの入力の 72〜76% に答え、誤答は 3〜4% でした。同じ割合だけ答えさせた JADEN のリゾルバ（誤答 5〜8%）より正確です。JADEN の強みは順位付けの精度ではなく、誤答約 1% で回答を止められることと較正済みの確率です。jageocoder の辞書のように街区番号で候補を絞ることが、最も明確な次の改善点です。修正で町名のみの誤答は 64% 減り、修正が壊したものも一つ見つかりました: 番地のない「町名＋建物名＋階」の住所 28 件が拒否されるようになりました。レポートと実行記録: [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/)。
 
 論文: [`paper/arxiv/jaden.pdf`](paper/arxiv/jaden.pdf)（LaTeX ソースも同じ場所。以前の草稿は [`paper/jaden-v0.3.md`](paper/jaden-v0.3.md)）。すべての表と図: [`benchmarks/heldout/results/`](benchmarks/heldout/results/)、[`benchmarks/heldout2/results/`](benchmarks/heldout2/results/)。
 

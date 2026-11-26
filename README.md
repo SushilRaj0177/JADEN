@@ -54,7 +54,9 @@ jaden resolve "南3条東1-2-1"            # 6 candidates ranked, none above the
 | without the prefecture | 99.87% / **0** | 99.88% / 0 | 99.97% / 2 | 99.97% / 50 |
 | town only (205,830) | 48.8% / **279** (0.28% of answers) | 48.9% / 774 | 75.8% / 45,343 | 0.06% / 4,385 |
 
-The calibrated resolver met its 1% target this time (0.72% wrong among answers); the 95% candidate sets again covered 93.8%. The fixes cut town-only wrong answers by 64%, and the test also caught one thing they broke: 28 addresses written as town + building + floor with no house number are now refused. Report and run notes: [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/).
+The calibrated resolver met its 1% target this time (0.72% wrong among answers); the 95% candidate sets again covered 93.8%.
+
+**On equal terms (an analysis made after both tests, [`benchmarks/posthoc/`](benchmarks/posthoc/)):** a jageocoder that declines whenever its equally good matches span several municipalities answers 72–76% of town-only inputs with 3–4% wrong, which is more accurate than JADEN's resolver answering the same share (5–8% wrong). JADEN's advantage is a controllable operating point near 1% wrong with calibrated probabilities, not better ranking; using block numbers to eliminate candidates, as jageocoder's dictionary does, is the clearest next improvement. The fixes cut town-only wrong answers by 64%, and the test also caught one thing they broke: 28 addresses written as town + building + floor with no house number are now refused. Report and run notes: [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/).
 
 The paper: [`paper/arxiv/jaden.pdf`](paper/arxiv/jaden.pdf) (LaTeX source alongside; the earlier draft is [`paper/jaden-v0.3.md`](paper/jaden-v0.3.md)). All tables and figures: [`benchmarks/heldout/results/`](benchmarks/heldout/results/), [`benchmarks/heldout2/results/`](benchmarks/heldout2/results/).
 
