@@ -398,6 +398,51 @@ def stage_report(folder: Path, out: Path, reader2: Optional[Path]) -> None:
             total = sum(c.values())
             lines.append(f"| {TITLES[reg]} | {verdict} | {total} | " + " | ".join(str(c.get(k, 0)) for k in "CTRGU") + " |")
         scores["inspection"] = {f"{k[0]}|{k[1]}": dict(v) for k, v in groups.items()}
+    # Pre-registered hypotheses
+    regs = scores["registers"]
+    retired_share = {r: s["retired_code_records"] / max(1, s["records"]) for r, s in regs.items()}
+    h3: Dict[str, Any] = {}
+    for reg in REGISTERS:
+        sel = [r for r in inspected if r["register"] == reg and r["verdict"] == "conflict" and r["written"] == "True"]
+        if len(sel) >= 20:
+            k = sum(1 for r in sel if r["category"] == "R")
+            h3[reg] = [k, len(sel)]
+    hyp = {
+        "H1": all(s["consistent_written_share"] >= 0.995 for s in regs.values() if s["written"]),
+        "H2": max(retired_share, key=lambda r: retired_share[r]) == "welfare",
+        "H3": all(k / n <= 0.20 for k, n in h3.values()) if h3 else None,
+        "H4": all(s["baseline_point_agrees"][0] / max(1, s["baseline_point_agrees"][1]) >= 0.97
+                  for s in regs.values() if s.get("baseline_point_agrees", [0, 0])[1] > 0),   # registers with coordinates
+    }
+    scores["hypotheses"] = hyp
+    scores["h3_reading_errors"] = h3
+    scores["retired_share"] = retired_share
+    lines += ["", "## Hypotheses", ""]
+    lines += [f"- **{k}**: {'holds' if v else 'does not hold' if v is not None else 'not tested'}" for k, v in hyp.items()]
+    lines += ["  - H1, consistent share of records that write their municipality: " +
+              ", ".join(f"{TITLES[r]} {100 * s['consistent_written_share']:.3f}%" for r, s in regs.items() if s["written"]),
+              "  - H2, share of records with a retired code: " +
+              ", ".join(f"{TITLES[r]} {100 * v:.3f}%" for r, v in retired_share.items()),
+              "  - H3, reading errors among inspected conflicts whose address writes its municipality: " +
+              ", ".join(f"{TITLES[r]} {k} of {n}" for r, (k, n) in h3.items())]
+    # Exploratory: codes that recur among conflicts (a code used for offices elsewhere)
+    lines += ["", "## Exploratory: codes that recur among conflicts", "",
+              "| Register | Code | Municipality | Conflicts with this code | Of them, point in the text's municipality |",
+              "| :--- | :--- | :--- | ---: | ---: |"]
+    for reg in REGISTERS:
+        path = folder / f"{reg}.audit.json"
+        if not path.exists():
+            continue
+        data = json.loads(path.read_text(encoding="utf-8"))
+        locp = folder / f"{reg}.locate.json"
+        located = json.loads(locp.read_text(encoding="utf-8")) if locp.exists() else {}
+        by_code = Counter(r["code"] for r in data["flagged"] if r["verdict"] == "conflict")
+        for code, k in by_code.most_common(3):
+            if k < 5:
+                continue
+            in_text = sum(1 for r in data["flagged"] if r["verdict"] == "conflict" and r["code"] == code
+                          and located.get(r["id"]) and _same(located[r["id"]], r["resolved"]))
+            lines.append(f"| {TITLES[reg]} | {code} | {_name(code)} | {k} | {in_text} |")
     (out / "scores.json").write_text(json.dumps(scores, ensure_ascii=False, indent=1), encoding="utf-8")
     (out / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))

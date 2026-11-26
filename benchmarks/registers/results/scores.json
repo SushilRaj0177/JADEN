@@ -1,0 +1,189 @@
+{
+ "commit": "af8e154",
+ "registers": {
+  "nta": {
+   "records": 5049462,
+   "verdicts": {
+    "consistent": 5048431,
+    "unreadable": 675,
+    "undetermined": 206,
+    "code_retired": 144,
+    "conflict": 6
+   },
+   "written": 5049151,
+   "verdicts_written": {
+    "consistent": 5048381,
+    "unreadable": 674,
+    "code_retired": 90,
+    "conflict": 6
+   },
+   "consistent_written_share": 0.9998653238930664,
+   "consistent_written_ci": [
+    0.9998548145163275,
+    0.9998750726345351
+   ],
+   "former_name_records": 89,
+   "retired_code_records": 211,
+   "baseline_point_agrees": [
+    0,
+    0
+   ],
+   "conflict_point": {},
+   "conflict_reader2": {
+    "jageocoder agrees with the code": 6
+   }
+  },
+  "care": {
+   "records": 223161,
+   "verdicts": {
+    "consistent": 218076,
+    "undetermined": 4129,
+    "unreadable": 416,
+    "consistent_former_name": 354,
+    "conflict": 136,
+    "district_not_in_claimed": 38,
+    "code_retired": 12
+   },
+   "written": 212382,
+   "verdicts_written": {
+    "consistent": 211871,
+    "consistent_former_name": 354,
+    "conflict": 124,
+    "unreadable": 22,
+    "code_retired": 11
+   },
+   "consistent_written_share": 0.999312559444774,
+   "consistent_written_ci": [
+    0.999191691782516,
+    0.999415364140933
+   ],
+   "former_name_records": 363,
+   "retired_code_records": 15,
+   "baseline_point_agrees": [
+    1991,
+    1997
+   ],
+   "conflict_point": {
+    "point in text's municipality": 118,
+    "point in neither": 1,
+    "point in code's municipality": 17
+   },
+   "conflict_reader2": {
+    "jageocoder agrees with JADEN": 119,
+    "jageocoder agrees with the code": 3,
+    "jageocoder gives neither": 2
+   }
+  },
+  "medical": {
+   "records": 206043,
+   "verdicts": {
+    "consistent": 205931,
+    "unreadable": 110,
+    "undetermined": 2
+   },
+   "written": 206043,
+   "verdicts_written": {
+    "consistent": 205931,
+    "unreadable": 110,
+    "undetermined": 2
+   },
+   "consistent_written_share": 0.9994564241444747,
+   "consistent_written_ci": [
+    0.9993460388942402,
+    0.9995481853596685
+   ],
+   "former_name_records": 0,
+   "retired_code_records": 0,
+   "baseline_point_agrees": [
+    1989,
+    2000
+   ],
+   "conflict_point": {},
+   "conflict_reader2": {}
+  },
+  "welfare": {
+   "records": 321859,
+   "verdicts": {
+    "consistent": 166107,
+    "undetermined": 144506,
+    "unreadable": 8195,
+    "code_retired": 1908,
+    "district_not_in_claimed": 935,
+    "conflict": 208
+   },
+   "written": 169,
+   "verdicts_written": {
+    "consistent": 104,
+    "conflict": 64,
+    "unreadable": 1
+   },
+   "consistent_written_share": 0.6153846153846154,
+   "consistent_written_ci": [
+    0.5402445866628726,
+    0.6853955370110579
+   ],
+   "former_name_records": 9,
+   "retired_code_records": 3281,
+   "baseline_point_agrees": [
+    1996,
+    2000
+   ],
+   "conflict_point": {
+    "point in code's municipality": 208
+   },
+   "conflict_reader2": {
+    "jageocoder agrees with the code": 51,
+    "jageocoder gives no answer": 6,
+    "jageocoder agrees with JADEN": 5,
+    "jageocoder gives neither": 2
+   }
+  }
+ },
+ "inspection": {
+  "nta|conflict": {
+   "U": 6
+  },
+  "care|conflict": {
+   "T": 9,
+   "R": 5,
+   "C": 85,
+   "U": 1
+  },
+  "care|district_not_in_claimed": {
+   "R": 27,
+   "U": 4,
+   "C": 2,
+   "G": 1,
+   "T": 4
+  },
+  "welfare|conflict": {
+   "R": 100
+  },
+  "welfare|district_not_in_claimed": {
+   "R": 37,
+   "G": 13
+  }
+ },
+ "hypotheses": {
+  "H1": false,
+  "H2": true,
+  "H3": false,
+  "H4": true
+ },
+ "h3_reading_errors": {
+  "care": [
+   3,
+   92
+  ],
+  "welfare": [
+   32,
+   32
+  ]
+ },
+ "retired_share": {
+  "nta": 4.1786629941962135e-05,
+  "care": 6.721604581445683e-05,
+  "medical": 0.0,
+  "welfare": 0.010193904784393165
+ }
+}
