@@ -54,6 +54,8 @@ def test_non_address_has_no_candidates() -> None:
 ])
 def test_library_features_match_the_research_code(text: str, side: str) -> None:
     """The probabilities resolve() returns are those the held-out test measured."""
+    if not (ROOT / "benchmarks" / "calibration" / "candidates.py").exists():
+        pytest.skip("needs the repository's research code")   # the wheel test runs away from the checkout
     sys.path.insert(0, str(ROOT / "benchmarks" / "calibration"))
     from candidates import CandidateBuilder
     research = CandidateBuilder().build(text, side)

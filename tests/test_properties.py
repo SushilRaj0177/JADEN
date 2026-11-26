@@ -15,6 +15,8 @@ import pytest
 import jaden
 
 BENCH = Path(__file__).resolve().parents[1] / "benchmarks" / "jabench" / "jabench.jsonl"
+if not BENCH.exists():   # the wheel test runs these tests away from the repository checkout
+    pytest.skip("needs the repository's benchmark files", allow_module_level=True)
 
 
 def _sample(step: int = 11) -> List[str]:

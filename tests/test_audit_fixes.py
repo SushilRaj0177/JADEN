@@ -1246,6 +1246,8 @@ def test_english_lines_with_a_building_or_room_first(english: str) -> None:
 def test_jadens_own_english_line_reads_back_to_the_same_key() -> None:
     bad = []
     bench = Path(__file__).resolve().parents[1] / "benchmarks" / "jabench" / "jabench.jsonl"
+    if not bench.exists():   # the wheel test runs these tests away from the repository checkout
+        pytest.skip("needs the repository's benchmark files")
     with open(bench, encoding="utf-8") as fh:
         rows = [json.loads(line)["input"] for i, line in enumerate(fh) if i % 60 == 0]
     for text in rows:
