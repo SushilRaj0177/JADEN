@@ -1,0 +1,212 @@
+{
+ "forced": {
+  "test 1 calibrated": {
+   "with_candidates": 310296,
+   "forced_wrong": 70197,
+   "answered": 192556,
+   "wrong": 2115,
+   "truth_missing": 1082,
+   "ranking": 1033
+  },
+  "test 1 calibrated + name": {
+   "with_candidates": 310296,
+   "forced_wrong": 64342,
+   "answered": 197239,
+   "wrong": 2255,
+   "truth_missing": 1156,
+   "ranking": 1099
+  },
+  "test 2 calibrated": {
+   "with_candidates": 194975,
+   "forced_wrong": 42050,
+   "answered": 121467,
+   "wrong": 880,
+   "truth_missing": 247,
+   "ranking": 633
+  },
+  "test 2 calibrated + name": {
+   "with_candidates": 194975,
+   "forced_wrong": 39398,
+   "answered": 124162,
+   "wrong": 1075,
+   "truth_missing": 359,
+   "ranking": 716
+  }
+ },
+ "starts_with_municipality": {
+  "care offices (development check)": {
+   "inputs": 2485,
+   "answered": 730,
+   "wrong": 185
+  },
+  "test 1": {
+   "inputs": 7103,
+   "answered": 2374,
+   "wrong": 856
+  },
+  "test 2": {
+   "inputs": 5018,
+   "answered": 884,
+   "wrong": 127
+  }
+ },
+ "llm": {
+  "haiku chooses | none": {
+   "kept": 526,
+   "wrong": 166,
+   "right_discarded": 0
+  },
+  "haiku chooses | confidence ≥ 80": {
+   "kept": 337,
+   "wrong": 70,
+   "right_discarded": 93
+  },
+  "haiku proposes | none": {
+   "kept": 478,
+   "wrong": 184,
+   "right_discarded": 0
+  },
+  "haiku proposes | confidence ≥ 80": {
+   "kept": 180,
+   "wrong": 13,
+   "right_discarded": 127
+  },
+  "haiku proposes | in JADEN's candidates": {
+   "kept": 358,
+   "wrong": 70,
+   "right_discarded": 6
+  },
+  "haiku proposes | both (system 4b)": {
+   "kept": 172,
+   "wrong": 10,
+   "right_discarded": 132
+  },
+  "sonnet proposes | none": {
+   "kept": 851,
+   "wrong": 399,
+   "right_discarded": 0
+  },
+  "sonnet proposes | confidence ≥ 80": {
+   "kept": 339,
+   "wrong": 38,
+   "right_discarded": 151
+  },
+  "sonnet proposes | in JADEN's candidates": {
+   "kept": 485,
+   "wrong": 41,
+   "right_discarded": 8
+  },
+  "sonnet proposes | both (system 4b)": {
+   "kept": 303,
+   "wrong": 8,
+   "right_discarded": 157
+  },
+  "haiku alone | none": {
+   "kept": 624,
+   "wrong": 166,
+   "right_discarded": 0
+  },
+  "haiku alone | confidence ≥ 80": {
+   "kept": 360,
+   "wrong": 31,
+   "right_discarded": 129
+  },
+  "haiku alone | in JADEN's candidates": {
+   "kept": 472,
+   "wrong": 33,
+   "right_discarded": 19
+  },
+  "haiku alone | both (system 4b)": {
+   "kept": 318,
+   "wrong": 3,
+   "right_discarded": 143
+  },
+  "sonnet alone | none": {
+   "kept": 957,
+   "wrong": 340,
+   "right_discarded": 0
+  },
+  "sonnet alone | confidence ≥ 80": {
+   "kept": 588,
+   "wrong": 70,
+   "right_discarded": 99
+  },
+  "sonnet alone | in JADEN's candidates": {
+   "kept": 624,
+   "wrong": 25,
+   "right_discarded": 18
+  },
+  "sonnet alone | both (system 4b)": {
+   "kept": 510,
+   "wrong": 8,
+   "right_discarded": 115
+  }
+ },
+ "projection": {
+  "haiku proposes": {
+   "remainder": 113057,
+   "right_share": 0.6695353539792452,
+   "wrong_among_answers": 0.015624399761784863
+  },
+  "sonnet proposes": {
+   "remainder": 113057,
+   "right_share": 0.7167344104112651,
+   "wrong_among_answers": 0.013648036896615482
+  }
+ },
+ "intervals": {
+  "test 1 rules": {
+   "answered": 166816,
+   "wrong": 639,
+   "wilson": [
+    0.0035453380633333823,
+    0.004138649570904967
+   ],
+   "cluster": [
+    0.003463385354141657,
+    0.00420588464372802
+   ]
+  },
+  "test 1 calibrated": {
+   "answered": 192556,
+   "wrong": 2115,
+   "wilson": [
+    0.010527937257652715,
+    0.011459210035472194
+   ],
+   "cluster": [
+    0.010401621031849119,
+    0.01163460191817913
+   ]
+  },
+  "test 2 rules": {
+   "answered": 100715,
+   "wrong": 279,
+   "wilson": [
+    0.0024640011906570764,
+    0.003114315548045367
+   ],
+   "cluster": [
+    0.002195924126350096,
+    0.0035610839979367537
+   ]
+  },
+  "test 2 calibrated": {
+   "answered": 121467,
+   "wrong": 880,
+   "wilson": [
+    0.006783166706333846,
+    0.00773753288516384
+   ],
+   "cluster": [
+    0.006747804906147909,
+    0.007699782594373806
+   ]
+  }
+ },
+ "sizes": {
+  "train_inputs": 359994,
+  "calib_inputs": 304137,
+  "devcheck_inputs": 305913
+ }
+}

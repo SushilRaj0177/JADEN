@@ -146,7 +146,7 @@ P(c) = \frac{e^{w\cdot x_c}}{Z},\qquad P(\text{none}) = \frac{e^{v\cdot g}}{Z},\
 Z = \sum_{c} e^{w\cdot x_c} + e^{v\cdot g}.
 \end{equation}
 The outside option matters because the gazetteer is incomplete: a single candidate is not certain.
-Parameters are fitted by maximum likelihood (L-BFGS, L2 penalty $10^{-3}$) on @@TRAIN_N@@ inputs built
+Parameters are fitted by maximum likelihood (L-BFGS, L2 penalty $10^{-3}$) on 359,994 inputs built
 from 120,000 sampled corporation addresses (the district part alone, prefecture plus district part, and
 the full address, each with the corporation's name). The prior counts the 4,977,458 corporations
 registered in each of 107,653 districts, leaving each training row's own corporation out.
@@ -305,7 +305,18 @@ Its probabilities stay well calibrated (ECE 0.005--0.015), but conformal sets me
 \toprule
 System & Filter on the model's answers & Kept & Wrong among kept (95\% CI) & Right answers discarded \\
 \midrule
-@@LLM_ROWS@@
+Haiku chooses from the list (remainder) & none (system 4) & 526 & 166 (27.7--35.7\%) & -- \\
+ & confidence $\ge 80$ & 337 & 70 (16.8--25.4\%) & 93 \\
+Haiku proposes (remainder) & none & 478 & 184 (34.2--42.9\%) & -- \\
+ & confidence $\ge 80$ & 180 & 13 (4.3--12.0\%) & 127 \\
+ & in JADEN's candidates & 358 & 70 (15.8--24.0\%) & 6 \\
+ & both (system 4b) & 172 & 10 (3.2--10.4\%) & 132 \\
+Sonnet proposes (remainder) & none & 851 & 399 (43.6--50.2\%) & -- \\
+ & confidence $\ge 80$ & 339 & 38 (8.3--15.0\%) & 151 \\
+ & in JADEN's candidates & 485 & 41 (6.3--11.3\%) & 8 \\
+ & both (system 4b) & 303 & 8 (1.3--5.1\%) & 157 \\
+Haiku alone (random) & none (system 5) & 624 & 166 (23.3--30.2\%) & -- \\
+Sonnet alone (random) & none (system 5) & 957 & 340 (32.6--38.6\%) & -- \\
 \bottomrule
 \end{tabular}
 \caption{Language models on the 1,000-input samples of test 1. ``Remainder'': town-only inputs the
@@ -319,7 +330,12 @@ Table~\ref{tab:llm}. Given JADEN's list, Haiku answered 526 of the 1,000 remaind
 166 (31.6\%); answering freely on random inputs, it was wrong on 26.6\%, so the list did not make it more
 reliable. Keeping only free answers that are among JADEN's candidates removes most wrong answers; adding
 the confidence filter, which the choose system did not get, removes more but also discards many right
-answers. The comparison that isolates verification is the row ``in JADEN's candidates'': @@LLM_VERIFY_SENTENCE@@
+answers. The comparison that isolates verification is the row ``in JADEN's candidates'': for Sonnet it keeps 485 of 851 answers with 41 wrong (8.5\%) and discards only 8 right
+ones; for Haiku, 358 of 478 with 70 wrong (19.6\%). With the same confidence filter, choosing from the list
+left 20.8\% wrong (337 kept) while proposing freely left 7.2\% (180 kept), so the list itself made the
+answers worse, not only the missing filter. Adding verified Sonnet proposals to the calibrated resolver
+would answer a projected 71.7\% of test~1's town-only inputs at 1.36\% wrong among answers (from the
+113,057 inputs left with candidates).
 Free answers also named municipalities that no longer exist (茶屋町, merged into 倉敷市 in 2005;
 浜松市中区, abolished in 2024): 2 to 6 in each 1,000-input sample.
 
@@ -383,7 +399,9 @@ does not come from the facilities' own operators.
 
 \subsection{Repeated addresses}
 Several facilities can share one address (clinics in one building), so the inputs are not independent.
-A bootstrap over clusters of identical input texts @@CLUSTER_TEXT@@
+A bootstrap over clusters of identical input texts widens the intervals only slightly: test~1 rules 0.35--0.42\% (Wilson 0.36--0.41\%) and
+calibrated 1.04--1.16\% (1.05--1.15\%); test~2 rules 0.22--0.36\% (0.25--0.31\%) and calibrated
+0.68--0.77\% (unchanged). No conclusion changes; test~1's calibrated interval still excludes 1\%.
 
 \subsection{Did the rule fixes overfit?}
 Between the tests the rules went through ten rounds of fixes found by reviewing failures on development
@@ -402,11 +420,18 @@ In the care-office register, 30,219 of 223,161 typed addresses (13.5\%) leave ou
 % ------------------------------------------------------------------------------------------
 \section{Analysis}
 
-\paragraph{Where the calibrated resolver is wrong.} @@ERRORS_TEXT@@ One pattern dominates the
-first group: an address that \emph{starts with a municipality name} (富岡町1-56-26-2). @@STARTS_TEXT@@
-In the welfare file the municipality is never written, so such inputs are districts that share a
-municipality's name; in the care data they usually do name the municipality. This shift between
-publishers is behind the coverage shortfall.
+\paragraph{Where the calibrated resolver is wrong.} Of the calibrated resolver's wrong town-only answers, 1,082 of 2,115 in test~1 (51\%) and
+247 of 880 in test~2 (28\%) are inputs whose right municipality is not among the candidates at all; the
+rest are ranking errors among candidates (築地4-2-19 read as Tokyo's 築地 for a facility in Amagasaki).
+Forced to answer every input with candidates, its top candidate would be wrong on 22.6\% (test~1) and
+21.6\% (test~2) of them, close to jageocoder's rate: the ranking is not better than jageocoder's, the
+probability is what tells the answers apart. One pattern dominates the
+first group: an address that \emph{starts with a municipality name} (富岡町1-56-26-2). Such inputs are 2.3\% of test~1's town-only inputs with candidates (7,103) but account for
+856 of its 2,115 wrong answers: 36\% of their answers are wrong, 14\% in test~2, and 25\% even in the
+care-office development data. The scorer treats a leading municipality name as evidence that the
+municipality is written, which holds less often than it assumes; how often a publisher writes districts
+that share a municipality's name (the welfare file never writes the municipality) is one source of the
+shift behind the coverage shortfall.
 
 \paragraph{A known failure mode.} A bare name that is both a municipality and a district elsewhere is read
 as the municipality: 栄町 alone is accepted as 千葉県栄町, and 錦町 alone as 熊本県錦町. It is the first
