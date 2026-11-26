@@ -1,0 +1,404 @@
+{
+ "commit": "af8e1546ae5cdfb72cfff628e20c5794a4e2d557",
+ "table": {
+  "P02-06 changed": {
+   "JADEN rules": {
+    "n": 8511,
+    "right": 7745,
+    "wrong": 80,
+    "answered": 7825,
+    "wrong_ci": [
+     0.008222726043412606,
+     0.012705223246045495
+    ]
+   },
+   "geolonia": {
+    "n": 8511,
+    "right": 39,
+    "wrong": 0,
+    "answered": 39,
+    "wrong_ci": [
+     0.0,
+     0.08966985360023902
+    ]
+   },
+   "jageocoder": {
+    "n": 8511,
+    "right": 7044,
+    "wrong": 802,
+    "answered": 7846,
+    "wrong_ci": [
+     0.09570799940791343,
+     0.10911671960297718
+    ]
+   }
+  },
+  "P02-06 unchanged": {
+   "JADEN rules": {
+    "n": 188502,
+    "right": 187929,
+    "wrong": 233,
+    "answered": 188162,
+    "wrong_ci": [
+     0.0010892497381013424,
+     0.0014077050545691675
+    ]
+   },
+   "JADEN rules (same sample as the other tools)": {
+    "n": 5000,
+    "right": 4980,
+    "wrong": 10,
+    "answered": 4990,
+    "wrong_ci": [
+     0.0010889135690600048,
+     0.003685286717949499
+    ]
+   },
+   "geolonia": {
+    "n": 5000,
+    "right": 4990,
+    "wrong": 10,
+    "answered": 5000,
+    "wrong_ci": [
+     0.0010867350406975989,
+     0.003677924176332773
+    ]
+   },
+   "jageocoder": {
+    "n": 5000,
+    "right": 4901,
+    "wrong": 10,
+    "answered": 4911,
+    "wrong_ci": [
+     0.001106435941831122,
+     0.0037445037100184916
+    ]
+   }
+  },
+  "P14-11 changed": {
+   "JADEN rules": {
+    "n": 1367,
+    "right": 1356,
+    "wrong": 1,
+    "answered": 1357,
+    "wrong_ci": [
+     0.00013009291743370892,
+     0.004162544814981291
+    ]
+   },
+   "geolonia": {
+    "n": 1367,
+    "right": 246,
+    "wrong": 0,
+    "answered": 246,
+    "wrong_ci": [
+     0.0,
+     0.015376142323776345
+    ]
+   },
+   "jageocoder": {
+    "n": 1367,
+    "right": 1182,
+    "wrong": 124,
+    "answered": 1306,
+    "wrong_ci": [
+     0.0802146438338247,
+     0.11205410072276903
+    ]
+   }
+  },
+  "P14-11 unchanged": {
+   "JADEN rules": {
+    "n": 89395,
+    "right": 89219,
+    "wrong": 77,
+    "answered": 89296,
+    "wrong_ci": [
+     0.0006900607366620234,
+     0.0010774855117066857
+    ]
+   },
+   "JADEN rules (same sample as the other tools)": {
+    "n": 5000,
+    "right": 4988,
+    "wrong": 3,
+    "answered": 4991,
+    "wrong_ci": [
+     0.00020443898805301585,
+     0.0017659137854963995
+    ]
+   },
+   "geolonia": {
+    "n": 5000,
+    "right": 4963,
+    "wrong": 3,
+    "answered": 4966,
+    "wrong_ci": [
+     0.00020546828566794925,
+     0.0017747960350299181
+    ]
+   },
+   "jageocoder": {
+    "n": 5000,
+    "right": 4997,
+    "wrong": 3,
+    "answered": 5000,
+    "wrong_ci": [
+     0.00020407096088550332,
+     0.001762737900530094
+    ]
+   }
+  }
+ },
+ "kinds": {
+  "P02-06": {
+   "other": {
+    "JADEN rules": {
+     "n": 178,
+     "right": 130,
+     "wrong": 0,
+     "answered": 130,
+     "wrong_ci": [
+      0.0,
+      0.02870258574314712
+     ]
+    },
+    "geolonia": {
+     "n": 178,
+     "right": 39,
+     "wrong": 0,
+     "answered": 39,
+     "wrong_ci": [
+      0.0,
+      0.08966985360023902
+     ]
+    },
+    "jageocoder": {
+     "n": 178,
+     "right": 100,
+     "wrong": 39,
+     "answered": 139,
+     "wrong_ci": [
+      0.21256139805764926,
+      0.3603921392872137
+     ]
+    }
+   },
+   "merger": {
+    "JADEN rules": {
+     "n": 3140,
+     "right": 3018,
+     "wrong": 3,
+     "answered": 3021,
+     "wrong_ci": [
+      0.00033777623319129063,
+      0.0029158156243129173
+     ]
+    },
+    "geolonia": {
+     "n": 3140,
+     "right": 0,
+     "wrong": 0,
+     "answered": 0,
+     "wrong_ci": [
+      0.0,
+      1.0
+     ]
+    },
+    "jageocoder": {
+     "n": 3140,
+     "right": 1989,
+     "wrong": 559,
+     "answered": 2548,
+     "wrong_ci": [
+      0.2037480575416242,
+      0.23587233268949362
+     ]
+    }
+   },
+   "status or name change": {
+    "JADEN rules": {
+     "n": 5193,
+     "right": 4597,
+     "wrong": 77,
+     "answered": 4674,
+     "wrong_ci": [
+      0.013201882265677409,
+      0.020540517220444574
+     ]
+    },
+    "geolonia": {
+     "n": 5193,
+     "right": 0,
+     "wrong": 0,
+     "answered": 0,
+     "wrong_ci": [
+      0.0,
+      1.0
+     ]
+    },
+    "jageocoder": {
+     "n": 5193,
+     "right": 4955,
+     "wrong": 204,
+     "answered": 5159,
+     "wrong_ci": [
+      0.0345581609020958,
+      0.04521217332624854
+     ]
+    }
+   }
+  },
+  "P14-11": {
+   "merger": {
+    "JADEN rules": {
+     "n": 625,
+     "right": 622,
+     "wrong": 0,
+     "answered": 622,
+     "wrong_ci": [
+      4.336808689942018e-19,
+      0.006138294418268136
+     ]
+    },
+    "geolonia": {
+     "n": 625,
+     "right": 194,
+     "wrong": 0,
+     "answered": 194,
+     "wrong_ci": [
+      0.0,
+      0.019417554245416534
+     ]
+    },
+    "jageocoder": {
+     "n": 625,
+     "right": 497,
+     "wrong": 87,
+     "answered": 584,
+     "wrong_ci": [
+      0.1223913492650883,
+      0.18014185015461928
+     ]
+    }
+   },
+   "status or name change": {
+    "JADEN rules": {
+     "n": 286,
+     "right": 283,
+     "wrong": 1,
+     "answered": 284,
+     "wrong_ci": [
+      0.0006218199843119887,
+      0.019672675321439508
+     ]
+    },
+    "geolonia": {
+     "n": 286,
+     "right": 0,
+     "wrong": 0,
+     "answered": 0,
+     "wrong_ci": [
+      0.0,
+      1.0
+     ]
+    },
+    "jageocoder": {
+     "n": 286,
+     "right": 265,
+     "wrong": 1,
+     "answered": 266,
+     "wrong_ci": [
+      0.0006639175999955567,
+      0.020984338265667857
+     ]
+    }
+   },
+   "ward": {
+    "JADEN rules": {
+     "n": 359,
+     "right": 359,
+     "wrong": 0,
+     "answered": 359,
+     "wrong_ci": [
+      0.0,
+      0.010587540127703108
+     ]
+    },
+    "geolonia": {
+     "n": 359,
+     "right": 52,
+     "wrong": 0,
+     "answered": 52,
+     "wrong_ci": [
+      0.0,
+      0.06879459041288215
+     ]
+    },
+    "jageocoder": {
+     "n": 359,
+     "right": 341,
+     "wrong": 18,
+     "answered": 359,
+     "wrong_ci": [
+      0.03194744588105694,
+      0.07785694259038625
+     ]
+    }
+   },
+   "split": {
+    "JADEN rules": {
+     "n": 97,
+     "right": 92,
+     "wrong": 0,
+     "answered": 92,
+     "wrong_ci": [
+      0.0,
+      0.04008280329209862
+     ]
+    },
+    "geolonia": {
+     "n": 97,
+     "right": 0,
+     "wrong": 0,
+     "answered": 0,
+     "wrong_ci": [
+      0.0,
+      1.0
+     ]
+    },
+    "jageocoder": {
+     "n": 97,
+     "right": 79,
+     "wrong": 18,
+     "answered": 97,
+     "wrong_ci": [
+      0.12072806645374706,
+      0.27436284840678665
+     ]
+    }
+   }
+  }
+ },
+ "hypotheses": {
+  "H1": false,
+  "H2": true,
+  "H3": false,
+  "H4": false,
+  "H5": false
+ },
+ "reverse": {
+  "n": 3794,
+  "agree": 2322,
+  "none": 1472
+ },
+ "inputs": {
+  "P02-06 rows": 197088,
+  "P02-06 unchanged": 188502,
+  "P02-06 changed": 8511,
+  "P02-06 excluded: no usable point": 18,
+  "P14-11 rows": 90762,
+  "P14-11 unchanged": 89395,
+  "P14-11 changed": 1367
+ }
+}
