@@ -547,7 +547,20 @@ print(hit.address, hit.level, hit.distance_m)                     # 京都府京
 found = jaden.extract_addresses("会場は東京都港区芝公園4-2-8の東京タワーです。")[0]
 print(found.start, found.end, found.text, found.canonical)        # 3 16 東京都港区芝公園4-2-8 東京都港区芝公園4丁目2番8号
 
-# 13. Online geospatial resolution via GSI (JGD2011 / WGS 84 compatible)
+# 13. Municipal history (v0.4): retired codes, and the pre-merger municipality of an address
+from jaden.history import code_change, current_codes, former_municipality
+print(current_codes("112267"))                                    # ('112038',): 鳩ヶ谷市 is now part of 川口市
+print(code_change("221350").successors, code_change("221350").date)  # ('221384', '221392') 2024-01-01 (浜松市北区, split)
+f = former_municipality("岐阜県多治見市笠原町2950")
+print(f.name, f.code, f.abolished)                                # 笠原町 215414 2006-01-23
+
+# 14. Auditing a record's municipality code against its address (v0.4)
+from jaden.audit import check_record
+r = check_record("茨城県阿見町牛久市柏田町1589-3", "084433")
+print(r.verdict, r.suggested_code, r.claimed_name_in_address)    # conflict 082198 True
+print(check_record("埼玉県鳩ヶ谷市里1650", "112267").verdict)       # code_retired
+
+# 15. Online geospatial resolution via GSI (JGD2011 / WGS 84 compatible)
 geo = jaden.geocode("東京都港区六本木6-10-1")
 print(geo.status)                 # 'SUCCESS'
 print(geo.coordinates.latitude)  # 35.660206
@@ -557,7 +570,7 @@ print(geo.matched_address)       # '東京都港区六本木六丁目１０番'
 
 ### Command-Line Interface (CLI)
 
-JADEN's CLI covers single addresses (`normalize`, `parse`, `validate`, `geocode`), files (`batch`, `dedupe`, `extract`), lookups (`postal`, `suggest`, `reverse`, `compare`), the API server (`serve`), the MCP server for AI assistants (`mcp`) and data management (`data`).
+JADEN's CLI covers single addresses (`normalize`, `parse`, `validate`, `geocode`), files (`batch`, `dedupe`, `extract`), lookups (`postal`, `suggest`, `reverse`, `compare`), register checks (`audit`), the API server (`serve`), the MCP server for AI assistants (`mcp`) and data management (`data`).
 
 #### 1. `normalize`: Canonical Address Formatting
 ```bash
@@ -852,6 +865,18 @@ curl -H 'X-API-Key: change-me' 'http://127.0.0.1:8080/v1/normalize?q=港区芝�
 ```
 
 Like everything else in JADEN it runs offline on the bundled data. `resolve_address` leaves `answered` false when the municipality cannot be told reliably, so the assistant knows to ask rather than invent one.
+
+#### 13. `audit`: Do a Register's Codes Agree with Its Addresses? (v0.4)
+```bash
+# Reads each row's address on its own and compares it with the row's municipality code
+$ jaden audit facilities.csv --code-column 市区町村コード -o checked.csv
+4 rows: consistent 1, conflict 1, code_retired 1, district_not_in_claimed 1
+```
+Appended columns: `jaden_audit` (consistent, consistent_former_name, code_retired, conflict, district_not_in_claimed,
+undetermined, unreadable, code_invalid), `jaden_code_status`, `jaden_resolved_code`, `jaden_suggested_code`,
+`jaden_candidates`, `jaden_former_name`, `jaden_municipality_written` and `jaden_audit_detail`. A conflict is a
+disagreement to look at, not proof that the code is wrong; how often each verdict reflects a real error was
+measured on four public registers ([`benchmarks/registers/`](benchmarks/registers/)).
 
 #### Exit Codes for Shell Automation
 | Exit Code | Meaning | Example Scenario |
