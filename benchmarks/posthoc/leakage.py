@@ -28,7 +28,7 @@ import re
 import shutil
 import sys
 from collections import Counter
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
@@ -126,6 +126,19 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=HERE / "results")
     args = ap.parse_args()
 
+    src = ROOT / "benchmarks" / "calibration" / "data"
+    red = args.work / "prior_reduced"
+    stats_path = red / "stats.json"
+    if stats_path.exists():                       # the reduced prior from an earlier run of this script
+        stats = json.loads(stats_path.read_text(encoding="utf-8"))
+        print(f"reusing {red}", file=sys.stderr)
+    else:
+        stats = build_reduced_prior(args, src, red)
+    run_scoring(args, src, red, stats)
+    return 0
+
+
+def build_reduced_prior(args: argparse.Namespace, src: Path, red: Path) -> Dict[str, int]:
     rows = test_rows(args.data)
     with Pool(args.jobs, initializer=_init) as pool:
         tkeys = [k for part in pool.imap(_test_keys, chunks(rows, 5000)) for k in part]
@@ -144,9 +157,6 @@ def main() -> int:
     facilities_hit = sum(1 for k in tkeys if k is not None and hits.get(k))
     print(f"{removed:,} corporations share a key with a test facility; {facilities_hit:,} facilities affected", file=sys.stderr)
 
-    # reduced prior
-    src = ROOT / "benchmarks" / "calibration" / "data"
-    red = args.work / "prior_reduced"
     red.mkdir(parents=True, exist_ok=True)
     town_minus: Counter = Counter()
     muni_minus: Counter = Counter()
@@ -167,48 +177,56 @@ def main() -> int:
             lg, n = line.split()
             fo.write(f"{lg}\t{max(0, int(n) - muni_minus.get(lg, 0))}\n")
     shutil.copy(src / "model.json", red / "model.json")
+    stats = {"facilities": len(rows), "keys": len(keys), "corporations_removed": removed, "facilities_affected": facilities_hit}
+    (red / "stats.json").write_text(json.dumps(stats), encoding="utf-8")
+    return stats
 
-    # rebuild town-only items with the reduced prior and score both versions
-    sys.path.insert(0, str(ROOT / "benchmarks" / "heldout2"))
-    from evaluate_heldout import Model, Scorer, wilson
-    spec = json.loads((src / "model.json").read_text(encoding="utf-8"))
-    models = {"calibrated": Model(spec["models"]["address"], False),
-              "calibrated + name": Model(spec["models"]["address+name"], True)}
-    scorer = Scorer()
+
+def town_only_records(path: Path) -> List[Dict[str, Any]]:
+    """The town-only inputs of one test with only the fields needed to rebuild them."""
+    with gzip.open(path, "rb") as fh:
+        items = pickle.load(fh)["items"]
+    recs = [{"id": it["id"], "input": it["input"], "side": it.get("side"), "truth": it["truth"]}
+            for it in items if it["variant"] == "town only" and it.get("known_truth", True)]
+    del items
+    if any(r["side"] is None for r in recs):       # test 2's items do not store the facility name
+        sides = {}
+        for line in open(path.parent / "inputs.jsonl", encoding="utf-8"):
+            r = json.loads(line)
+            if r["variant"] == "town only":
+                sides[r["id"]] = r["side"]
+        for r in recs:
+            r["side"] = sides.get(r["id"], "")
+    return recs
+
+
+def run_scoring(args: argparse.Namespace, src: Path, red: Path, stats: Dict[str, int]) -> None:
+    from evaluate_heldout import wilson
     lines = ["# Post-hoc: town-prior leakage check", "",
-             f"Test facilities keyed by municipality, registered town and numbers: {len(keys):,} distinct keys "
-             f"({len(rows):,} facilities of both tests). Corporations in the National Tax Agency register with "
-             f"the same key: **{removed:,}**, sharing a key with **{facilities_hit:,}** test facilities. They are "
-             "removed from the prior, and the town-only test inputs are rebuilt and scored again with the same "
-             "model and threshold.", "",
+             f"Test facilities keyed by municipality, registered town and numbers: {stats['keys']:,} distinct keys "
+             f"({stats['facilities']:,} facilities of both tests). Corporations in the National Tax Agency register "
+             f"with the same key: **{stats['corporations_removed']:,}**, sharing a key with "
+             f"**{stats['facilities_affected']:,}** test facilities. They are removed from the prior, and every "
+             "town-only test input is rebuilt with each prior and scored with the same model and threshold.", "",
              "| Test | Model | Prior | Right | Wrong | Wrong among answers (95% CI) |", "| :--- | :--- | :--- | ---: | ---: | :--- |"]
-    result: Dict[str, Any] = {"keys": len(keys), "corporations_removed": removed, "facilities_affected": facilities_hit}
+    result: Dict[str, Any] = dict(stats)
+    ctx = get_context("spawn")                     # fresh workers: nothing large is copied into them
     for tname, path in (("test 1", args.test1 / "jaden_items.pkl.gz"), ("test 2", args.test2 / "items_final.pkl.gz")):
-        with gzip.open(path, "rb") as fh:
-            items = [it for it in pickle.load(fh)["items"] if it["variant"] == "town only" and it.get("known_truth", True)]
-        if any("side" not in it for it in items):        # test 2's items do not store the facility name
-            sides = {}
-            for line in open(path.parent / "inputs.jsonl", encoding="utf-8"):
-                r = json.loads(line)
-                if r["variant"] == "town only":
-                    sides[r["id"]] = r["side"]
-            for it in items:
-                it["side"] = sides.get(it["id"], "")
-        reduced = rebuild(items, red, args.jobs)
-        for mname, model in models.items():
-            for pname, its in (("full", items), ("reduced", reduced)):
-                right = wrong = 0
-                for it in its:
-                    if not it["candidates"]:
-                        continue
-                    p, _ = model.probs(it)
-                    j = max(range(len(p)), key=p.__getitem__)
-                    if p[j] >= model.tau:
-                        ok = scorer.right(it["candidates"][j], it["truth"])
-                        right += ok
-                        wrong += not ok
+        recs = town_only_records(path)
+        tally: Dict[Tuple[str, str], List[int]] = {}
+        for pname, folder in (("full", src), ("reduced", red)):
+            with ctx.Pool(args.jobs, initializer=_init_scoring, initargs=(str(folder),), maxtasksperchild=50) as pool:
+                for part in pool.imap_unordered(_score, chunks(recs, 2000)):
+                    for mname, (r, w) in part.items():
+                        acc = tally.setdefault((mname, pname), [0, 0])
+                        acc[0] += r
+                        acc[1] += w
+            print(f"  {tname}, {pname} prior: done", file=sys.stderr, flush=True)
+        n = len(recs)
+        for mname in ("calibrated", "calibrated + name"):
+            for pname in ("full", "reduced"):
+                right, wrong = tally[(mname, pname)]
                 lo, hi = wilson(wrong, right + wrong)
-                n = len(its)
                 result.setdefault(tname, {}).setdefault(mname, {})[pname] = {"n": n, "right": right, "wrong": wrong}
                 lines.append(f"| {tname} | {mname} | {pname} | {100 * right / n:.2f}% | {wrong:,} | "
                              f"{100 * wrong / max(1, right + wrong):.2f}% ({100 * lo:.2f}–{100 * hi:.2f}%) |")
@@ -216,33 +234,38 @@ def main() -> int:
     (args.out / "leakage.json").write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     (args.out / "leakage.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
-    return 0
 
 
-_B: Any = None
+_W: Dict[str, Any] = {}
 
 
-def _init_builder(folder: str) -> None:
-    global _B
+def _init_scoring(folder: str) -> None:
+    for p in ("src", "benchmarks/calibration", "benchmarks/heldout"):
+        sys.path.insert(0, str(ROOT / p))
     from candidates import CandidateBuilder, Prior
-    _B = CandidateBuilder(Prior(Path(folder)))
+    from evaluate_heldout import Model, Scorer
+    spec = json.loads((ROOT / "benchmarks" / "calibration" / "data" / "model.json").read_text(encoding="utf-8"))
+    _W["builder"] = CandidateBuilder(Prior(Path(folder)))
+    _W["models"] = {"calibrated": Model(spec["models"]["address"], False),
+                    "calibrated + name": Model(spec["models"]["address+name"], True)}
+    _W["scorer"] = Scorer()
 
 
-def _rebuild(batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    from candidates import label_of
-    out = []
-    for it in batch:
-        item = _B.build(it["input"], it.get("side", ""))
-        new = dict(it)
-        new.update({"status": item.status, "candidates": item.candidates, "x": item.x, "g": item.g,
-                    "label": label_of(item, it["truth"], _B.by_code)})
-        out.append(new)
-    return out
-
-
-def rebuild(items: List[Dict[str, Any]], folder: Path, jobs: int) -> List[Dict[str, Any]]:
-    with Pool(jobs, initializer=_init_builder, initargs=(str(folder),)) as pool:
-        return [x for part in pool.imap(_rebuild, chunks(items, 2000)) for x in part]
+def _score(batch: List[Dict[str, Any]]) -> Dict[str, Tuple[int, int]]:
+    """Rebuild each input with this worker's prior; count right and wrong answers at the threshold."""
+    out = {m: [0, 0] for m in _W["models"]}
+    for r in batch:
+        item = _W["builder"].build(r["input"], r["side"] or "")
+        if not item.candidates:
+            continue
+        it = {"x": item.x, "g": item.g}
+        for mname, model in _W["models"].items():
+            p, _ = model.probs(it)
+            j = max(range(len(p)), key=p.__getitem__)
+            if p[j] >= model.tau:
+                ok = _W["scorer"].right(item.candidates[j], r["truth"])
+                out[mname][0 if ok else 1] += 1
+    return {m: (v[0], v[1]) for m, v in out.items()}
 
 
 if __name__ == "__main__":
