@@ -39,3 +39,9 @@ def test_former_municipality_of_a_current_address() -> None:
 def test_an_unchanged_municipality_has_no_former_one() -> None:
     assert former_municipality("東京都港区芝公園4-2-8") is None
     assert former_municipality("あいうえお") is None
+
+
+def test_a_koaza_falls_back_to_its_oaza() -> None:
+    # The district table is at 大字 level; a marked 小字 lies inside its 大字
+    f = former_municipality("岩手県一関市藤沢町大籠字右名沢28-7")
+    assert f is not None and f.name == "藤沢町"

@@ -149,4 +149,12 @@ def former_municipality(address: Any) -> Optional[FormerMunicipality]:
         return None
     chome = str(c.chome) if c.chome is not None else ""
     code = _HISTORY.district_former(c.lg_code, town_key(c.town), chome)
+    if code is None and c.koaza and c.town.endswith(c.koaza):
+        # The district table is at 大字 level: a 小字 lies inside its 大字 ('藤沢町大籠字右名沢' -> '藤沢町大籠')
+        # Only when the 小字 is marked as such: '大字東貝塚' has no 小字, whatever the parse says
+        parent = c.town[:-len(c.koaza)]
+        marked = parent.endswith("字") and not parent.endswith("大字")
+        parent = parent[:-2] if parent.endswith("小字") else parent[:-1]
+        if marked and parent:
+            code = _HISTORY.district_former(c.lg_code, town_key(parent), chome)
     return _HISTORY.former(code) if code else None
